@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  api:
+    image: stumpisuter/catchmentapi-api:latest
+    build: ./project
+    ports:
+      - 8000:8000
+    command: uvicorn main:app --host 0.0.0.0 --reload
+    volumes:
+      - ./project:/usr/src/app
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+    labels:
+      # Enable Traefik for this specific "backend" service
+      - traefik.enable=true
+      # Define the port inside of the Docker service to use
+      - traefik.http.services.app.loadbalancer.server.port=8000
+      # Make Traefik use this domain in HTTP
+      - traefik.http.routers.app-http.entrypoints=http
+      - traefik.http.routers.app-http.rule=Host(`catchmentapi.christophsuter.ch`)
+      # Use the traefik-public network (declared below)
+      - traefik.docker.network=traefik-public
+      # Make Traefik use this domain in HTTPS
+      - traefik.http.routers.app-https.entrypoints=https
+      - traefik.http.routers.app-https.rule=Host(`catchmentapi.christophsuter.ch`)
+      - traefik.http.routers.app-https.tls=true
+      # Use the "le" (Let's Encrypt) resolver
+      - traefik.http.routers.app-https.tls.certresolver=le
+      - traefik.http.routers.app-http.middlewares=https-redirect
+    networks:
+      # Use the public network created to be shared between Traefik and
+      # any other service that needs to be publicly available with HTTPS
+      - traefik-public
+
+  view:
+    build: ./openlayers-view
+    ports:
+      - 8080:5173
+    command: npm run start -- --host
+    volumes:
+      - ./openlayers-view:/app
+      - /app/node_modules
+
+  worker:
+    image: stumpisuter/catchmentapi-worker:latest
+    build: ./project
+    command: celery -A worker.celery worker --loglevel=info --logfile=logs/celery.log
+    volumes:
+      - ./project:/usr/src/app
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - api
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 16g
+    networks:
+      # Use the public network created to be shared between Traefik and
+      # any other service that needs to be publicly available with HTTPS
+      - traefik-public
+
+
+  redis:
+    image: redis:7
+    networks:
+      # Use the public network created to be shared between Traefik and
+      # any other service that needs to be publicly available with HTTPS
+      - traefik-public
+
+
+  dashboard:
+    build: ./project
+    command: celery --broker=redis://redis:6379/0 flower --port=5555
+    ports:
+      - 5556:5555
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - api
+      - redis
+      - worker
+    networks:
+      - traefik-public
+
+networks:
+  traefik-public:
+    external: true
