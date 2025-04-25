@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   api:
     image: stumpisuter/catchmentapi-api:latest
@@ -18,17 +16,17 @@ services:
       # Define the port inside of the Docker service to use
       - traefik.http.services.app.loadbalancer.server.port=8000
       # Make Traefik use this domain in HTTP
-      - traefik.http.routers.app-http.entrypoints=http
-      - traefik.http.routers.app-http.rule=Host(`${CATCHMENTAPI_HOSTNAME}`)
+      # - traefik.http.routers.app-http.entrypoints=http
+      # - traefik.http.routers.app-http.rule=Host(`${CATCHMENTAPI_HOSTNAME}`)
       # Use the traefik-public network (declared below)
       - traefik.docker.network=traefik-public
       # Make Traefik use this domain in HTTPS
-      - traefik.http.routers.app-https.entrypoints=https
-      - traefik.http.routers.app-https.rule=Host(`${CATCHMENTAPI_HOSTNAME}`)
-      - traefik.http.routers.app-https.tls=true
+      # - traefik.http.routers.app-https.entrypoints=https
+      # - traefik.http.routers.app-https.rule=Host(`${CATCHMENTAPI_HOSTNAME}`)
+      # - traefik.http.routers.app-https.tls=true
       # Use the "le" (Let's Encrypt) resolver
-      - traefik.http.routers.app-https.tls.certresolver=le
-      - traefik.http.routers.app-http.middlewares=https-redirect
+      # - traefik.http.routers.app-https.tls.certresolver=le
+      # - traefik.http.routers.app-http.middlewares=https-redirect
     networks:
       # Use the public network created to be shared between Traefik and
       # any other service that needs to be publicly available with HTTPS
@@ -46,8 +44,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
-          memory: 16g
+          cpus: '1'
+          memory: 4g
     networks:
       # Use the public network created to be shared between Traefik and
       # any other service that needs to be publicly available with HTTPS
@@ -66,9 +64,9 @@ services:
     image: traefik:v2.3
     ports:
       # Listen on port 80, default for HTTP, necessary to redirect to HTTPS
-      - 80:80
+      - 8333:80
       # Listen on port 443, default for HTTPS
-      - 443:443
+      - 4443:443
     restart: always
     labels:
       # Enable Traefik for this service, to make it available in the public network
@@ -77,27 +75,27 @@ services:
       - traefik.http.services.traefik-dashboard.loadbalancer.server.port=8080
       # Use the traefik-public network (declared below)
       - traefik.docker.network=traefik-public
-      
+
     volumes:
       # Add Docker as a mounted volume, so that Traefik can read the labels of other services
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # Mount the volume to store the certificates
-      - traefik-public-certificates:/certificates
+      # - traefik-public-certificates:/certificates
     command:
       # Enable Docker in Traefik, so that it reads labels from Docker services
       - --providers.docker
       # Do not expose all Docker services, only the ones explicitly exposed
       - --providers.docker.exposedbydefault=false
       # Create an entrypoint "http" listening on port 80
-      - --entrypoints.http.address=:80
+      - --entrypoints.http.address=:8333
       # Create an entrypoint "https" listening on port 443
-      - --entrypoints.https.address=:443
+      - --entrypoints.https.address=:4443
       # Create the certificate resolver "le" for Let's Encrypt, uses the environment variable EMAIL
-      - --certificatesresolvers.le.acme.email=christoph@suter-burri.ch
+      # - --certificatesresolvers.le.acme.email=christoph@suter-burri.ch
       # Store the Let's Encrypt certificates in the mounted volume
-      - --certificatesresolvers.le.acme.storage=/certificates/acme.json
+      # - --certificatesresolvers.le.acme.storage=/certificates/acme.json
       # Use the TLS Challenge for Let's Encrypt
-      - --certificatesresolvers.le.acme.tlschallenge=true
+      # - --certificatesresolvers.le.acme.tlschallenge=true
       # Enable the access log, with HTTP requests
       - --accesslog
       # Enable the Traefik log, for configurations and errors
@@ -109,11 +107,11 @@ services:
       # any other service that needs to be publicly available with HTTPS
       - traefik-public
 
-volumes:
+#volumes:
   # Create a volume to store the certificates, there is a constraint to make sure
   # Traefik is always deployed to the same Docker node with the same volume containing
   # the HTTPS certificates
-  traefik-public-certificates:
+  # traefik-public-certificates:
 
 networks:
   traefik-public:
