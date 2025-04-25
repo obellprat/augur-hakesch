@@ -1,5 +1,5 @@
 {
-  "name": "openlayers-view",
+  "name": "augur-hackesch-frontend",
   "version": "1.0.0",
   "scripts": {
     "start": "vite",

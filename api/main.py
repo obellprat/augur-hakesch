@@ -2,7 +2,6 @@ from celery.result import AsyncResult
 from fastapi import Body, FastAPI, Form, Request, File, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.responses import Response
@@ -15,7 +14,6 @@ from worker import calculate_subcatchments
 
 app = FastAPI()
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
-templates = Jinja2Templates(directory="templates")
 
 origins = [
     "*",
@@ -31,7 +29,6 @@ app.add_middleware(
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    # return templates.TemplateResponse("index.html", context={"request": request})
     f = open("index.html", "r")
     return f.read()
 
