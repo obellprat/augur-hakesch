@@ -1,7 +1,9 @@
 import { resolve } from 'path'
 import inject from "@rollup/plugin-inject";
+import { defineConfig } from 'vite'
 
-export default {
+export default defineConfig ({
+  base: "./",
   plugins: [
           inject({   // => that should be first under plugins array
             $: 'jquery',
@@ -15,4 +17,4 @@ export default {
   server: {
     port: 5173
   }
-}
+})

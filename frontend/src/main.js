@@ -71,7 +71,7 @@ const styleFunction = function (feature) {
 };
 
 map.on('singleclick', function (e) {
-  fetch('/catchment/?northing=' + e.coordinate[0] + '&easting=' + e.coordinate[1], {
+  fetch('./catchment/?northing=' + e.coordinate[0] + '&easting=' + e.coordinate[1], {
     method: 'GET',
   })
   .then(response => response.json())
@@ -86,7 +86,7 @@ map.on('singleclick', function (e) {
 
 function getStatus(taskID) {
   
-  fetch(`/tasks/${taskID}`, {
+  fetch(`./tasks/${taskID}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'
@@ -171,7 +171,7 @@ $('input[name="points_shapefile_zip"]').on('change', uploadShapefileZip);
 
 function uploadShapefileZip() {
   var formData = new FormData($("#shpzipupload").get(0));
-  var ajaxUrl = "/subcatchments/";
+  var ajaxUrl = "./subcatchments/";
 				
   $.ajax({
     url : ajaxUrl,
@@ -188,7 +188,7 @@ function uploadShapefileZip() {
 
 function getSubCatchmentStatus(taskID, wasrunning) {
   
-  fetch(`/tasks/${taskID}`, {
+  fetch(`./tasks/${taskID}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'
