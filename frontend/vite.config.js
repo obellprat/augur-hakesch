@@ -10,7 +10,7 @@ export default {
         ],
   root: resolve(__dirname, 'src'),
   build: {
-    outDir: '../../project'
+    outDir: '../../api'
   },
   server: {
     port: 5173
