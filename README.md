@@ -3,13 +3,13 @@ Augur-Hakesch is an AUGUR application for river discharge calculations based on 
 
 # installation
 ## local installation and developement
-The local developement process for Augur-Hakesch is based on Task ([https://taskfile.dev/]). After git checkout run
-    pip install go-task-bin
+The local developement process for Augur-Hakesch is based on Task ([https://taskfile.dev/](https://taskfile.dev/)). After git checkout run
+`pip install go-task-bin`
 
 Next download the example dem / dir from online sources to /src/api/data and build the frontend. For this ust call
-    task init
+`task init`
 
 To run it locally
-    task dev
+`task dev`
 
 and the app is accessible on http://localhost:8000 (it needs to start some minutes)
