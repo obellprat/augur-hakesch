@@ -1,12 +1,12 @@
 services:
   api:
     image: stumpisuter/catchmentapi-api:latest
-    build: ./api
+    build: ./src
     ports:
       - 8000:8000
     command: uvicorn main:app --host 0.0.0.0 --reload
     volumes:
-      - ./api:/usr/src/app
+      - ./src/api:/usr/src/app
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -17,17 +17,8 @@ services:
       - traefik.enable=true
       # Define the port inside of the Docker service to use
       - traefik.http.services.app.loadbalancer.server.port=8000
-      # Make Traefik use this domain in HTTP
-      - traefik.http.routers.app-http.entrypoints=http
-      - traefik.http.routers.app-http.rule=Host(`catchmentapi.christophsuter.ch`)
       # Use the traefik-public network (declared below)
       - traefik.docker.network=traefik-public
-      # Make Traefik use this domain in HTTPS
-      - traefik.http.routers.app-https.entrypoints=https
-      - traefik.http.routers.app-https.rule=Host(`catchmentapi.christophsuter.ch`)
-      - traefik.http.routers.app-https.tls=true
-      # Use the "le" (Let's Encrypt) resolver
-      - traefik.http.routers.app-https.tls.certresolver=le
       - traefik.http.routers.app-http.middlewares=https-redirect
     networks:
       # Use the public network created to be shared between Traefik and
@@ -35,20 +26,20 @@ services:
       - traefik-public
 
   view:
-    build: ./frontend
+    build: ./src/frontend
     ports:
       - 8080:5173
     command: npm run start -- --host
     volumes:
-      - ./frontend:/app
+      - ./src/frontend:/app
       - /app/node_modules
 
   worker:
     image: stumpisuter/catchmentapi-worker:latest
-    build: ./api
-    command: celery -A worker.celery worker --loglevel=info --logfile=logs/celery.log
+    build: ./src/api
+    command: celery -A calculations.catchment.celery worker --loglevel=info --logfile=./logs/celery.log
     volumes:
-      - ./api:/usr/src/app
+      - ./src/api:/usr/src/app
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -75,7 +66,7 @@ services:
 
 
   dashboard:
-    build: ./api
+    build: ./src/api
     command: celery --broker=redis://redis:6379/0 flower --port=5555
     ports:
       - 5556:5555

@@ -1,0 +1,24 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  GREETING: Hello, World!
+
+tasks:
+
+
+  build:
+    cmds:
+    
+      - docker compose build
+  
+  build-frontend:
+    dir: src/frontend
+    cmds:
+      - npm run build
+
+  push:
+    cmds:
+      - task: build
+      - docker compose push

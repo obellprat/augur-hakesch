@@ -42,11 +42,11 @@ def calculate_catchment(self, northing: float, easting: float, withRiverNetwork:
     
     grid.clip_to(fdir)
     small_view = grid.view(fdir)
-    raster = grid.to_raster(fdir, 'smallfdir.tif', target_view=small_view)
+    raster = grid.to_raster(fdir, 'data/temp/smallfdir.tif', target_view=small_view)
 
     del grid
     gc.collect()
-    grid2 = Grid.from_raster('smallfdir.tif')
+    grid2 = Grid.from_raster('data/temp/smallfdir.tif')
 
     self.update_state(state='PROGRESS',
                 meta={'text': 'Calculation accumulation'})

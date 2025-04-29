@@ -1,14 +1,14 @@
 import './style.css';
 
 import proj4 from "proj4";
-import GeoJSON from 'ol/format/GeoJSON.js';
+import GeoJSON from 'ol/format/GeoJSON';
 import { Map, View } from "ol";
 import { Tile as TileLayer, Vector as VectorLayer} from "ol/layer";
 import { XYZ } from "ol/source";
 import { defaults as defaultControls, ScaleLine } from "ol/control";
 import { register } from "ol/proj/proj4";
 import { Vector as VectorSource } from "ol/source";
-import {Circle as CircleStyle, Fill, Stroke, Style} from 'ol/style.js';
+import {Circle as CircleStyle, Fill, Stroke, Style} from 'ol/style';
 import TileGrid from "ol/tilegrid/TileGrid";
 import { TILEGRID_ORIGIN, TILEGRID_RESOLUTIONS, WMS_TILE_SIZE } from "./config";
 
@@ -86,7 +86,7 @@ map.on('singleclick', function (e) {
 
 function getStatus(taskID) {
   
-  fetch(`./tasks/${taskID}`, {
+  fetch(`./task/${taskID}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'
@@ -188,7 +188,7 @@ function uploadShapefileZip() {
 
 function getSubCatchmentStatus(taskID, wasrunning) {
   
-  fetch(`./tasks/${taskID}`, {
+  fetch(`./task/${taskID}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'

@@ -1,6 +1,6 @@
-api/logs/celery.log
-api/data/temp/tempoutput.geojson
-api/assets
-api/index.html
-api/data
-api/smallfdir.tif
+src/api/logs/celery.log
+src/api/data/temp/tempoutput.geojson
+src/api/assets
+src/api/index.html
+src/api/data
+src/api/smallfdir.tif

@@ -1,7 +1,7 @@
 import json
 from unittest.mock import patch
 
-from worker import create_task
+from api.src.catchment.worker import create_task
 
 
 def test_home(test_app):
