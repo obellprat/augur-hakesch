@@ -1,4 +1,4 @@
-# https://taskfile.dev
+# https://taskfile.dev - For Augur Hakesch
 
 version: '3'
 
@@ -6,11 +6,22 @@ vars:
   GREETING: Hello, World!
 
 tasks:
+  init:
+    cmds:
+      - task: init-frontend
+      - curl -o ./src/api/data/dir_3x3_3.tif https://www.suter-burri.ch/dateien/augur/dir_3x3_3.tif
 
+  init-frontend:
+    dir: src/frontend
+    cmds:
+      - npm i
+
+  dev:
+    cmds:
+      - docker compose up --build
 
   build:
     cmds:
-    
       - docker compose build
   
   build-frontend:
