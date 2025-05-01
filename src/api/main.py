@@ -5,8 +5,12 @@ from fastapi.responses import HTMLResponse
 
 from routers import catchment, file, task
 
+from version import __version__
 
-app = FastAPI()
+
+app = FastAPI(
+    version=__version__,
+)
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 origins = [
