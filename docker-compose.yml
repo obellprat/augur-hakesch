@@ -37,7 +37,7 @@ services:
   worker:
     image: stumpisuter/catchmentapi-worker:latest
     build: ./src/api
-    command: celery -A calculations.catchment.celery worker --loglevel=info --logfile=./logs/celery.log
+    command: celery -A calculations.calculations.app worker --loglevel=info --logfile=./logs/celery.log
     volumes:
       - ./src/api:/usr/src/app
     environment:
