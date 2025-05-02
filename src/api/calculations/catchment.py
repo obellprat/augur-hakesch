@@ -1,8 +1,7 @@
 import os
 import time
 from pysheds.grid import Grid
-import fiona
-from fiona.crs import CRS
+import rasterio
 import numpy as np
 import json
 import gc
@@ -12,15 +11,9 @@ import binascii
 import shutil
 from celery.utils.log import get_task_logger
 
-from celery import Celery
+from calculations.calculations import app
 
-
-celery = Celery(__name__)
-celery.conf.broker_url = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379")
-celery.conf.result_backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://localhost:6379")
-logger = get_task_logger(__name__)
-
-@celery.task(name="calculate_catchment", bind=True)
+@app.task(name="calculate_catchment", bind=True)
 def calculate_catchment(self, northing: float, easting: float, withRiverNetwork: bool):
     # Rertrieve and load DEM
     # ----------------------
@@ -180,7 +173,7 @@ def calculate_subcatchment(id: float, requestid,  northing: float, easting: floa
 
     return "OK"
 
-@celery.task(name="calculate_subcatchments", bind=True)
+@app.task(name="calculate_subcatchments", bind=True)
 def calculate_subcatchments(self, points_shapefile_zip_path):
     mybytes = binascii.a2b_base64(points_shapefile_zip_path.encode('utf8'))
 

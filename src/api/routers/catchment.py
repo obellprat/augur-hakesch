@@ -22,3 +22,8 @@ async def subcatchments(points_shapefile_zip: Annotated[bytes, File()]):
     return JSONResponse({"task_id": task.id})
     #task = calculate_subcatchments.delay(await points_shapefile_zip.file)
     #return JSONResponse({"task_id": task.id})
+
+@router.get("/isozonierung")
+async def get_catchment(northing: float, easting: float):
+    task = calculate_catchment.delay(northing, easting, withRiverNetwork)
+    return JSONResponse({"task_id": task.id})
