@@ -12,4 +12,4 @@ def get_file(task_id):
 
 @router.get("/isozones/{task_id}")
 def get_file(task_id):
-    return FileResponse(f"./data/" + task_id + "/isozones.tif", media_type="image/tiff")
+    return FileResponse(f"./data/temp/" + task_id + "/isozones_cog.tif", media_type="image/tiff")
