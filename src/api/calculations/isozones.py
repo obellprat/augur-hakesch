@@ -8,7 +8,10 @@ import zipfile
 import io
 import binascii
 import shutil
-from celery.utils.log import get_task_logger
+from rio_cogeo.cogeo import cog_translate
+from rio_cogeo.profiles import cog_profiles
+from rasterio.io import MemoryFile
+from pysheds.view import View
 
 from calculations.calculations import app
 
@@ -74,6 +77,55 @@ def calculate_isozones(self, northing: float, easting: float):
     # write geotiff to tempdir
     os.mkdir(f"data/{self.request.id.__str__()}")
     
-    grid2.to_raster(dist, f"data/{self.request.id.__str__()}/isozones.tif", target_view=small_view)
+    # writing cloud optimized geotiff
+
+    # Defining the output COG filename
+    # path = data/NASADEM_HGT_n57e105_COG.tif
+    cog_filename = f"data/temp/{self.request.id.__str__()}/isozones_cog.tif"
+
+    src_profile = dict(
+        driver="GTiff",
+        dtype="int"
+    )
+
+    target_view = dist.viewfinder
+    small_view2 = View.view(dist, target_view)
+
+    height, width = small_view2.shape
+    default_blockx = width
+    default_profile = {
+        'driver' : 'GTiff',
+        'blockxsize' : 256,
+        'blockysize' : 256,
+        'count': 1
+    }
+    profile = default_profile
+    profile_updates = {
+        'crs' : dist.crs.srs,
+        'transform' : dist.affine,
+        'dtype' : dist.dtype.name,
+        'nodata' : dist.nodata,
+        'height' : height,
+        'width' : width
+    }
+    profile.update(profile_updates)
+
+    with MemoryFile() as memfile:
+        # Opening an empty MemoryFile for in memory operation - faster
+        with memfile.open(**profile) as mem:
+            # Writing the array values to MemoryFile using the rasterio.io module
+            # https://rasterio.readthedocs.io/en/stable/api/rasterio.io.html
+            mem.write(np.asarray(dist), 1)
+
+            dst_profile = cog_profiles.get("deflate")
+
+            # Creating destination COG
+            cog_translate(
+                mem,
+                cog_filename,
+                dst_profile,
+                use_cog_driver=True,
+                in_memory=False
+            )
 
     return
