@@ -75,7 +75,7 @@ def calculate_isozones(self, northing: float, easting: float):
     dist = np.rint(((dist/v_gerinne) / 60) / 10)   # strecke / geschwindigkeit / 60(-> für m/min) / 10 (-> 10 Minuten klassen) 
 
     # write geotiff to tempdir
-    os.mkdir(f"data/{self.request.id.__str__()}")
+    os.mkdir(f"data/temp/{self.request.id.__str__()}")
     
     # writing cloud optimized geotiff
 
