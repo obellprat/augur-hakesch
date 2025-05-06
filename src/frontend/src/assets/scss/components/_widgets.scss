@@ -1,0 +1,205 @@
+//
+// widgets.scss
+//
+
+
+.info-sidebar {
+    width: 100%;
+}
+
+@include media-breakpoint-up(xl) {
+    .info-sidebar {
+        width: 320px;
+    }
+}
+
+
+// Simple tile box
+.widget-flat {
+    position: relative;
+    overflow: hidden;
+
+    .widget-flat-icon {
+        position: absolute;
+        right: -10px;
+        font-size: 64px;
+        bottom: -10px;
+        opacity: 0.075;
+        transition: all .4s;
+    }
+
+    &:hover {
+        .widget-flat-icon {
+            bottom: 0;
+            opacity: 0.25;
+        }
+    }
+}
+
+.widget-icon {
+    transform: rotate(20deg);
+    right: -20px;
+}
+
+//
+// App Search
+//
+.app-search {
+    position: relative;
+
+    .form-control {
+        padding-left: 40px;
+    }
+
+    .app-search-icon {
+        @extend .translate-middle-y;
+        @extend .d-flex;
+        @extend .position-absolute;
+        @extend .top-50;
+        @extend .justify-content-center;
+        width: 40px;
+        z-index: 5;
+    }
+
+    svg {
+        height: 18px;
+    }
+
+    iconify-icon {
+        svg {
+            margin: 0 auto;
+        }
+    }
+
+    &.app-search-sm {
+        .form-control {
+            padding-left: 30px;
+        }
+
+        .app-search-icon {
+            width: 30px;
+        }
+
+        svg {
+            height: 16px;
+        }
+    }
+
+    &.app-search-lg {
+        .form-control {
+            padding-left: 50px;
+        }
+
+        .app-search-icon {
+            width: 50px;
+        }
+
+        svg {
+            height: 24px;
+        }
+    }
+}
+
+
+
+
+// 
+// Custom Progress Style::: Please check again
+//
+.custom-progress {
+    position: relative;
+    height: 3rem;
+    background-color: var(--#{$prefix}tertiary-bg);
+
+    .progress-info {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        padding: 0 15px;
+        z-index: 1;
+    }
+
+    .progress-data {
+        position: absolute;
+        top: 0;
+        display: flex;
+        height: 100%;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+        color: var(--#{$prefix}progress-bar-color);
+        text-align: center;
+        white-space: nowrap;
+    }
+}
+
+@each $color,
+$value in $theme-colors {
+    .custom-progress:has(.bg-#{$color}) {
+        background-color: rgba(var(--#{$prefix}#{$color}-rgb), 0.1);
+    }
+
+    .progress-data {
+        &.bg-#{$color} {
+            background-color: rgba(var(--#{$prefix}#{$color}-rgb), 0.2) !important;
+        }
+    }
+}
+
+
+// Recent Activity (Timeline)
+.timeline-alt {
+    padding: 20px 0;
+    position: relative;
+
+    .timeline-item {
+        position: relative;
+
+        &:before {
+            background-color: var(--#{$prefix}tertiary-bg);
+            bottom: 0;
+            content: "";
+            left: 11px;
+            position: absolute;
+            top: 24px;
+            width: 2px;
+            z-index: 0;
+        }
+
+        .timeline-icon {
+            float: left;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            font-size: 14px;
+            text-align: center;
+            line-height: 24px;
+            background-color: $white;
+        }
+
+        .timeline-item-info {
+            margin-left: 35px;
+        }
+
+        &:last-of-type {
+            &::before {
+                display: none;
+            }
+        }
+    }
+}
+
+.card-bg-img {
+    background-size: cover;
+    background-position: right center;
+    background-repeat: no-repeat;
+}
+
+
+.dr-profile-bg {
+    background-image: url("/assets/images/dr-profile/dr-bg.jpg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    padding: 100px;
+}

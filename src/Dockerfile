@@ -1,14 +1,17 @@
-FROM node:18-alpine AS frontendbuild
+FROM node:23-alpine AS frontendbuild
 
 WORKDIR /app
 
 COPY ./frontend/package.json .
 
 RUN npm install
+RUN npm install -g gulp
+RUN npm install gulp
+RUN yarn install
 
 COPY ./frontend .
 
-RUN npm run build
+RUN gulp build
 
 
 # pull official base image

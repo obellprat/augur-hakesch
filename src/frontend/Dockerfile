@@ -1,13 +1,15 @@
-FROM node:18-alpine
+FROM node:23-alpine
 
 WORKDIR /app
 
 COPY package.json .
 
 RUN npm install
+RUN npm install -g gulp
+RUN npm install gulp
 
 COPY . .
 
-EXPOSE 5173
+EXPOSE 3000
 
-CMD [ "npm", "run", "build" ]
+CMD [ "gulp", "build" ]
