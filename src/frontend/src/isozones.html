@@ -1,0 +1,72 @@
+@@include('./partials/html.html')
+
+<head>
+    @@include("./partials/title-meta.html", {"title": "Isozones"})
+    <!-- leaflet Css -->
+    <link href="assets/vendor/ol/ol.css" rel="stylesheet" type="text/css" />
+
+    @@include('./partials/head-css.html')
+<style>    
+.cupertino-pane-wrapper {
+    display: inline !important;
+    width: 80%;
+    position: absolute;
+    margin: 0 auto;
+    left: 0;
+    right: 0;
+}
+.pane {
+    position: absolute !important;
+}
+</style>
+
+</head>
+
+<body>
+    <!-- Begin page -->
+    <div class="wrapper">
+
+        @@include("./partials/menu.html", {"title":"Isozones"})
+
+        <!-- ============================================================== -->
+        <!-- Start Page Content here -->
+        <!-- ============================================================== -->
+        <div class="page-content">
+            <div class="page-container container-fluid d-flex flex-grow-1 ">
+                <div class="container-fluid d-flex flex-grow-1 position-relative" id="mapcontainer" style="overflow: hidden;">
+                    <div class="d-flex flex-grow-1" id="map"></div>
+                </div>
+            </div> <!-- container -->
+
+            @@include('./partials/footer.html')
+
+        </div>
+        <!-- ============================================================== -->
+        <!-- End Page content -->
+        <!-- ============================================================== -->
+
+    </div>
+    <!-- END wrapper -->
+
+    <!-- Cupertino pane element -->
+    <div class="cupertino-pane container-fluid">
+        <div class="row">
+            <div class="col-12" id="entrytext">
+                <h5>Please select the outlet point on the map</h5>
+            </div>
+            <div class="col-12 collapse" id="progresstext"></div>
+            <div class="col-12 collapse">
+                <div class="progress mb-2">
+                    <div class="progress-bar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END Cupertino pane element -->
+
+    @@include('./partials/footer-scripts.html')
+    <script type="module" src="assets/js/bundle.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,30 @@
+//
+// _file-manager.scss
+//
+
+
+.file-manager {
+    width: 250px;
+    min-width: 250px;
+}
+
+
+.file-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .list-group-item {
+        background-color: transparent;
+        padding: 8px 12px;
+        border-radius: 0;
+        transition: all 0.3s ease-in-out;
+        font-weight: $font-weight-medium;
+
+        &.active,
+        &:hover {
+            color: var(--#{$prefix}primary);
+            background-color: var(--#{$prefix}body-bg);
+        }
+    }
+}

@@ -9,16 +9,21 @@ tasks:
   init:
     cmds:
       - task: init-frontend
-      - curl --create-dirs -o ./src/api/data/dir_3x3_3.tif https://www.suter-burri.ch/dateien/augur/dir_3x3_3.tif
+      - curl -o ./src/api/data/dir_3x3_3.tif https://www.suter-burri.ch/dateien/augur/dir_3x3_3.tif
 
   init-frontend:
     dir: src/frontend
     cmds:
-      - npm i
+      - gulp build
 
   dev:
     cmds:
       - docker compose up --build
+
+  dev-frontend:
+    dir: src/frontend
+    cmds:
+      - gulp
 
   build:
     cmds:
@@ -27,7 +32,7 @@ tasks:
   build-frontend:
     dir: src/frontend
     cmds:
-      - npm run build
+      - gulp build
 
   push:
     cmds:

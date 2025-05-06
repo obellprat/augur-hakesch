@@ -1,0 +1,117 @@
+//
+// _layout.scss
+//
+
+// Wrapper
+.wrapper {
+    height: 100%;
+    width: 100%;
+}
+
+// Content Page
+.page-content {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    margin-left: $sidenav-width;
+    transition: $transition-base;
+    min-height: calc(100vh - calc($topbar-height + 3.5rem));
+    padding: 0 calc($grid-gutter-width * 0.5);
+}
+
+@include media-breakpoint-down(md) {
+    .page-content {
+        min-height: calc(100vh - calc($topbar-height + 3rem));
+    }
+}
+
+// Logo Height
+.logo-lg {
+    img {
+        height: $logo-lg-height;
+    }
+}
+
+.logo-sm {
+    img {
+        height: $logo-sm-height;
+    }
+}
+
+// Sidebar Logo
+.logo {
+    display: block;
+    top: 0;
+    position: sticky;
+    line-height: $topbar-height;
+    padding: 0 22px;
+    transition: $transition-base;
+    text-align: center;
+
+    .logo-lg,
+    .logo-dark {
+        display: block;
+    }
+
+    .logo-sm,
+    .logo-light  {
+        display: none;
+    }
+}
+
+// Sidebar Bottom Help-box
+.help-box {
+    border-radius: 5px;
+    padding: 20px;
+    margin: 65px 25px 25px;
+    position: relative;
+    background-color: rgba(var(--#{$prefix}primary-rgb), 0.05);
+    border: 1px solid var(--#{$prefix}border-color);
+}
+
+// Sidenav Logo
+html[data-menu-color="dark"],
+html[data-bs-theme="dark"] {
+
+    .sidenav-menu {
+        .logo {
+            .logo-light {
+                display: block;
+            }
+
+            .logo-dark {
+                display: none;
+            }
+        }
+
+        .help-box {
+            color: $white;
+            background-color: rgba(var(--#{$prefix}light-rgb), 0.07);
+        }
+    }
+}
+
+
+// Topbar Logo
+html[data-bs-theme="dark"] {
+    .app-topbar {
+        .logo {
+            .logo-light {
+                display: block;
+            }
+
+            .logo-dark {
+                display: none;
+            }
+        }
+    }
+}
+
+// Page Title 
+.page-title-head {
+    height: var(--#{$prefix}topbar-height);
+}
+
+.page-title {
+    color: var(--#{$prefix}topbar-item-color);
+}
