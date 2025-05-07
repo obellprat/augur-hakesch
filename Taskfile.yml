@@ -9,11 +9,14 @@ tasks:
   init:
     cmds:
       - task: init-frontend
-      - curl -o ./src/api/data/dir_3x3_3.tif https://www.suter-burri.ch/dateien/augur/dir_3x3_3.tif
+      - mkdir src/api/data
+      - mkdir src/api/data/temp
+      - curl -o src/api/data/dir_3x3_3.tif https://www.suter-burri.ch/dateien/augur/dir_3x3_3.tif
 
   init-frontend:
     dir: src/frontend
     cmds:
+      - npm i
       - gulp build
 
   dev:
