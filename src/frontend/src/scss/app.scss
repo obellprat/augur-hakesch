@@ -1,0 +1,87 @@
+/*
+Template Name: Arclon - Responsive Bootstrap 5 Admin Dashboard
+Version: 1.0.0
+Author: Coderthemes
+Email: support@coderthemes.com
+File: App Css File
+*/
+
+
+// Core files
+@import "../../node_modules/bootstrap/scss/functions";
+@import "../../node_modules/bootstrap/scss/variables";
+
+@import "variables";
+@import "variables-dark";
+
+@import "variables-custom";
+@import "theme-mode";
+
+@import "../../node_modules/bootstrap/scss/bootstrap";
+
+// Structure
+@import "structure/topbar";
+@import "structure/sidenav";
+@import "structure/horizontal";
+@import "structure/layout";
+@import "structure/footer";
+@import "structure/customizer";
+
+
+// Components
+@import "components/utilities";
+@import "components/background";
+@import "components/accordions";
+@import "components/alert";
+@import "components/avatar";
+@import "components/breadcrumb";
+@import "components/buttons";
+@import "components/badge";
+@import "components/card";
+@import "components/dropdown";
+@import "components/forms";
+@import "components/modal";
+@import "components/nav";
+@import "components/pagination";
+@import "components/popover";
+@import "components/print";
+@import "components/progress";
+@import "components/reboot";
+@import "components/ribbons";
+@import "components/switch";
+@import "components/tables";
+@import "components/tooltip";
+@import "components/steps";
+@import "components/preloader";
+@import "components/widgets";
+
+// Pages
+@import "pages/chat";
+@import "pages/file-manager";
+@import "pages/kanban";
+@import "pages/authentication";
+@import "pages/error";
+@import "pages/faq";
+@import "pages/maintenance";
+@import "pages/email";
+@import "pages/timeline";
+@import "pages/components-demo";
+
+// Plugins
+@import "plugins/apexcharts";
+@import "plugins/datatable";
+@import "plugins/calendar";
+@import "plugins/choice";
+@import "plugins/gridjs";
+@import "plugins/daterange";
+@import "plugins/flatpickr";
+@import "plugins/dragula";
+@import "plugins/dropzone";
+@import "plugins/form-wizard";
+@import "plugins/maps";
+@import "plugins/quill-editor";
+@import "plugins/select2";
+@import "plugins/simplebar";
+@import "plugins/leaflet-maps";
+@import "plugins/sweetalert2";
+@import "plugins/rangeslider";

@@ -1,0 +1,38 @@
+<script lang="ts">
+    import '../scss/app.scss';
+    import '../scss/icons.scss';
+
+    import {Footer, Menu} from '$lib/index'
+    
+    import { loadScript } from '$lib/page/loadscript';
+    import { onMount } from 'svelte';
+
+	let { children } = $props();
+
+    
+    onMount(async () => {
+        await loadScript('/assets/js/vendor.min.js');
+        await loadScript('/assets/js/app.js');
+        console.log('script loaded successfully!');
+    });
+</script>
+<!-- Begin page -->
+<div class="wrapper">
+
+    <Menu />
+
+    <!-- ============================================================== -->
+    <!-- Start Page Content here -->
+    <!-- ============================================================== -->
+    <div class="page-content">
+        <div class="page-container">
+            {@render children()}
+        </div> <!-- container -->
+        <Footer />
+    </div>
+    <!-- ============================================================== -->
+    <!-- End Page content -->
+    <!-- ============================================================== -->
+
+</div>
+<!-- END wrapper -->

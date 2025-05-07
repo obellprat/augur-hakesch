@@ -1,0 +1,54 @@
+//
+// accordions.scss
+//
+
+.accordion-button {
+    font-weight: $font-weight-medium;
+}
+
+.accordion-bordered {
+    .accordion-item {
+        border-top: $accordion-border-width solid $accordion-border-color;
+        border-radius: $accordion-border-radius;
+
+        &:not(:first-of-type) {
+            margin-top: 0.5rem;
+        }
+
+        .accordion-button {
+            border-radius: $accordion-border-radius;
+
+            &:not(.collapsed) {
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+        }
+    }
+}
+
+.accordion-arrow-none {
+    .accordion-button {
+        &::after {
+            background-image: none;
+        }
+    }
+}
+
+.accordion-custom-icon {
+    .accordion-icon {
+        position: absolute;
+        right: $accordion-padding-x;
+    }
+    .accordion-icon-off {
+        display: none;
+    }
+
+    [aria-expanded="true"] {
+        .accordion-icon-off {
+            display: block;
+        }
+        .accordion-icon-on {
+            display: none;
+        }
+    }
+}
