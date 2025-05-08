@@ -33,7 +33,7 @@
 		<ul class="side-nav">
 			<li class="side-nav-title">Tools</li>
 
-			<Navlink title="Dashboard" href="/" icon="ti ti-home" />
+			<Navlink title="Dashboard" href="./" icon="ti ti-home" />
 
 			<Navlink title="Precipitation" href="precipitation" icon="ti ti-cloud-rain" />
 

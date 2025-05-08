@@ -2,9 +2,6 @@
 	import '../scss/app.scss';
 	import '../scss/icons.scss';
 
-	import bootstrapSrc from '../../node_modules/bootstrap/dist/js/bootstrap.bundle?url';
-	import jquerySrc from '../../node_modules/jquery/dist/jquery?url';
-
 	import { Footer, Menu } from '$lib/index';
 
 	import { loadScript } from '$lib/page/loadscript';
@@ -13,13 +10,13 @@
 	let { children } = $props();
 
 	onMount(async () => {
-		await loadScript('/assets/js/app.js');
+		await loadScript('./assets/js/app.js');
 	});
 </script>
 
 <svelte:head>
-	<script src={jquerySrc}></script>
-	<script src={bootstrapSrc}></script>
+	<script src="./assets/vendor/jquery/jquery.min.js"></script>
+	<script src="./assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 </svelte:head>
 <!-- Begin page -->
 <div class="wrapper">

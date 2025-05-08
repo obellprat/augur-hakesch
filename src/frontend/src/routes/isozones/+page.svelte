@@ -16,32 +16,12 @@
 
 	$pageTitle = 'Isozones';
 
+	import {
+		PUBLIC_HAKESCH_API_PATH
+	} from '$env/static/public';
+	console.log(PUBLIC_HAKESCH_API_PATH);
+//let HAKESCH_API_PATH = "/api";
 	onMount(async () => {
-		let mapcontainer = document.getElementById('mapcontainer');
-		let body = document.querySelector('body');
-		let mapcontainer_bounding = mapcontainer?.getBoundingClientRect();
-		let body_bounding = body?.getBoundingClientRect();
-		let settings: CupertinoSettings = {
-			parentElement: mapcontainer!,
-			breaks: {
-				middle: {
-					enabled: false
-				},
-				bottom: {
-					enabled: true,
-					height: body_bounding!.height - mapcontainer_bounding!.height + 50
-				}
-			},
-			initialBreak: 'bottom',
-			buttonDestroy: false
-		};
-
-		let myPane = new CupertinoPane('.cupertino-pane', settings);
-
-		(async () => {
-			await myPane.present({ animate: true });
-		})();
-
 		proj4.defs(
 			'EPSG:2056',
 			'+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs'
@@ -72,7 +52,7 @@
 		});
 
 		map.on('singleclick', function (e) {
-			fetch('./isozones/?northing=' + e.coordinate[0] + '&easting=' + e.coordinate[1], {
+			fetch(PUBLIC_HAKESCH_API_PATH + '/isozones/?northing=' + e.coordinate[0] + '&easting=' + e.coordinate[1], {
 				method: 'GET'
 			})
 				.then((response) => response.json())
@@ -86,7 +66,7 @@
 		});
 
 		function getStatus(taskID: String) {
-			fetch(`./task/${taskID}`, {
+			fetch(PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json'
@@ -108,7 +88,7 @@
 						const isozone_source = new GeoTIFF({
 							sources: [
 								{
-									url: './data/temp/' + res.task_id + '/isozones_cog.tif'
+									url: PUBLIC_HAKESCH_API_PATH + '/data/temp/' + res.task_id + '/isozones_cog.tif'
 								}
 							],
 							normalize: false
@@ -151,6 +131,31 @@
 				})
 				.catch((err) => console.log(err));
 		}
+
+		let mapcontainer = document.getElementById('mapcontainer');
+		let body = document.querySelector('body');
+		let mapcontainer_bounding = mapcontainer?.getBoundingClientRect();
+		let body_bounding = body?.getBoundingClientRect();
+		let settings: CupertinoSettings = {
+			parentElement: mapcontainer!,
+			breaks: {
+				middle: {
+					enabled: false
+				},
+				bottom: {
+					enabled: true,
+					height: body_bounding!.height - mapcontainer_bounding!.height + 50
+				}
+			},
+			initialBreak: 'bottom',
+			buttonDestroy: false
+		};
+
+		let myPane = new CupertinoPane('.cupertino-pane', settings);
+
+		(async () => {
+			await myPane.present({ animate: true });
+		})();
 	});
 </script>
 
@@ -167,9 +172,21 @@
 		<div class="d-flex flex-grow-1" id="map"></div>
 	</div>
 
-	<div class="cupertino-pane">
-		<h1>Header</h1>
-		<div class="content">Content</div>
-	</div>
+
+    <!-- Cupertino pane element -->
+    <div class="cupertino-pane container-fluid">
+        <div class="row">
+            <div class="col-12" id="entrytext">
+                <h5>Please select the outlet point on the map</h5>
+            </div>
+            <div class="col-12 collapse" id="progresstext"></div>
+            <div class="col-12 collapse">
+                <div class="progress mb-2">
+                    <div class="progress-bar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END Cupertino pane element -->
 </div>
 <!-- container -->
