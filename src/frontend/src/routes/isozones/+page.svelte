@@ -8,9 +8,40 @@
 	import { register } from 'ol/proj/proj4';
 	import proj4 from 'proj4';
 	import { onMount } from 'svelte';
+	import type { CupertinoSettings } from 'cupertino-pane';
+	import { CupertinoPane } from 'cupertino-pane';
+
+	import '../../../node_modules/ol/ol.css';
+	import { getBottomLeft } from 'ol/extent';
 
 	$pageTitle = 'Isozones';
+
 	onMount(async () => {
+		let mapcontainer = document.getElementById('mapcontainer');
+		let body = document.querySelector('body');
+		let mapcontainer_bounding = mapcontainer?.getBoundingClientRect();
+		let body_bounding = body?.getBoundingClientRect();
+		let settings: CupertinoSettings = {
+			parentElement: mapcontainer!,
+			breaks: {
+				middle: {
+					enabled: false
+				},
+				bottom: {
+					enabled: true,
+					height: body_bounding!.height - mapcontainer_bounding!.height + 50
+				}
+			},
+			initialBreak: 'bottom',
+			buttonDestroy: false
+		};
+
+		let myPane = new CupertinoPane('.cupertino-pane', settings);
+
+		(async () => {
+			await myPane.present({ animate: true });
+		})();
+
 		proj4.defs(
 			'EPSG:2056',
 			'+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs'
@@ -18,7 +49,6 @@
 		register(proj4);
 
 		const backgroundLayer = new TileLayer({
-			id: 'background-layer',
 			source: new XYZ({
 				url: `https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg`
 			})
@@ -41,36 +71,6 @@
 			view: view
 		});
 
-		let mapcontainer = document.getElementById('mapcontainer');
-		let body = document.querySelector('body');
-		let mapcontainer_bounding = mapcontainer?.getBoundingClientRect();
-		let body_bounding = body?.getBoundingClientRect();
-
-		/*let settings = { parentElement: mapcontainer,
-  breaks: {
-    middle: {
-      enabled: false
-    },
-    bottom: {
-      enabled: true,
-      height: body_bounding.height - mapcontainer_bounding.height + 50
-    }
-  },
-  initialBreak: 'bottom',
-  buttonDestroy: false
-}
-*/
-
-		//let myPane = new CupertinoPane(".cupertino-pane", settings);
-
-		(async () => {
-			//await myPane.present({ animate: true });
-		})();
-
-		const styleFunction = function (feature) {
-			return styles[feature.getGeometry().getType()];
-		};
-
 		map.on('singleclick', function (e) {
 			fetch('./isozones/?northing=' + e.coordinate[0] + '&easting=' + e.coordinate[1], {
 				method: 'GET'
@@ -78,14 +78,14 @@
 				.then((response) => response.json())
 				.then((data) => {
 					const actTime = new Date();
-					document.getElementById('progresstext').innerHTML = `${actTime.toUTCString()} Starting`;
+					document.getElementById('progresstext')!.innerHTML = `${actTime.toUTCString()} Starting`;
 
 					map.getTargetElement().classList.add('spinner');
 					getStatus(data.task_id);
 				});
 		});
 
-		function getStatus(taskID) {
+		function getStatus(taskID: String) {
 			fetch(`./task/${taskID}`, {
 				method: 'GET',
 				headers: {
@@ -99,7 +99,7 @@
 					//let html = `${actTime.toUTCString()} ${res.task_status} `;
 					let html = `${res.task_status} `;
 					if (res.task_status != 'SUCCESS') html = html + `${JSON.stringify(res.task_result.text)}`;
-					document.getElementById('progresstext').innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
+					document.getElementById('progresstext')!.innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
 
 					const taskStatus = res.task_status;
 					if (taskStatus === 'SUCCESS') {
@@ -116,7 +116,6 @@
 
 						const isozone = new WebGLTileLayer({
 							source: isozone_source,
-							name: 'isozone',
 							style: {
 								color: [
 									'interpolate',
@@ -131,6 +130,7 @@
 								]
 							}
 						});
+						isozone.set('name', 'isozone');
 
 						map.getLayers().forEach((layer) => {
 							if (layer && layer.get('name') && layer.get('name') == 'isozone') {
@@ -165,6 +165,11 @@
 		style="overflow: hidden;"
 	>
 		<div class="d-flex flex-grow-1" id="map"></div>
+	</div>
+
+	<div class="cupertino-pane">
+		<h1>Header</h1>
+		<div class="content">Content</div>
 	</div>
 </div>
 <!-- container -->
