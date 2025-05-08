@@ -2,10 +2,7 @@
  * Theme: Arclon - Responsive Admin Dashboard
  * Author: Coderthemes
  * Module/App: Flat picker
-*/
-
-
-
+ */
 
 // flatpickr('#basic-datepicker');
 
@@ -79,4 +76,3 @@
 //     dateFormat: "H:i",
 //     defaultDate: "01:45"
 // });
-

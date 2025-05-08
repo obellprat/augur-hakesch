@@ -1,17 +1,15 @@
 /**
-* Theme: Arclon - Responsive Bootstrap 5 Admin Dashboard
-* Author: Coderthemes
-* Module/App: Form Wizard
-*/
-
-
+ * Theme: Arclon - Responsive Bootstrap 5 Admin Dashboard
+ * Author: Coderthemes
+ * Module/App: Form Wizard
+ */
 
 new Wizard('#basicwizard');
 
 new Wizard('#progressbarwizard', {
-  progress: true
+	progress: true
 });
 
 new Wizard('#validation-wizard', {
-  validate: true
+	validate: true
 });

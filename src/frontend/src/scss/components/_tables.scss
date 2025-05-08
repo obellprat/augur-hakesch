@@ -2,46 +2,44 @@
 // tables.scss
 //
 th {
-    font-weight: $font-weight-semibold;
+	font-weight: $font-weight-semibold;
 }
 
 .thead-sm {
-    > * > * {
-        padding: $table-cell-padding-y-sm $table-cell-padding-x-sm !important;
-    }
+	> * > * {
+		padding: $table-cell-padding-y-sm $table-cell-padding-x-sm !important;
+	}
 }
 
 .table-custom {
-    tfoot > tr > th:first-child, 
-    thead > tr > th:first-child, 
-    tr th:first-child, 
-    tr td:first-child {
-        padding-left: calc($table-cell-padding-y * 1.5) !important;
-    }
+	tfoot > tr > th:first-child,
+	thead > tr > th:first-child,
+	tr th:first-child,
+	tr td:first-child {
+		padding-left: calc($table-cell-padding-y * 1.5) !important;
+	}
 
-    tfoot > tr > th:last-child, 
-    thead > tr > th:last-child, 
-    tr th:last-child, 
-    tr td:last-child {
-        padding-right: calc($table-cell-padding-y * 1.5) !important;
-    }
+	tfoot > tr > th:last-child,
+	thead > tr > th:last-child,
+	tr th:last-child,
+	tr td:last-child {
+		padding-right: calc($table-cell-padding-y * 1.5) !important;
+	}
 }
 
 // Tables fluid
 .table-nowrap {
-
-    th,
-    td {
-        white-space: nowrap;
-    }
+	th,
+	td {
+		white-space: nowrap;
+	}
 }
 
-
 // dark mode
-[data-bs-theme="dark"] {
-    .table-light {
-        --#{$prefix}table-color: var(--#{$prefix}body-color);
-        --#{$prefix}table-bg: var(--#{$prefix}light);
-        --#{$prefix}table-border-color: var(--#{$prefix}border-color);
-    }
+[data-bs-theme='dark'] {
+	.table-light {
+		--#{$prefix}table-color: var(--#{$prefix}body-color);
+		--#{$prefix}table-bg: var(--#{$prefix}light);
+		--#{$prefix}table-border-color: var(--#{$prefix}border-color);
+	}
 }

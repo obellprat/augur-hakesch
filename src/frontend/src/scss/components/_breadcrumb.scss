@@ -4,16 +4,16 @@
 
 // Breadcrumb item arrow
 .breadcrumb-item {
-    a {
-        color: var(--#{$prefix}body-color);
+	a {
+		color: var(--#{$prefix}body-color);
 
-        &:hover {
-            color: var(--#{$prefix}primary);
-        }
-    }
-    +.breadcrumb-item {
-        &::before {
-            font-family: "remixicon";
-        }
-    }
+		&:hover {
+			color: var(--#{$prefix}primary);
+		}
+	}
+	+ .breadcrumb-item {
+		&::before {
+			font-family: 'remixicon';
+		}
+	}
 }

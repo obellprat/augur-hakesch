@@ -37,6 +37,9 @@
 	},
 	"dependencies": {
 		"bootstrap": "^5.3.6",
-		"jquery": "^3.7.1"
+		"cupertino-pane": "^1.4.22",
+		"jquery": "^3.7.1",
+		"ol": "^10.5.0",
+		"proj4": "^2.15.0"
 	}
 }

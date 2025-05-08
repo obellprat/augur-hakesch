@@ -4,15 +4,15 @@
 
 .britechart,
 .tick text {
-    font-family: $font-family-base;
-    font-size: 0.75rem;
+	font-family: $font-family-base;
+	font-size: 0.75rem;
 }
 
 .horizontal-grid-line,
 .vertical-grid-line,
 .extended-x-line,
 .extended-y-line {
-    stroke: var(--#{$prefix}border-color);
+	stroke: var(--#{$prefix}border-color);
 }
 
 .tick text,
@@ -20,5 +20,5 @@
 .donut-text,
 .legend-entry-name,
 .legend-entry-value {
-    fill: var(--#{$prefix}secondary-color);
+	fill: var(--#{$prefix}secondary-color);
 }

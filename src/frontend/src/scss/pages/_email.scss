@@ -3,40 +3,38 @@
 //
 
 @include media-breakpoint-up(xxl) {
-    .email-sidebar {
-        width: 270px;
-    }
+	.email-sidebar {
+		width: 270px;
+	}
 }
-
 
 .email-menu-list {
-    a {
-        color: var(--#{$prefix}body-tertiary-color);
-        padding: 6px 8px;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        transition: all 0.2s ease-in-out;
+	a {
+		color: var(--#{$prefix}body-tertiary-color);
+		padding: 6px 8px;
+		border-radius: 4px;
+		display: flex;
+		align-items: center;
+		transition: all 0.2s ease-in-out;
 
-        &.active,
-        &:hover {
-            color: var(--#{$prefix}primary);
-            background-color: rgba(var(--#{$prefix}light-rgb), 0.5);
+		&.active,
+		&:hover {
+			color: var(--#{$prefix}primary);
+			background-color: rgba(var(--#{$prefix}light-rgb), 0.5);
 
-            iconify-icon.text-muted {
-                color: var(--#{$prefix}primary) !important;
-            }
-        }
+			iconify-icon.text-muted {
+				color: var(--#{$prefix}primary) !important;
+			}
+		}
 
-        &.active {
-            font-weight: $font-weight-semibold;
-        }
-    }
+		&.active {
+			font-weight: $font-weight-semibold;
+		}
+	}
 }
 
-
 .mail-list:has(.form-check-input:checked) {
-    tr:has(.form-check-input:checked) {
-        background-color: rgba(var(--#{$prefix}light-rgb), 0.5);
-    }
+	tr:has(.form-check-input:checked) {
+		background-color: rgba(var(--#{$prefix}light-rgb), 0.5);
+	}
 }

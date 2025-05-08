@@ -3,43 +3,43 @@
 //
 
 .gu-mirror {
-    position: fixed !important;
-    margin: 0 !important;
-    z-index: 9999 !important;
-    opacity: 0.8;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
-    filter: alpha(opacity=80);
+	position: fixed !important;
+	margin: 0 !important;
+	z-index: 9999 !important;
+	opacity: 0.8;
+	-ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=80)';
+	filter: alpha(opacity=80);
 }
 
 .gu-hide {
-    display: none !important;
+	display: none !important;
 }
 
 .gu-unselectable {
-    user-select: none !important;
+	user-select: none !important;
 }
 
 .gu-transit {
-    opacity: 0.2;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=20)";
-    filter: alpha(opacity=20);
+	opacity: 0.2;
+	-ms-filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=20)';
+	filter: alpha(opacity=20);
 }
 
 .dragula-handle {
-    position: relative;
-    width: 36px;
-    height: 36px;
-    font-size: 22px;
-    text-align: center;
-    cursor: move;
+	position: relative;
+	width: 36px;
+	height: 36px;
+	font-size: 22px;
+	text-align: center;
+	cursor: move;
 
-    &:before {
-        content: "\f22f";
-        font-family: "tabler-icons";
-        position: absolute;
-    }
+	&:before {
+		content: '\f22f';
+		font-family: 'tabler-icons';
+		position: absolute;
+	}
 }
 
 .handle {
-    cursor: move;
+	cursor: move;
 }

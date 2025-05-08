@@ -2,9 +2,8 @@
 // _tooltip.scss
 //
 
-@each $color,
-$value in $theme-colors {
-    .tooltip-#{$color} {
-        --#{$prefix}tooltip-bg: var(--#{$prefix}#{$color});
-    }
+@each $color, $value in $theme-colors {
+	.tooltip-#{$color} {
+		--#{$prefix}tooltip-bg: var(--#{$prefix}#{$color});
+	}
 }
