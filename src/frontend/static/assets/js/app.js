@@ -790,20 +790,14 @@ class ThemeCustomizer {
         this.initWindowSize();
         this._adjustLayout();
         this.setSwitchFromConfig();
-        console.log("Da");
     }
 }
 
 document.addEventListener('DOMContentLoaded', function (e) {
-    new App().init();
-    new ThemeCustomizer().init();
-    console.log("Auch hier");
+    //new App().init();
+    //new ThemeCustomizer().init();
+    //console.log("Auch hier");
 });
-
-
-new App().init();
-    new ThemeCustomizer().init();
-    console.log("Auch hier");
 
 const customJS = () => {
 
@@ -944,10 +938,12 @@ const customJS = () => {
         initToggle();
         // initDropdownHover();
         initTouchspin();
-        console.log("init successfull");
     }
 
     init();
 }
 
+
+new App().init();
+new ThemeCustomizer().init();
 customJS();

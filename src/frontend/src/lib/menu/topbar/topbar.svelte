@@ -1,3 +1,7 @@
+<script lang="ts">
+    import pageTitle from '$lib/page/pageTitle';
+</script>
+
 <!-- Topbar Start -->
 <header class="app-topbar" id="header">
     <div class="page-container topbar-menu">
@@ -29,7 +33,7 @@
             <!-- Topbar Page Title -->
             <div class="topbar-item d-none d-md-flex px-2">
                 <div>
-                    <h4 class="page-title fs-20 fw-semibold mb-0">Welcome!</h4>
+                    <h4 class="page-title fs-20 fw-semibold mb-0">{$pageTitle}</h4>
                 </div>
             </div>
 

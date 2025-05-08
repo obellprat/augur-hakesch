@@ -1,3 +1,8 @@
+<script lang="ts">
+    import Navlink from './navlink.svelte';
+import NavLink from './navlink.svelte'
+</script>
+
 <!-- Sidenav Menu Start -->
 <div class="sidenav-menu">
 
@@ -32,52 +37,24 @@
                 Tools
             </li>
 
-            <li class="side-nav-item">
-                <a href="index.html" class="side-nav-link">
-                    <span class="menu-icon"><i class="ti ti-home"></i></span>
-                    <span class="menu-text"> Dashboard </span>
-                </a>
-            </li>
 
-            <li class="side-nav-item">
-                <a href="precipitation.html" class="side-nav-link">
-                    <span class="menu-icon"><i class="ti ti-cloud-rain"></i></span>
-                    <span class="menu-text"> Precipitation </span>
-                </a>
-            </li>
+            <Navlink title="Dashboard" href="/" icon="ti ti-home" />
 
-            <li class="side-nav-item">
-                <a href="apps-calendar.html" class="side-nav-link">
-                    <span class="menu-icon"><i class="ti ti-chart-histogram"></i></span>
-                    <span class="menu-text"> HAKESCH 2.0 </span>
-                </a>
-            </li>
+            <Navlink title="Precipitation" href="precipitation" icon="ti ti-cloud-rain" />
 
-            <li class="side-nav-item">
-                <a href="isozones.html" class="side-nav-link">
-                    <span class="menu-icon"><i class="ti ti-stopwatch"></i></span>
-                    <span class="menu-text"> Isozones </span>
-                </a>
-            </li>
+            <Navlink title="HAKESCH 2.0" href="hakesch" icon="ti ti-chart-histogram" />
+
+            <Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />
 
 
             <li class="side-nav-title mt-2">
                 About
             </li>
 
-            <li class="side-nav-item">
-                <a href="index.html" class="side-nav-link">
-                    <span class="menu-icon"><i class="ti ti-school"></i></span>
-                    <span class="menu-text"> Science</span>
-                </a>
-            </li>
+            
+            <Navlink title="Science" href="science" icon="ti ti-school" />
 
-            <li class="side-nav-item">
-                <a href="index.html" class="side-nav-link">
-                    <span class="menu-icon"><i class="ti ti-info-circle"></i></span>
-                    <span class="menu-text"> About AUGUR </span>
-                </a>
-            </li>
+            <Navlink title="About AUGUR" href="about" icon="ti ti-info-circle" />
 
         </ul>
 

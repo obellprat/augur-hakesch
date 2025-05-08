@@ -11,7 +11,6 @@ from version import __version__
 app = FastAPI(
     version=__version__,
 )
-app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 app.mount("/data", StaticFiles(directory="data"), name="data")
 
 origins = [
@@ -30,25 +29,3 @@ app.include_router(catchment.router)
 app.include_router(file.router)
 app.include_router(task.router)
 app.include_router(isozones.router)
-
-
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    f = open("index.html", "r")
-    return f.read()
-
-@app.get("/precipitation.html", response_class=HTMLResponse)
-def home(request: Request):
-    f = open("precipitation.html", "r")
-    return f.read()
-
-
-@app.get("/isozones.html", response_class=HTMLResponse)
-def home(request: Request):
-    f = open("isozones.html", "r")
-    return f.read()
-
-@app.get("/index.html", response_class=HTMLResponse)
-def home(request: Request):
-    f = open("index.html", "r")
-    return f.read()

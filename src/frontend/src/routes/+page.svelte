@@ -1,3 +1,14 @@
+<script lang="ts">
+    import pageTitle from '$lib/page/pageTitle';
+
+    $pageTitle = "Dashboard";
+
+</script>
+
+<svelte:head>
+    <title>{$pageTitle} | AUGUR</title> 
+</svelte:head>
+
 
 <div class="row row-cols-xxl-1 row-cols-md-1 row-cols-1">
     <div class="col">

@@ -1,18 +1,3 @@
-FROM node:23-alpine AS frontendbuild
-
-WORKDIR /app
-
-COPY ./frontend/package.json .
-
-RUN npm install
-RUN npm install -g gulp
-RUN npm install gulp
-RUN yarn install
-
-COPY ./frontend .
-
-RUN gulp build
-
 
 # pull official base image
 FROM python:3.11.2-slim-buster
@@ -34,4 +19,3 @@ RUN pip install -r requirements.txt
 
 # copy project
 COPY ./api .
-COPY --from=frontendbuild /api .
