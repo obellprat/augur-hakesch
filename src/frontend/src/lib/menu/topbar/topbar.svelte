@@ -1,5 +1,20 @@
 <script lang="ts">
 	import pageTitle from '$lib/page/pageTitle';
+	import { userState } from '$lib/state.svelte';
+
+	import { page } from '$app/state';
+	import { redirect } from '@sveltejs/kit';
+
+	function login() {
+		console.log(page.url.pathname);
+		page.data.keycloak.login();
+	}
+
+	function logout() {
+		console.log(page.url.pathname);
+		page.data.keycloak.logout({redirectUri:page.data.pathname});
+	}
+
 </script>
 
 <!-- Topbar Start -->
@@ -134,7 +149,14 @@
 				</button>
 			</div>
 
+
+
 			<!-- User Dropdown -->
+			 {#if userState.authenticated===false}
+			<div class="" id="loginbuttonbar"> 	
+                <button class="topbar-link btn btn-primary bg-gradient rounded-pill" id="loginBtn" type="button" onclick={login}>Login</button>
+            </div>
+			{:else}
 			<div class="topbar-item nav-user">
 				<div class="dropdown">
 					<a
@@ -152,7 +174,7 @@
 							alt="user-image"
 						/>
 						<span class="d-lg-flex flex-column gap-1 d-none">
-							<h5 class="my-0">Christoph Suter</h5>
+							<h5 class="my-0">{userState.name}</h5>
 						</span>
 						<i class="ri-arrow-down-s-line d-none d-lg-block align-middle ms-1"></i>
 					</a>
@@ -183,14 +205,14 @@
 						<div class="dropdown-divider"></div>
 
 						<!-- item-->
-						<a href="javascript:void(0);" class="dropdown-item active fw-semibold text-danger">
+						<a href="javascript:void(0);" class="dropdown-item active fw-semibold text-danger" onclick="{logout}">
 							<i class="ri-logout-box-line me-1 fs-16 align-middle"></i>
 							<span class="align-middle">Sign Out</span>
 						</a>
 					</div>
 				</div>
 			</div>
-
+			{/if}
 			<!-- Language Dropdown -->
 			<div class="topbar-item">
 				<div class="dropdown">

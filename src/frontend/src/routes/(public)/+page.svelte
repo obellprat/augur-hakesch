@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import pageTitle from '$lib/page/pageTitle';
 
 	$pageTitle = 'Dashboard';
+
 </script>
 
 <svelte:head>

@@ -9,7 +9,7 @@
 </script>
 
 <li class={['side-nav-item', { active }]}>
-	<a {href} class="side-nav-link">
+	<a {href} class="side-nav-link" data-sveltekit-preload-data="off">
 		<span class="menu-icon"><i class={icon}></i></span>
 		<span class="menu-text"> {title} </span>
 	</a>

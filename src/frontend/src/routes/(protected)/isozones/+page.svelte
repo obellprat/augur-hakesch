@@ -11,7 +11,7 @@
 	import type { CupertinoSettings } from 'cupertino-pane';
 	import { CupertinoPane } from 'cupertino-pane';
 
-	import '../../../node_modules/ol/ol.css';
+	import '../../../../node_modules/ol/ol.css';
 	import { getBottomLeft } from 'ol/extent';
 
 	$pageTitle = 'Isozones';
@@ -19,8 +19,7 @@
 	import {
 		PUBLIC_HAKESCH_API_PATH
 	} from '$env/static/public';
-	console.log(PUBLIC_HAKESCH_API_PATH);
-//let HAKESCH_API_PATH = "/api";
+
 	onMount(async () => {
 		proj4.defs(
 			'EPSG:2056',
