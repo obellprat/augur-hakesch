@@ -1,4 +1,3 @@
-
 import { browser } from '$app/environment';
 import { page } from '$app/state';
 import { redirect } from '@sveltejs/kit';

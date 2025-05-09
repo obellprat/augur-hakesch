@@ -16,9 +16,7 @@
 
 	$pageTitle = 'Isozones';
 
-	import {
-		PUBLIC_HAKESCH_API_PATH
-	} from '$env/static/public';
+	import { PUBLIC_HAKESCH_API_PATH } from '$env/static/public';
 
 	onMount(async () => {
 		proj4.defs(
@@ -51,9 +49,16 @@
 		});
 
 		map.on('singleclick', function (e) {
-			fetch(PUBLIC_HAKESCH_API_PATH + '/isozones/?northing=' + e.coordinate[0] + '&easting=' + e.coordinate[1], {
-				method: 'GET'
-			})
+			fetch(
+				PUBLIC_HAKESCH_API_PATH +
+					'/isozones/?northing=' +
+					e.coordinate[0] +
+					'&easting=' +
+					e.coordinate[1],
+				{
+					method: 'GET'
+				}
+			)
 				.then((response) => response.json())
 				.then((data) => {
 					const actTime = new Date();
@@ -171,21 +176,27 @@
 		<div class="d-flex flex-grow-1" id="map"></div>
 	</div>
 
-
-    <!-- Cupertino pane element -->
-    <div class="cupertino-pane container-fluid">
-        <div class="row">
-            <div class="col-12" id="entrytext">
-                <h5>Please select the outlet point on the map</h5>
-            </div>
-            <div class="col-12 collapse" id="progresstext"></div>
-            <div class="col-12 collapse">
-                <div class="progress mb-2">
-                    <div class="progress-bar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- END Cupertino pane element -->
+	<!-- Cupertino pane element -->
+	<div class="cupertino-pane container-fluid">
+		<div class="row">
+			<div class="col-12" id="entrytext">
+				<h5>Please select the outlet point on the map</h5>
+			</div>
+			<div class="col-12 collapse" id="progresstext"></div>
+			<div class="col-12 collapse">
+				<div class="progress mb-2">
+					<div
+						class="progress-bar"
+						role="progressbar"
+						style="width: 25%"
+						aria-valuenow="25"
+						aria-valuemin="0"
+						aria-valuemax="100"
+					></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- END Cupertino pane element -->
 </div>
 <!-- container -->

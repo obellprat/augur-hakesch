@@ -3,7 +3,7 @@
 
 	import { redirect } from '@sveltejs/kit';
 
-import { page } from '$app/state';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	let { children } = $props();
 	//let current = $derived(page.url.href);
@@ -17,7 +17,6 @@ import { page } from '$app/state';
 				redirect(307,"/login?redirect_url="+page.url.href);
 			}*/
 	});
-
 </script>
 
 {@render children()}

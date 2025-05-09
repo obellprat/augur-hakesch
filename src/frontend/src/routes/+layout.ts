@@ -2,52 +2,41 @@ import { browser } from '$app/environment';
 import type { LayoutLoad } from '../$types';
 import Keycloak from 'keycloak-js';
 import type { KeycloakInitOptions } from 'keycloak-js';
-import { PUBLIC_KEYCLOAK_URL} from '$env/static/public';
+import { PUBLIC_KEYCLOAK_URL } from '$env/static/public';
 import { userState } from '$lib/state.svelte';
 
 import { page } from '$app/state';
 
 export const load: LayoutLoad = () => {
 	const instance = {
-	  url: `${PUBLIC_KEYCLOAK_URL}/`,
-	  realm: 'augur',
-	  clientId: 'augur'
+		url: `${PUBLIC_KEYCLOAK_URL}/`,
+		realm: 'augur',
+		clientId: 'augur'
 	};
-  
-
 
 	const keycloak = new Keycloak(instance);
 
-
-	
-	
 	let keycloakPromise;
 	if (browser) {
-		const kcInitOpts: KeycloakInitOptions = { 
-			onLoad: "check-sso",
+		const kcInitOpts: KeycloakInitOptions = {
+			onLoad: 'check-sso',
 			checkLoginIframe: false
-		  }
-		console.log("erstes layout");
-	  keycloakPromise = keycloak.init(kcInitOpts)
-	  .then(async (auth) => {
-		if (auth) {
-			
-			const profile = await keycloak.loadUserProfile();
-			userState.name = profile.firstName + " " + profile.lastName;
-			userState.authenticated = true;
-		}
-
-		
-	  });
+		};
+		console.log('erstes layout');
+		keycloakPromise = keycloak.init(kcInitOpts).then(async (auth) => {
+			if (auth) {
+				const profile = await keycloak.loadUserProfile();
+				userState.name = profile.firstName + ' ' + profile.lastName;
+				userState.authenticated = true;
+			}
+		});
 	}
 	return {
 		keycloakPromise: keycloakPromise,
-		keycloak:keycloak,
+		keycloak: keycloak,
 		page: page
-	}
-  };
-
-
+	};
+};
 
 /**
  * Theme: Arclon - Responsive Bootstrap 5 Admin Dashboard

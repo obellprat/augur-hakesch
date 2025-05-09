@@ -3,7 +3,6 @@
 	import pageTitle from '$lib/page/pageTitle';
 
 	$pageTitle = 'Dashboard';
-
 </script>
 
 <svelte:head>

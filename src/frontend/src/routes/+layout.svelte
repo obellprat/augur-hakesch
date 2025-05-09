@@ -12,7 +12,6 @@
 	onMount(async () => {
 		await loadScript('./assets/js/app.js');
 	});
-
 </script>
 
 <svelte:head>

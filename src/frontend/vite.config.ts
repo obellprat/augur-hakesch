@@ -1,7 +1,7 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import { cjsInterop } from 'vite-plugin-cjs-interop';
-import { viteStaticCopy } from 'vite-plugin-static-copy'
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
 	plugins: [
@@ -12,15 +12,16 @@ export default defineConfig({
 			apply: 'serve'
 		}),
 		viteStaticCopy({
-			targets: [{ 
-                src: 'node_modules/bootstrap/dist/**/*', 
-                dest: 'assets/vendor/bootstrap' 
-            },{ 
-                src: 'node_modules/jquery/dist/**/*', 
-                dest: 'assets/vendor/jquery' 
-            }
-		]
-		  })
-		
+			targets: [
+				{
+					src: 'node_modules/bootstrap/dist/**/*',
+					dest: 'assets/vendor/bootstrap'
+				},
+				{
+					src: 'node_modules/jquery/dist/**/*',
+					dest: 'assets/vendor/jquery'
+				}
+			]
+		})
 	]
 });
