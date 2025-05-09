@@ -2,10 +2,8 @@ import { browser } from '$app/environment';
 import { page } from '$app/state';
 import { redirect } from '@sveltejs/kit';
 
-export async function load({ parent }) {
+export async function load() {
 	if (browser) {
-		console.log('iso page load');
-		console.log(page.data.keycloak);
 		await page.data.keycloakPromise;
 
 		if (page.data.keycloak != null && !page.data.keycloak.authenticated) {
