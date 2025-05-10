@@ -2,9 +2,9 @@
 	import { page } from '$app/state';
 	import { redirect } from '@sveltejs/kit';
 	import { browser } from '$app/environment';
-	
-	import { signIn, signOut } from "@auth/sveltekit/client"
-  import { SignIn } from "@auth/sveltekit/components"
+
+	import { signIn, signOut } from '@auth/sveltekit/client';
+	import { SignIn } from '@auth/sveltekit/components';
 
 	let redirect_url: string | null;
 	if (browser) {
@@ -24,9 +24,10 @@
 							class="btn btn-primary bg-gradient rounded-pill"
 							id="loginBtn"
 							type="button"
-							onclick={() => signIn("keycloak",{redirectTo: redirect_url
-								? `${decodeURIComponent(redirect_url)}`
-								: ``})}>Login</button
+							onclick={() =>
+								signIn('keycloak', {
+									redirectTo: redirect_url ? `${decodeURIComponent(redirect_url)}` : ``
+								})}>Login</button
 						>
 					</div>
 				</div>

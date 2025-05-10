@@ -12,8 +12,7 @@ const config = {
 		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 		adapter: adapter(),
 		paths: {
-			
-			base: '/hakesch2',
+			base: '/hakesch2'
 		}
 	}
 };

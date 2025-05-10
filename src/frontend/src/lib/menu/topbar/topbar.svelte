@@ -5,7 +5,7 @@
 	import { page } from '$app/state';
 	import { redirect } from '@sveltejs/kit';
 
-	import { signIn, signOut } from "@auth/sveltekit/client"
+	import { signIn, signOut } from '@auth/sveltekit/client';
 </script>
 
 <!-- Topbar Start -->
@@ -207,7 +207,7 @@
 						class="topbar-link btn btn-primary bg-gradient rounded-pill"
 						id="loginBtn"
 						type="button"
-						onclick={() => signIn("keycloak")}>Login</button
+						onclick={() => signIn('keycloak')}>Login</button
 					>
 				</div>
 			{/if}

@@ -1,4 +1,3 @@
-
 export async function load() {
 	/*await parent().then(async(data) => {
 		if (browser) {
