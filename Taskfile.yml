@@ -17,7 +17,6 @@ tasks:
     dir: src/frontend
     cmds:
       - npm i
-      - gulp build
 
   dev:
     cmds:
@@ -26,7 +25,7 @@ tasks:
   dev-frontend:
     dir: src/frontend
     cmds:
-      - gulp
+      - npm run dev
 
   build:
     cmds:
@@ -35,7 +34,7 @@ tasks:
   build-frontend:
     dir: src/frontend
     cmds:
-      - gulp build
+      - npm run build
 
   push:
     cmds:
