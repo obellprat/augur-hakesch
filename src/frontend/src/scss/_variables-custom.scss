@@ -1,0 +1,39 @@
+//
+// variables-custom.scss
+//
+
+$logo-lg-height: var(--#{$prefix}logo-lg-height);
+$logo-sm-height: var(--#{$prefix}logo-sm-height);
+
+// Left Sidebar
+$sidenav-width: var(--#{$prefix}sidenav-width);
+$sidenav-width-md: var(--#{$prefix}sidenav-width-md);
+$sidenav-width-sm: var(--#{$prefix}sidenav-width-sm);
+$sidenav-user-bg: var(--#{$prefix}sidenav-user-bg);
+
+$menu-item-icon-size: var(--#{$prefix}menu-item-icon-size);
+$menu-item-font-size: var(--#{$prefix}menu-item-font-size);
+$menu-link-item-gap: var(--#{$prefix}menu-link-item-gap);
+$menu-item-padding-x: var(--#{$prefix}menu-item-padding-x);
+$menu-item-padding-y: var(--#{$prefix}menu-item-padding-y);
+
+// Menu
+$menu-bg: var(--#{$prefix}menu-bg);
+$menu-item-color: var(--#{$prefix}menu-item-color);
+$menu-item-hover-color: var(--#{$prefix}menu-item-hover-color);
+$menu-item-hover-bg: var(--#{$prefix}menu-item-hover-bg);
+$menu-item-active-color: var(--#{$prefix}menu-item-active-color);
+$menu-item-active-bg: var(--#{$prefix}menu-item-active-bg);
+
+// Topbar
+$topbar-height: var(--#{$prefix}topbar-height);
+$topbar-bg: var(--#{$prefix}topbar-bg);
+$topbar-item-color: var(--#{$prefix}topbar-item-color);
+$topbar-item-hover-color: var(--#{$prefix}topbar-item-hover-color);
+$topbar-search-bg: var(--#{$prefix}topbar-search-bg);
+$topbar-user-bg: var(--#{$prefix}topbar-user-bg);
+$topbar-user-border: var(--#{$prefix}topbar-user-border);
+
+// Custom Background
+$custom-bg: var(--#{$prefix}custom-bg);
+$custom-color: var(--#{$prefix}custom-color);

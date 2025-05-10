@@ -1,0 +1,81 @@
+//
+// pagination.scss
+//
+
+.pagination {
+	.page-link {
+		svg {
+			height: 14px;
+		}
+	}
+}
+
+// Pagination Boxed (Custom)
+.pagination-boxed {
+	.page-link {
+		display: inline-flex;
+		justify-content: center;
+		align-items: center;
+		margin-left: 0.35rem !important;
+		border-radius: var(--#{$prefix}border-radius) !important;
+		height: calc(#{$pagination-padding-y * 2} + #{$btn-line-height}em + #{$border-width * 2});
+		width: calc(#{$pagination-padding-y * 2} + #{$btn-line-height}em + #{$border-width * 2});
+		padding: 0;
+	}
+
+	&.pagination-sm {
+		.page-link {
+			height: calc(#{$pagination-padding-y-sm * 2} + #{$btn-line-height}em + #{$border-width * 2});
+			width: calc(#{$pagination-padding-y-sm * 2} + #{$btn-line-height}em + #{$border-width * 2});
+		}
+	}
+
+	&.pagination-lg {
+		.page-link {
+			height: calc(#{$pagination-padding-y-lg * 2} + #{$btn-line-height}em + #{$border-width * 2});
+			width: calc(#{$pagination-padding-y-lg * 2} + #{$btn-line-height}em + #{$border-width * 2});
+		}
+	}
+}
+
+// Pagination rounded (Custom)
+.pagination-rounded {
+	.page-link {
+		border-radius: 50% !important;
+	}
+}
+
+// Pagination Color
+@each $color, $value in $theme-colors {
+	.pagination-#{$color} {
+		--#{$prefix}pagination-hover-color: var(--#{$prefix}#{$color});
+		--#{$prefix}pagination-active-bg: var(--#{$prefix}#{$color});
+		--#{$prefix}pagination-active-border-color: var(--#{$prefix}#{$color});
+	}
+}
+
+// Pagination Gradient
+.pagination-gradient {
+	.page-link {
+		background-image: var(--#{$prefix}gradient);
+	}
+}
+
+// Pagination Soft Color
+@each $state in map-keys($theme-colors) {
+	.pagination-soft-#{$state} {
+		--#{$prefix}pagination-hover-color: var(--#{$prefix}#{$state});
+		--#{$prefix}pagination-active-color: var(--#{$prefix}#{$state});
+		--#{$prefix}pagination-active-bg: var(--#{$prefix}#{$state}-bg-subtle);
+		--#{$prefix}pagination-active-border-color: #{transparent};
+	}
+}
+
+// Pagination rounded (Custom)
+.pagination-rounded {
+	.page-link {
+		border-radius: 30px !important;
+		margin: 0 3px !important;
+		border: none;
+	}
+}

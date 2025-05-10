@@ -1,0 +1,249 @@
+//
+// topbar.scss
+//
+
+/* ================== */
+/* Topbar CSS */
+/* ===================== */
+
+.app-topbar {
+	position: sticky;
+	top: 0;
+	z-index: 100;
+	min-height: $topbar-height;
+	margin-left: $sidenav-width;
+	transition: all 0.2s ease-in-out;
+	padding: 0 calc($grid-gutter-width * 1);
+
+	.topbar-menu {
+		background-color: var(--#{$prefix}secondary-bg);
+		box-shadow: $card-box-shadow;
+		margin: $grid-gutter-width 0;
+		border: $card-border-width solid var(--#{$prefix}topbar-border-color);
+		display: flex;
+		justify-content: space-between;
+		position: relative;
+		border-radius: $card-border-radius;
+
+		.topbar-item {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: $topbar-height;
+
+			.topbar-link {
+				z-index: 1;
+				border: none;
+				background-color: transparent;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				color: $topbar-item-color;
+
+				&:hover,
+				&:active,
+				&:focus {
+					color: $topbar-item-hover-color;
+				}
+			}
+		}
+	}
+
+	ul {
+		list-style-type: none;
+		margin-bottom: 0;
+	}
+
+	.logo {
+		display: none;
+	}
+}
+
+@include media-breakpoint-up(md) {
+	html:not([data-layout='topnav']) {
+		.app-topbar:not(.topbar-active) {
+			--#{$prefix}topbar-bg: #ffffff;
+		}
+
+		.app-topbar {
+			&.topbar-active {
+				.topbar-menu {
+					background-color: $topbar-bg;
+				}
+			}
+		}
+	}
+}
+
+@include media-breakpoint-down(md) {
+	.app-topbar {
+		border: none;
+		padding: 0;
+		background-color: $topbar-bg;
+		border-radius: 0;
+		box-shadow: var(--#{$prefix}box-shadow);
+		margin-bottom: calc($grid-gutter-width * 1);
+	}
+}
+
+.sidenav-toggle-button {
+	position: relative;
+	cursor: pointer;
+	background-color: transparent;
+	border: none;
+	color: $topbar-item-color;
+
+	&:hover,
+	&:active,
+	&:focus {
+		color: $topbar-item-hover-color;
+	}
+}
+
+// Topbar light/Dark Mode icon
+#light-dark-mode {
+	.light-mode-icon {
+		display: block;
+	}
+
+	.dark-mode-icon {
+		display: none;
+	}
+}
+
+html[data-bs-theme='dark'] {
+	#light-dark-mode {
+		.light-mode-icon {
+			display: none;
+		}
+
+		.dark-mode-icon {
+			display: block;
+		}
+	}
+}
+
+.nav-user {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-height: $topbar-height;
+	transition: none;
+}
+
+// Topbar Search
+.topbar-search {
+	width: 230px;
+	padding: calc($input-padding-y * 0.75) $input-padding-x;
+	line-height: $input-line-height;
+	background-color: var(--#{$prefix}topbar-search-bg);
+	border-radius: 30px;
+	border: $card-border-width solid var(--#{$prefix}topbar-border-color);
+}
+
+// Notification
+.notification-item {
+	background-color: var(--#{$prefix}secondary-bg);
+	position: relative;
+	cursor: pointer;
+
+	.notification-item-close {
+		position: absolute;
+		right: 0;
+		display: none;
+		top: 0;
+		bottom: 0;
+		padding: 15px;
+		background-color: #{$dropdown-link-hover-bg};
+	}
+
+	.notification-badge {
+		height: 22px;
+		width: 22px;
+		text-align: center;
+		color: $white;
+		top: -12px;
+		right: -8px;
+		border: 2px solid $card-bg;
+		line-height: 18px;
+		font-size: 11px;
+	}
+
+	&:hover {
+		.notification-item-close {
+			display: block;
+		}
+	}
+}
+
+.animate-ring {
+	animation: tada 1.5s ease infinite;
+}
+
+@keyframes tada {
+	0% {
+		transform: scaleZ(1);
+	}
+
+	10%,
+	20% {
+		transform: scale3d(0.95, 0.95, 0.95) rotate3d(0, 0, 1, -10deg);
+	}
+
+	30%,
+	50%,
+	70%,
+	90% {
+		transform: scaleZ(1) rotate3d(0, 0, 1, 10deg);
+	}
+
+	40%,
+	60%,
+	80% {
+		transform: rotate3d(0, 0, 1, -10deg);
+	}
+
+	to {
+		transform: scaleZ(1);
+	}
+}
+
+@include media-breakpoint-down(sm) {
+	.app-topbar {
+		.topbar-menu {
+			position: static;
+		}
+
+		.dropdown {
+			position: static;
+
+			.dropdown-menu {
+				width: 100%;
+			}
+		}
+	}
+}
+
+@include media-breakpoint-down(md) {
+	.app-topbar {
+		.logo {
+			display: block;
+
+			span.logo-lg {
+				display: none;
+			}
+
+			span.logo-sm {
+				display: block;
+			}
+		}
+	}
+}
+
+[data-bs-theme='dark'] {
+	.app-topbar {
+		box-shadow: none;
+	}
+}

@@ -1,15 +1,20 @@
-FROM node:23-alpine
+FROM node:23-alpine AS build
 
 WORKDIR /app
 
-COPY package.json .
+COPY package*.json .
 
-RUN npm install
-RUN npm install -g gulp
-RUN npm install gulp
+RUN npm ci
 
 COPY . .
+RUN npm run build
 
-EXPOSE 3000
+FROM node:23-alpine AS run
 
-CMD [ "gulp", "build" ]
+ENV NODE_ENV=production
+
+WORKDIR /app
+COPY --from=build /app/build ./build
+COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/node_modules ./node_modules
+ENTRYPOINT ["node", "build"]

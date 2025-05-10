@@ -1,6 +1,6 @@
 services:
   api:
-    image: stumpisuter/catchmentapi-api:latest
+    image: stumpisuter/augur-hakesch-api:latest
     build: ./src
     ports:
       - 8000:8000
@@ -26,16 +26,27 @@ services:
       - traefik-public
 
   view:
+    image: stumpisuter/augur-hakesch-frontend:latest
     build: ./src/frontend
     ports:
-      - 8080:5173
-    command: npm run start -- --host
-    volumes:
-      - ./src/frontend:/app
-      - /app/node_modules
+      - 3000:3000
+    command: node build/index.js
+    environment:
+      NODE_ENV: production
+      PUBLIC_HAKESCH_API_PATH: "/api"
+    labels:
+      # Enable Traefik for this specific "backend" service
+      - traefik.enable=true
+      # Define the port inside of the Docker service to use
+      - traefik.http.services.app.loadbalancer.server.port=3000
+      # Use the traefik-public network (declared below)
+      - traefik.docker.network=traefik-public
+      - traefik.http.routers.app-http.middlewares=https-redirect
+    networks:
+      - traefik-public
 
   worker:
-    image: stumpisuter/catchmentapi-worker:latest
+    image: stumpisuter/augur-hakesch-worker:latest
     build: ./src/api
     command: celery -A calculations.calculations.app worker --loglevel=info --logfile=./logs/celery.log
     volumes:

@@ -1,0 +1,160 @@
+//
+// _chat.scss
+//
+
+.list-scroll {
+	height: calc(100vh - 100px);
+}
+
+.chat-scroll {
+	height: calc(100vh - 300px);
+}
+
+@include media-breakpoint-up(xl) {
+	.chat-user-list {
+		width: 340px;
+	}
+
+	.list-scroll {
+		height: calc(100vh - 365px);
+	}
+
+	.chat-scroll {
+		height: calc(100vh - 387px);
+	}
+}
+
+.chat-content {
+	flex: 1 1 auto;
+}
+
+// chat user sidebar
+.chat {
+	.users-list {
+		.chat-users {
+			// border-radius: var(--#{$prefix}border-radius-lg);
+			display: flex;
+			align-items: center;
+			padding: 1rem 1.2rem;
+			transition: all 0.2s ease-in-out;
+			gap: 10px;
+
+			&:hover {
+				// background-color: var(--#{$prefix}body-bg);
+				background-color: rgba($primary, 0.05);
+			}
+
+			&.active {
+				background-color: rgba($primary, 0.05);
+			}
+		}
+	}
+
+	.chat-users {
+		.chat-avatar {
+			position: relative;
+
+			&::after {
+				content: '';
+				position: absolute;
+				bottom: 0;
+				right: 0;
+				height: 30%;
+				width: 30%;
+				border-radius: 50%;
+			}
+		}
+
+		.chat-avatar-online {
+			&::after {
+				background-color: $success;
+				border: 2px solid var(--#{$prefix}secondary-bg);
+			}
+		}
+
+		.chat-avatar-offline {
+			&::after {
+				background-color: $danger;
+				border: 2px solid var(--#{$prefix}secondary-bg);
+			}
+		}
+	}
+}
+
+// Chat widget
+.chat-list {
+	list-style: none;
+	padding: 0;
+	margin-bottom: 0 !important;
+	display: flex;
+	gap: 12px;
+	flex-direction: column;
+	scrollbar-width: thin;
+
+	.chat-group {
+		display: inline-flex;
+		gap: 12px;
+
+		.chat-body {
+			flex-shrink: 1;
+		}
+
+		.chat-message {
+			background: var(--#{$prefix}light);
+			border-radius: 3px;
+			display: flex;
+			padding: 12px;
+			position: relative;
+			max-width: 650px;
+			margin-bottom: 8px;
+
+			p {
+				margin: 0;
+			}
+
+			&:hover {
+				.chat-actions {
+					display: inline-flex;
+				}
+			}
+		}
+
+		.chat-actions {
+			display: none;
+			margin-left: 8px;
+			position: absolute;
+			right: -40px;
+			top: 7px;
+
+			i {
+				font-size: 20px;
+			}
+		}
+
+		.chat-actions:has(.show) {
+			display: inline-flex;
+		}
+	}
+
+	.odd {
+		justify-content: end;
+		flex-direction: row-reverse;
+		text-align: end;
+
+		.chat-message {
+			background-color: var(--#{$prefix}primary);
+			color: white;
+		}
+
+		.chat-actions {
+			left: -50px;
+			right: auto;
+		}
+	}
+}
+
+[data-bs-target='#chat-user-list'] {
+	&.collapsed {
+		transform: rotate(180deg);
+	}
+}

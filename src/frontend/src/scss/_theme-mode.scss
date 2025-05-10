@@ -1,0 +1,102 @@
+//
+// _theme-default.scss
+//
+
+// Google Font Family
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&display=swap');
+
+:root {
+	--#{$prefix}logo-lg-height: 40px;
+	--#{$prefix}logo-sm-height: 30px;
+
+	--#{$prefix}sidenav-width: 245px;
+	--#{$prefix}sidenav-width-md: 160px;
+	--#{$prefix}sidenav-width-sm: 80px;
+
+	--#{$prefix}topbar-height: 65px;
+
+	--#{$prefix}menu-item-icon-size: 1.25rem;
+	--#{$prefix}menu-item-font-size: 0.925rem;
+	--#{$prefix}menu-link-item-gap: 10px;
+	--#{$prefix}menu-item-padding-x: 15px;
+	--#{$prefix}menu-item-padding-y: 8px;
+	--#{$prefix}menu-item-item-gap: 2px;
+
+	--#{$prefix}custom-bg: #ffffff;
+	--#{$prefix}custom-color: #37394d;
+
+	// theme dark
+	&[data-bs-theme='dark'] {
+		--#{$prefix}light: #ffffff1c;
+		--#{$prefix}light-rgb: #{to-rgb(#3e3e3f)};
+		--#{$prefix}dark: #ffffff33;
+		--#{$prefix}dark-rgb: #{to-rgb(#323a3d)};
+		--#{$prefix}box-shadow: #{0px 0px 35px 0px rgba(26, 27, 34, 0.5)};
+
+		--#{$prefix}custom-bg: #131317;
+		--#{$prefix}custom-color: #ffffff;
+
+		.card {
+			--#{$prefix}card-border-color: transparent;
+		}
+
+		.dropdown-menu {
+			--#{$prefix}dropdown-box-shadow: none;
+		}
+	}
+}
+
+:root {
+	// Background Light left-sidebar
+	&[data-menu-color='light'] {
+		--#{$prefix}menu-bg: #ffffff80;
+		--#{$prefix}menu-item-color: #{$gray-700};
+		--#{$prefix}menu-item-hover-color: #{$primary};
+		--#{$prefix}menu-item-hover-bg: #{rgba($primary, 0.1)};
+		--#{$prefix}menu-item-active-color: #{$primary};
+		--#{$prefix}menu-item-active-bg: transparent;
+		--#{$prefix}sidenav-user-bg: #f6fafd;
+	}
+
+	// Dark Left Sidebar
+	&[data-menu-color='dark'] {
+		--#{$prefix}menu-bg: #252630;
+		--#{$prefix}menu-item-color: #97aac1;
+		--#{$prefix}menu-item-hover-color: #e2eeff;
+		--#{$prefix}menu-item-hover-bg: #ffffff0a;
+		--#{$prefix}menu-item-active-color: #e2eeff;
+		--#{$prefix}menu-item-active-bg: #ffffff0a;
+		--#{$prefix}sidenav-user-bg: #252630;
+	}
+
+	// Dark Mode Only
+	&[data-bs-theme='dark'][data-menu-color='light'],
+	&[data-menu-color='dark'][data-bs-theme='dark'] {
+		--#{$prefix}menu-bg: #ffffff1f;
+		--#{$prefix}menu-item-color: #97aac1;
+		--#{$prefix}menu-item-hover-color: #e2eeff;
+		--#{$prefix}menu-item-hover-bg: #ffffff0a;
+		--#{$prefix}menu-item-active-color: #e2eeff;
+		--#{$prefix}menu-item-active-bg: #ffffff0a;
+		--#{$prefix}sidenav-user-bg: #ffffff0a;
+	}
+
+	// Light Topbar
+	&[data-topbar-color='light'] {
+		--#{$prefix}topbar-bg: #ffffff;
+		--#{$prefix}topbar-item-color: #606365;
+		--#{$prefix}topbar-item-hover-color: #{$primary};
+		--#{$prefix}topbar-search-bg: #f6f8f9;
+		--#{$prefix}topbar-border-color: #ffffff;
+	}
+
+	// Topbar (Dark Mode)
+	&[data-bs-theme='dark'][data-topbar-color='light'] {
+		--#{$prefix}topbar-bg: #1f1e21;
+		--#{$prefix}topbar-item-color: #dce7f3;
+		--#{$prefix}topbar-item-hover-color: #e4f0ff;
+		--#{$prefix}topbar-search-bg: #ffffff0f;
+		--#{$prefix}topbar-user-bg: transparent;
+		--#{$prefix}topbar-border-color: transparent;
+	}
+}
