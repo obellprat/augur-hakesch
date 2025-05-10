@@ -207,7 +207,7 @@
 						class="topbar-link btn btn-primary bg-gradient rounded-pill"
 						id="loginBtn"
 						type="button"
-						onclick={() => signIn("keycloak",{redirectTo:"https://dev.augur.world/hakesch2/"})}>Login</button
+						onclick={() => signIn("keycloak")}>Login</button
 					>
 				</div>
 			{/if}
