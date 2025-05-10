@@ -1,9 +1,11 @@
 services:
   api:
-    image: stumpisuter/catchmentapi-api:latest
+    image: stumpisuter/augur-hakesch-api:latest
     ports:
       - 8000:8000
-    command: uvicorn main:app --host 0.0.0.0 --reload
+    command: uvicorn main:app --host 0.0.0.0 --root-path /hakesch2 --reload
+    volumes:
+      - ./data:/usr/src/app/data
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -32,9 +34,34 @@ services:
       # any other service that needs to be publicly available with HTTPS
       - traefik-public
 
+  view:
+    image: stumpisuter/augur-hakesch-frontend:latest
+    build: ./src/frontend
+    ports:
+      - 3000:3000
+    command: node build/index.js
+    environment:
+      ORIGIN: "https://dev.augur.world"
+      NODE_ENV: production
+      PUBLIC_HAKESCH_API_PATH: "/../api"
+    labels:
+      # Enable Traefik for this specific "backend" service
+      - traefik.enable=true
+      # Define the port inside of the Docker service to use
+      - traefik.http.services.app.loadbalancer.server.port=3000
+      # Use the traefik-public network (declared below)
+      - traefik.docker.network=traefik-public
+      - traefik.http.routers.app-http.middlewares=https-redirect
+    networks:
+      - traefik-public
+
+
   worker:
-    image: stumpisuter/catchmentapi-worker:latest
-    command: celery -A calculations.catchment.celery worker --loglevel=info --logfile=./logs/celery.log
+    image: stumpisuter/augur-hakesch-worker:latest
+    command: celery -A calculations.calculations.app worker --loglevel=info --logfile=./logs/celery.log
+    volumes:
+      - ./data:/usr/src/app/data
+      - ./logs:/usr/src/app/logs
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -45,7 +72,7 @@ services:
       resources:
         limits:
           cpus: '1'
-          memory: 4g
+          memory: 8g
     networks:
       # Use the public network created to be shared between Traefik and
       # any other service that needs to be publicly available with HTTPS
@@ -111,7 +138,6 @@ services:
   # Create a volume to store the certificates, there is a constraint to make sure
   # Traefik is always deployed to the same Docker node with the same volume containing
   # the HTTPS certificates
-  # traefik-public-certificates:
 
 networks:
   traefik-public:
