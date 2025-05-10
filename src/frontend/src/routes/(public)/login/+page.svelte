@@ -2,17 +2,14 @@
 	import { page } from '$app/state';
 	import { redirect } from '@sveltejs/kit';
 	import { browser } from '$app/environment';
+	
+	import { signIn, signOut } from "@auth/sveltekit/client"
+  import { SignIn } from "@auth/sveltekit/components"
+
 	let redirect_url: string | null;
 	if (browser) {
 		const urlParams = new URLSearchParams(window.location.search);
 		redirect_url = urlParams.get('redirect_url');
-
-		if (page.data.keycloak && browser && page.data.keycloak.authenticated) {
-			if (redirect_url) redirect(307, redirect_url);
-		}
-	}
-	function login() {
-		page.data.keycloak.login({ redirectUri: redirect_url });
 	}
 </script>
 
@@ -27,7 +24,9 @@
 							class="btn btn-primary bg-gradient rounded-pill"
 							id="loginBtn"
 							type="button"
-							onclick={login}>Login</button
+							onclick={() => signIn("keycloak",{redirectTo: redirect_url
+								? `${decodeURIComponent(redirect_url)}`
+								: ``})}>Login</button
 						>
 					</div>
 				</div>

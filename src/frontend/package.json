@@ -27,7 +27,6 @@
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^3.0.0",
 		"globals": "^16.0.0",
-		"keycloak-js": "^26.2.0",
 		"prettier": "^3.4.2",
 		"prettier-plugin-svelte": "^3.3.3",
 		"sass": "^1.87.0",
@@ -41,6 +40,7 @@
 		"vite-plugin-static-copy": "^2.3.1"
 	},
 	"dependencies": {
+		"@auth/sveltekit": "^1.9.2",
 		"bootstrap": "^5.3.6",
 		"jquery": "^3.7.1",
 		"ol": "^10.5.0",

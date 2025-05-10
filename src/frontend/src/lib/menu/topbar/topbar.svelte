@@ -5,15 +5,7 @@
 	import { page } from '$app/state';
 	import { redirect } from '@sveltejs/kit';
 
-	function login() {
-		console.log(page.url.pathname);
-		page.data.keycloak.login();
-	}
-
-	function logout() {
-		console.log(page.url.pathname);
-		page.data.keycloak.logout({ redirectUri: page.data.pathname });
-	}
+	import { signIn, signOut } from "@auth/sveltekit/client"
 </script>
 
 <!-- Topbar Start -->
@@ -149,16 +141,7 @@
 			</div>
 
 			<!-- User Dropdown -->
-			{#if userState.authenticated === false}
-				<div class="" id="loginbuttonbar">
-					<button
-						class="topbar-link btn btn-primary bg-gradient rounded-pill"
-						id="loginBtn"
-						type="button"
-						onclick={login}>Login</button
-					>
-				</div>
-			{:else}
+			{#if page.data.session}
 				<div class="topbar-item nav-user">
 					<div class="dropdown">
 						<a
@@ -176,7 +159,7 @@
 								alt="user-image"
 							/>
 							<span class="d-lg-flex flex-column gap-1 d-none">
-								<h5 class="my-0">{userState.name}</h5>
+								<h5 class="my-0">{page.data.session.user?.name}</h5>
 							</span>
 							<i class="ri-arrow-down-s-line d-none d-lg-block align-middle ms-1"></i>
 						</a>
@@ -210,13 +193,22 @@
 							<a
 								href="javascript:void(0);"
 								class="dropdown-item active fw-semibold text-danger"
-								onclick={logout}
+								onclick={() => signOut()}
 							>
 								<i class="ri-logout-box-line me-1 fs-16 align-middle"></i>
 								<span class="align-middle">Sign Out</span>
 							</a>
 						</div>
 					</div>
+				</div>
+			{:else}
+				<div class="" id="loginbuttonbar">
+					<button
+						class="topbar-link btn btn-primary bg-gradient rounded-pill"
+						id="loginBtn"
+						type="button"
+						onclick={() => signIn("keycloak",{redirectTo:"https://dev.augur.world/hakesch2/"})}>Login</button
+					>
 				</div>
 			{/if}
 			<!-- Language Dropdown -->

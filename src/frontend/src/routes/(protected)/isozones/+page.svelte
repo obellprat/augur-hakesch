@@ -87,7 +87,6 @@
 
 					const taskStatus = res.task_status;
 					if (taskStatus === 'SUCCESS') {
-						console.log(res);
 
 						const isozone_source = new GeoTIFF({
 							sources: [
