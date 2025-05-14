@@ -19,7 +19,19 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 		],
 		secret: AUTH_SECRET,
 		trustHost: true,
-		debug: true
+		debug: true,
+		callbacks: {
+			async jwt({ token, account }) {
+				if (account) {
+					return { ...token, accessToken: account.access_token }
+				}
+				return token
+			},
+			async session({ session, token }) {
+				session.accessToken = token.accessToken
+				return session
+			}
+		}
 	};
 	return authOptions;
 });

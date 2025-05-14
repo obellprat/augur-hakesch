@@ -6,6 +6,8 @@
 	import { redirect } from '@sveltejs/kit';
 
 	import { signIn, signOut } from '@auth/sveltekit/client';
+	
+    import { base } from '$app/paths';
 </script>
 
 <!-- Topbar Start -->
@@ -15,13 +17,13 @@
 			<!-- Brand Logo -->
 			<a href="index.html" class="logo">
 				<span class="logo-light">
-					<span class="logo-lg"><img src="assets/images/logo.png" alt="logo" /></span>
-					<span class="logo-sm"><img src="assets/images/logo-sm.png" alt="small logo" /></span>
+					<span class="logo-lg"><img src="{base}/assets/images/logo.png" alt="logo" /></span>
+					<span class="logo-sm"><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span>
 				</span>
 
 				<span class="logo-dark">
-					<span class="logo-lg"><img src="assets/images/logo-dark.png" alt="dark logo" /></span>
-					<span class="logo-sm"><img src="assets/images/logo-sm.png" alt="small logo" /></span>
+					<span class="logo-lg"><img src="{base}/assets/images/logo-dark.png" alt="dark logo" /></span>
+					<span class="logo-sm"><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span>
 				</span>
 			</a>
 
@@ -66,19 +68,19 @@
 							<div class="row g-0">
 								<div class="col">
 									<a class="dropdown-icon-item" href="#">
-										<img src="assets/images/brands/slack.svg" alt="slack" />
+										<img src="{base}/assets/images/brands/slack.svg" alt="slack" />
 										<span>Slack</span>
 									</a>
 								</div>
 								<div class="col">
 									<a class="dropdown-icon-item" href="#">
-										<img src="assets/images/brands/gitlab.svg" alt="Github" />
+										<img src="{base}/assets/images/brands/gitlab.svg" alt="Github" />
 										<span>Gitlab</span>
 									</a>
 								</div>
 								<div class="col">
 									<a class="dropdown-icon-item" href="#">
-										<img src="assets/images/brands/dribbble.svg" alt="dribbble" />
+										<img src="{base}/assets/images/brands/dribbble.svg" alt="dribbble" />
 										<span>Dribbble</span>
 									</a>
 								</div>
@@ -87,19 +89,19 @@
 							<div class="row g-0">
 								<div class="col">
 									<a class="dropdown-icon-item" href="#">
-										<img src="assets/images/brands/bitbucket.svg" alt="bitbucket" />
+										<img src="{base}/assets/images/brands/bitbucket.svg" alt="bitbucket" />
 										<span>Bitbucket</span>
 									</a>
 								</div>
 								<div class="col">
 									<a class="dropdown-icon-item" href="#">
-										<img src="assets/images/brands/dropbox.svg" alt="dropbox" />
+										<img src="{base}/assets/images/brands/dropbox.svg" alt="dropbox" />
 										<span>Dropbox</span>
 									</a>
 								</div>
 								<div class="col">
 									<a class="dropdown-icon-item" href="#">
-										<img src="assets/images/brands/google-cloud.svg" alt="G Suite" />
+										<img src="{base}/assets/images/brands/google-cloud.svg" alt="G Suite" />
 										<span>G Cloud</span>
 									</a>
 								</div>
@@ -109,19 +111,19 @@
 							<div class="row g-0">
 								<div class="col">
 									<a class="dropdown-icon-item" href="#">
-										<img src="assets/images/brands/aws.svg" alt="bitbucket" />
+										<img src="{base}/assets/images/brands/aws.svg" alt="bitbucket" />
 										<span>AWS</span>
 									</a>
 								</div>
 								<div class="col">
 									<a class="dropdown-icon-item" href="#">
-										<img src="assets/images/brands/digital-ocean.svg" alt="dropbox" />
+										<img src="{base}/assets/images/brands/digital-ocean.svg" alt="dropbox" />
 										<span>Server</span>
 									</a>
 								</div>
 								<div class="col">
 									<a class="dropdown-icon-item" href="#">
-										<img src="assets/images/brands/bootstrap.svg" alt="G Suite" />
+										<img src="{base}/assets/images/brands/bootstrap.svg" alt="G Suite" />
 										<span>Bootstrap</span>
 									</a>
 								</div>
@@ -153,7 +155,7 @@
 							aria-expanded="false"
 						>
 							<img
-								src="assets/images/users/avatar-1.jpg"
+								src="{base}/assets/images/users/avatar-1.jpg"
 								width="32"
 								class="rounded-circle me-lg-2 d-flex"
 								alt="user-image"
@@ -170,7 +172,7 @@
 							</div>
 
 							<!-- item-->
-							<a href="javascript:void(0);" class="dropdown-item">
+							<a href="./user/myaccount" data-sveltekit-preload-data="off" class="dropdown-item">
 								<i class="ri-account-circle-line me-1 fs-16 align-middle"></i>
 								<span class="align-middle">My Account</span>
 							</a>
@@ -223,7 +225,7 @@
 						aria-expanded="false"
 					>
 						<img
-							src="assets/images/flags/us.svg"
+							src="{base}/assets/images/flags/us.svg"
 							alt="user-image"
 							class="w-100 rounded"
 							height="18"
@@ -235,7 +237,7 @@
 						<!-- item-->
 						<a href="javascript:void(0);" class="dropdown-item" data-translator-lang="en">
 							<img
-								src="assets/images/flags/us.svg"
+								src="{base}/assets/images/flags/us.svg"
 								alt="user-image"
 								class="me-1 rounded"
 								height="18"
@@ -246,7 +248,7 @@
 						<!-- item-->
 						<a href="javascript:void(0);" class="dropdown-item">
 							<img
-								src="assets/images/flags/de.svg"
+								src="{base}/assets/images/flags/de.svg"
 								alt="user-image"
 								class="me-1 rounded"
 								height="18"
@@ -257,7 +259,7 @@
 						<!-- item-->
 						<a href="javascript:void(0);" class="dropdown-item">
 							<img
-								src="assets/images/flags/it.svg"
+								src="{base}/assets/images/flags/it.svg"
 								alt="user-image"
 								class="me-1 rounded"
 								height="18"
@@ -268,7 +270,7 @@
 						<!-- item-->
 						<a href="javascript:void(0);" class="dropdown-item">
 							<img
-								src="assets/images/flags/es.svg"
+								src="{base}/assets/images/flags/es.svg"
 								alt="user-image"
 								class="me-1 rounded"
 								height="18"

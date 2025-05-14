@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Navlink from './navlink.svelte';
 	import NavLink from './navlink.svelte';
+	
+    import { base } from '$app/paths';
 </script>
 
 <!-- Sidenav Menu Start -->
@@ -8,13 +10,13 @@
 	<!-- Brand Logo -->
 	<a href="index.html" class="logo">
 		<span class="logo-light">
-			<span class="logo-lg"><img src="assets/images/logo.png" alt="logo" /></span>
-			<span class="logo-sm"><img src="assets/images/logo-sm.png" alt="small logo" /></span>
+			<span class="logo-lg"><img src="{base}/assets/images/logo.png" alt="logo" /></span>
+			<span class="logo-sm"><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span>
 		</span>
 
 		<span class="logo-dark">
-			<span class="logo-lg"><img src="assets/images/logo-dark.png" alt="dark logo" /></span>
-			<span class="logo-sm"><img src="assets/images/logo-sm.png" alt="small logo" /></span>
+			<span class="logo-lg"><img src="{base}/assets/images/logo-dark.png" alt="dark logo" /></span>
+			<span class="logo-sm"><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span>
 		</span>
 	</a>
 

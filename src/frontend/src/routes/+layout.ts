@@ -1,10 +1,6 @@
 import { browser } from '$app/environment';
 import type { LayoutLoad } from '../$types';
-import type { KeycloakInitOptions } from 'keycloak-js';
-import { PUBLIC_KEYCLOAK_URL } from '$env/static/public';
 import { userState } from '$lib/state.svelte';
-
-import { page } from '$app/state';
 
 export const load: LayoutLoad = () => {
 	/**
