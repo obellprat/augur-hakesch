@@ -1,14 +1,3 @@
-/*import { SvelteKitAuth } from "@auth/sveltekit"
-import Keycloak from "@auth/sveltekit/providers/keycloak"
- 
-export const { handle, signIn } = SvelteKitAuth({
-  providers: [Keycloak({
-    clientId:"4459369d-435f-4451-adf6-1328de26631a",
-    clientSecret:"6ve4dVJjoDCnW0qxNVXcf4MbdjyQdvKQ",
-    issuer:"https:/id.boccadileone.ch/auth/realms/augur"
-  })],
-}) */
-
 import { SvelteKitAuth } from '@auth/sveltekit';
 import keycloak from '@auth/sveltekit/providers/keycloak';
 
