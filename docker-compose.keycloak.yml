@@ -1,0 +1,43 @@
+postgres:
+    image: postgres:17.5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - augur
+
+keycloak:
+    image: quay.io/keycloak/keycloak:26.2.4
+    command: start
+    environment:
+      KC_HOSTNAME: id.augur.world
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT_HTTPS: true
+      PROXY_ADDRESS_FORWARDING: true
+      KC_HOSTNAME_ADMIN_URL: https://id.augur.world/
+      KC_HOSTNAME_STRICT: false
+      KC_PROXY_HEADERS: xforwarded
+      KC_PROXY: edge
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres/${POSTGRES_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./augur-keycloakify:/opt/keycloak/providers/
+    restart: always
+    depends_on:
+      - postgres
+    networks:
+      augur:
+          aliases:
+                - keycloak
+networks:
+  augur:
+  
