@@ -11,10 +11,7 @@ import geopandas as gpd
 from shapely import geometry, ops
 import pandas as pd
 
-from calculations.calculations import app
-
-@app.task(name="calculate_isozones", bind=True)
-def calculate_isozones(self, northing: float, easting: float):
+def calculate_isozones(northing: float, easting: float):
     # Definitions
 
     v_gerinne = 1.5 # m/s
@@ -22,25 +19,20 @@ def calculate_isozones(self, northing: float, easting: float):
 
     # Rertrieve and load DEM
     # ----------------------
-
-    dem = 'data/geotiffminusriver.tif'
+    dem = '../data/geotiffminusriver.tif'
     grid = Grid.from_raster(dem)
         
     dirmap = (1, 2, 3, 4, 5, 6, 7, 8)
-    self.update_state(state='PROGRESS',
-                meta={'text': 'Reading DEM'})
 
     dem = grid.read_raster(dem, window=(northing - 10000, easting - 10000, northing + 10000, easting + 10000), window_crs=grid.crs)
     grid.clip_to(dem)
     small_view = grid.view(dem)
-    grid.to_raster(dem, 'data/temp/smallfdir.tif', target_view=small_view)
+    grid.to_raster(dem, '../data/temp/smallfdir.tif', target_view=small_view)
 
     del grid
     gc.collect()
-    grid2 = Grid.from_raster('data/temp/smallfdir.tif')
-        
-    self.update_state(state='PROGRESS',
-                meta={'text': 'Compute flow directions'})
+    grid2 = Grid.from_raster('../data/temp/smallfdir.tif')
+
     # calculate accumulation
 
     pit_filled_dem = grid2.fill_pits(dem)
@@ -51,9 +43,6 @@ def calculate_isozones(self, northing: float, easting: float):
     acc = grid2.accumulation(fdir, dirmap=dirmap)
     x_snap, y_snap = grid2.snap_to_mask(acc > 10000, (northing, easting))
 
-    
-    self.update_state(state='PROGRESS',
-                meta={'text': 'Delineate the catchment'})
     # Delineate the catchment    
     catch = grid2.catchment(x=x_snap, y=y_snap, fdir=fdir, dirmap=dirmap, 
                         xytype='coordinate')
@@ -64,19 +53,13 @@ def calculate_isozones(self, northing: float, easting: float):
 
 
     # calculate slope
-    
-    self.update_state(state='PROGRESS',
-                meta={'text': 'Calculating slope'})
     slope = grid2.cell_slopes(fdir=fdir, dirmap=dirmap, dem=dem, nodata=0)
     #slope_percentage = gaussian_filter(slope, sigma=1)
     slope_percentage = slope * 100
 
 
     # create wald raster
-    
-    self.update_state(state='PROGRESS',
-                meta={'text': 'Getting forest'})
-    forests = gpd.read_file('data/ch_wald.shp')
+    forests = gpd.read_file('../data/ch_wald.shp')
     grid2.clip_to(catch)
     # Convert catchment raster to vector geometry and find intersection
     shapes = grid2.polygonize()
@@ -98,9 +81,11 @@ def calculate_isozones(self, northing: float, easting: float):
     forests_raster[forests_raster < 0] = 0
 
     # calculate "Hindernislayer".
-    
-    self.update_state(state='PROGRESS',
-                meta={'text': 'Calculating obstacle layer'})
+    grid2.to_raster(acc, f"../data/temp/acc.tif")
+    with rasterio.open(f"../data/temp/acc.tif") as p_src:
+        new_acc = p_src.read(1)
+        meta = p_src.meta
+        affine = p_src.transform
     acc_view = grid2.view(acc)
     obstacle_grid = acc_view.copy()
     
@@ -121,9 +106,7 @@ def calculate_isozones(self, northing: float, easting: float):
     obstacle_raster = Raster(obstacle_grid, viewfinder=grid2.viewfinder)
 
     # calculate raster distance
-    
-    self.update_state(state='PROGRESS',
-                meta={'text': 'Calculate distance'})
+
     dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap, weights=obstacle_raster)
 
     #dist = dist * cell_size
@@ -135,11 +118,9 @@ def calculate_isozones(self, northing: float, easting: float):
 
 
     # writing cloud optimized geotiff
-    
-    self.update_state(state='PROGRESS',
-                meta={'text': 'Writing isozone file'})
+
     # Defining the output COG filename
-    cog_filename = f"data/temp/isozones_cog.tif"
+    cog_filename = f"../data/temp/isozones_cog.tif"
 
     src_profile = dict(
         driver="GTiff",
@@ -184,7 +165,8 @@ def calculate_isozones(self, northing: float, easting: float):
                 use_cog_driver=True,
                 in_memory=False
             )
-    
-    self.update_state(state='PROGRESS',
-                meta={'text': 'Finish'})
+
     return
+
+
+calculate_isozones(northing=2608236, easting=1209604)
