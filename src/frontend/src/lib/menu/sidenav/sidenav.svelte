@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Navlink from './navlink.svelte';
 	import NavLink from './navlink.svelte';
-	
-    import { base } from '$app/paths';
+
+	import { base } from '$app/paths';
 </script>
 
 <!-- Sidenav Menu Start -->
@@ -39,7 +39,7 @@
 
 			<Navlink title="Precipitation" href="precipitation" icon="ti ti-cloud-rain" />
 
-			<Navlink title="HAKESCH 2.0" href="hakesch" icon="ti ti-chart-histogram" />
+			<Navlink title="HAKESCH 2.0" href="hakesch2" icon="ti ti-chart-histogram" />
 
 			<Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />
 

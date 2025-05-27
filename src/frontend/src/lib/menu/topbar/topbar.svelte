@@ -1,13 +1,12 @@
 <script lang="ts">
 	import pageTitle from '$lib/page/pageTitle';
-	import { userState } from '$lib/state.svelte';
 
 	import { page } from '$app/state';
 	import { redirect } from '@sveltejs/kit';
 
 	import { signIn, signOut } from '@auth/sveltekit/client';
-	
-    import { base } from '$app/paths';
+
+	import { base } from '$app/paths';
 </script>
 
 <!-- Topbar Start -->
@@ -18,12 +17,18 @@
 			<a href="index.html" class="logo">
 				<span class="logo-light">
 					<span class="logo-lg"><img src="{base}/assets/images/logo.png" alt="logo" /></span>
-					<span class="logo-sm"><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span>
+					<span class="logo-sm"
+						><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span
+					>
 				</span>
 
 				<span class="logo-dark">
-					<span class="logo-lg"><img src="{base}/assets/images/logo-dark.png" alt="dark logo" /></span>
-					<span class="logo-sm"><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span>
+					<span class="logo-lg"
+						><img src="{base}/assets/images/logo-dark.png" alt="dark logo" /></span
+					>
+					<span class="logo-sm"
+						><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span
+					>
 				</span>
 			</a>
 
