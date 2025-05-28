@@ -4,8 +4,17 @@ import { error } from "@sveltejs/kit";
 import { fail, redirect } from "@sveltejs/kit";
 import type { Actions } from './$types';
 import { base } from '$app/paths';
+import { browser } from '$app/environment';
+import { page } from '$app/state';
+
 
 export const load = async ({ params }) => {
+  if (browser) {
+		if (!data.session?.user?.name) {
+			redirect(303, `./login?redirect_url=` + page.url.href + '/hakesch2');
+		}
+	}
+
   const { id } = params;
   const project = await getProjectById(id);
 
@@ -21,10 +30,12 @@ export const load = async ({ params }) => {
 export const actions = {
   default: async ({ request }) => {
     const formData = Object.fromEntries(await request.formData());
-    const { title, id, description } = formData as unknown as {
+    const { title, id, description, easting, northing } = formData as unknown as {
       title: string | undefined;
       id: string | undefined;
       description: string|undefined;
+      easting: number|undefined;
+      northing: number|undefined;
     };
     if (!title || !id) {
       return fail(400, { message: "Missing required fields" });
@@ -32,7 +43,13 @@ export const actions = {
 
     const updatedPost = await updateProject(id, {
       title,
-      description
+      description,
+      Point: {
+        update : {
+          easting: Number(easting),
+          northing: Number(northing)
+        }
+      }
     });
 
     redirect(302, `${base}/hakesch2/overview/${updatedPost.id}`);

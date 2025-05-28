@@ -1,0 +1,6 @@
+.gitignore
+Makefile
+README.md
+.env
+.env.local
+data/

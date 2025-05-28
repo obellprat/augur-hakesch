@@ -11,6 +11,9 @@ const getProjectById = async (id: string) => {
 	return await prisma.project.findUnique({
 		where: {
 			id
+		},
+		include: {
+			Point: true
 		}
 	});
 };
@@ -26,6 +29,9 @@ const getAllProjects = async (userId: number) => {
 	return await prisma.project.findMany({
 		where: {
 			user: { id : userId}
+		},
+		include: {
+			Point: true
 		},
 		orderBy: {
 			lastModified: 'desc'

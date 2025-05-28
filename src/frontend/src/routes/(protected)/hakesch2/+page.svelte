@@ -53,8 +53,8 @@
                         <input type="text" class="form-control rounded-pill" placeholder="Search mail...">
                         <i class="ri-search-line fs-18 app-search-icon text-muted"></i>
                     </div>-->
-					<button type="button" class="btn btn-primary bg-gradient rounded-pill"
-						>Neues Projekt erstellen</button
+					<a href="{base}/hakesch2/create" type="button" class="btn btn-primary bg-gradient rounded-pill"
+						>Neues Projekt erstellen</a
 					>
 				</div>
 			</div>
@@ -67,8 +67,8 @@
 						<th></th>
 						<th>Titel</th>
 						<th>Beschreibung</th>
-						<th>Northing</th>
 						<th>Easting</th>
+						<th>Northing</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -96,18 +96,18 @@
 
 									<td>
 										<div>
-											<span class="fs-14 text-muted mb-0">2600000</span>
+											<span class="fs-14 text-muted mb-0">{project.Point.easting}</span>
 										</div>
 									</td>
 
 									<td>
 										<div>
-											<span class="fs-14 text-muted mb-0">1200000</span>
+											<span class="fs-14 text-muted mb-0">{project.Point.northing}</span>
 										</div>
 									</td>
 
 									<td>
-										<p class="fs-12 text-muted mb-0 text-end">Jan 5, 3:45 PM</p>
+										<p class="fs-12 text-muted mb-0 text-end"></p>
 									</td>
 
 									<td class="pe-3">

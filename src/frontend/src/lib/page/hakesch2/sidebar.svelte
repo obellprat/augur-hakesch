@@ -63,7 +63,7 @@
 									>
 									<div id="other" class="collapse show">
 										<div class="email-menu-list d-flex flex-column mt-2">
-											<a href="javascript: void(0);">
+											<a href="{base}/hakesch2/overview/{props.currentProject.id}">
 												<iconify-icon icon="solar:mailbox-outline" class="me-2 fs-18 text-muted"
 												></iconify-icon>
 												<span>Übersicht</span>
