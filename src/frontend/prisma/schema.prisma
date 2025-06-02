@@ -27,8 +27,11 @@ model Project {
   title   String
   description String
   lastModified DateTime           @updatedAt
+  isozones_taskid String   @default("")
+  isozones_running String @default("")
+  catchment_geojson String @default("")
   pointId Int
-  Point   Point  @relation(fields: [pointId], references: [id])
+  Point   Point  @relation(fields: [pointId], references: [id], onDelete: Cascade)
   userId  Int
   user    User   @relation(fields: [userId], references: [id])
 }

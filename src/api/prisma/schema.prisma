@@ -1,0 +1,37 @@
+generator client {
+  provider             = "prisma-client-py"
+  recursive_type_depth = "-1"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id      Int       @id @default(autoincrement())
+  email   String    @unique
+  name    String?
+  Project Project[]
+}
+
+model Project {
+  id                String   @id @default(nanoid())
+  title             String
+  pointId           Int
+  userId            Int
+  description       String
+  lastModified      DateTime @updatedAt
+  catchment_geojson String   @default("")
+  isozones_running  String   @default("")
+  isozones_taskid   String   @default("")
+  Point             Point    @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id])
+}
+
+model Point {
+  id       Int       @id @default(autoincrement())
+  northing Float
+  easting  Float
+  Project  Project[]
+}

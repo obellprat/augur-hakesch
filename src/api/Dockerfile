@@ -18,3 +18,6 @@ RUN pip install -r requirements.txt
 
 # copy project
 COPY . .
+
+
+RUN prisma generate

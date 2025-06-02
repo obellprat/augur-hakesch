@@ -1,4 +1,4 @@
-import { getProjectById, updateProject } from '$lib/server/project';
+import { getProjectById, updateProject, deleteProject } from '$lib/server/project';
 import { error } from '@sveltejs/kit';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
@@ -8,7 +8,7 @@ import { page } from '$app/state';
 
 export const load = async ({ params }) => {
 	if (browser) {
-		if (!data.session?.user?.name) {
+		if (!page.data.session?.user?.name) {
 			redirect(303, `./login?redirect_url=` + page.url.href + '/hakesch2');
 		}
 	}
@@ -26,7 +26,7 @@ export const load = async ({ params }) => {
 };
 
 export const actions = {
-	default: async ({ request }) => {
+	update: async ({ request }) => {
 		const formData = Object.fromEntries(await request.formData());
 		const { title, id, description, easting, northing } = formData as unknown as {
 			title: string | undefined;
@@ -51,5 +51,14 @@ export const actions = {
 		});
 
 		redirect(302, `${base}/hakesch2/overview/${updatedPost.id}`);
+	},
+	delete: async({request}) => {
+		const formData = Object.fromEntries(await request.formData());
+		const { id } = formData as unknown as {
+			id: string | undefined;
+		};
+
+		await deleteProject(id!, page.data.session?.myuser.id );
+		redirect(302, `${base}/hakesch2`);
 	}
 } satisfies Actions;

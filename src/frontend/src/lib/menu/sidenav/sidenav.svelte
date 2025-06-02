@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { base } from '$app/paths';
+	import Navlink from './navlink.svelte';
 </script>
 
 <!-- Sidenav Menu Start -->

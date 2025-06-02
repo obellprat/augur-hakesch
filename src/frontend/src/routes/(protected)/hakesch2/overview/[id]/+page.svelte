@@ -5,14 +5,20 @@
 	import { currentProject } from '$lib/state.svelte';
 	import { enhance } from '$app/forms';
 
-	import { Map, View } from 'ol';
+	import { Map, View, Feature } from 'ol';
 	import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
-	import WebGLTileLayer from 'ol/layer/WebGLTile';
-	import { XYZ, GeoTIFF } from 'ol/source';
+	import { Point } from 'ol/geom';
+	import { Vector as VectorSource } from 'ol/source';
+	import Stroke from 'ol/style/Stroke';
+	import Fill from 'ol/style/Fill';
+	import CircleStyle from 'ol/style/Circle.js';
+	import Style from 'ol/style/Style';
+	import { XYZ } from 'ol/source';
 	import { defaults as defaultControls, ScaleLine } from 'ol/control';
 	import { register } from 'ol/proj/proj4';
 	import proj4 from 'proj4';
 	import '../../../../../../node_modules/ol/ol.css';
+	import type { Coordinate } from 'ol/coordinate';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	$pageTitle = 'HAKESCH 2.0 - Projekt ' + data.project.title;
@@ -24,6 +30,43 @@
 	currentProject.id = data.project.id;
 
 	onMount(async () => {
+
+		const stroke = new Stroke({color: 'black', width: 2});	
+		const fill = new Fill({color: 'blue'});
+
+		var vectorSource = new VectorSource({
+		});
+
+		var vectorLayer = new VectorLayer({ 
+			name: 'Pourpoint',
+			zIndex: 100,
+			source: vectorSource,
+			style: new Style({
+				image: new CircleStyle({
+					radius: 7,
+					fill: fill,
+					stroke: stroke,
+				})
+			})
+		});
+
+		function addMarker(coordinates: Coordinate) {
+			var marker = new Feature(new Point(coordinates));
+			var zIndex = 1;
+			
+
+			map.getLayers().forEach((layer) => {
+				if (layer && layer.get('name') && layer.get('name') == 'Pourpoint') {
+					map.removeLayer(layer);
+				}
+			});
+			vectorSource = new VectorSource({
+				});
+			vectorSource.addFeature(marker);
+			vectorLayer.setSource(vectorSource);
+			map.addLayer(vectorLayer);
+		}
+
 		proj4.defs(
 			'EPSG:2056',
 			'+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs'
@@ -38,7 +81,7 @@
 
 		const view = new View({
 			projection: 'EPSG:2056',
-			center: [2605764, 1177523],
+			center: [easting, northing],
 			zoom: 14
 		});
 
@@ -49,13 +92,17 @@
 					units: 'metric'
 				})
 			]),
-			layers: [backgroundLayer],
+			layers: [backgroundLayer, vectorLayer],
 			view: view
 		});
+
+		
+		addMarker([easting, northing]);
 
 		map.on('singleclick', function (e) {
 			northing = Math.round(e.coordinate[1]);
 			easting = Math.round(e.coordinate[0]);
+			addMarker([easting, northing]);
 		});
 	});
 </script>
@@ -83,17 +130,16 @@
 					</h3>
 				</div>
 				<div class="d-flex align-items-center gap-2">
-					<a
-						href="javascript: void(0);"
+					<span
 						class="btn btn-sm btn-icon btn-ghost-danger d-none d-xl-flex"
-						data-bs-toggle="modal"
-						data-bs-target="#userCall"
 						data-bs-placement="top"
 						title="Delete"
 						aria-label="delete"
+						data-bs-toggle="modal"
+						data-bs-target="#delete-project-modal"
 					>
 						<i class="ti ti-trash fs-20"></i>
-					</a>
+				</span>
 					<a
 						href="javascript: void(0);"
 						class="btn btn-sm btn-icon btn-ghost-primary d-none d-xl-flex"
@@ -112,7 +158,7 @@
 			<div class="row">
 				<div class="col-lg-6">
 					<form
-						method="post"
+						method="post"  action="?/update"
 						use:enhance={() => {
 							return async ({ update }) => {
 								await update();
@@ -177,4 +223,31 @@
 			<!-- end row-->
 		</div>
 	</div>
+
+
+	<!-- Warning Header Modal -->
+	<div id="delete-project-modal" class="modal fade" tabindex="-1" role="dialog"
+		aria-labelledby="warning-header-modalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header text-bg-warning border-0">
+					<h4 class="modal-title" id="warning-header-modalLabel">Projekt löschen
+					</h4>
+					<button type="button" class="btn-close btn-close-white"
+						data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p>Soll das Projekt {data.project.title} wirklich gelöscht werden?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light"
+						data-bs-dismiss="modal">Abbrechen</button>
+						<form method="POST" action="?/delete">
+							<input type="hidden" name="id" value={data.project.id} />
+							<button type="submit" class="btn btn-warning">Löschen</button>
+						</form>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
 </div>

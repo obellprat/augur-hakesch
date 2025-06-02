@@ -40,3 +40,8 @@ tasks:
     cmds:
       - task: build
       - docker compose push
+
+  prisma:
+    dir: src/frontend
+    cmds:
+      - prisma generate --schema=../frontend/prisma/schema.prisma

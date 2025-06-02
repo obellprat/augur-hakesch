@@ -14,7 +14,7 @@ import pandas as pd
 from calculations.calculations import app
 
 @app.task(name="calculate_isozones", bind=True)
-def calculate_isozones(self, northing: float, easting: float):
+def calculate_isozones(self, projectId: str, northing: float, easting: float):
     # Definitions
 
     v_gerinne = 1.5 # m/s

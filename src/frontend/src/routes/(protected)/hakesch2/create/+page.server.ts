@@ -6,11 +6,12 @@ import { base } from '$app/paths';
 export const actions = {
 	default: async ({ request, locals }) => {
 		const auth = await locals.auth();
-		console.log(auth.myuser);
 		const formData = Object.fromEntries(await request.formData());
-		const { title, description } = formData as unknown as {
+		const { title, description, easting, northing } = formData as unknown as {
 			title: string | undefined;
-			description: string;
+			description: string | undefined;
+			easting: number | undefined;
+			northing: number | undefined;
 		};
 		if (!title) {
 			return fail(400, { message: 'Missing required fields' });
@@ -18,12 +19,12 @@ export const actions = {
 
 		const createdProject = await createNewProject({
 			title: title,
-			description: description,
+			description: description!,
 			user: { connect: { id: auth.myuser.id } },
 			Point: {
 				create: {
-					northing: 2600000,
-					easting: 1200000
+					northing: Number(northing),
+					easting: Number(easting)
 				}
 			}
 		});

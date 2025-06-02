@@ -39,4 +39,13 @@ const getAllProjects = async (userId: number) => {
 	});
 };
 
-export { createNewProject, getProjectById, updateProject, getAllProjects };
+const deleteProject = async (projectId: string, userId: number) => {
+	return await prisma.project.delete({
+		where: {
+			user: { id: userId },
+			id: projectId
+		}
+	});
+};
+
+export { createNewProject, getProjectById, updateProject, getAllProjects, deleteProject };
