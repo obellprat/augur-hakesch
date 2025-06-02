@@ -1,8 +1,8 @@
 <script lang="ts">
 	import pageTitle from '$lib/page/pageTitle';
-    import type { ActionData, PageServerData } from "./$types";
+	import type { ActionData, PageServerData } from './$types';
 	import { onMount } from 'svelte';
-	import { currentProject } from "$lib/state.svelte";
+	import { currentProject } from '$lib/state.svelte';
 	import { enhance } from '$app/forms';
 
 	import { Map, View } from 'ol';
@@ -14,7 +14,7 @@
 	import proj4 from 'proj4';
 	import '../../../../../../node_modules/ol/ol.css';
 
-    let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	$pageTitle = 'HAKESCH 2.0 - Projekt ' + data.project.title;
 
 	let northing = $derived(data.project.Point.northing);
@@ -111,45 +111,68 @@
 		<div class="card-body">
 			<div class="row">
 				<div class="col-lg-6">
-					<form method="post" use:enhance={() => {
-
-		return async ({ update }) => {
-			await update();
-			currentProject.title = data.project.title;
-		};
-	}}>
+					<form
+						method="post"
+						use:enhance={() => {
+							return async ({ update }) => {
+								await update();
+								currentProject.title = data.project.title;
+							};
+						}}
+					>
 						<input type="hidden" name="id" value={data.project.id} />
 						<div class="mb-3">
 							<label for="title" class="form-label">Projekttitel</label>
-							<input type="text" name="title" id="title" class="form-control" value={data.project.title} />
+							<input
+								type="text"
+								name="title"
+								id="title"
+								class="form-control"
+								value={data.project.title}
+							/>
 						</div>
 
 						<div class="mb-3">
 							<label for="description" class="form-label">Beschreibung</label>
-							<textarea class="form-control" name="description" rows="5">{data.project.description}</textarea>
+							<textarea class="form-control" name="description" rows="5"
+								>{data.project.description}</textarea
+							>
 						</div>
 
 						<div class="mb-3">
 							<label for="easting" class="form-label">Abflusspunkt</label>
 							<div class="row">
-							<div class="col-md-6">
-							<input type="text" name="easting" id="easting" class="form-control" value={easting}  />
-							</div>
-							<div class="col-md-6">
-							<input type="text" name="northing" id="northing" class="form-control" value={northing} />
-							</div>
+								<div class="col-md-6">
+									<input
+										type="text"
+										name="easting"
+										id="easting"
+										class="form-control"
+										value={easting}
+									/>
+								</div>
+								<div class="col-md-6">
+									<input
+										type="text"
+										name="northing"
+										id="northing"
+										class="form-control"
+										value={northing}
+									/>
+								</div>
 							</div>
 						</div>
 
-                        <button type="submit" class="btn btn-primary">Save</button>
+						<button type="submit" class="btn btn-primary">Save</button>
 					</form>
 				</div>
 				<!-- end col -->
-				 <div class="col-lg-6">
-					
-					<div class="py-2">Abflusspunkt <span class="text-muted">(mit einem Klick auf die Karte ändern)</span></div>
+				<div class="col-lg-6">
+					<div class="py-2">
+						Abflusspunkt <span class="text-muted">(mit einem Klick auf die Karte ändern)</span>
+					</div>
 					<div class="d-flex flex-grow-1" style="height:500px;" id="map"></div>
-				 </div>
+				</div>
 			</div>
 			<!-- end row-->
 		</div>

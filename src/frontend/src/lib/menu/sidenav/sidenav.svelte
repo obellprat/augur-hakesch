@@ -1,7 +1,4 @@
 <script lang="ts">
-	import Navlink from './navlink.svelte';
-	import NavLink from './navlink.svelte';
-
 	import { base } from '$app/paths';
 </script>
 

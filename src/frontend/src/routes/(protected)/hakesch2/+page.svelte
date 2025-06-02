@@ -2,7 +2,7 @@
 	import pageTitle from '$lib/page/pageTitle';
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
-	
+
 	export let data;
 
 	$pageTitle = 'HAKESCH 2.0 - Projekte';
@@ -53,8 +53,10 @@
                         <input type="text" class="form-control rounded-pill" placeholder="Search mail...">
                         <i class="ri-search-line fs-18 app-search-icon text-muted"></i>
                     </div>-->
-					<a href="{base}/hakesch2/create" type="button" class="btn btn-primary bg-gradient rounded-pill"
-						>Neues Projekt erstellen</a
+					<a
+						href="{base}/hakesch2/create"
+						type="button"
+						class="btn btn-primary bg-gradient rounded-pill">Neues Projekt erstellen</a
 					>
 				</div>
 			</div>
@@ -63,12 +65,13 @@
 		<div class="border-top border-light">
 			<div class="table-responsive">
 				<table class="table table-hover mail-list mb-0">
-					<thead><tr>
-						<th></th>
-						<th>Titel</th>
-						<th>Beschreibung</th>
-						<th>Easting</th>
-						<th>Northing</th>
+					<thead
+						><tr>
+							<th></th>
+							<th>Titel</th>
+							<th>Beschreibung</th>
+							<th>Easting</th>
+							<th>Northing</th>
 						</tr>
 					</thead>
 					<tbody>

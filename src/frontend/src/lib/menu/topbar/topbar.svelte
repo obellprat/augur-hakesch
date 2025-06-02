@@ -2,7 +2,6 @@
 	import pageTitle from '$lib/page/pageTitle';
 
 	import { page } from '$app/state';
-	import { redirect } from '@sveltejs/kit';
 
 	import { signIn, signOut } from '@auth/sveltekit/client';
 

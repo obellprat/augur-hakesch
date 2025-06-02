@@ -1,10 +1,10 @@
 <script lang="ts">
 	import pageTitle from '$lib/page/pageTitle';
-    import type { ActionData, PageServerData } from "./$types";
+	import type { ActionData, PageServerData } from './$types';
 	import { onMount } from 'svelte';
 	import Sidebar from '$lib/page/hakesch2/sidebar.svelte';
 
-    let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	$pageTitle = 'HAKESCH 2.0 - Projekt erstellen';
 
 	onMount(async () => {});
@@ -28,11 +28,8 @@
 					>
 						<i class="ri-menu-2-line fs-17"></i>
 					</button>
-					<h3 class="my-0 lh-base">
-						Neues Projekt erstellen
-					</h3>
+					<h3 class="my-0 lh-base">Neues Projekt erstellen</h3>
 				</div>
-				
 			</div>
 		</div>
 		<div class="card-body">
@@ -49,7 +46,7 @@
 							<textarea class="form-control" name="description" rows="5"></textarea>
 						</div>
 
-                        <button type="submit" class="btn btn-primary">Erstellen</button>
+						<button type="submit" class="btn btn-primary">Erstellen</button>
 					</form>
 				</div>
 				<!-- end col -->

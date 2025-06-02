@@ -18,9 +18,9 @@ const getProjectById = async (id: string) => {
 	});
 };
 
-const updateProject = async (projectId : string, project: Prisma.ProjectUpdateInput) => {
+const updateProject = async (projectId: string, project: Prisma.ProjectUpdateInput) => {
 	return await prisma.project.update({
-		where: {id : projectId},
+		where: { id: projectId },
 		data: project
 	});
 };
@@ -28,7 +28,7 @@ const updateProject = async (projectId : string, project: Prisma.ProjectUpdateIn
 const getAllProjects = async (userId: number) => {
 	return await prisma.project.findMany({
 		where: {
-			user: { id : userId}
+			user: { id: userId }
 		},
 		include: {
 			Point: true

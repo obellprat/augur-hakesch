@@ -19,8 +19,7 @@ export const load: PageServerLoad = async (events) => {
 			session,
 			projects
 		};
-	}
-	else {
+	} else {
 		redirect(303, `./login?redirect_url=` + page.url.href);
 	}
 };

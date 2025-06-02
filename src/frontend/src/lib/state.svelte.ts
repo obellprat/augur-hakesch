@@ -1,4 +1,4 @@
 export const currentProject = $state({
-	id : '',
-	title : ''
+	id: '',
+	title: ''
 });

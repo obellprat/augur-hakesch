@@ -1,57 +1,55 @@
-	
-import { getProjectById, updateProject } from "$lib/server/project";
-import { error } from "@sveltejs/kit";
-import { fail, redirect } from "@sveltejs/kit";
+import { getProjectById, updateProject } from '$lib/server/project';
+import { error } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { base } from '$app/paths';
 import { browser } from '$app/environment';
 import { page } from '$app/state';
 
-
 export const load = async ({ params }) => {
-  if (browser) {
+	if (browser) {
 		if (!data.session?.user?.name) {
 			redirect(303, `./login?redirect_url=` + page.url.href + '/hakesch2');
 		}
 	}
 
-  const { id } = params;
-  const project = await getProjectById(id);
+	const { id } = params;
+	const project = await getProjectById(id);
 
-  if (!project) {
-    error(404, "Project not found");
-  }
+	if (!project) {
+		error(404, 'Project not found');
+	}
 
-  return {
-    project,
-  };
+	return {
+		project
+	};
 };
 
 export const actions = {
-  default: async ({ request }) => {
-    const formData = Object.fromEntries(await request.formData());
-    const { title, id, description, easting, northing } = formData as unknown as {
-      title: string | undefined;
-      id: string | undefined;
-      description: string|undefined;
-      easting: number|undefined;
-      northing: number|undefined;
-    };
-    if (!title || !id) {
-      return fail(400, { message: "Missing required fields" });
-    }
+	default: async ({ request }) => {
+		const formData = Object.fromEntries(await request.formData());
+		const { title, id, description, easting, northing } = formData as unknown as {
+			title: string | undefined;
+			id: string | undefined;
+			description: string | undefined;
+			easting: number | undefined;
+			northing: number | undefined;
+		};
+		if (!title || !id) {
+			return fail(400, { message: 'Missing required fields' });
+		}
 
-    const updatedPost = await updateProject(id, {
-      title,
-      description,
-      Point: {
-        update : {
-          easting: Number(easting),
-          northing: Number(northing)
-        }
-      }
-    });
+		const updatedPost = await updateProject(id, {
+			title,
+			description,
+			Point: {
+				update: {
+					easting: Number(easting),
+					northing: Number(northing)
+				}
+			}
+		});
 
-    redirect(302, `${base}/hakesch2/overview/${updatedPost.id}`);
-  },
+		redirect(302, `${base}/hakesch2/overview/${updatedPost.id}`);
+	}
 } satisfies Actions;
