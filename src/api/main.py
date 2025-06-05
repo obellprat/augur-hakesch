@@ -26,10 +26,10 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup():
-    await prisma.connect()
+    prisma.connect()
 @app.on_event("shutdown")
 async def shutdown():
-    await prisma.disconnect()
+    prisma.disconnect()
 
 # Set up Keycloak
 keycloak_config = KeycloakConfiguration(

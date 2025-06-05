@@ -4,7 +4,7 @@ from helpers.prisma import prisma
 
 
 async def map_user(userinfo: dict[str, any]) -> User:
-    user = await prisma.user.find_first(
+    user = prisma.user.find_first(
         where={
             "email": userinfo["email"],
         }
@@ -19,7 +19,7 @@ async def get_user(request: Request) -> User:
 
     if "user" in request.scope:
         # Do whatever you need to get the user object from the database
-        user = await prisma.user.find_first(
+        user = prisma.user.find_first(
             where={
                 "email": request.scope["user"].email,
             })

@@ -1,6 +1,6 @@
+
 from pysheds.grid import Grid
 import numpy as np
-import rasterio
 import gc
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
@@ -10,11 +10,15 @@ from scipy.ndimage import gaussian_filter
 import geopandas as gpd
 from shapely import geometry, ops
 import pandas as pd
-
+import os
+from prisma import Prisma
 from calculations.calculations import app
+import fiona
+import json
+from fiona.crs import CRS
 
 @app.task(name="calculate_isozones", bind=True)
-def calculate_isozones(self, projectId: str, northing: float, easting: float):
+def calculate_isozones(self, projectId: str, userId: int, northing: float, easting: float):
     # Definitions
 
     v_gerinne = 1.5 # m/s
@@ -41,6 +45,8 @@ def calculate_isozones(self, projectId: str, northing: float, easting: float):
         
     self.update_state(state='PROGRESS',
                 meta={'text': 'Compute flow directions'})
+    
+
     # calculate accumulation
 
     pit_filled_dem = grid2.fill_pits(dem)
@@ -54,6 +60,8 @@ def calculate_isozones(self, projectId: str, northing: float, easting: float):
     
     self.update_state(state='PROGRESS',
                 meta={'text': 'Delineate the catchment'})
+    
+
     # Delineate the catchment    
     catch = grid2.catchment(x=x_snap, y=y_snap, fdir=fdir, dirmap=dirmap, 
                         xytype='coordinate')
@@ -139,7 +147,13 @@ def calculate_isozones(self, projectId: str, northing: float, easting: float):
     self.update_state(state='PROGRESS',
                 meta={'text': 'Writing isozone file'})
     # Defining the output COG filename
-    cog_filename = f"data/temp/isozones_cog.tif"
+    if not os.path.exists(f"data/{userId}"):
+        os.makedirs(f"data/{userId}")
+
+    if not os.path.exists(f"data/{userId}/{projectId}"):
+        os.makedirs(f"data/{userId}/{projectId}")
+
+    cog_filename = f"data/{userId}/{projectId}/isozones_cog.tif"
 
     src_profile = dict(
         driver="GTiff",
@@ -184,6 +198,56 @@ def calculate_isozones(self, projectId: str, northing: float, easting: float):
                 use_cog_driver=True,
                 in_memory=False
             )
+
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Polygonize catchment'})
+    # Create a vector representation of the catchment mask
+    catch_view = grid2.view(catch, dtype=np.uint8)
+    shapes = grid2.polygonize(catch_view)
+
+    # Specify schema
+    schema = {
+            'geometry': 'Polygon',
+            'properties': {'LABEL': 'float:16'}
+    }
+
+    # Write shapefile
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Creating geometry'})
+    with fiona.open(f"data/{userId}/{projectId}/catchment.geojson", 'w',
+                    driver='GeoJSON',
+                    crs=grid2.crs.srs,
+                    schema=schema) as c:
+        i = 0
+        for shape, value in shapes:
+            rec = {}
+            rec['geometry'] = shape
+            rec['properties'] = {'LABEL' : str(value)}
+            rec['id'] = str(i)
+            c.write(rec)
+            i += 1
+
+    with open(f"data/{userId}/{projectId}/catchment.geojson", 'r') as file:
+        data = json.load(file)
+
+    self.update_state(state='PROGRESS',
+            meta={'text': 'Save to database'})    
+
+    prisma = Prisma()
+    prisma.connect()
+    
+    updatedProject = prisma.project.update(
+        where = {
+            'id' :  projectId
+        },
+        data = {
+            'isozones_running': 'success',
+            'catchment_geojson': json.dumps(data)
+        },
+        )
+
+    prisma.disconnect(5)
     
     self.update_state(state='PROGRESS',
                 meta={'text': 'Finish'})

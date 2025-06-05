@@ -13,7 +13,7 @@ router = APIRouter(prefix="/isozones",
 @router.get("/")
 async def get_isozones(ProjectId:str, user: User = Depends(get_user)):
     try:
-        project =  await prisma.project.find_unique_or_raise(
+        project =  prisma.project.find_unique_or_raise(
             where = {
                 'userId' : user.id,
                 'id' :  ProjectId
@@ -22,9 +22,9 @@ async def get_isozones(ProjectId:str, user: User = Depends(get_user)):
                 'Point' : True
             }
         )
-        
-        task = calculate_isozones.delay(project.id, project.Point.northing, project.Point.easting)
-        await prisma.project.update(
+        print(project)
+        task = calculate_isozones.delay(project.id, user.id, project.Point.easting, project.Point.northing)
+        prisma.project.update(
             where = {
                 'id' :  ProjectId
             },
