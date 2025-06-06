@@ -47,6 +47,7 @@
 				.then((data) => {
 					const actTime = new Date();
 					document.getElementById('progresstext')!.innerHTML = `${actTime.toUTCString()} Starting`;
+					globalThis.$('.progress-bar').css('width', '0%').attr('aria-valuenow', 0);
 					getStatus(data.task_id);
 				});
 	}
@@ -66,7 +67,11 @@
 				const actTime = new Date();
 				//let html = `${actTime.toUTCString()} ${res.task_status} `;
 				let html = ``;
-				if (res.task_status != 'SUCCESS' && res.task_status != 'PENDING') html = html + `${JSON.stringify(res.task_result.text)}`;
+				if (res.task_status != 'SUCCESS' && res.task_status != 'PENDING') {
+					html = html + `${JSON.stringify(res.task_result.text)}`;
+					
+					globalThis.$('.progress-bar').css('width', res.task_result.progress + '%').attr('aria-valuenow', res.task_result.progress);
+				}
 				document.getElementById('progresstext')!.innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
 
 				const taskStatus = res.task_status;
