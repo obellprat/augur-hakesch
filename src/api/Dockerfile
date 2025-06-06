@@ -20,4 +20,6 @@ RUN pip install -r requirements.txt
 COPY . .
 
 
+ENV TZ="Europe/Zurich"
+
 RUN prisma generate

@@ -28,8 +28,11 @@ model Project {
   description String
   lastModified DateTime           @updatedAt
   isozones_taskid String   @default("")
-  isozones_running String @default("")
+  isozones_running Boolean @default(false)
   catchment_geojson String @default("")
+  catchment_area  Float @default(0)
+  channel_length  Float @default(0)
+  delta_h Float @default(0)
   pointId Int
   Point   Point  @relation(fields: [pointId], references: [id], onDelete: Cascade)
   userId  Int

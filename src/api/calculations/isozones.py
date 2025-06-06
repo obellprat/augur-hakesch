@@ -242,7 +242,7 @@ def calculate_isozones(self, projectId: str, userId: int, northing: float, easti
             'id' :  projectId
         },
         data = {
-            'isozones_running': 'success',
+            'isozones_running': False,
             'catchment_geojson': json.dumps(data)
         },
         )

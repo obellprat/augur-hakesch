@@ -17,17 +17,20 @@ model User {
 }
 
 model Project {
-  id                String   @id @default(nanoid())
-  title             String
-  pointId           Int
-  userId            Int
-  description       String
-  lastModified      DateTime @updatedAt
-  catchment_geojson String   @default("")
-  isozones_running  String   @default("")
-  isozones_taskid   String   @default("")
-  Point             Point    @relation(fields: [pointId], references: [id], onDelete: Cascade)
-  user              User     @relation(fields: [userId], references: [id])
+  id      String    @id @default(nanoid())
+  title   String
+  description String
+  lastModified DateTime           @updatedAt
+  isozones_taskid String   @default("")
+  isozones_running Boolean @default(false)
+  catchment_geojson String @default("")
+  catchment_area  Float @default(0)
+  channel_length  Float @default(0)
+  delta_h Float @default(0)
+  pointId Int
+  Point   Point  @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  userId  Int
+  user    User   @relation(fields: [userId], references: [id])
 }
 
 model Point {

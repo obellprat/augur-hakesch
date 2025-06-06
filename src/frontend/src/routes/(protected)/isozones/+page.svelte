@@ -87,43 +87,9 @@
 
 					const taskStatus = res.task_status;
 					if (taskStatus === 'SUCCESS') {
-						const isozone_source = new GeoTIFF({
-							sources: [
-								{
-									url: PUBLIC_HAKESCH_API_PATH + '/data/temp/' + res.task_id + '/isozones_cog.tif'
-								}
-							],
-							normalize: false
-						});
-
-						const isozone = new WebGLTileLayer({
-							source: isozone_source,
-							style: {
-								color: [
-									'interpolate',
-									['linear'],
-									['band', 1],
-									-1, // undefined
-									[0, 0, 0, 0],
-									0, // undefined
-									[255, 0, 0],
-									5,
-									[255, 210, 210]
-								]
-							}
-						});
-						isozone.set('name', 'isozone');
-
-						map.getLayers().forEach((layer) => {
-							if (layer && layer.get('name') && layer.get('name') == 'isozone') {
-								map.removeLayer(layer);
-							}
-						});
-
-						map.addLayer(isozone);
+						
 					}
 					if (taskStatus === 'SUCCESS' || taskStatus === 'FAILURE') {
-						map.getTargetElement().classList.remove('spinner');
 						return false;
 					}
 

@@ -29,6 +29,7 @@ async def get_isozones(ProjectId:str, user: User = Depends(get_user)):
                 'id' :  ProjectId
             },
             data = {
+                'isozones_running': True,
                 'isozones_taskid': task.id,
             },
             )

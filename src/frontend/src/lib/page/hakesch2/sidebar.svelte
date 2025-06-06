@@ -72,19 +72,12 @@
 													<span>Übersicht</span>
 												</a>
 
-												<a href="javascript: void(0);">
+												<a href="{base}/hakesch2/geodata/{props.currentProject.id}">
 													<iconify-icon
 														icon="solar:trash-bin-trash-outline"
 														class="me-2 fs-18 text-muted"
 													></iconify-icon>
-													<span>Einzugsgebiet</span>
-												</a>
-												<a href="javascript: void(0);">
-													<iconify-icon
-														icon="solar:info-square-outline"
-														class="me-2 fs-18 text-muted"
-													></iconify-icon>
-													<span>Isozonen</span>
+													<span>Geodaten</span>
 												</a>
 												<a href="javascript: void(0);">
 													<iconify-icon

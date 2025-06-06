@@ -65,7 +65,7 @@
 						Some quick example text to build on the card title and make up the bulk of the card's
 						content. Some quick example text to build on the card title and make up.
 					</p>
-					<a href="hmm.html" class="btn btn-primary">Start</a>
+					<a href="hmm" class="btn btn-primary">Start</a>
 				</div>
 				<!-- end card-body-->
 			</div>
