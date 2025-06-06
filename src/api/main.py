@@ -43,6 +43,7 @@ keycloak_config = KeycloakConfiguration(
 excluded_routes = [
     "/docs",
     "/openapi.json",
+    "/data",
 ]
 # Add middleware with basic config
 setup_keycloak_middleware(

@@ -5,10 +5,12 @@
 	import { currentProject } from '$lib/state.svelte';
 	import { enhance } from '$app/forms';
 
+	import GeoJSON from 'ol/format/GeoJSON.js';
 	import { Map, View, Feature } from 'ol';
 	import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
+	import WebGLTileLayer from 'ol/layer/WebGLTile';
 	import { Point } from 'ol/geom';
-	import { Vector as VectorSource } from 'ol/source';
+	import { Vector as VectorSource, GeoTIFF  } from 'ol/source';
 	import Stroke from 'ol/style/Stroke';
 	import Fill from 'ol/style/Fill';
 	import CircleStyle from 'ol/style/Circle.js';
@@ -31,6 +33,8 @@
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
+
+	let map: Map;
 
 	async function calculateGeodatas() {
 		fetch(
@@ -89,11 +93,81 @@
 			.catch((err) => console.log(err));
 	}
 
+	function addCatchment() {
+			const catchmentSource = new VectorSource({
+				features: new GeoJSON().readFeatures(data.project.catchment_geojson, 
+				{
+					dataProjection: 'EPSG:2056',
+					featureProjection: map.getView().getProjection()
+				}
+				),        
+			});
+
+			const catchmentLayer = new VectorLayer({
+				source: catchmentSource,
+				name: 'catchment',
+				style: new Style({
+					stroke: new Stroke({
+					color: 'orange',
+					lineDash: [4],
+					width: 3,
+					}),
+					fill: new Fill({
+					color: 'rgba(0, 0, 255, 0.1)',
+					}),
+				})
+			});
+
+			map.getLayers().forEach(layer => {
+				if (layer && layer.get('name') && layer.get('name') == 'catchment'){
+					map.removeLayer(layer)
+				}
+			});
+
+			map.addLayer(catchmentLayer);
+		}
+
+	function addIsozones() {
+		const isozone_source = new GeoTIFF({
+							sources: [
+								{
+									url: PUBLIC_HAKESCH_API_PATH + '/data/' + data.session.myuser.id + '/' + data.project.id +  '/isozones_cog.tif'
+								}
+							],
+							normalize: false
+						});
+
+						const isozone = new WebGLTileLayer({
+							source: isozone_source,
+							style: {
+								color: [
+									'interpolate',
+									['linear'],
+									['band', 1],
+									-1, // undefined
+									[0, 0, 0, 0],
+									0, // undefined
+									[255, 0, 0],
+									5,
+									[255, 210, 210]
+								]
+							}
+						});
+						isozone.set('name', 'isozone');
+
+						map.getLayers().forEach((layer) => {
+							if (layer && layer.get('name') && layer.get('name') == 'isozone') {
+								map.removeLayer(layer);
+							}
+						});
+
+						map.addLayer(isozone);
+	}
+
 	onMount(async () => {
 
 		const stroke = new Stroke({color: 'black', width: 2});	
 		const fill = new Fill({color: 'blue'});
-
 		var vectorSource = new VectorSource({
 		});
 
@@ -127,6 +201,8 @@
 			map.addLayer(vectorLayer);
 		}
 
+		
+
 		proj4.defs(
 			'EPSG:2056',
 			'+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs'
@@ -145,7 +221,7 @@
 			zoom: 14
 		});
 
-		const map = new Map({
+		map = new Map({
 			target: 'map',
 			controls: defaultControls().extend([
 				new ScaleLine({
@@ -158,6 +234,8 @@
 
 		
 		addMarker([easting, northing]);
+		addCatchment();
+		addIsozones();
 
 	});
 </script>
@@ -236,9 +314,9 @@
 							<tbody>
 								<tr>
 									<td>
-										57 km<sup>2</sup>
+										{data.project.catchment_area} km<sup>2</sup>
 									</td>
-									<td>2'450 m</td>
+									<td>{data.project.channel_length} m</td>
 									<td class="text-muted">
 										<a href="javascript: void(0);" class="link-reset fs-20 p-1"> Herunterladen</a>
 									</td>

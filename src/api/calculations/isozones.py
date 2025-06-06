@@ -78,6 +78,12 @@ def calculate_isozones(self, projectId: str, userId: int, northing: float, easti
     # Clip the bounding box to the catchment
     grid2.clip_to(catch)
 
+    # calculate catchment area
+    num_cells = np.sum(catch)
+    cell_area = cell_size ** 2
+    catchment_area = num_cells * cell_area
+    catchmentkm2 = catchment_area/(1000*1000)
+
 
     # calculate slope
     
@@ -140,6 +146,12 @@ def calculate_isozones(self, projectId: str, userId: int, northing: float, easti
     
     self.update_state(state='PROGRESS',
                 meta={'text': 'Calculate distance', 'progress' : 85})
+    
+    normal_dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap)
+    normal_dist[normal_dist == np.inf] = -1000000
+    normal_dist[normal_dist <= 0] = -1000000
+    dist_max = np.max(normal_dist[np.isfinite(normal_dist)].astype(int)) * cell_size
+
     dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap, weights=obstacle_raster)
 
     #dist = dist * cell_size
@@ -251,7 +263,9 @@ def calculate_isozones(self, projectId: str, userId: int, northing: float, easti
         },
         data = {
             'isozones_running': False,
-            'catchment_geojson': json.dumps(data)
+            'catchment_geojson': json.dumps(data),
+            'channel_length': dist_max.item(),
+            'catchment_area': catchmentkm2.item()
         },
         )
 
