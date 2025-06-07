@@ -16,7 +16,7 @@
 
 	$pageTitle = 'Isozones';
 
-	import { PUBLIC_HAKESCH_API_PATH } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 
 	onMount(async () => {
 		proj4.defs(
@@ -50,7 +50,7 @@
 
 		map.on('singleclick', function (e) {
 			fetch(
-				PUBLIC_HAKESCH_API_PATH +
+				env.PUBLIC_HAKESCH_API_PATH +
 					'/isozones/?northing=' +
 					e.coordinate[0] +
 					'&easting=' +
@@ -70,7 +70,7 @@
 		});
 
 		function getStatus(taskID: String) {
-			fetch(PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
+			fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json'

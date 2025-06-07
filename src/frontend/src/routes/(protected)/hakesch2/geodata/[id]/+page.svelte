@@ -23,7 +23,7 @@
 	import type { Coordinate } from 'ol/coordinate';
 	import { base } from '$app/paths';
 	
-	import { PUBLIC_HAKESCH_API_PATH } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	$pageTitle = 'HAKESCH 2.0 - Projekt ' + data.project.title;
@@ -56,7 +56,7 @@
 				});
 	}
 	function getStatus(taskID: String) {
-		fetch(PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
+		fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
 			method: 'GET',
 			headers: {
 				'Authorization': 'Bearer ' + data.session.access_token,
@@ -131,7 +131,7 @@
 		const isozone_source = new GeoTIFF({
 							sources: [
 								{
-									url: PUBLIC_HAKESCH_API_PATH + '/data/' + data.session.myuser.id + '/' + data.project.id +  '/isozones_cog.tif'
+									url: env.PUBLIC_HAKESCH_API_PATH + '/data/' + data.session.myuser.id + '/' + data.project.id +  '/isozones_cog.tif'
 								}
 							],
 							normalize: false
@@ -262,7 +262,7 @@
 						{data.project.title} - Geodaten
 					</h3>
 				</div>
-				<div class="ms-auto d-xl-flex d-none">
+				<div class="ms-auto d-xl-flex">
 					<button type="button"
 						onclick={calculateGeodatas}
 						class="btn btn-primary bg-gradient rounded-pill" data-bs-toggle="modal" data-bs-target="#generate-modal">Geodaten neu berechnen</button

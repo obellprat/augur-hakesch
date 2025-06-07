@@ -3,22 +3,19 @@ import keycloak from '@auth/sveltekit/providers/keycloak';
 import { prisma } from '$lib/prisma';
 
 import {
-	AUTH_KEYCLOAK_ID,
-	AUTH_KEYCLOAK_ISSUER,
-	AUTH_KEYCLOAK_SECRET,
-	AUTH_SECRET
-} from '$env/static/private';
+	env
+} from '$env/dynamic/private';
 
 export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 	const authOptions = {
 		providers: [
 			keycloak({
-				clientId: AUTH_KEYCLOAK_ID,
-				clientSecret: AUTH_KEYCLOAK_SECRET,
-				issuer: AUTH_KEYCLOAK_ISSUER
+				clientId: env.AUTH_KEYCLOAK_ID,
+				clientSecret: env.AUTH_KEYCLOAK_SECRET,
+				issuer: env.AUTH_KEYCLOAK_ISSUER
 			})
 		],
-		secret: AUTH_SECRET,
+		secret: env.AUTH_SECRET,
 		trustHost: true,
 		debug: true,
 		callbacks: {
@@ -55,16 +52,10 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 				session.myuser = myuser;
 				session.access_token = token.access_token;
 				session.refresh_token = token.refresh_token;
-				session.expoires_at = token.expires_at
-				
-				console.log("token.......");
-				console.log(token);
-				console.log(".....");
-				console.log(session);
-				console.log(Date.now())
+				session.expires_at = token.expires_at
+
 				if (Date.now() > token.expires_at * 1000) {
-					console.log("refresh token");
-					const response  = await fetch(`${AUTH_KEYCLOAK_ISSUER}/protocol/openid-connect/token`, {
+					const response  = await fetch(`${env.AUTH_KEYCLOAK_ISSUER}/protocol/openid-connect/token`, {
 						method: 'POST',
 						headers: {
 						'content-type': 'application/x-www-form-urlencoded'
@@ -72,8 +63,8 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 						body: new URLSearchParams({
 						grant_type: 'refresh_token',
 						refresh_token: token.refresh_token,
-						client_id: AUTH_KEYCLOAK_ID,
-						client_secret: AUTH_KEYCLOAK_SECRET,
+						client_id: env.AUTH_KEYCLOAK_ID,
+						client_secret: env.AUTH_KEYCLOAK_SECRET,
 						})
 					});
 					
