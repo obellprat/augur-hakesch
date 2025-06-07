@@ -1,59 +1,76 @@
-import os
+
 from pysheds.grid import Grid
 import numpy as np
-import rasterio
-import json
 import gc
-import zipfile
-import io
-import binascii
-import shutil
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
 from rasterio.io import MemoryFile
-from pysheds.view import View
-
+from pysheds.view import Raster,View
+from scipy.ndimage import gaussian_filter
+import geopandas as gpd
+from shapely import geometry, ops
+import pandas as pd
+import os
+from prisma import Prisma
 from calculations.calculations import app
+import fiona
+import json
+from fiona.crs import CRS
 
 @app.task(name="calculate_isozones", bind=True)
-def calculate_isozones(self, northing: float, easting: float):
+def calculate_isozones(self, projectId: str, userId: int, northing: float, easting: float):
     # Definitions
 
     v_gerinne = 1.5 # m/s
-    v_oberflaeche = 0.5 # m/s
     cell_size = 5
 
     # Rertrieve and load DEM
     # ----------------------
 
-    watershed = 'data/dir_3x3_3.tif'
-    self.update_state(state='PROGRESS',
-                meta={'text': 'Reading watershed'})
-    grid = Grid.from_raster(watershed)
+    dem = 'data/geotiffminusriver.tif'
+    grid = Grid.from_raster(dem)
         
-    self.update_state(state='PROGRESS',
-                meta={'text': 'Compute flow directions'})
     dirmap = (1, 2, 3, 4, 5, 6, 7, 8)
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Reading DEM', 'progress' : 5})
 
-    fdir = grid.read_raster(watershed, window=(northing - 10000, easting - 10000, northing + 10000, easting + 10000), window_crs=grid.crs, dtype=np.uint8)
-    
-    grid.clip_to(fdir)
-    small_view = grid.view(fdir)
-    grid.to_raster(fdir, 'data/temp/smallfdir.tif', target_view=small_view)
+    dem = grid.read_raster(dem, window=(northing - 10000, easting - 10000, northing + 10000, easting + 10000), window_crs=grid.crs)
+    grid.clip_to(dem)
+    small_view = grid.view(dem)
+    grid.to_raster(dem, 'data/temp/smallfdir.tif', target_view=small_view)
 
     del grid
     gc.collect()
     grid2 = Grid.from_raster('data/temp/smallfdir.tif')
-
+        
     self.update_state(state='PROGRESS',
-                meta={'text': 'Calculation accumulation'})
-    acc = grid2.accumulation(fdir, dirmap=dirmap)
+                meta={'text': 'Compute flow directions: Fill pits', 'progress' : 8})
+    
 
+    # calculate accumulation
+
+    pit_filled_dem = grid2.fill_pits(dem)
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Compute flow directions: Fill depressions', 'progress' : 16})
+    flooded_dem = grid2.fill_depressions(pit_filled_dem)
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Compute flow directions: Resolve flats', 'progress' : 22})
+    inflated_dem = grid2.resolve_flats(flooded_dem)
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Compute flow directions: Accumulation', 'progress' : 40})
+    fdir = grid2.flowdir(inflated_dem, dirmap=dirmap)    
+    
+    acc = grid2.accumulation(fdir, dirmap=dirmap)
     x_snap, y_snap = grid2.snap_to_mask(acc > 10000, (northing, easting))
 
-    # Delineate the catchment    
+    
     self.update_state(state='PROGRESS',
-                meta={'text': 'Delineate the catchment'})
+                meta={'text': 'Delineate the catchment', 'progress' : 50})
+    
+
+    # Delineate the catchment    
     catch = grid2.catchment(x=x_snap, y=y_snap, fdir=fdir, dirmap=dirmap, 
                         xytype='coordinate')
     # Crop and plot the catchment
@@ -61,27 +78,102 @@ def calculate_isozones(self, northing: float, easting: float):
     # Clip the bounding box to the catchment
     grid2.clip_to(catch)
 
-    # calculate "Hindernislayer".
-    obstacle_grid = acc.copy()
-    obstacle_grid[acc >= 10000] = 1
-    obstacle_grid[acc < 10000] = v_gerinne / v_oberflaeche
+    # calculate catchment area
+    num_cells = np.sum(catch)
+    cell_area = cell_size ** 2
+    catchment_area = num_cells * cell_area
+    catchmentkm2 = catchment_area/(1000*1000)
 
 
-    self.update_state(state='PROGRESS', meta={'text': 'Calculate distance with velocity to outlet'})
-    dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap, weights=obstacle_grid)
-
-    dist = dist * cell_size
-    dist[dist == np.inf] = -1000
-    dist = np.rint(((dist/v_gerinne) / 60) / 10)   # strecke / geschwindigkeit / 60(-> für m/min) / 10 (-> 10 Minuten klassen) 
-
-    # write geotiff to tempdir
-    os.mkdir(f"./data/temp/{self.request.id.__str__()}")
+    # calculate slope
     
-    # writing cloud optimized geotiff
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Calculating slope', 'progress' : 60})
+    slope = grid2.cell_slopes(fdir=fdir, dirmap=dirmap, dem=dem, nodata=0)
+    #slope_percentage = gaussian_filter(slope, sigma=1)
+    slope_percentage = slope * 100
 
+
+    # create wald raster
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Getting forest', 'progress' : 70})
+    forests = gpd.read_file('data/ch_wald.shp')
+    grid2.clip_to(catch)
+    # Convert catchment raster to vector geometry and find intersection
+    shapes = grid2.polygonize()
+
+    objektart = 'objektart'
+    catchment_polygon = ops.unary_union([geometry.shape(shape)
+                                        for shape, value in shapes])
+    forests = forests[forests.intersects(catchment_polygon)]
+    catchment_forests = gpd.GeoDataFrame(forests, 
+                                    geometry=forests.intersection(catchment_polygon))
+
+    # Convert forest to simple integer values
+    forest_types = np.unique(catchment_forests[objektart])
+    forest_types = pd.Series(np.arange(forest_types.size), index=forest_types)
+    catchment_forests[objektart] = catchment_forests[objektart].map(forest_types)
+    forests_polygons = zip(catchment_forests.geometry.values, catchment_forests[objektart].values)
+    forests_raster = grid2.rasterize(forests_polygons, fill=-1)
+    forests_raster[forests_raster >= 0] = 1
+    forests_raster[forests_raster < 0] = 0
+
+    # calculate "Hindernislayer".
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Calculating obstacle layer', 'progress' : 80})
+    acc_view = grid2.view(acc)
+    obstacle_grid = acc_view.copy()
+    
+    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage < 1,slope_percentage>-100), forests_raster==1), 300,obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage < 1,slope_percentage>-100), forests_raster==0), 1500,obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage >= 1,slope_percentage<5), forests_raster==1), 1500, obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage >= 1,slope_percentage<5), forests_raster==0), 750, obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage >= 5,slope_percentage<10), forests_raster==1), 750, obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage >= 5,slope_percentage<10), forests_raster==0), 375, obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage >= 10,slope_percentage<20), forests_raster==1), 500, obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage >= 10,slope_percentage<20), forests_raster==0), 250, obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage >= 20,slope_percentage<40), forests_raster==1), 375, obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage >= 20,slope_percentage<40), forests_raster==0), 188, obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(slope_percentage >= 40, forests_raster==1), 300, obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(slope_percentage >= 40, forests_raster==0), 150, obstacle_grid)
+    obstacle_grid = np.where(acc_view>10000, 100, obstacle_grid)
+
+    obstacle_raster = Raster(obstacle_grid, viewfinder=grid2.viewfinder)
+
+    # calculate raster distance
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Calculate distance', 'progress' : 85})
+    
+    normal_dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap)
+    normal_dist[normal_dist == np.inf] = -1000000
+    normal_dist[normal_dist <= 0] = -1000000
+    dist_max = np.max(normal_dist[np.isfinite(normal_dist)].astype(int)) * cell_size
+
+    dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap, weights=obstacle_raster)
+
+    #dist = dist * cell_size
+    dist[dist == np.inf] = -1000000
+    dist[dist <= 0] = -1000000
+    dist = np.rint(((dist)/(v_gerinne * 60 * 100)) / 10) + 1  # strecke / geschwindigkeit * 60(-> für m/min) * 100 (hindernislayer) / 10 (-> 10 Minuten klassen) +1 da wir bei Klasse 1 starten
+
+    dist[dist<=0] = None
+
+
+    # writing cloud optimized geotiff
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Writing isozone file', 'progress' : 90})
     # Defining the output COG filename
-    # path = data/NASADEM_HGT_n57e105_COG.tif
-    cog_filename = f"./data/temp/{self.request.id.__str__()}/isozones_cog.tif"
+    if not os.path.exists(f"data/{userId}"):
+        os.makedirs(f"data/{userId}")
+
+    if not os.path.exists(f"data/{userId}/{projectId}"):
+        os.makedirs(f"data/{userId}/{projectId}")
+
+    cog_filename = f"data/{userId}/{projectId}/isozones_cog.tif"
 
     src_profile = dict(
         driver="GTiff",
@@ -92,7 +184,6 @@ def calculate_isozones(self, northing: float, easting: float):
     small_view2 = View.view(dist, target_view)
 
     height, width = small_view2.shape
-    default_blockx = width
     default_profile = {
         'driver' : 'GTiff',
         'blockxsize' : 256,
@@ -104,7 +195,7 @@ def calculate_isozones(self, northing: float, easting: float):
         'crs' : dist.crs.srs,
         'transform' : dist.affine,
         'dtype' : dist.dtype.name,
-        'nodata' : dist.nodata,
+        'nodata' : 0,
         'height' : height,
         'width' : width
     }
@@ -128,4 +219,58 @@ def calculate_isozones(self, northing: float, easting: float):
                 in_memory=False
             )
 
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Polygonize catchment', 'progress' : 92})
+    # Create a vector representation of the catchment mask
+    catch_view = grid2.view(catch, dtype=np.uint8)
+    shapes = grid2.polygonize(catch_view)
+
+    # Specify schema
+    schema = {
+            'geometry': 'Polygon',
+            'properties': {'LABEL': 'float:16'}
+    }
+
+    # Write shapefile
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Creating geometry', 'progress' : 95})
+    with fiona.open(f"data/{userId}/{projectId}/catchment.geojson", 'w',
+                    driver='GeoJSON',
+                    crs=grid2.crs.srs,
+                    schema=schema) as c:
+        i = 0
+        for shape, value in shapes:
+            rec = {}
+            rec['geometry'] = shape
+            rec['properties'] = {'LABEL' : str(value)}
+            rec['id'] = str(i)
+            c.write(rec)
+            i += 1
+
+    with open(f"data/{userId}/{projectId}/catchment.geojson", 'r') as file:
+        data = json.load(file)
+
+    self.update_state(state='PROGRESS',
+            meta={'text': 'Save to database', 'progress' : 99})    
+
+    prisma = Prisma()
+    prisma.connect()
+    
+    updatedProject = prisma.project.update(
+        where = {
+            'id' :  projectId
+        },
+        data = {
+            'isozones_running': False,
+            'catchment_geojson': json.dumps(data),
+            'channel_length': dist_max.item(),
+            'catchment_area': catchmentkm2.item()
+        },
+        )
+
+    prisma.disconnect(5)
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Finish', 'progress' : 100})
     return

@@ -16,7 +16,7 @@
 
 	$pageTitle = 'Isozones';
 
-	import { PUBLIC_HAKESCH_API_PATH } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 
 	onMount(async () => {
 		proj4.defs(
@@ -50,7 +50,7 @@
 
 		map.on('singleclick', function (e) {
 			fetch(
-				PUBLIC_HAKESCH_API_PATH +
+				env.PUBLIC_HAKESCH_API_PATH +
 					'/isozones/?northing=' +
 					e.coordinate[0] +
 					'&easting=' +
@@ -70,7 +70,7 @@
 		});
 
 		function getStatus(taskID: String) {
-			fetch(PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
+			fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json'
@@ -87,43 +87,9 @@
 
 					const taskStatus = res.task_status;
 					if (taskStatus === 'SUCCESS') {
-						const isozone_source = new GeoTIFF({
-							sources: [
-								{
-									url: PUBLIC_HAKESCH_API_PATH + '/data/temp/' + res.task_id + '/isozones_cog.tif'
-								}
-							],
-							normalize: false
-						});
-
-						const isozone = new WebGLTileLayer({
-							source: isozone_source,
-							style: {
-								color: [
-									'interpolate',
-									['linear'],
-									['band', 1],
-									-1, // undefined
-									[0, 0, 0, 0],
-									0, // undefined
-									[255, 0, 0],
-									5,
-									[255, 210, 210]
-								]
-							}
-						});
-						isozone.set('name', 'isozone');
-
-						map.getLayers().forEach((layer) => {
-							if (layer && layer.get('name') && layer.get('name') == 'isozone') {
-								map.removeLayer(layer);
-							}
-						});
-
-						map.addLayer(isozone);
+						
 					}
 					if (taskStatus === 'SUCCESS' || taskStatus === 'FAILURE') {
-						map.getTargetElement().classList.remove('spinner');
 						return false;
 					}
 

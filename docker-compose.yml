@@ -1,7 +1,7 @@
 services:
   api:
     image: stumpisuter/augur-hakesch-api:latest
-    build: ./src
+    build: ./src/api
     ports:
       - 8000:8000
     command: uvicorn main:app --host 0.0.0.0 --reload
@@ -31,9 +31,7 @@ services:
     ports:
       - 3000:3000
     command: node build/index.js
-    environment:
-      NODE_ENV: production
-      PUBLIC_HAKESCH_API_PATH: "/api"
+
     labels:
       # Enable Traefik for this specific "backend" service
       - traefik.enable=true

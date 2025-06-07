@@ -13,3 +13,5 @@ python-multipart==0.0.9
 rio_cogeo==5.4.1
 fastapi-keycloak-middleware==1.2.0
 python-dotenv==1.1.0
+geopandas==1.0.1
+prisma==0.15.0

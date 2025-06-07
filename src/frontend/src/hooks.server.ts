@@ -10,6 +10,7 @@ import { type Handle } from '@sveltejs/kit';
 import { handle as authenticationHandle } from './auth';
 import { sequence } from '@sveltejs/kit/hooks';
 
+
 async function authorizationHandle({ event, resolve }) {
 	// If the request is still here, just proceed as normally
 	return resolve(event);

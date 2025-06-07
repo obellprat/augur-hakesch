@@ -5,16 +5,31 @@ from fastapi.responses import HTMLResponse
 import os
 from fastapi_keycloak_middleware import KeycloakConfiguration, setup_keycloak_middleware
 from dotenv import load_dotenv
+from helpers.prisma import prisma
+from helpers.user import map_user
+import logging
+import uvicorn
 
-from routers import catchment, file, task, isozones
+from routers import catchment, file, task, isozones, project
 
 from version import __version__
 
 load_dotenv() # will search for .env file in local folder and load variables 
 
+LOG = logging.getLogger(__name__)
+LOG.info("API is starting up")
+LOG.info(uvicorn.Config.asgi_version)
+
 app = FastAPI(
     version=__version__,
 )
+
+@app.on_event("startup")
+async def startup():
+    prisma.connect()
+@app.on_event("shutdown")
+async def shutdown():
+    prisma.disconnect()
 
 # Set up Keycloak
 keycloak_config = KeycloakConfiguration(
@@ -28,6 +43,7 @@ keycloak_config = KeycloakConfiguration(
 excluded_routes = [
     "/docs",
     "/openapi.json",
+    "/data",
 ]
 # Add middleware with basic config
 setup_keycloak_middleware(
@@ -35,6 +51,7 @@ setup_keycloak_middleware(
     keycloak_configuration=keycloak_config,
     add_swagger_auth=True,
     exclude_patterns=excluded_routes,
+    user_mapper=map_user
 )
 
 app.mount("/data", StaticFiles(directory="data"), name="data")
@@ -55,3 +72,6 @@ app.include_router(catchment.router)
 app.include_router(file.router)
 app.include_router(task.router)
 app.include_router(isozones.router)
+app.include_router(project.router)
+
+

@@ -1,13 +1,11 @@
 <script lang="ts">
 	import pageTitle from '$lib/page/pageTitle';
-	import { userState } from '$lib/state.svelte';
 
 	import { page } from '$app/state';
-	import { redirect } from '@sveltejs/kit';
 
 	import { signIn, signOut } from '@auth/sveltekit/client';
-	
-    import { base } from '$app/paths';
+
+	import { base } from '$app/paths';
 </script>
 
 <!-- Topbar Start -->
@@ -18,12 +16,18 @@
 			<a href="index.html" class="logo">
 				<span class="logo-light">
 					<span class="logo-lg"><img src="{base}/assets/images/logo.png" alt="logo" /></span>
-					<span class="logo-sm"><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span>
+					<span class="logo-sm"
+						><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span
+					>
 				</span>
 
 				<span class="logo-dark">
-					<span class="logo-lg"><img src="{base}/assets/images/logo-dark.png" alt="dark logo" /></span>
-					<span class="logo-sm"><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span>
+					<span class="logo-lg"
+						><img src="{base}/assets/images/logo-dark.png" alt="dark logo" /></span
+					>
+					<span class="logo-sm"
+						><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span
+					>
 				</span>
 			</a>
 
@@ -50,90 +54,6 @@
 		</div>
 
 		<div class="d-flex align-items-center gap-2">
-			<!-- Apps Dropdown -->
-			<div class="topbar-item d-none d-sm-flex">
-				<div class="dropdown">
-					<button
-						class="topbar-link dropdown-toggle drop-arrow-none"
-						data-bs-toggle="dropdown"
-						data-bs-offset="0,18"
-						type="button"
-						aria-haspopup="false"
-						aria-expanded="false"
-					>
-						<i class="ri-apps-2-add-line fs-22"></i>
-					</button>
-					<div class="dropdown-menu dropdown-menu-end dropdown-menu-lg p-0">
-						<div class="p-2">
-							<div class="row g-0">
-								<div class="col">
-									<a class="dropdown-icon-item" href="#">
-										<img src="{base}/assets/images/brands/slack.svg" alt="slack" />
-										<span>Slack</span>
-									</a>
-								</div>
-								<div class="col">
-									<a class="dropdown-icon-item" href="#">
-										<img src="{base}/assets/images/brands/gitlab.svg" alt="Github" />
-										<span>Gitlab</span>
-									</a>
-								</div>
-								<div class="col">
-									<a class="dropdown-icon-item" href="#">
-										<img src="{base}/assets/images/brands/dribbble.svg" alt="dribbble" />
-										<span>Dribbble</span>
-									</a>
-								</div>
-							</div>
-
-							<div class="row g-0">
-								<div class="col">
-									<a class="dropdown-icon-item" href="#">
-										<img src="{base}/assets/images/brands/bitbucket.svg" alt="bitbucket" />
-										<span>Bitbucket</span>
-									</a>
-								</div>
-								<div class="col">
-									<a class="dropdown-icon-item" href="#">
-										<img src="{base}/assets/images/brands/dropbox.svg" alt="dropbox" />
-										<span>Dropbox</span>
-									</a>
-								</div>
-								<div class="col">
-									<a class="dropdown-icon-item" href="#">
-										<img src="{base}/assets/images/brands/google-cloud.svg" alt="G Suite" />
-										<span>G Cloud</span>
-									</a>
-								</div>
-							</div>
-							<!-- end row-->
-
-							<div class="row g-0">
-								<div class="col">
-									<a class="dropdown-icon-item" href="#">
-										<img src="{base}/assets/images/brands/aws.svg" alt="bitbucket" />
-										<span>AWS</span>
-									</a>
-								</div>
-								<div class="col">
-									<a class="dropdown-icon-item" href="#">
-										<img src="{base}/assets/images/brands/digital-ocean.svg" alt="dropbox" />
-										<span>Server</span>
-									</a>
-								</div>
-								<div class="col">
-									<a class="dropdown-icon-item" href="#">
-										<img src="{base}/assets/images/brands/bootstrap.svg" alt="G Suite" />
-										<span>Bootstrap</span>
-									</a>
-								</div>
-							</div>
-							<!-- end row-->
-						</div>
-					</div>
-				</div>
-			</div>
-
 			<!-- Light/Dark Mode Button -->
 			<div class="topbar-item d-none d-sm-flex">
 				<button class="topbar-link" id="light-dark-mode" type="button">
@@ -172,7 +92,7 @@
 							</div>
 
 							<!-- item-->
-							<a href="./user/myaccount" data-sveltekit-preload-data="off" class="dropdown-item">
+							<a href="{base}/user/myaccount" data-sveltekit-preload-data="off" class="dropdown-item">
 								<i class="ri-account-circle-line me-1 fs-16 align-middle"></i>
 								<span class="align-middle">My Account</span>
 							</a>

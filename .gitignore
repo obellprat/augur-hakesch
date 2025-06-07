@@ -5,7 +5,8 @@ src/api/data
 src/frontend/dist/
 src/frontend/node_modules/
 src/frontend/not_used_pages/
-src/api/*.html
+src/api/*.html¨
+src/api/prisma/src/
 node_modules
 
 # Output
@@ -15,6 +16,7 @@ node_modules
 .wrangler
 /.svelte-kit
 /build
+**/__pycache__/
 
 # OS
 .DS_Store

@@ -1,4 +1,4 @@
-export const userState = $state({
-	name: 'name',
-	authenticated: false
+export const currentProject = $state({
+	id: '',
+	title: ''
 });
