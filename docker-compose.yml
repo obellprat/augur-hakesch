@@ -7,9 +7,7 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --reload
     volumes:
       - ./src/api:/usr/src/app
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file: ".env"
     depends_on:
       - redis
     labels:
@@ -31,7 +29,7 @@ services:
     ports:
       - 3000:3000
     command: node build/index.js
-
+    env_file: ".env"
     labels:
       # Enable Traefik for this specific "backend" service
       - traefik.enable=true
@@ -49,9 +47,7 @@ services:
     command: celery -A calculations.calculations.app worker --loglevel=info --logfile=./logs/celery.log
     volumes:
       - ./src/api:/usr/src/app
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file: ".env"
     depends_on:
       - api
       - redis
