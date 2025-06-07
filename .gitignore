@@ -6,6 +6,7 @@ src/frontend/dist/
 src/frontend/node_modules/
 src/frontend/not_used_pages/
 src/api/*.html
+src/api/prisma/src
 node_modules
 
 # Output
