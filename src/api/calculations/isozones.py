@@ -1,6 +1,6 @@
+
 from pysheds.grid import Grid
 import numpy as np
-import rasterio
 import gc
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
@@ -10,11 +10,15 @@ from scipy.ndimage import gaussian_filter
 import geopandas as gpd
 from shapely import geometry, ops
 import pandas as pd
-
+import os
+from prisma import Prisma
 from calculations.calculations import app
+import fiona
+import json
+from fiona.crs import CRS
 
 @app.task(name="calculate_isozones", bind=True)
-def calculate_isozones(self, northing: float, easting: float):
+def calculate_isozones(self, projectId: str, userId: int, northing: float, easting: float):
     # Definitions
 
     v_gerinne = 1.5 # m/s
@@ -28,7 +32,7 @@ def calculate_isozones(self, northing: float, easting: float):
         
     dirmap = (1, 2, 3, 4, 5, 6, 7, 8)
     self.update_state(state='PROGRESS',
-                meta={'text': 'Reading DEM'})
+                meta={'text': 'Reading DEM', 'progress' : 5})
 
     dem = grid.read_raster(dem, window=(northing - 10000, easting - 10000, northing + 10000, easting + 10000), window_crs=grid.crs)
     grid.clip_to(dem)
@@ -40,12 +44,22 @@ def calculate_isozones(self, northing: float, easting: float):
     grid2 = Grid.from_raster('data/temp/smallfdir.tif')
         
     self.update_state(state='PROGRESS',
-                meta={'text': 'Compute flow directions'})
+                meta={'text': 'Compute flow directions: Fill pits', 'progress' : 8})
+    
+
     # calculate accumulation
 
     pit_filled_dem = grid2.fill_pits(dem)
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Compute flow directions: Fill depressions', 'progress' : 16})
     flooded_dem = grid2.fill_depressions(pit_filled_dem)
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Compute flow directions: Resolve flats', 'progress' : 22})
     inflated_dem = grid2.resolve_flats(flooded_dem)
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Compute flow directions: Accumulation', 'progress' : 40})
     fdir = grid2.flowdir(inflated_dem, dirmap=dirmap)    
     
     acc = grid2.accumulation(fdir, dirmap=dirmap)
@@ -53,7 +67,9 @@ def calculate_isozones(self, northing: float, easting: float):
 
     
     self.update_state(state='PROGRESS',
-                meta={'text': 'Delineate the catchment'})
+                meta={'text': 'Delineate the catchment', 'progress' : 50})
+    
+
     # Delineate the catchment    
     catch = grid2.catchment(x=x_snap, y=y_snap, fdir=fdir, dirmap=dirmap, 
                         xytype='coordinate')
@@ -62,11 +78,17 @@ def calculate_isozones(self, northing: float, easting: float):
     # Clip the bounding box to the catchment
     grid2.clip_to(catch)
 
+    # calculate catchment area
+    num_cells = np.sum(catch)
+    cell_area = cell_size ** 2
+    catchment_area = num_cells * cell_area
+    catchmentkm2 = catchment_area/(1000*1000)
+
 
     # calculate slope
     
     self.update_state(state='PROGRESS',
-                meta={'text': 'Calculating slope'})
+                meta={'text': 'Calculating slope', 'progress' : 60})
     slope = grid2.cell_slopes(fdir=fdir, dirmap=dirmap, dem=dem, nodata=0)
     #slope_percentage = gaussian_filter(slope, sigma=1)
     slope_percentage = slope * 100
@@ -75,7 +97,7 @@ def calculate_isozones(self, northing: float, easting: float):
     # create wald raster
     
     self.update_state(state='PROGRESS',
-                meta={'text': 'Getting forest'})
+                meta={'text': 'Getting forest', 'progress' : 70})
     forests = gpd.read_file('data/ch_wald.shp')
     grid2.clip_to(catch)
     # Convert catchment raster to vector geometry and find intersection
@@ -100,7 +122,7 @@ def calculate_isozones(self, northing: float, easting: float):
     # calculate "Hindernislayer".
     
     self.update_state(state='PROGRESS',
-                meta={'text': 'Calculating obstacle layer'})
+                meta={'text': 'Calculating obstacle layer', 'progress' : 80})
     acc_view = grid2.view(acc)
     obstacle_grid = acc_view.copy()
     
@@ -123,7 +145,13 @@ def calculate_isozones(self, northing: float, easting: float):
     # calculate raster distance
     
     self.update_state(state='PROGRESS',
-                meta={'text': 'Calculate distance'})
+                meta={'text': 'Calculate distance', 'progress' : 85})
+    
+    normal_dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap)
+    normal_dist[normal_dist == np.inf] = -1000000
+    normal_dist[normal_dist <= 0] = -1000000
+    dist_max = np.max(normal_dist[np.isfinite(normal_dist)].astype(int)) * cell_size
+
     dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap, weights=obstacle_raster)
 
     #dist = dist * cell_size
@@ -137,9 +165,15 @@ def calculate_isozones(self, northing: float, easting: float):
     # writing cloud optimized geotiff
     
     self.update_state(state='PROGRESS',
-                meta={'text': 'Writing isozone file'})
+                meta={'text': 'Writing isozone file', 'progress' : 90})
     # Defining the output COG filename
-    cog_filename = f"data/temp/isozones_cog.tif"
+    if not os.path.exists(f"data/{userId}"):
+        os.makedirs(f"data/{userId}")
+
+    if not os.path.exists(f"data/{userId}/{projectId}"):
+        os.makedirs(f"data/{userId}/{projectId}")
+
+    cog_filename = f"data/{userId}/{projectId}/isozones_cog.tif"
 
     src_profile = dict(
         driver="GTiff",
@@ -184,7 +218,59 @@ def calculate_isozones(self, northing: float, easting: float):
                 use_cog_driver=True,
                 in_memory=False
             )
+
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Polygonize catchment', 'progress' : 92})
+    # Create a vector representation of the catchment mask
+    catch_view = grid2.view(catch, dtype=np.uint8)
+    shapes = grid2.polygonize(catch_view)
+
+    # Specify schema
+    schema = {
+            'geometry': 'Polygon',
+            'properties': {'LABEL': 'float:16'}
+    }
+
+    # Write shapefile
     
     self.update_state(state='PROGRESS',
-                meta={'text': 'Finish'})
+                meta={'text': 'Creating geometry', 'progress' : 95})
+    with fiona.open(f"data/{userId}/{projectId}/catchment.geojson", 'w',
+                    driver='GeoJSON',
+                    crs=grid2.crs.srs,
+                    schema=schema) as c:
+        i = 0
+        for shape, value in shapes:
+            rec = {}
+            rec['geometry'] = shape
+            rec['properties'] = {'LABEL' : str(value)}
+            rec['id'] = str(i)
+            c.write(rec)
+            i += 1
+
+    with open(f"data/{userId}/{projectId}/catchment.geojson", 'r') as file:
+        data = json.load(file)
+
+    self.update_state(state='PROGRESS',
+            meta={'text': 'Save to database', 'progress' : 99})    
+
+    prisma = Prisma()
+    prisma.connect()
+    
+    updatedProject = prisma.project.update(
+        where = {
+            'id' :  projectId
+        },
+        data = {
+            'isozones_running': False,
+            'catchment_geojson': json.dumps(data),
+            'channel_length': dist_max.item(),
+            'catchment_area': catchmentkm2.item()
+        },
+        )
+
+    prisma.disconnect(5)
+    
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Finish', 'progress' : 100})
     return

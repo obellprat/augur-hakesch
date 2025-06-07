@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "src/generated/prisma"
+  binaryTargets = ["linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id      Int       @id @default(autoincrement())
+  email   String    @unique
+  name    String?
+  Project Project[]
+}
+
+model Project {
+  id      String    @id @default(nanoid())
+  title   String
+  description String
+  lastModified DateTime           @updatedAt
+  isozones_taskid String   @default("")
+  isozones_running Boolean @default(false)
+  catchment_geojson String @default("")
+  catchment_area  Float @default(0)
+  channel_length  Float @default(0)
+  delta_h Float @default(0)
+  pointId Int
+  Point   Point  @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  userId  Int
+  user    User   @relation(fields: [userId], references: [id])
+}
+
+model Point {
+  id       Int       @id @default(autoincrement())
+  northing Float
+  easting  Float
+  Project  Project[]
+}

@@ -1,6 +1,5 @@
 import { browser } from '$app/environment';
 import type { LayoutLoad } from '../$types';
-import { userState } from '$lib/state.svelte';
 
 export const load: LayoutLoad = () => {
 	/**

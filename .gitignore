@@ -16,6 +16,7 @@ node_modules
 .wrangler
 /.svelte-kit
 /build
+**/__pycache__/
 
 # OS
 .DS_Store

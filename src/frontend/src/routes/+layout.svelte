@@ -1,8 +1,8 @@
 <script lang="ts">
 	import '../scss/app.scss';
 	import '../scss/icons.scss';
-	
-    import { base } from '$app/paths';
+
+	import { base } from '$app/paths';
 
 	import { Footer, Menu } from '$lib/index';
 
