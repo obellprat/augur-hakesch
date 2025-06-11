@@ -5,8 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "src/generated/prisma"
+  provider      = "prisma-client"
+  output        = "src/generated/prisma"
   binaryTargets = ["linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
 }
 
@@ -23,20 +23,27 @@ model User {
 }
 
 model Project {
-  id      String    @id @default(nanoid())
-  title   String
-  description String
-  lastModified DateTime           @updatedAt
-  isozones_taskid String   @default("")
-  isozones_running Boolean @default(false)
-  catchment_geojson String @default("")
-  catchment_area  Float @default(0)
-  channel_length  Float @default(0)
-  delta_h Float @default(0)
-  pointId Int
-  Point   Point  @relation(fields: [pointId], references: [id], onDelete: Cascade)
-  userId  Int
-  user    User   @relation(fields: [userId], references: [id])
+  id                         String   @id @default(nanoid())
+  title                      String
+  description                String
+  lastModified               DateTime @updatedAt
+  isozones_taskid            String   @default("")
+  isozones_running           Boolean  @default(false)
+  catchment_geojson          String   @default("")
+  catchment_area             Float    @default(0)
+  branches_geojson           String   @default("")
+  channel_length             Float    @default(0)
+  cummulative_channel_length Float    @default(0)
+  delta_h                    Float    @default(0)
+  pointId                    Int
+  Point                      Point    @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  userId                     Int
+  user                       User     @relation(fields: [userId], references: [id])
+
+  idfParameterId Int?
+  IDF_Parameters IDF_Parameters? @relation(fields: [idfParameterId], references: [id], onDelete: Cascade)
+  moFliesszeitId Int?
+  Mod_Fliesszeit Mod_Fliesszeit? @relation(fields: [moFliesszeitId], references: [id])
 }
 
 model Point {
@@ -44,4 +51,34 @@ model Point {
   northing Float
   easting  Float
   Project  Project[]
+}
+
+model IDF_Parameters {
+  id         Int       @id @default(autoincrement())
+  P_low_1h   Float
+  P_high_1h  Float
+  P_low_24h  Float
+  P_high_24h Float
+  rp_low     Float
+  rp_high    Float
+  Project    Project[]
+}
+
+model Mod_Fliesszeit {
+  id        Int         @id @default(autoincrement())
+  x         Int
+  Annuality Annualities @relation(fields: [x], references: [id])
+  Vo20      Float
+  psi       Float
+  TB_start  Int
+  istep     Int
+  tol       Int
+  max_iter  Int
+  Project   Project[]
+}
+
+model Annualities {
+  id             Int              @id @default(autoincrement())
+  description    String
+  Mod_Fliesszeit Mod_Fliesszeit[]
 }

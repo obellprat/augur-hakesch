@@ -13,7 +13,8 @@ const getProjectById = async (id: string) => {
 			id
 		},
 		include: {
-			Point: true
+			Point: true,
+			IDF_Parameters: true
 		}
 	});
 };
