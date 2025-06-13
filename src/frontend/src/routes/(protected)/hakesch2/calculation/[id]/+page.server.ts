@@ -75,5 +75,61 @@ export const actions = {
 		});
 
 		redirect(302, `${base}/hakesch2/calculation/${id}`);
+	},
+
+	updatemfzv: async ({ request }) => {
+		const formData = Object.fromEntries(await request.formData());
+		const { id, mfzv_id, x, Vo20, psi} = formData as unknown as {
+			id: string | undefined;
+			mfzv_id: number | undefined;
+			x: number | undefined;
+			Vo20: number | undefined;
+			psi: number | undefined;
+		};
+		
+		if (!id) {
+			return fail(400, { message: 'Missing required fields' });
+		}
+		const annuality = await prisma.Annualities.findUnique({
+			where: {
+				number: Number(x) || 0
+			}
+		})
+		const mfzv = await prisma.Mod_Fliesszeit.upsert({
+			where: {
+				id : Number(mfzv_id) || 0				
+			},
+			update: {
+				Annuality: {
+					connect : {
+						id: annuality.id
+					}	
+				},
+				Vo20: Number(Vo20) || 0,
+				psi: Number(psi) || 0
+			},
+			create: {
+				Annuality: {
+					connect : {
+						number: Number(x) || 0
+					}	
+				},
+				Vo20: Number(Vo20) || 0,
+				psi: Number(psi) || 0
+			}
+		})
+
+		await prisma.project.update({
+			where: { id: id!},
+			data: {
+				Mod_Fliesszeit: {
+					connect: {
+							id: mfzv.id,
+					}
+				}
+			}
+		});
+
+		redirect(302, `${base}/hakesch2/calculation/${id}`);
 	}
 } satisfies Actions;

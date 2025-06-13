@@ -70,15 +70,29 @@ model Mod_Fliesszeit {
   Annuality Annualities @relation(fields: [x], references: [id])
   Vo20      Float
   psi       Float
-  TB_start  Int
-  istep     Int
-  tol       Int
-  max_iter  Int
+  TB_start  Int @default(30)
+  istep     Int @default(5)
+  tol       Int @default(5)
+  max_iter  Int @default(1000)
   Project   Project[]
+  Mod_Fliesszeit_Result Mod_Fliesszeit_Result?
+}
+
+model Mod_Fliesszeit_Result {
+  id    Int         @id @default(autoincrement())
+  HQ    Float
+  Tc    Float
+  TB    Float
+  TFl   Float
+  i     Float
+  Vox   Float
+  mod_fliesszeit Int @unique
+  Mod_Fliesszeit Mod_Fliesszeit @relation(fields: [mod_fliesszeit], references: [id])
 }
 
 model Annualities {
   id             Int              @id @default(autoincrement())
   description    String
   Mod_Fliesszeit Mod_Fliesszeit[]
+  number         Float  @unique
 }

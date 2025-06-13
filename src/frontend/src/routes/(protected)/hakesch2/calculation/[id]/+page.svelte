@@ -29,6 +29,35 @@
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
 
+	let returnPeriod = $state([
+		{
+			id: 2.33,
+			text: `2.33`
+		},
+		{
+			id: 20,
+			text: `20`
+		},
+		{
+			id: 100,
+			text: `100`
+		}
+	]);
+
+		let returnPeriodx = $state([
+		{
+			id: 0,
+			text: `2.33`
+		},
+		{
+			id: 1,
+			text: `20`
+		},
+		{
+			id: 2,
+			text: `100`
+		}
+	]);
 	onMount(async () => {
 	});
 </script>
@@ -59,7 +88,7 @@
 		</div>
 		<div class="card-body">
 			<div class="row">
-				<div class="col-lg-12">
+				<div class="col-lg-8">
 					<div class="accordion" id="accordionPanelsStayOpenExample">
 						<div class="accordion-item">
 							<h2 class="accordion-header" id="panelsStayOpen-headingOne">
@@ -80,7 +109,7 @@
 					>				<input type="hidden" name="id" value={data.project.id} />
 									<input type="hidden" name="idf_id" value={data.project.IDF_Parameters?.id} />
 									<h4 class="text-muted">Angaben zur Berechnung der Niederschlags-Intensität</h4>
-									<div class="row g-2 py-2">
+									<div class="row g-2 py-2 align-items-end">
                                         <div class="mb-3 col-md-4">
                                             <label for="P_low_1h" class="form-label">Precipitation [mm] for lower return period, 1 hour duration</label>
                                             <input type="number" class="form-control" name="P_low_1h" id="P_low_1h" value={Number(data.project.IDF_Parameters?.P_low_1h)}>
@@ -91,15 +120,18 @@
                                         </div>
 										<div class="mb-3 col-md-4">
                                             <label for="rp_low" class="form-label">Lower return period</label>
-                                            <select id="rp_low" name="rp_low" class="form-select">
-                                                <option>Bitte wählen</option>
-                                                <option>2.33</option>
-                                                <option>20</option>
-                                                <option>100</option>
-                                            </select>
+                                            <select id="rp_low" name="rp_low" class="form-select"
+												value={(data.project.IDF_Parameters?.rp_low)}
+											>
+												{#each returnPeriod as rp}
+													<option value={rp.id}>
+														{rp.text}
+													</option>
+												{/each}
+											</select>
                                         </div>
                                     </div>
-									<div class="row g-2">
+									<div class="row g-2 align-items-end">
                                         <div class="mb-3 col-md-4">
                                             <label for="P_high_1h" class="form-label">Precipitation [mm] for upper return period, 1 hour duration</label>
                                             <input type="number" class="form-control" id="P_high_1h" name="P_high_1h" value={Number(data.project.IDF_Parameters?.P_high_1h)}>
@@ -110,12 +142,16 @@
                                         </div>
 										<div class="mb-3 col-md-4">
                                             <label for="rp_high" class="form-label">Upper return period</label>
-                                            <select id="rp_high" name="rp_high" class="form-select">
-                                                <option>Bitte wählen</option>
-                                                <option>2.33</option>
-                                                <option>20</option>
-                                                <option>100</option>
-                                            </select>
+
+											<select id="rp_high" name="rp_high" class="form-select"
+												value={(data.project.IDF_Parameters?.rp_high)}
+											>
+												{#each returnPeriod as rp}
+													<option value={rp.id}>
+														{rp.text}
+													</option>
+												{/each}
+											</select>
                                         </div>
                                     </div>
 									<button type="submit" class="btn btn-primary">Save</button>
@@ -124,24 +160,47 @@
 							</div>
 						</div>
 						<div class="accordion-item">
-							<h2 class="accordion-header" id="panelsStayOpen-headingTwo">
+							<h1 class="accordion-header" id="panelsStayOpen-headingTwo">
 								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="true" aria-controls="panelsStayOpen-collapseTwo">
 									Modifiziertes Fliesszeitverfahren
 								</button>
-							</h2>
+							</h1>
 							<div id="panelsStayOpen-collapseTwo" class="collapse" aria-labelledby="panelsStayOpen-headingTwo" style="">
 								<div class="accordion-body">
-									<strong>This is the second item's accordion body.</strong> It is hidden
-									by default, until the
-									collapse plugin adds the appropriate classes that we use to style each
-									element. These classes
-									control the overall appearance, as well as the showing and hiding via
-									CSS transitions. You can
-									modify any of this with custom CSS or overriding our default variables.
-									It's also worth noting that
-									just about any HTML can go within the <code>.accordion-body</code>,
-									though the transition does limit
-									overflow.
+									<form
+						method="post"  action="?/updatemfzv"
+						use:enhance={() => {
+							return async ({ update }) => {
+								await update();
+							};
+						}}
+					>				<input type="hidden" name="id" value={data.project.id} />
+									<input type="hidden" name="mfzv_id" value={data.project.Mod_Fliesszeit?.id} />
+									<div class="row g-2 py-2 align-items-end">
+                                        <div class="mb-3 col-md-4">
+                                            <label for="P_low_1h" class="form-label">Return period</label>
+                                            <select id="x" name="x" class="form-select"
+												value={(data.project.Mod_Fliesszeit.Annuality.number)}
+											>
+												{#each returnPeriod as rp}
+													<option value={rp.id}>
+														{rp.text}
+													</option>
+												{/each}
+											</select>
+                                        </div>
+                                        <div class="mb-3 col-md-4">
+                                            <label for="P_low_24h" class="form-label">Wetting volume for 20-year event [mm]</label>
+                                            <input type="number" class="form-control" id="Vo20" name="Vo20" value={Number(data.project.Mod_Fliesszeit?.Vo20)}>
+                                        </div>
+										<div class="mb-3 col-md-4">
+                                            <label for="P_low_24h" class="form-label">Peak flow coefficient [-]</label>
+                                            <input type="number" class="form-control" id="psi" name="psi" value={Number(data.project.Mod_Fliesszeit?.psi)}>
+                                        </div>
+                                    </div>
+									<button type="submit" class="btn btn-primary">Save</button>
+									<button type="submit" class="btn btn-primary">Save And calculate</button>
+									</form>
 								</div>
 							</div>
 						</div>
@@ -153,21 +212,29 @@
 							</h2>
 							<div id="panelsStayOpen-collapseThree" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingThree" style="">
 								<div class="accordion-body">
-									<strong>This is the third item's accordion body.</strong> It is hidden
-									by default, until the
-									collapse plugin adds the appropriate classes that we use to style each
-									element. These classes
-									control the overall appearance, as well as the showing and hiding via
-									CSS transitions. You can
-									modify any of this with custom CSS or overriding our default variables.
-									It's also worth noting that
-									just about any HTML can go within the <code>.accordion-body</code>,
-									though the transition does limit
-									overflow.
+									Noch nicht implementiert
 								</div>
 							</div>
 						</div>
 					</div>
+				</div>
+				<div class="col-lg-4">
+					<div class="accordion" id="accordionPanelsResults">
+						<div class="accordion-item">
+							<h2 class="accordion-header" id="panelsResults-headingOne">
+								<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsResults-collapseOne" aria-expanded="true" aria-controls="panelsResults-collapseOne">
+									Resultate
+								</button>
+							</h2>
+							<div id="panelsResults-collapseOne" class="accordion-collapse collapse show" aria-labelledby="panelsResults-headingOne" style="">
+								<div class="accordion-body">
+									
+									<h4 class="text-muted">Modifiziertes Fliesszeitverfahren</h4>
+								</div>
+							</div>
+						</div>
+					</div>
+
 				</div>
 			</div>
 		</div>

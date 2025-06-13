@@ -14,7 +14,12 @@ const getProjectById = async (id: string) => {
 		},
 		include: {
 			Point: true,
-			IDF_Parameters: true
+			IDF_Parameters: true,
+			Mod_Fliesszeit: {
+				include: {
+					Annuality: true
+				}
+			}
 		}
 	});
 };
