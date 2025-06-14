@@ -26,7 +26,7 @@ def get_modifizierte_fliesszeit(ProjectId:str, user: User = Depends(get_user)):
                 }
             }
         )
-        task = modifizierte_fliesszeit.delay(project.IDF_Parameters.P_low_1h, project.IDF_Parameters.P_high_1h, project.IDF_Parameters.P_low_24h, project.IDF_Parameters.P_high_24h, project.IDF_Parameters.rp_low, project.IDF_Parameters.rp_high, 2.3, project.Mod_Fliesszeit.Vo20, project.channel_length, project.delta_h, project.Mod_Fliesszeit.psi, project.catchment_area, project.Mod_Fliesszeit.id)
+        task = modifizierte_fliesszeit.delay(project.IDF_Parameters.P_low_1h, project.IDF_Parameters.P_high_1h, project.IDF_Parameters.P_low_24h, project.IDF_Parameters.P_high_24h, project.IDF_Parameters.rp_low, project.IDF_Parameters.rp_high, project.Mod_Fliesszeit.Annuality.number, project.Mod_Fliesszeit.Vo20, project.channel_length, project.delta_h, project.Mod_Fliesszeit.psi, project.catchment_area, project.Mod_Fliesszeit.id)
         return JSONResponse({"task_id": task.id}) 
     except:
         # Handle missing user scenario

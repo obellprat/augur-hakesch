@@ -59,6 +59,7 @@
 		}
 	]);
 	onMount(async () => {
+		console.log(data.project);
 	});
 </script>
 
@@ -195,7 +196,7 @@
                                         </div>
 										<div class="mb-3 col-md-4">
                                             <label for="P_low_24h" class="form-label">Peak flow coefficient [-]</label>
-                                            <input type="number" class="form-control" id="psi" name="psi" value={Number(data.project.Mod_Fliesszeit?.psi)}>
+                                            <input type="number" step="0.01"  class="form-control" id="psi" name="psi" value={Number(data.project.Mod_Fliesszeit?.psi)}>
                                         </div>
                                     </div>
 									<button type="submit" class="btn btn-primary">Save</button>
@@ -230,6 +231,7 @@
 								<div class="accordion-body">
 									
 									<h4 class="text-muted">Modifiziertes Fliesszeitverfahren</h4>
+									<p>Hq: {data.project.Mod_Fliesszeit?.Mod_Fliesszeit_Result?.HQ}</p>
 								</div>
 							</div>
 						</div>
