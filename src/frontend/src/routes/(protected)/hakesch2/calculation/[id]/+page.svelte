@@ -31,8 +31,8 @@
 
 	let returnPeriod = $state([
 		{
-			id: 2.33,
-			text: `2.33`
+			id: 2.3,
+			text: `2.3`
 		},
 		{
 			id: 20,
@@ -47,7 +47,7 @@
 		let returnPeriodx = $state([
 		{
 			id: 0,
-			text: `2.33`
+			text: `2.3`
 		},
 		{
 			id: 1,

@@ -22,19 +22,26 @@ from shapely.geometry import shape
 from calculations.calculations import app
 
 @app.task(name="modifizierte_fliesszeit", bind=True)
-def modifizierte_fliesszeit(
-    x,              # Return period: "2.3", "20", "100"
-    Vo20,           # Wetting volume for 20-year event [mm]
-    L,              # Channel length up to the watershed ridge [m] 
-    delta_H,        # Elevation difference along L [m]
-    psi,            # Peak flow coefficient [-]
-    E,              # Catchment area [km²]
-    intensity_fn,   # Rainfall intensity function: i(x, Tc) in mm/h
+def modifizierte_fliesszeit(self, 
+    P_low_1h,
+    P_high_1h,
+    P_low_24h,
+    P_high_24h,
+    rp_low,
+    rp_high,  
+    x:float,
+    Vo20:int,           # Wetting volume for 20-year event [mm]
+    L:float,              # Channel length up to the watershed ridge [m] 
+    delta_H:float,        # Elevation difference along L [m]
+    psi:float,            # Peak flow coefficient [-]
+    E:float,              # Catchment area [km²]
+    mod_fliesszeit_id:int, # db id for updating results
     TB_start=30,    # Initial value for TB [min]
     istep=5,        # Step size for TB [min]
     tol=5,          # Convergence tolerance [mm]
-    max_iter=1000    # Max. iterations
+    max_iter=1000
 ):
+    intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
     # 1. Wetting volume depending on x
     if x == 2.3:
         Vox = 0.5 * Vo20
@@ -73,6 +80,37 @@ def modifizierte_fliesszeit(
     i_final = intensity_fn(rp_years = x, duration_minutes = Tc)
     HQ = 0.278 * i_final * psi * E
 
+
+    prisma = Prisma()
+    prisma.connect()
+    
+    updatedResults = prisma.mod_fliesszeit_result.upsert(
+        where = {
+            'mod_fliesszeit' : mod_fliesszeit_id
+        },
+        data = {
+            'update' : {
+                'HQ' : HQ,
+                'Tc' : Tc,
+                'TB' : TB,
+                'TFl' : TFl,
+                'Vox' : Vox
+            },
+            'create' : {
+                'HQ' : HQ,
+                'Tc' : Tc,
+                'TB' : TB,
+                'i' : i_final,
+                'TFl' : TFl,
+                'Vox' : Vox,
+                'mod_fliesszeit' : mod_fliesszeit_id
+            }
+        }
+        
+    )
+
+    prisma.disconnect(5)
+
     return {
         "HQ": HQ,
         "Tc": Tc,
@@ -82,6 +120,58 @@ def modifizierte_fliesszeit(
         "Vox": Vox
     }
 
+
+def construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high2):
+    
+    """
+    Constructs an IDF curve with user-defined lower and upper return periods.
+    Inputs:
+        P_low_1h:   Precipitation [mm] for lower return period, 1 hour duration
+        P_high_1h:  Precipitation [mm] for upper return period, 1 hour duration
+        P_low_24h:  Precipitation [mm] for lower return period, 24 hour duration
+        P_high_24h: Precipitation [mm] for upper return period, 24 hour duration
+        rp_low:     Lower return period (e.g. 2.33) as string
+        rp_high:    Upper return period (e.g. 100) as string
+    Returns:
+        idf_intensity: function(duration_minutes, return_period_years) -> intensity [mm/h]
+    """
+
+    # Convert return periods from string to float
+    log_rp = np.log10([rp_low, rp_high2])
+    P_1h = [P_low_1h, P_high_1h]
+    P_24h = [P_low_24h, P_high_24h]
+
+    # Linear fit for 1h and 24h precipitation
+    coeffs_1h = np.polyfit(log_rp, P_1h, 1)
+    coeffs_24h = np.polyfit(log_rp, P_24h, 1)
+
+    def precipitation_amount(duration_h, rp_years):
+        log_rp_val = np.log10(rp_years)
+        if duration_h == 1:
+            return coeffs_1h[0] * log_rp_val + coeffs_1h[1]
+        elif duration_h == 24:
+            return coeffs_24h[0] * log_rp_val + coeffs_24h[1]
+        else:
+            raise ValueError("Only 1h and 24h durations supported for precipitation amount.")
+
+    def idf_intensity(rp_years, duration_minutes):
+        # Convert return periods from string to float
+        duration_h = duration_minutes / 60.0
+        P1 = precipitation_amount(1, rp_years)
+        P24 = precipitation_amount(24, rp_years)
+        I1 = P1 / 1.0
+        I24 = P24 / 24.0
+        log_durations = np.log10([1, 24])
+        log_intensities = np.log10([I1, I24])
+        slope, intercept = np.polyfit(log_durations, log_intensities, 1)
+        log_duration = np.log10(duration_h)
+        log_intensity = slope * log_duration + intercept
+        return 10 ** log_intensity
+
+    return idf_intensity
+
+# Example usage:
+# idf_fn = construct_idf_curve(25, 50, 60, 120, 2.33, 100)
 
 @app.task(name="prepare_hakesch_hydroparameters", bind=True)
 def prepare_hakesch_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 10000, v_gerinne = 1.5):
