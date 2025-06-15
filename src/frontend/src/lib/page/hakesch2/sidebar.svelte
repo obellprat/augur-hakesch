@@ -3,6 +3,11 @@
 	import { currentProject } from '$lib/state.svelte';
 
 	let props = $props();
+	// Function to close the offcanvas menu
+	function closeOffcanvas() {
+		let closeCanvas = document.querySelector('[data-bs-dismiss="offcanvas"]');
+		if (closeCanvas) closeCanvas.click();
+	}
 </script>
 
 <div class="card email-sidebar">
@@ -42,7 +47,7 @@
 									</div>
 
 									<div class="email-menu-list d-flex flex-column">
-										<a href="{base}/hakesch2" class="active">
+										<a href="{base}/hakesch2" class="active" onclick={closeOffcanvas}>
 											<iconify-icon icon="solar:inbox-outline" class="me-2 fs-18 text-muted"
 											></iconify-icon>
 											<span>Projekte</span>
@@ -60,31 +65,31 @@
 											data-bs-toggle="collapse"
 											data-bs-target="#other"
 											aria-expanded="false"
-											aria-controls="other"
+											aria-controls="other" 
 											>Projekt: {currentProject.title}
 											<i class="ri-arrow-down-s-line ms-auto"></i></a
 										>
 										<div id="other" class="collapse show">
 											<div class="email-menu-list d-flex flex-column mt-2">
-												<a href="{base}/hakesch2/overview/{props.currentProject.id}">
+												<a href="{base}/hakesch2/overview/{props.currentProject.id}" onclick={closeOffcanvas}>
 													<iconify-icon icon="solar:mailbox-outline" class="me-2 fs-18 text-muted"
 													></iconify-icon>
 													<span>Übersicht</span>
 												</a>
 
-												<a href="{base}/hakesch2/geodata/{props.currentProject.id}">
+												<a href="{base}/hakesch2/geodata/{props.currentProject.id}" onclick={closeOffcanvas}>
 													<iconify-icon
 														icon="solar:trash-bin-trash-outline"
 														class="me-2 fs-18 text-muted"
 													></iconify-icon>
 													<span>Geodaten</span>
 												</a>
-												<a href="javascript: void(0);">
+												<a href="{base}/hakesch2/calculation/{props.currentProject.id}" onclick={closeOffcanvas}>
 													<iconify-icon
 														icon="solar:chat-round-line-outline"
 														class="me-2 fs-18 text-muted"
 													></iconify-icon>
-													<span>Clark-WSL</span>
+													<span>Berechnen</span>
 												</a>
 											</div>
 										</div>

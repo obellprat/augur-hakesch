@@ -38,8 +38,8 @@
 
 	async function calculateGeodatas() {
 		fetch(
-				PUBLIC_HAKESCH_API_PATH +
-					'/isozones/?ProjectId='+ data.project.id,
+				env.PUBLIC_HAKESCH_API_PATH +
+					'/hakesch/prepare_hakesch_hydroparameters?ProjectId='+ data.project.id,
 				{
 					method: 'GET',
 					headers: {
@@ -72,9 +72,15 @@
 				//let html = `${actTime.toUTCString()} ${res.task_status} `;
 				let html = ``;
 				if (res.task_status != 'SUCCESS' && res.task_status != 'PENDING') {
-					html = html + `${JSON.stringify(res.task_result.text)}`;
+					html = `${JSON.stringify(res.task_result.text.replace('"',''))}`;
 					
 					globalThis.$('.progress-bar').css('width', res.task_result.progress + '%').attr('aria-valuenow', res.task_result.progress);
+				}
+				else if (res.task_status != 'PENDING') {
+					html = "Der Prozess wird intialisiert. Bitte warten...";
+				}
+				else if (res.task_status != 'SUCCESS') {
+					html = "Die Geodaten wurden erfolgrech berechnet.";				
 				}
 				document.getElementById('progresstext')!.innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
 

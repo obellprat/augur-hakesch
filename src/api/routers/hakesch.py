@@ -1,0 +1,74 @@
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
+from helpers.prisma import prisma
+from helpers.user import get_user
+from prisma.models import User
+
+from calculations.hakesch import construct_idf_curve, modifizierte_fliesszeit, prepare_hakesch_hydroparameters
+
+router = APIRouter(prefix="/hakesch",
+    tags=["hakesch"],)
+
+@router.get("/modifizierte_fliesszeit")
+def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User = Depends(get_user)):
+    try:
+        project =  prisma.project.find_unique_or_raise(
+            where = {
+                'userId' : user.id,
+                'id' :  ProjectId
+            },
+            include = {
+                'IDF_Parameters' : True,
+                'Mod_Fliesszeit' : {
+                    'include' :  {
+                        'Annuality' : True
+                    }
+                }
+            }
+        )
+
+        modFliesszeit = next((x for x in project.Mod_Fliesszeit if x.id == ModFliesszeitId), None)
+        print(modFliesszeit);
+
+        task = modifizierte_fliesszeit.delay(project.IDF_Parameters.P_low_1h, project.IDF_Parameters.P_high_1h, project.IDF_Parameters.P_low_24h, project.IDF_Parameters.P_high_24h, project.IDF_Parameters.rp_low, project.IDF_Parameters.rp_high, modFliesszeit.Annuality.number, modFliesszeit.Vo20, project.channel_length, project.delta_h, modFliesszeit.psi, project.catchment_area, modFliesszeit.id)
+        return JSONResponse({"task_id": task.id}) 
+    except:
+        # Handle missing user scenario
+        raise HTTPException(
+            status_code=404,
+            detail="Unable to retrieve project",
+        )
+
+
+
+@router.get("/prepare_hakesch_hydroparameters")
+async def get_prepare_hakesch_hydroparametersisozones(ProjectId:str, user: User = Depends(get_user)):
+    try:
+        project =  prisma.project.find_unique_or_raise(
+            where = {
+                'userId' : user.id,
+                'id' :  ProjectId
+            },
+            include = {
+                'Point' : True
+            }
+        )
+        print(project)
+        task = prepare_hakesch_hydroparameters.delay(project.id, user.id, project.Point.easting, project.Point.northing)
+        prisma.project.update(
+            where = {
+                'id' :  ProjectId
+            },
+            data = {
+                'isozones_running': True,
+                'isozones_taskid': task.id,
+            },
+            )
+        return JSONResponse({"task_id": task.id})
+    except:
+        # Handle missing user scenario
+        raise HTTPException(
+            status_code=404,
+            detail="Unable to retrieve project",
+        )
+

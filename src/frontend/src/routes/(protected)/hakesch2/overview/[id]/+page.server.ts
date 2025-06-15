@@ -39,7 +39,7 @@ export const actions = {
 			return fail(400, { message: 'Missing required fields' });
 		}
 
-		const updatedPost = await updateProject(id, {
+		const updatedProject = await updateProject(id, {
 			title,
 			description,
 			Point: {
@@ -50,7 +50,7 @@ export const actions = {
 			}
 		});
 
-		redirect(302, `${base}/hakesch2/overview/${updatedPost.id}`);
+		redirect(302, `${base}/hakesch2/overview/${updatedProject.id}`);
 	},
 	delete: async({request}) => {
 		const formData = Object.fromEntries(await request.formData());
