@@ -14,8 +14,8 @@ export const load = async ({ params }) => {
 	}
 
 	const { id } = params;
+	console.log("Project reload");
 	const project = await getProjectById(id);
-
 	if (!project) {
 		error(404, 'Project not found');
 	}
@@ -41,7 +41,6 @@ export const actions = {
 		if (!id) {
 			return fail(400, { message: 'Missing required fields' });
 		}
-		console.log(P_low_1h);
 
 		const idf = await prisma.IDF_Parameters.upsert({
 			where: {id : Number(idf_id) || 0},
@@ -115,11 +114,16 @@ export const actions = {
 					}	
 				},
 				Vo20: Number(Vo20) || 0,
-				psi: Number(psi) || 0
+				psi: Number(psi) || 0,
+				Project: {
+					connect: {
+						id: id
+					}
+				}
 			}
 		})
 
-		await prisma.project.update({
+		const project = await prisma.project.update({
 			where: { id: id!},
 			data: {
 				Mod_Fliesszeit: {
@@ -127,9 +131,22 @@ export const actions = {
 							id: mfzv.id,
 					}
 				}
+			},
+			include: {
+				Point: true,
+				IDF_Parameters: true,
+				Mod_Fliesszeit: {
+					orderBy: {
+						id: "asc",
+					},
+					include: {
+						Annuality: true,
+						Mod_Fliesszeit_Result: true
+					}
+				}
 			}
 		});
-
-		redirect(302, `${base}/hakesch2/calculation/${id}`);
+		return project;
+		//redirect(302, `${base}/hakesch2/calculation/${id}`);
 	}
 } satisfies Actions;

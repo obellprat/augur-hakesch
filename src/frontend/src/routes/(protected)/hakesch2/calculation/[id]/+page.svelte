@@ -4,27 +4,12 @@
 	import { onMount } from 'svelte';
 	import { currentProject } from '$lib/state.svelte';
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 
-	import { Map, View, Feature } from 'ol';
-	import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
-	import { Point } from 'ol/geom';
-	import { Vector as VectorSource } from 'ol/source';
-	import Stroke from 'ol/style/Stroke';
-	import Fill from 'ol/style/Fill';
-	import CircleStyle from 'ol/style/Circle.js';
-	import Style from 'ol/style/Style';
-	import { XYZ } from 'ol/source';
-	import { defaults as defaultControls, ScaleLine } from 'ol/control';
-	import { register } from 'ol/proj/proj4';
-	import proj4 from 'proj4';
-	import '../../../../../../node_modules/ol/ol.css';
-	import type { Coordinate } from 'ol/coordinate';
+	import { env } from '$env/dynamic/public';	
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	$pageTitle = 'HAKESCH 2.0 - Projekt ' + data.project.title;
-
-	let northing = $derived(data.project.Point.northing);
-	let easting = $derived(data.project.Point.easting);
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
@@ -58,8 +43,69 @@
 			text: `100`
 		}
 	]);
+
+	let calulcationType = $state(0);
+	let mod_verfahren = $derived(data.project.Mod_Fliesszeit);
+	
+	function addCalculation() {
+		if (calulcationType==1) {
+			// add modifiziertes Fliesszeitverfahren
+			const mod_fliesszeit = {
+				id: 0
+			}
+			mod_verfahren.push(mod_fliesszeit);
+		}
+	}
+	
+	function calculateModFliess(mod_fliesszeit_id: Number) {
+		fetch(
+				env.PUBLIC_HAKESCH_API_PATH +
+					'/hakesch/modifizierte_fliesszeit?ProjectId='+ data.project.id+'&ModFliesszeitId='+mod_fliesszeit_id,
+				{
+					method: 'GET',
+					headers: {
+						'Authorization': 'Bearer ' + data.session.access_token,
+					},
+				}
+			)
+				.then((response) => response.json())
+				.then((data) => {
+					getStatus(data.task_id);
+				});
+	}
+	function getStatus(taskID: String) {
+		fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
+			method: 'GET',
+			headers: {
+				'Authorization': 'Bearer ' + data.session.access_token,
+				'Content-Type': 'application/json'
+			}
+		})
+			.then((response) => response.json())
+			.then((res) => {
+				console.log("res");
+				console.log(res);
+				// write out the state
+				const actTime = new Date();
+				//let html = `${actTime.toUTCString()} ${res.task_status} `;
+				let html = ``;
+				const taskStatus = res.task_status;
+				if (taskStatus === 'SUCCESS') {
+					invalidateAll();
+				}
+				if (taskStatus === 'SUCCESS' || taskStatus === 'FAILURE') {
+					return false;
+				}
+
+				setTimeout(function () {
+					getStatus(res.task_id);
+				}, 1000);
+			})
+			.catch((err) => console.log(err));
+	}
+
 	onMount(async () => {
-		console.log(data.project);
+		mod_verfahren = data.project.Mod_Fliesszeit;
 	});
 </script>
 
@@ -84,6 +130,37 @@
 					<h3 class="my-0 lh-base">
 						{data.project.title}
 					</h3>
+				</div>
+				<div class="ms-auto d-xl-flex">
+					<button type="button"
+						class="btn btn-primary bg-gradient rounded-pill" data-bs-toggle="modal" data-bs-target="#generate-modal">Hydrologische Berechnung hinzufügen</button
+					>
+					
+					<div id="generate-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="standard-modalLabel" aria-hidden="true">
+						<div class="modal-dialog">
+							<div class="modal-content">
+								<div class="modal-header">
+									<h4 class="modal-title" id="standard-modalLabel">Hydrologische Berechnung hinzufügen</h4>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+								</div>
+								<div class="modal-body">
+									<h5>Welches Verfahren soll dem Projekt hinzugefügt weden?</h5>
+									<hr>
+									<select id="calculation_type" class="form-select"
+												bind:value={calulcationType}
+											>
+											<option value="1">Modifiziertes Fliesszeitverfahren</option>
+											<option value="2">Kölla</option>
+											<option value="3">Clark-WSL</option>
+									</select>
+								</div>
+								<div class="modal-footer">
+									<button type="button" class="btn btn-light" data-bs-dismiss="modal" onclick={addCalculation}>Hinzufügen</button>
+								</div>
+							</div><!-- /.modal-content -->
+						</div><!-- /.modal-dialog -->
+					</div>
+
 				</div>
 			</div>
 		</div>
@@ -160,28 +237,30 @@
 								</div>
 							</div>
 						</div>
+						
+						{#each mod_verfahren as mod_fz}
+
+
 						<div class="accordion-item">
-							<h1 class="accordion-header" id="panelsStayOpen-headingTwo">
-								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="true" aria-controls="panelsStayOpen-collapseTwo">
-									Modifiziertes Fliesszeitverfahren
+							<h1 class="accordion-header" id="panelsStayOpen-modFZ{mod_fz.id}">
+								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapsemodFZ{mod_fz.id}" aria-expanded="true" aria-controls="panelsStayOpen-collapsemodFZ{mod_fz.id}">
+									Modifiziertes Fliesszeitverfahren 
+									{#if mod_fz.Annuality}
+										({mod_fz.Annuality.description})
+									{/if}
 								</button>
 							</h1>
-							<div id="panelsStayOpen-collapseTwo" class="collapse" aria-labelledby="panelsStayOpen-headingTwo" style="">
+							<div id="panelsStayOpen-collapsemodFZ{mod_fz.id}" class="collapse" aria-labelledby="panelsStayOpen-modFZ{mod_fz.id}" style="">
 								<div class="accordion-body">
 									<form
 						method="post"  action="?/updatemfzv"
-						use:enhance={() => {
-							return async ({ update }) => {
-								await update();
-							};
-						}}
 					>				<input type="hidden" name="id" value={data.project.id} />
-									<input type="hidden" name="mfzv_id" value={data.project.Mod_Fliesszeit?.id} />
+									<input type="hidden" name="mfzv_id" value={mod_fz.id} />
 									<div class="row g-2 py-2 align-items-end">
                                         <div class="mb-3 col-md-4">
                                             <label for="P_low_1h" class="form-label">Return period</label>
                                             <select id="x" name="x" class="form-select"
-												value={(data.project.Mod_Fliesszeit.Annuality.number)}
+												value={(mod_fz.Annuality?.number)}
 											>
 												{#each returnPeriod as rp}
 													<option value={rp.id}>
@@ -192,19 +271,20 @@
                                         </div>
                                         <div class="mb-3 col-md-4">
                                             <label for="P_low_24h" class="form-label">Wetting volume for 20-year event [mm]</label>
-                                            <input type="number" class="form-control" id="Vo20" name="Vo20" value={Number(data.project.Mod_Fliesszeit?.Vo20)}>
+                                            <input type="number" class="form-control" id="Vo20" name="Vo20" value={Number(mod_fz.Vo20)}>
                                         </div>
 										<div class="mb-3 col-md-4">
                                             <label for="P_low_24h" class="form-label">Peak flow coefficient [-]</label>
-                                            <input type="number" step="0.01"  class="form-control" id="psi" name="psi" value={Number(data.project.Mod_Fliesszeit?.psi)}>
+                                            <input type="number" step="0.01"  class="form-control" id="psi" name="psi" value={Number(mod_fz.psi)}>
                                         </div>
                                     </div>
 									<button type="submit" class="btn btn-primary">Save</button>
-									<button type="submit" class="btn btn-primary">Save And calculate</button>
+									<button type="button" class="btn btn-primary" onclick={() => calculateModFliess(mod_fz.id)}>Calculate</button>
 									</form>
 								</div>
 							</div>
 						</div>
+						{/each}
 						<div class="accordion-item">
 							<h2 class="accordion-header" id="panelsStayOpen-headingThree">
 								<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="false" aria-controls="panelsStayOpen-collapseThree">
@@ -229,9 +309,12 @@
 							</h2>
 							<div id="panelsResults-collapseOne" class="accordion-collapse collapse show" aria-labelledby="panelsResults-headingOne" style="">
 								<div class="accordion-body">
-									
-									<h4 class="text-muted">Modifiziertes Fliesszeitverfahren</h4>
-									<p>Hq: {data.project.Mod_Fliesszeit?.Mod_Fliesszeit_Result?.HQ}</p>
+									{#each mod_verfahren as mod_fz}
+									<h4 class="text-muted">Modifiziertes Fliesszeitverfahren {#if mod_fz.Annuality}
+										({mod_fz.Annuality.description})
+									{/if}</h4>
+									<p>Hq: {mod_fz.Mod_Fliesszeit_Result?.HQ.toFixed(2)}</p>
+									{/each}
 								</div>
 							</div>
 						</div>

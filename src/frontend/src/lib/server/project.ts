@@ -15,7 +15,10 @@ const getProjectById = async (id: string) => {
 		include: {
 			Point: true,
 			IDF_Parameters: true,
-			Mod_Fliesszeit: {
+			Mod_Fliesszeit: {				
+				orderBy: {
+					id: "asc",
+				},
 				include: {
 					Annuality: true,
 					Mod_Fliesszeit_Result: true
