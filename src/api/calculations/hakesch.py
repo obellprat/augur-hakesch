@@ -83,28 +83,34 @@ def modifizierte_fliesszeit(self,
 
     prisma = Prisma()
     prisma.connect()
+
     
-    updatedResults = prisma.mod_fliesszeit_result.upsert(
+    
+    updatedResults = prisma.mod_fliesszeit.update(
         where = {
-            'mod_fliesszeit' : mod_fliesszeit_id
+            'id' : mod_fliesszeit_id
         },
         data = {
-            'update' : {
-                'HQ' : HQ,
-                'Tc' : Tc,
-                'TB' : TB,
-                'TFl' : TFl,
-                'Vox' : Vox
-            },
-            'create' : {
-                'HQ' : HQ,
-                'Tc' : Tc,
-                'TB' : TB,
-                'i' : i_final,
-                'TFl' : TFl,
-                'Vox' : Vox,
-                'mod_fliesszeit' : mod_fliesszeit_id
+            'Mod_Fliesszeit_Result': {
+                'upsert' : {
+                    'update' : {
+                        'HQ' : HQ,
+                        'Tc' : Tc,
+                        'TB' : TB,
+                        'TFl' : TFl,
+                        'Vox' : Vox
+                    },
+                    'create' : {
+                        'HQ' : HQ,
+                        'Tc' : Tc,
+                        'TB' : TB,
+                        'i' : i_final,
+                        'TFl' : TFl,
+                        'Vox' : Vox
+                    }
+                }
             }
+            
         }
         
     )

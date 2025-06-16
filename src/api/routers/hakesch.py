@@ -28,8 +28,6 @@ def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User 
         )
 
         modFliesszeit = next((x for x in project.Mod_Fliesszeit if x.id == ModFliesszeitId), None)
-        print(modFliesszeit);
-
         task = modifizierte_fliesszeit.delay(project.IDF_Parameters.P_low_1h, project.IDF_Parameters.P_high_1h, project.IDF_Parameters.P_low_24h, project.IDF_Parameters.P_high_24h, project.IDF_Parameters.rp_low, project.IDF_Parameters.rp_high, modFliesszeit.Annuality.number, modFliesszeit.Vo20, project.channel_length, project.delta_h, modFliesszeit.psi, project.catchment_area, modFliesszeit.id)
         return JSONResponse({"task_id": task.id}) 
     except:

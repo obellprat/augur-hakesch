@@ -5,6 +5,7 @@
 	import { currentProject } from '$lib/state.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+  	import { toast } from '@zerodevx/svelte-toast'
 
 	import { env } from '$env/dynamic/public';	
 
@@ -13,6 +14,8 @@
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
+
+	let isMFZSaving = $state(false);
 
 	let returnPeriod = $state([
 		{
@@ -51,16 +54,20 @@
 		if (calulcationType==1) {
 			// add modifiziertes Fliesszeitverfahren
 			const mod_fliesszeit = {
-				id: 0
+				id: 0,
+				project_id: data.project.id
 			}
 			mod_verfahren.push(mod_fliesszeit);
 		}
 	}
 	
-	function calculateModFliess(mod_fliesszeit_id: Number) {
+	function calculateModFliess(project_id: Number, mod_fliesszeit_id: Number) {
+		toast.push('Berechnung läuft...', {
+			initial: 0
+		})
 		fetch(
 				env.PUBLIC_HAKESCH_API_PATH +
-					'/hakesch/modifizierte_fliesszeit?ProjectId='+ data.project.id+'&ModFliesszeitId='+mod_fliesszeit_id,
+					'/hakesch/modifizierte_fliesszeit?ProjectId='+ project_id +'&ModFliesszeitId='+mod_fliesszeit_id,
 				{
 					method: 'GET',
 					headers: {
@@ -83,14 +90,20 @@
 		})
 			.then((response) => response.json())
 			.then((res) => {
-				console.log("res");
-				console.log(res);
 				// write out the state
 				const actTime = new Date();
 				//let html = `${actTime.toUTCString()} ${res.task_status} `;
 				let html = ``;
 				const taskStatus = res.task_status;
 				if (taskStatus === 'SUCCESS') {
+					toast.pop();
+					toast.push('Erfolgreich berechnet!', {
+					theme: {
+							'--toastColor': 'mintcream',
+							'--toastBackground': 'rgba(72,187,120,0.9)',
+							'--toastBarBackground': '#2F855A'
+						}
+					})
 					invalidateAll();
 				}
 				if (taskStatus === 'SUCCESS' || taskStatus === 'FAILURE') {
@@ -254,7 +267,22 @@
 								<div class="accordion-body">
 									<form
 						method="post"  action="?/updatemfzv"
-					>				<input type="hidden" name="id" value={data.project.id} />
+						use:enhance={() => {
+							isMFZSaving = true;
+							return async ({ result, update }) => {
+								await update({reset : false});
+								data.project = result;
+								isMFZSaving = false;
+								toast.push('Erfolgreich gespeichert!', {
+									theme: {
+										'--toastColor': 'mintcream',
+										'--toastBackground': 'rgba(72,187,120,0.9)',
+										'--toastBarBackground': '#2F855A'
+									}
+									})
+							};
+						}}
+					>				<input type="hidden" name="id" value={mod_fz.project_id} />
 									<input type="hidden" name="mfzv_id" value={mod_fz.id} />
 									<div class="row g-2 py-2 align-items-end">
                                         <div class="mb-3 col-md-4">
@@ -278,9 +306,53 @@
                                             <input type="number" step="0.01"  class="form-control" id="psi" name="psi" value={Number(mod_fz.psi)}>
                                         </div>
                                     </div>
-									<button type="submit" class="btn btn-primary">Save</button>
-									<button type="button" class="btn btn-primary" onclick={() => calculateModFliess(mod_fz.id)}>Calculate</button>
+									<div class="d-flex align-items-center justify-content-between py-1">
+										<div class="d-flex align-items-center gap-2">
+											<button type="submit" class="btn btn-primary" disabled={isMFZSaving}>Save</button>
+											<button type="button" class="btn btn-primary" disabled={isMFZSaving} onclick={() => calculateModFliess(mod_fz.project_id, mod_fz.id)}>Calculate</button>
+										</div>
+										<div class="d-flex align-items-center gap-2">
+											<span
+													class="btn btn-sm btn-icon btn-ghost-danger d-xl-flex"
+													data-bs-placement="top"
+													title="Delete"
+													aria-label="delete"
+													data-bs-toggle="modal"
+													data-bs-target="#delete-project-modal{mod_fz.id}"
+												>
+													<i class="ti ti-trash fs-20"></i>
+											</span>
+											
+											
+										</div>
+									</div>
+									
 									</form>
+									<!-- Delete Calculation Modal -->
+									<div id="delete-project-modal{mod_fz.id}" class="modal fade" tabindex="-1" role="dialog"
+										aria-labelledby="warning-header-modalLabel" aria-hidden="true">
+										<div class="modal-dialog">
+											<div class="modal-content">
+												<div class="modal-header text-bg-warning border-0">
+													<h4 class="modal-title" id="warning-header-modalLabel">Berechnung löschen
+													</h4>
+													<button type="button" class="btn-close btn-close-white"
+														data-bs-dismiss="modal" aria-label="Close"></button>
+												</div>
+												<div class="modal-body">
+													<p>Soll die Berechnung wirklich gelöscht werden?</p>
+												</div>
+												<div class="modal-footer">
+													<button type="button" class="btn btn-light"
+														data-bs-dismiss="modal">Abbrechen</button>
+														<form method="POST" action="?/delete">
+															<input type="hidden" name="id" value={mod_fz.id} />
+															<button type="submit" class="btn btn-warning">Löschen</button>
+														</form>
+												</div>
+											</div><!-- /.modal-content -->
+										</div><!-- /.modal-dialog -->
+									</div><!-- /.modal -->
 								</div>
 							</div>
 						</div>
