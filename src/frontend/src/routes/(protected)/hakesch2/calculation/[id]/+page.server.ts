@@ -6,7 +6,6 @@ import { base } from '$app/paths';
 import { browser } from '$app/environment';
 import { page } from '$app/state';
 import { prisma } from '$lib/prisma';
-import { NULL } from 'sass';
 
 export const load = async ({ params }) => {
 	if (browser) {
