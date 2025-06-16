@@ -58,30 +58,30 @@ model IDF_Parameters {
 }
 
 model Mod_Fliesszeit {
-  id                    Int                    @id @default(autoincrement())
-  x                     Int
-  Annuality             Annualities            @relation(fields: [x], references: [id])
-  Vo20                  Float
-  psi                   Float
-  TB_start              Int                    @default(30)
-  istep                 Int                    @default(5)
-  tol                   Int                    @default(5)
-  max_iter              Int                    @default(1000)
-  project_id            String                 @unique
-  Project               Project                @relation(fields: [project_id], references: [id])
-  Mod_Fliesszeit_Result Mod_Fliesszeit_Result?
+  id                       Int                    @id @default(autoincrement())
+  x                        Int
+  Annuality                Annualities            @relation(fields: [x], references: [id])
+  Vo20                     Float
+  psi                      Float
+  TB_start                 Int                    @default(30)
+  istep                    Int                    @default(5)
+  tol                      Int                    @default(5)
+  max_iter                 Int                    @default(1000)
+  project_id               String
+  Project                  Project                @relation(fields: [project_id], references: [id])
+  mod_fliesszeit_result_id Int?                   @unique
+  Mod_Fliesszeit_Result    Mod_Fliesszeit_Result? @relation(fields: [mod_fliesszeit_result_id], references: [id], onDelete: Cascade)
 }
 
 model Mod_Fliesszeit_Result {
-  id             Int            @id @default(autoincrement())
+  id             Int             @id @default(autoincrement())
   HQ             Float
   Tc             Float
   TB             Float
   TFl            Float
   i              Float
   Vox            Float
-  mod_fliesszeit Int            @unique
-  Mod_Fliesszeit Mod_Fliesszeit @relation(fields: [mod_fliesszeit], references: [id])
+  Mod_Fliesszeit Mod_Fliesszeit?
 }
 
 model Annualities {

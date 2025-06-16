@@ -340,6 +340,18 @@
 					</div>
 					<div class="d-flex flex-grow-1" style="height:500px;" id="map"></div>
 				</div>
+				<div class="col-lg-12">
+					<div class="d-flex align-items-center justify-content-between py-1">
+							<div class="d-flex align-items-center gap-2">
+							</div>
+							<div class="d-flex align-items-center gap-2">
+								<a href="{base}/hakesch2/calculation/{data.project.id}" type="button" class="btn btn-primary">
+									Berechnen <i class="ri-arrow-right-line"></i>
+								</a>
+								
+							</div>
+						</div>
+				</div>
 			</div>
 			<!-- end row-->
 		</div>

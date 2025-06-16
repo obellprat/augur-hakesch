@@ -5,6 +5,8 @@ import type { Actions } from './$types';
 import { base } from '$app/paths';
 import { browser } from '$app/environment';
 import { page } from '$app/state';
+import { prisma } from '$lib/prisma';
+import { NULL } from 'sass';
 
 export const load = async ({ params }) => {
 	if (browser) {
@@ -14,7 +16,6 @@ export const load = async ({ params }) => {
 	}
 
 	const { id } = params;
-	console.log("Project reload");
 	const project = await getProjectById(id);
 	if (!project) {
 		error(404, 'Project not found');
@@ -94,6 +95,7 @@ export const actions = {
 				number: Number(x) || 0
 			}
 		})
+		console.log("Da noch");
 		const mfzv = await prisma.Mod_Fliesszeit.upsert({
 			where: {
 				id : Number(mfzv_id) || 0				
@@ -122,7 +124,8 @@ export const actions = {
 				}
 			}
 		})
-
+		
+		console.log("Da noch immer");
 		const project = await prisma.project.update({
 			where: { id: id!},
 			data: {
@@ -148,5 +151,18 @@ export const actions = {
 		});
 		return project;
 		//redirect(302, `${base}/hakesch2/calculation/${id}`);
+	},
+
+	delete: async({request}) => {
+		const formData = Object.fromEntries(await request.formData());
+		const { id } = formData as unknown as {
+			id: number | undefined;
+		};
+
+		await await prisma.Mod_Fliesszeit.delete({
+			where : {
+				id: Number(id)
+			}
+		});
 	}
 } satisfies Actions;

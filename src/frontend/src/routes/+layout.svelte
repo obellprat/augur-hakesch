@@ -3,6 +3,8 @@
 	import '../scss/icons.scss';
 
 	import { base } from '$app/paths';
+	
+  	import { SvelteToast } from '@zerodevx/svelte-toast'
 
 	import { Footer, Menu } from '$lib/index';
 
@@ -31,6 +33,7 @@
 		{@render children()}
 		<Footer />
 	</div>
+	<SvelteToast />
 	<!-- ============================================================== -->
 	<!-- End Page content -->
 	<!-- ============================================================== -->

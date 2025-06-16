@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { currentProject } from '$lib/state.svelte';
 	import { enhance } from '$app/forms';
+	import { base } from '$app/paths';
 
 	import { Map, View, Feature } from 'ol';
 	import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
@@ -208,8 +209,18 @@
 								</div>
 							</div>
 						</div>
-
-						<button type="submit" class="btn btn-primary">Save</button>
+						<div class="d-flex align-items-center justify-content-between py-1">
+							<div class="d-flex align-items-center gap-2">
+								<button type="submit" class="btn btn-primary">Save</button>
+							</div>
+							<div class="d-flex align-items-center gap-2">
+								<a href="{base}/hakesch2/geodata/{data.project.id}" type="button" class="btn btn-primary">
+									Geodaten <i class="ri-arrow-right-line"></i>
+								</a>
+								
+							</div>
+						</div>
+						
 					</form>
 				</div>
 				<!-- end col -->
