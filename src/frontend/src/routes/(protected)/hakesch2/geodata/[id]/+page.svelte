@@ -76,10 +76,10 @@
 					
 					globalThis.$('.progress-bar').css('width', res.task_result.progress + '%').attr('aria-valuenow', res.task_result.progress);
 				}
-				else if (res.task_status != 'PENDING') {
+				else if (res.task_status == 'PENDING') {
 					html = "Der Prozess wird intialisiert. Bitte warten...";
 				}
-				else if (res.task_status != 'SUCCESS') {
+				else if (res.task_status == 'SUCCESS') {
 					html = "Die Geodaten wurden erfolgrech berechnet.";				
 				}
 				document.getElementById('progresstext')!.innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
