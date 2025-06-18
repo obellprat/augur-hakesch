@@ -87,7 +87,6 @@
 
 					const taskStatus = res.task_status;
 					if (taskStatus === 'SUCCESS') {
-						
 					}
 					if (taskStatus === 'SUCCESS' || taskStatus === 'FAILURE') {
 						return false;

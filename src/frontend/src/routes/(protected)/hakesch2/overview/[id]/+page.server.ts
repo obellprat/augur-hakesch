@@ -52,13 +52,13 @@ export const actions = {
 
 		redirect(302, `${base}/hakesch2/overview/${updatedProject.id}`);
 	},
-	delete: async({request}) => {
+	delete: async ({ request }) => {
 		const formData = Object.fromEntries(await request.formData());
 		const { id } = formData as unknown as {
 			id: string | undefined;
 		};
 
-		await deleteProject(id!, page.data.session?.myuser.id );
+		await deleteProject(id!, page.data.session?.myuser.id);
 		redirect(302, `${base}/hakesch2`);
 	}
 } satisfies Actions;

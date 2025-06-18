@@ -3,8 +3,8 @@
 	import '../scss/icons.scss';
 
 	import { base } from '$app/paths';
-	
-  	import { SvelteToast } from '@zerodevx/svelte-toast'
+
+	import { SvelteToast } from '@zerodevx/svelte-toast';
 
 	import { Footer, Menu } from '$lib/index';
 
