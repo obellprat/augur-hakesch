@@ -4,6 +4,8 @@
 
 	import { base } from '$app/paths';
 
+	import { SvelteToast } from '@zerodevx/svelte-toast';
+
 	import { Footer, Menu } from '$lib/index';
 
 	import { loadScript } from '$lib/page/loadscript';
@@ -31,6 +33,7 @@
 		{@render children()}
 		<Footer />
 	</div>
+	<SvelteToast />
 	<!-- ============================================================== -->
 	<!-- End Page content -->
 	<!-- ============================================================== -->

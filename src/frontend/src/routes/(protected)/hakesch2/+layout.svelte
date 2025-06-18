@@ -11,9 +11,7 @@
 
 	$pageTitle = 'HAKESCH 2.0';
 
-	onMount(async () => {
-		
-	});
+	onMount(async () => {});
 </script>
 
 <div class="page-container">

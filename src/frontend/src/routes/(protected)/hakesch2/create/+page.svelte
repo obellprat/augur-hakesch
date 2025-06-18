@@ -23,16 +23,13 @@
 	let easting = $derived(2600000);
 	let northing = $derived(1200000);
 
-
 	onMount(async () => {
+		const stroke = new Stroke({ color: 'black', width: 2 });
+		const fill = new Fill({ color: 'blue' });
 
-		const stroke = new Stroke({color: 'black', width: 2});	
-		const fill = new Fill({color: 'blue'});
+		var vectorSource = new VectorSource({});
 
-		var vectorSource = new VectorSource({
-		});
-
-		var vectorLayer = new VectorLayer({ 
+		var vectorLayer = new VectorLayer({
 			name: 'Pourpoint',
 			zIndex: 100,
 			source: vectorSource,
@@ -40,7 +37,7 @@
 				image: new CircleStyle({
 					radius: 7,
 					fill: fill,
-					stroke: stroke,
+					stroke: stroke
 				})
 			})
 		});
@@ -48,15 +45,13 @@
 		function addMarker(coordinates: Coordinate) {
 			var marker = new Feature(new Point(coordinates));
 			var zIndex = 1;
-			
 
 			map.getLayers().forEach((layer) => {
 				if (layer && layer.get('name') && layer.get('name') == 'Pourpoint') {
 					map.removeLayer(layer);
 				}
 			});
-			vectorSource = new VectorSource({
-				});
+			vectorSource = new VectorSource({});
 			vectorSource.addFeature(marker);
 			vectorLayer.setSource(vectorSource);
 			map.addLayer(vectorLayer);
@@ -91,7 +86,6 @@
 			view: view
 		});
 
-		
 		addMarker([easting, northing]);
 
 		map.on('singleclick', function (e) {
@@ -127,23 +121,15 @@
 		<div class="card-body">
 			<div class="row">
 				<div class="col-lg-6">
-					<form
-						method="post">
+					<form method="post">
 						<div class="mb-3">
 							<label for="title" class="form-label">Projekttitel</label>
-							<input
-								type="text"
-								name="title"
-								id="title"
-								class="form-control"
-							/>
+							<input type="text" name="title" id="title" class="form-control" />
 						</div>
 
 						<div class="mb-3">
 							<label for="description" class="form-label">Beschreibung</label>
-							<textarea class="form-control" name="description" rows="5"
-								></textarea
-							>
+							<textarea class="form-control" name="description" rows="5"></textarea>
 						</div>
 
 						<div class="mb-3">

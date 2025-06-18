@@ -6,7 +6,6 @@
 	import { signIn, signOut } from '@auth/sveltekit/client';
 
 	import { base } from '$app/paths';
-	
 </script>
 
 <!-- Topbar Start -->
@@ -93,7 +92,11 @@
 							</div>
 
 							<!-- item-->
-							<a href="{base}/user/myaccount" data-sveltekit-preload-data="off" class="dropdown-item">
+							<a
+								href="{base}/user/myaccount"
+								data-sveltekit-preload-data="off"
+								class="dropdown-item"
+							>
 								<i class="ri-account-circle-line me-1 fs-16 align-middle"></i>
 								<span class="align-middle">My Account</span>
 							</a>
@@ -138,7 +141,7 @@
 						class="topbar-link btn btn-outline-primary rounded-pill"
 						id="loginBtn"
 						type="button"
-						onclick={() => signIn('keycloak', null, { prompt: "create" })}>Signup</button
+						onclick={() => signIn('keycloak', null, { prompt: 'create' })}>Signup</button
 					>
 				</div>
 			{/if}
@@ -150,9 +153,9 @@
 						data-bs-toggle="dropdown"
 						data-bs-offset="0,25"
 						aria-haspopup="false"
-						aria-expanded="false" 
+						aria-expanded="false"
 					>
-					DE
+						DE
 					</span>
 
 					<div class="dropdown-menu dropdown-menu-end">

@@ -4,7 +4,7 @@ from helpers.prisma import prisma
 from helpers.user import get_user
 from prisma.models import User
 
-from calculations.hakesch import construct_idf_curve, modifizierte_fliesszeit, prepare_hakesch_hydroparameters
+from calculations.hakesch import construct_idf_curve, modifizierte_fliesszeit, prepare_hakesch_hydroparameters, koella
 
 router = APIRouter(prefix="/hakesch",
     tags=["hakesch"],)
@@ -28,8 +28,6 @@ def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User 
         )
 
         modFliesszeit = next((x for x in project.Mod_Fliesszeit if x.id == ModFliesszeitId), None)
-        print(modFliesszeit);
-
         task = modifizierte_fliesszeit.delay(project.IDF_Parameters.P_low_1h, project.IDF_Parameters.P_high_1h, project.IDF_Parameters.P_low_24h, project.IDF_Parameters.P_high_24h, project.IDF_Parameters.rp_low, project.IDF_Parameters.rp_high, modFliesszeit.Annuality.number, modFliesszeit.Vo20, project.channel_length, project.delta_h, modFliesszeit.psi, project.catchment_area, modFliesszeit.id)
         return JSONResponse({"task_id": task.id}) 
     except:
@@ -39,6 +37,33 @@ def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User 
             detail="Unable to retrieve project",
         )
 
+@router.get("/koella")
+def get_koella(ProjectId:str, KoellaId: int, user: User = Depends(get_user)):
+    try:
+        project =  prisma.project.find_unique_or_raise(
+            where = {
+                'userId' : user.id,
+                'id' :  ProjectId
+            },
+            include = {
+                'IDF_Parameters' : True,
+                'Koella' : {
+                    'include' :  {
+                        'Annuality' : True
+                    }
+                }
+            }
+        )
+
+        koella_obj = next((x for x in project.Koella if x.id == KoellaId), None)
+        task = koella.delay(project.IDF_Parameters.P_low_1h, project.IDF_Parameters.P_high_1h, project.IDF_Parameters.P_low_24h, project.IDF_Parameters.P_high_24h, project.IDF_Parameters.rp_low, project.IDF_Parameters.rp_high, koella_obj.Annuality.number, koella_obj.Vo20, project.channel_length, project.catchment_area, koella_obj.glacier_area, koella_obj.id)
+        return JSONResponse({"task_id": task.id}) 
+    except:
+        # Handle missing user scenario
+        raise HTTPException(
+            status_code=404,
+            detail="Unable to retrieve project",
+        )
 
 
 @router.get("/prepare_hakesch_hydroparameters")

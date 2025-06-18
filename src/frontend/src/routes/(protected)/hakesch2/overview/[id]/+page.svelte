@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { currentProject } from '$lib/state.svelte';
 	import { enhance } from '$app/forms';
+	import { base } from '$app/paths';
 
 	import { Map, View, Feature } from 'ol';
 	import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
@@ -30,14 +31,12 @@
 	currentProject.id = data.project.id;
 
 	onMount(async () => {
+		const stroke = new Stroke({ color: 'black', width: 2 });
+		const fill = new Fill({ color: 'blue' });
 
-		const stroke = new Stroke({color: 'black', width: 2});	
-		const fill = new Fill({color: 'blue'});
+		var vectorSource = new VectorSource({});
 
-		var vectorSource = new VectorSource({
-		});
-
-		var vectorLayer = new VectorLayer({ 
+		var vectorLayer = new VectorLayer({
 			name: 'Pourpoint',
 			zIndex: 100,
 			source: vectorSource,
@@ -45,7 +44,7 @@
 				image: new CircleStyle({
 					radius: 7,
 					fill: fill,
-					stroke: stroke,
+					stroke: stroke
 				})
 			})
 		});
@@ -53,15 +52,13 @@
 		function addMarker(coordinates: Coordinate) {
 			var marker = new Feature(new Point(coordinates));
 			var zIndex = 1;
-			
 
 			map.getLayers().forEach((layer) => {
 				if (layer && layer.get('name') && layer.get('name') == 'Pourpoint') {
 					map.removeLayer(layer);
 				}
 			});
-			vectorSource = new VectorSource({
-				});
+			vectorSource = new VectorSource({});
 			vectorSource.addFeature(marker);
 			vectorLayer.setSource(vectorSource);
 			map.addLayer(vectorLayer);
@@ -96,7 +93,6 @@
 			view: view
 		});
 
-		
 		addMarker([easting, northing]);
 
 		map.on('singleclick', function (e) {
@@ -139,7 +135,7 @@
 						data-bs-target="#delete-project-modal"
 					>
 						<i class="ti ti-trash fs-20"></i>
-				</span>
+					</span>
 					<a
 						href="javascript: void(0);"
 						class="btn btn-sm btn-icon btn-ghost-primary d-none d-xl-flex"
@@ -158,7 +154,8 @@
 			<div class="row">
 				<div class="col-lg-6">
 					<form
-						method="post"  action="?/update"
+						method="post"
+						action="?/update"
 						use:enhance={() => {
 							return async ({ update }) => {
 								await update();
@@ -208,8 +205,20 @@
 								</div>
 							</div>
 						</div>
-
-						<button type="submit" class="btn btn-primary">Save</button>
+						<div class="d-flex align-items-center justify-content-between py-1">
+							<div class="d-flex align-items-center gap-2">
+								<button type="submit" class="btn btn-primary">Save</button>
+							</div>
+							<div class="d-flex align-items-center gap-2">
+								<a
+									href="{base}/hakesch2/geodata/{data.project.id}"
+									type="button"
+									class="btn btn-primary"
+								>
+									Geodaten <i class="ri-arrow-right-line"></i>
+								</a>
+							</div>
+						</div>
 					</form>
 				</div>
 				<!-- end col -->
@@ -224,30 +233,40 @@
 		</div>
 	</div>
 
-
 	<!-- Warning Header Modal -->
-	<div id="delete-project-modal" class="modal fade" tabindex="-1" role="dialog"
-		aria-labelledby="warning-header-modalLabel" aria-hidden="true">
+	<div
+		id="delete-project-modal"
+		class="modal fade"
+		tabindex="-1"
+		role="dialog"
+		aria-labelledby="warning-header-modalLabel"
+		aria-hidden="true"
+	>
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header text-bg-warning border-0">
-					<h4 class="modal-title" id="warning-header-modalLabel">Projekt löschen
-					</h4>
-					<button type="button" class="btn-close btn-close-white"
-						data-bs-dismiss="modal" aria-label="Close"></button>
+					<h4 class="modal-title" id="warning-header-modalLabel">Projekt löschen</h4>
+					<button
+						type="button"
+						class="btn-close btn-close-white"
+						data-bs-dismiss="modal"
+						aria-label="Close"
+					></button>
 				</div>
 				<div class="modal-body">
 					<p>Soll das Projekt {data.project.title} wirklich gelöscht werden?</p>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-light"
-						data-bs-dismiss="modal">Abbrechen</button>
-						<form method="POST" action="?/delete">
-							<input type="hidden" name="id" value={data.project.id} />
-							<button type="submit" class="btn btn-warning">Löschen</button>
-						</form>
+					<button type="button" class="btn btn-light" data-bs-dismiss="modal">Abbrechen</button>
+					<form method="POST" action="?/delete">
+						<input type="hidden" name="id" value={data.project.id} />
+						<button type="submit" class="btn btn-warning">Löschen</button>
+					</form>
 				</div>
-			</div><!-- /.modal-content -->
-		</div><!-- /.modal-dialog -->
-	</div><!-- /.modal -->
+			</div>
+			<!-- /.modal-content -->
+		</div>
+		<!-- /.modal-dialog -->
+	</div>
+	<!-- /.modal -->
 </div>

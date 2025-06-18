@@ -83,28 +83,34 @@ def modifizierte_fliesszeit(self,
 
     prisma = Prisma()
     prisma.connect()
+
     
-    updatedResults = prisma.mod_fliesszeit_result.upsert(
+    
+    updatedResults = prisma.mod_fliesszeit.update(
         where = {
-            'mod_fliesszeit' : mod_fliesszeit_id
+            'id' : mod_fliesszeit_id
         },
         data = {
-            'update' : {
-                'HQ' : HQ,
-                'Tc' : Tc,
-                'TB' : TB,
-                'TFl' : TFl,
-                'Vox' : Vox
-            },
-            'create' : {
-                'HQ' : HQ,
-                'Tc' : Tc,
-                'TB' : TB,
-                'i' : i_final,
-                'TFl' : TFl,
-                'Vox' : Vox,
-                'mod_fliesszeit' : mod_fliesszeit_id
+            'Mod_Fliesszeit_Result': {
+                'upsert' : {
+                    'update' : {
+                        'HQ' : HQ,
+                        'Tc' : Tc,
+                        'TB' : TB,
+                        'TFl' : TFl,
+                        'Vox' : Vox
+                    },
+                    'create' : {
+                        'HQ' : HQ,
+                        'Tc' : Tc,
+                        'TB' : TB,
+                        'i' : i_final,
+                        'TFl' : TFl,
+                        'Vox' : Vox
+                    }
+                }
             }
+            
         }
         
     )
@@ -120,6 +126,159 @@ def modifizierte_fliesszeit(self,
         "Vox": Vox
     }
 
+@app.task(name="koella", bind=True)
+def koella(self,
+    P_low_1h,
+    P_high_1h,
+    P_low_24h,
+    P_high_24h,
+    rp_low,
+    rp_high,  
+    x,                      # Recurrence interval: "2.3", "20", "100"
+    Vo20,                   # Wetting volume for 20-year event [mm]
+    Lg,                     # Cumulative channel length [km]
+    E,                      # Catchment area [km²]
+    glacier_area,           # Glacier area [km²]
+    koella_id,              # db id for updating results
+    rs=4,                   # Meltwater equivalent [mm / h]
+    snow_melt=False,         # Consider snowmelt [bool]
+    TB_start=30,            # Start value for TB [min]
+    tol=5,                  # Convergence tolerance [mm]
+    istep=5,                # Step size for TB [min]
+    max_iter=1000            # Max. iterations
+):
+    intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
+    # Effective contributing area in km²
+    FLeff = 0.12 * (Lg ** 0.17)  
+
+    if x == 2.3:
+        Vox = 0.5 * Vo20
+        f = 0.1 * Vox
+    elif x == 100:
+        Vox = 1.3 * Vo20
+        f = 0.1 * Vox
+    elif x == 20:
+        Vox = Vo20
+        f = 0.1 * Vo20
+    else:
+        raise ValueError("Invalid recurrence interval (x)")
+
+    TFl_h = FLeff ** 0.2
+    TFl = TFl_h * 60  # min
+    kGang = 1 # Initial value for hydrograph correction factor
+
+    TB = TB_start
+    for _ in range(max_iter):
+        Tc = TB + TFl
+        ix = intensity_fn(rp_years = x, duration_minutes = Tc) 
+        if abs(TB / 60 * ix - Vox) < tol:
+            # Convergence reached
+            break 
+        else: 
+            if TB * ix < Vox:
+                TB_new = TB - istep
+            else:
+                TB_new = TB + istep
+            TB = TB_new
+    else:
+        raise RuntimeError("TB iteration did not converge.")
+      
+    # Hydrograph correction (rain duration = Tc)
+    if Tc <= 60:
+        if E > 1:
+            kGang = 1 + (10 - E) / 9 * 0.2
+        else:
+            kGang = 1.2
+    elif Tc <= 180:
+        TRx = Tc / 60  # Rain duration in hours (stimmt das?)
+        if E > 1:
+            kGang = 1 + (3 - TRx) / 2 * (10 - E) / 9 * 0.2
+        else:
+            kGang = 1 + (3 - TRx) / 2 * 0.2
+
+    i_final = intensity_fn(rp_years = x, duration_minutes = Tc) 
+    if snow_melt:
+        i_final += rs
+    i_corrected = max(i_final - f, 0)
+
+    QGle = 0.5 * glacier_area
+
+    # Correction according to recurrence interval
+    
+    def get_kF_values(Vo20):
+        # Table mapping Vo20 to kF2.33 and kF100
+        table = {
+            20: (0.9, 1.1),
+            25: (0.8, 1.15),
+            30: (0.75, 1.2),
+            35: (0.7, 1.25),
+            40: (0.65, 1.3),
+            45: (0.6, 1.3)
+        }
+        # Find closest Vo20 in table if not exact
+        keys = sorted(table.keys())
+        closest = min(keys, key=lambda k: abs(k - Vo20))
+        return table[closest]
+
+    kF2_33, kF100 = get_kF_values(Vo20)
+
+    # Compute HQ depending on recurrence  intervalperiod
+    if x == 2.3:
+        kF = kF2_33
+    elif x == 100:
+        kF = kF100
+    elif x == 20:
+        kF = 1.0
+
+    HQ = FLeff * kF * (i_corrected - 0.1 * Vox) * kGang + QGle
+    prisma = Prisma()
+    prisma.connect()
+
+    
+    
+    updatedResults = prisma.koella.update(
+        where = {
+            'id' : koella_id
+        },
+        data = {
+            'Koella_Result': {
+                'upsert' : {
+                    'update' : {
+                        "HQ": HQ,
+                        "Tc": Tc,
+                        "TB": TB,
+                        "TFl": TFl,
+                        "FLeff": FLeff,
+                        "i_final": i_final,
+                        "i_korrigiert": i_corrected
+                    },
+                    'create' : {
+                        "HQ": HQ,
+                        "Tc": Tc,
+                        "TB": TB,
+                        "TFl": TFl,
+                        "FLeff": FLeff,
+                        "i_final": i_final,
+                        "i_korrigiert": i_corrected
+                    }
+                }
+            }
+            
+        }
+        
+    )
+
+    prisma.disconnect(5)
+
+    return {
+        "HQ": HQ,
+        "Tc": Tc,
+        "TB": TB,
+        "TFl": TFl,
+        "FLeff": FLeff,
+        "i_final": i_final,
+        "i_korrigiert": i_corrected,
+    }
 
 def construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high2):
     

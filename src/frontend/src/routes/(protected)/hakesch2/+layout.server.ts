@@ -19,6 +19,5 @@ export const load: PageServerLoad = async (events) => {
 			session,
 			projects
 		};
-	}
-	else redirect(303, base+`/login?redirect_url=` + base + '/hakesch2');
+	} else redirect(303, base + `/login?redirect_url=` + base + '/hakesch2');
 };
