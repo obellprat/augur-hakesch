@@ -6,6 +6,7 @@
 	import { signIn, signOut } from '@auth/sveltekit/client';
 
 	import { base } from '$app/paths';
+	
 </script>
 
 <!-- Topbar Start -->
@@ -132,32 +133,33 @@
 						onclick={() => signIn('keycloak')}>Login</button
 					>
 				</div>
+				<div class="" id="loginbuttonbar">
+					<button
+						class="topbar-link btn btn-outline-primary rounded-pill"
+						id="loginBtn"
+						type="button"
+						onclick={() => signIn('keycloak', null, { prompt: "create" })}>Signup</button
+					>
+				</div>
 			{/if}
 			<!-- Language Dropdown -->
 			<div class="topbar-item">
 				<div class="dropdown">
-					<button
-						class="topbar-link"
+					<span
+						class="topbar-link light-mode-icon fs-18"
 						data-bs-toggle="dropdown"
 						data-bs-offset="0,25"
-						type="button"
 						aria-haspopup="false"
-						aria-expanded="false"
+						aria-expanded="false" 
 					>
-						<img
-							src="{base}/assets/images/flags/us.svg"
-							alt="user-image"
-							class="w-100 rounded"
-							height="18"
-							id="selected-language-image"
-						/>
-					</button>
+					DE
+					</span>
 
 					<div class="dropdown-menu dropdown-menu-end">
 						<!-- item-->
 						<a href="javascript:void(0);" class="dropdown-item" data-translator-lang="en">
 							<img
-								src="{base}/assets/images/flags/us.svg"
+								src="{base}/assets/images/flags/gb.svg"
 								alt="user-image"
 								class="me-1 rounded"
 								height="18"
@@ -174,28 +176,6 @@
 								height="18"
 							/>
 							<span class="align-middle">German</span>
-						</a>
-
-						<!-- item-->
-						<a href="javascript:void(0);" class="dropdown-item">
-							<img
-								src="{base}/assets/images/flags/it.svg"
-								alt="user-image"
-								class="me-1 rounded"
-								height="18"
-							/>
-							<span class="align-middle">Italian</span>
-						</a>
-
-						<!-- item-->
-						<a href="javascript:void(0);" class="dropdown-item">
-							<img
-								src="{base}/assets/images/flags/es.svg"
-								alt="user-image"
-								class="me-1 rounded"
-								height="18"
-							/>
-							<span class="align-middle">Spanish</span>
 						</a>
 					</div>
 				</div>
