@@ -4,10 +4,10 @@ from helpers.prisma import prisma
 from helpers.user import get_user
 from prisma.models import User
 
-from calculations.hakesch import construct_idf_curve, modifizierte_fliesszeit, prepare_hakesch_hydroparameters, koella
+from calculations.hydrocalc import construct_idf_curve, modifizierte_fliesszeit, prepare_hydrocalc_hydroparameters, koella
 
-router = APIRouter(prefix="/hakesch",
-    tags=["hakesch"],)
+router = APIRouter(prefix="/hydrocalc",
+    tags=["hydrocalc"],)
 
 @router.get("/modifizierte_fliesszeit")
 def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User = Depends(get_user)):
@@ -66,8 +66,8 @@ def get_koella(ProjectId:str, KoellaId: int, user: User = Depends(get_user)):
         )
 
 
-@router.get("/prepare_hakesch_hydroparameters")
-async def get_prepare_hakesch_hydroparametersisozones(ProjectId:str, user: User = Depends(get_user)):
+@router.get("/prepare_hydrocalc_hydroparameters")
+async def get_prepare_hydrocalc_hydroparametersisozones(ProjectId:str, user: User = Depends(get_user)):
     try:
         project =  prisma.project.find_unique_or_raise(
             where = {
@@ -79,7 +79,7 @@ async def get_prepare_hakesch_hydroparametersisozones(ProjectId:str, user: User 
             }
         )
         print(project)
-        task = prepare_hakesch_hydroparameters.delay(project.id, user.id, project.Point.easting, project.Point.northing)
+        task = prepare_hydrocalc_hydroparameters.delay(project.id, user.id, project.Point.easting, project.Point.northing)
         prisma.project.update(
             where = {
                 'id' :  ProjectId

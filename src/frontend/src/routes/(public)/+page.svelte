@@ -60,12 +60,12 @@
 					alt="Card fsdaf cap"
 				/>
 				<div class="card-body">
-					<h3 class="card-title">HAKESCH 2.0</h3>
+					<h3 class="card-title">HydroCalc</h3>
 					<p class="card-text">
 						Some quick example text to build on the card title and make up the bulk of the card's
 						content. Some quick example text to build on the card title and make up.
 					</p>
-					<a href="hakesch2" class="btn btn-primary">Start</a>
+					<a href="hydrocalc" class="btn btn-primary">Start</a>
 				</div>
 				<!-- end card-body-->
 			</div>

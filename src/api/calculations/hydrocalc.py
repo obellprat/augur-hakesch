@@ -332,8 +332,8 @@ def construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_h
 # Example usage:
 # idf_fn = construct_idf_curve(25, 50, 60, 120, 2.33, 100)
 
-@app.task(name="prepare_hakesch_hydroparameters", bind=True)
-def prepare_hakesch_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 10000, v_gerinne = 1.5):
+@app.task(name="prepare_hydrocalc_hydroparameters", bind=True)
+def prepare_hydrocalc_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 10000, v_gerinne = 1.5):
     # Definitions
     cell_size = 5
 

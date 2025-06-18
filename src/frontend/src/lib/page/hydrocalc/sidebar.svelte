@@ -47,7 +47,7 @@
 									</div>
 
 									<div class="email-menu-list d-flex flex-column">
-										<a href="{base}/hakesch2" class="active" onclick={closeOffcanvas}>
+										<a href="{base}/hydrocalc" class="active" onclick={closeOffcanvas}>
 											<iconify-icon icon="solar:inbox-outline" class="me-2 fs-18 text-muted"
 											></iconify-icon>
 											<span>Projekte</span>
@@ -72,7 +72,7 @@
 										<div id="other" class="collapse show">
 											<div class="email-menu-list d-flex flex-column mt-2">
 												<a
-													href="{base}/hakesch2/overview/{props.currentProject.id}"
+													href="{base}/hydrocalc/overview/{props.currentProject.id}"
 													onclick={closeOffcanvas}
 												>
 													<iconify-icon icon="solar:mailbox-outline" class="me-2 fs-18 text-muted"
@@ -81,7 +81,7 @@
 												</a>
 
 												<a
-													href="{base}/hakesch2/geodata/{props.currentProject.id}"
+													href="{base}/hydrocalc/geodata/{props.currentProject.id}"
 													onclick={closeOffcanvas}
 												>
 													<iconify-icon
@@ -91,7 +91,7 @@
 													<span>Geodaten</span>
 												</a>
 												<a
-													href="{base}/hakesch2/calculation/{props.currentProject.id}"
+													href="{base}/hydrocalc/calculation/{props.currentProject.id}"
 													onclick={closeOffcanvas}
 												>
 													<iconify-icon

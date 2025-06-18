@@ -22,7 +22,7 @@
 	import type { Coordinate } from 'ol/coordinate';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
-	$pageTitle = 'HAKESCH 2.0 - Projekt ' + data.project.title;
+	$pageTitle = 'HydroCalc - Projekt ' + data.project.title;
 
 	let northing = $derived(data.project.Point.northing);
 	let easting = $derived(data.project.Point.easting);
@@ -211,7 +211,7 @@
 							</div>
 							<div class="d-flex align-items-center gap-2">
 								<a
-									href="{base}/hakesch2/geodata/{data.project.id}"
+									href="{base}/hydrocalc/geodata/{data.project.id}"
 									type="button"
 									class="btn btn-primary"
 								>

@@ -37,7 +37,7 @@
 
 			<Navlink title="Precipitation" href="precipitation" icon="ti ti-cloud-rain" />
 
-			<Navlink title="HAKESCH 2.0" href="hakesch2" icon="ti ti-chart-histogram" />
+			<Navlink title="HydroCalc" href="hydrocalc" icon="ti ti-chart-histogram" />
 
 			<!--<Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />-->
 
