@@ -39,7 +39,7 @@
 
 			<Navlink title="HAKESCH 2.0" href="hakesch2" icon="ti ti-chart-histogram" />
 
-			<Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />
+			<!--<Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />-->
 
 			<li class="side-nav-title mt-2">About</li>
 
