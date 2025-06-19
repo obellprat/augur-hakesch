@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { currentProject } from '$lib/state.svelte';
+	import Navlink from './navlink.svelte'
 
 	let props = $props();
 	// Function to close the offcanvas menu
@@ -55,6 +56,7 @@
 												>{props.projectCount}</span
 											>
 										</a>
+										
 									</div>
 								</div>
 								{#if props.currentProject.id != ''}
@@ -71,35 +73,9 @@
 										>
 										<div id="other" class="collapse show">
 											<div class="email-menu-list d-flex flex-column mt-2">
-												<a
-													href="{base}/hydrocalc/overview/{props.currentProject.id}"
-													onclick={closeOffcanvas}
-												>
-													<iconify-icon icon="solar:mailbox-outline" class="me-2 fs-18 text-muted"
-													></iconify-icon>
-													<span>Übersicht</span>
-												</a>
-
-												<a
-													href="{base}/hydrocalc/geodata/{props.currentProject.id}"
-													onclick={closeOffcanvas}
-												>
-													<iconify-icon
-														icon="solar:trash-bin-trash-outline"
-														class="me-2 fs-18 text-muted"
-													></iconify-icon>
-													<span>Geodaten</span>
-												</a>
-												<a
-													href="{base}/hydrocalc/calculation/{props.currentProject.id}"
-													onclick={closeOffcanvas}
-												>
-													<iconify-icon
-														icon="solar:chat-round-line-outline"
-														class="me-2 fs-18 text-muted"
-													></iconify-icon>
-													<span>Berechnen</span>
-												</a>
+												<Navlink title="Übersicht" href="{base}/hydrocalc/overview/{props.currentProject.id}" tool="overview" />
+												<Navlink title="Geodaten" href="{base}/hydrocalc/geodata/{props.currentProject.id}" tool="geodata" />
+												<Navlink title="Berechnen" href="{base}/hydrocalc/calculation/{props.currentProject.id}" tool="calculation" />
 											</div>
 										</div>
 									</div>

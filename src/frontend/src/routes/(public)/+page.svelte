@@ -43,7 +43,7 @@
 						Some quick example text to build on the card title and make up the bulk of the card's
 						content. Some quick example text to build on the card title and make up.
 					</p>
-					<a href="precipitation.html" class="btn btn-primary">Start</a>
+					<a href="precipitation.html" class="btn btn-primary stretched-link">Start</a>
 				</div>
 				<!-- end card-body-->
 			</div>
@@ -53,19 +53,18 @@
 
 		<div class="col-sm-6 col-lg-3">
 			<!-- Simple card -->
-			<div class="card d-block">
+			<div class="card d-block" >
 				<img
 					class="card-img-top"
-					src="assets/images/tools/precipitation.png"
+					src="assets/images/tools/hydrocalc.png"
 					alt="Card fsdaf cap"
 				/>
 				<div class="card-body">
 					<h3 class="card-title">HydroCalc</h3>
 					<p class="card-text">
-						Some quick example text to build on the card title and make up the bulk of the card's
-						content. Some quick example text to build on the card title and make up.
+						Berechnen von hydrologischen Abflussmodellierungen, wie modifiziertes Fliesszeitverfahren, Kölla oder Clark-WSL.
 					</p>
-					<a href="hydrocalc" class="btn btn-primary">Start</a>
+					<a href="hydrocalc" class="btn btn-primary stretched-link">Start</a>
 				</div>
 				<!-- end card-body-->
 			</div>
