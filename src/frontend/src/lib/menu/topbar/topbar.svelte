@@ -146,7 +146,7 @@
 				</div>
 			{/if}
 			<!-- Language Dropdown -->
-			<div class="topbar-item">
+			<div class="topbar-item" style="padding-right:10px;">
 				<div class="dropdown">
 					<span
 						class="topbar-link light-mode-icon fs-18"
