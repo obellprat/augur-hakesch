@@ -5,7 +5,7 @@
 
 	export let data;
 
-	$pageTitle = 'HAKESCH 2.0 - Projekte';
+	$pageTitle = 'HydroCalc  - Projekte';
 
 	onMount(async () => {});
 </script>
@@ -54,7 +54,7 @@
                         <i class="ri-search-line fs-18 app-search-icon text-muted"></i>
                     </div>-->
 					<a
-						href="{base}/hakesch2/create"
+						href="{base}/hydrocalc/create"
 						type="button"
 						class="btn btn-primary bg-gradient rounded-pill">Neues Projekt erstellen</a
 					>
@@ -84,7 +84,7 @@
 
 									<td>
 										<a
-											href="{base}/hakesch2/overview/{project.id}"
+											href="{base}/hydrocalc/overview/{project.id}"
 											class="link-reset fs-14 fw-medium stretched-link"
 										>
 											{project.title}

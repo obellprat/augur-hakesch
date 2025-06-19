@@ -10,7 +10,7 @@ from helpers.user import map_user
 import logging
 import uvicorn
 
-from routers import catchment, file, task, isozones, project, hakesch
+from routers import catchment, file, task, isozones, project, hydrocalc
 
 from version import __version__
 
@@ -73,6 +73,6 @@ app.include_router(file.router)
 app.include_router(task.router)
 app.include_router(isozones.router)
 app.include_router(project.router)
-app.include_router(hakesch.router)
+app.include_router(hydrocalc.router)
 
 

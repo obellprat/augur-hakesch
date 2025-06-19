@@ -26,7 +26,7 @@
 	import { env } from '$env/dynamic/public';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
-	$pageTitle = 'HAKESCH 2.0 - Projekt ' + data.project.title;
+	$pageTitle = 'HydroCalc - Projekt ' + data.project.title;
 
 	let northing = $derived(data.project.Point.northing);
 	let easting = $derived(data.project.Point.easting);
@@ -39,7 +39,7 @@
 	async function calculateGeodatas() {
 		fetch(
 			env.PUBLIC_HAKESCH_API_PATH +
-				'/hakesch/prepare_hakesch_hydroparameters?ProjectId=' +
+				'/hydrocalc/prepare_hydrocalc_hydroparameters?ProjectId=' +
 				data.project.id,
 			{
 				method: 'GET',
@@ -363,7 +363,7 @@
 						<div class="d-flex align-items-center gap-2"></div>
 						<div class="d-flex align-items-center gap-2">
 							<a
-								href="{base}/hakesch2/calculation/{data.project.id}"
+								href="{base}/hydrocalc/calculation/{data.project.id}"
 								type="button"
 								class="btn btn-primary"
 							>

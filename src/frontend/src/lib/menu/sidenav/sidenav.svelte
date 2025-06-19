@@ -6,7 +6,7 @@
 <!-- Sidenav Menu Start -->
 <div class="sidenav-menu">
 	<!-- Brand Logo -->
-	<a href="index.html" class="logo">
+	<a href="./" class="logo">
 		<span class="logo-light">
 			<span class="logo-lg"><img src="{base}/assets/images/logo.png" alt="logo" /></span>
 			<span class="logo-sm"><img src="{base}/assets/images/logo-sm.png" alt="small logo" /></span>
@@ -37,7 +37,7 @@
 
 			<Navlink title="Precipitation" href="precipitation" icon="ti ti-cloud-rain" />
 
-			<Navlink title="HAKESCH 2.0" href="hakesch2" icon="ti ti-chart-histogram" />
+			<Navlink title="HydroCalc" href="hydrocalc" icon="ti ti-chart-histogram" />
 
 			<!--<Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />-->
 

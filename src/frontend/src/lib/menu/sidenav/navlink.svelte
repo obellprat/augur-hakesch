@@ -4,7 +4,7 @@
 	import { base } from '$app/paths';
 	let { title, icon, href } = $props();
 
-	let active = $derived(page.url.pathname === '/' + href);
+	let active = $derived(page.url.pathname.includes(href));
 	$effect(() => {
 		if (page.url.pathname == '/' && href == '/') active = true;
 	});

@@ -10,7 +10,7 @@ import { prisma } from '$lib/prisma';
 export const load = async ({ params }) => {
 	if (browser) {
 		if (!page.data.session?.user?.name) {
-			redirect(303, `./login?redirect_url=` + page.url.href + '/hakesch2');
+			redirect(303, `./login?redirect_url=` + page.url.href + '/hydrocalc');
 		}
 	}
 
@@ -74,7 +74,7 @@ export const actions = {
 			}
 		});
 
-		redirect(302, `${base}/hakesch2/calculation/${id}`);
+		redirect(302, `${base}/hydrocalc/calculation/${id}`);
 	},
 
 	updatemfzv: async ({ request }) => {
@@ -150,7 +150,7 @@ export const actions = {
 			}
 		});
 		return project;
-		//redirect(302, `${base}/hakesch2/calculation/${id}`);
+		//redirect(302, `${base}/hydrocalc/calculation/${id}`);
 	},
 
 	updatekoella: async ({ request }) => {
@@ -223,7 +223,7 @@ export const actions = {
 			}
 		});
 		return project;
-		//redirect(302, `${base}/hakesch2/calculation/${id}`);
+		//redirect(302, `${base}/hydrocalc/calculation/${id}`);
 	},
 
 	delete: async ({ request }) => {

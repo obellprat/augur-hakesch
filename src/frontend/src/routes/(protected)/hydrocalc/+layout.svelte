@@ -2,14 +2,14 @@
 	import pageTitle from '$lib/page/pageTitle';
 	import { onMount } from 'svelte';
 
-	import Sidebar from '$lib/page/hakesch2/sidebar.svelte';
+	import Sidebar from '$lib/page/hydrocalc/sidebar.svelte';
 	import { page } from '$app/state';
 
 	import { currentProject } from '$lib/state.svelte';
 
 	let { children } = $props();
 
-	$pageTitle = 'HAKESCH 2.0';
+	$pageTitle = 'HydroCalc';
 
 	onMount(async () => {});
 </script>

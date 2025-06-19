@@ -18,7 +18,7 @@
 	import type { Coordinate } from 'ol/coordinate';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
-	$pageTitle = 'HAKESCH 2.0 - Projekt erstellen';
+	$pageTitle = 'HydroCalc - Projekt erstellen';
 
 	let easting = $derived(2600000);
 	let northing = $derived(1200000);

@@ -9,7 +9,7 @@ import { page } from '$app/state';
 export const load = async ({ params }) => {
 	if (browser) {
 		if (!page.data.session?.user?.name) {
-			redirect(303, `./login?redirect_url=` + page.url.href + '/hakesch2');
+			redirect(303, `./login?redirect_url=` + page.url.href + '/hydrocalc');
 		}
 	}
 

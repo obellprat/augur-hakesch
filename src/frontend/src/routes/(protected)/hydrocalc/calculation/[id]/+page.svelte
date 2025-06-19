@@ -10,7 +10,7 @@
 	import { env } from '$env/dynamic/public';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
-	$pageTitle = 'HAKESCH 2.0 - Projekt ' + data.project.title;
+	$pageTitle = 'HydroCalc - Projekt ' + data.project.title;
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
@@ -77,7 +77,7 @@
 		});
 		fetch(
 			env.PUBLIC_HAKESCH_API_PATH +
-				'/hakesch/modifizierte_fliesszeit?ProjectId=' +
+				'/hydrocalc/modifizierte_fliesszeit?ProjectId=' +
 				project_id +
 				'&ModFliesszeitId=' +
 				mod_fliesszeit_id,
@@ -99,7 +99,7 @@
 		});
 		fetch(
 			env.PUBLIC_HAKESCH_API_PATH +
-				'/hakesch/koella?ProjectId=' +
+				'/hydrocalc/koella?ProjectId=' +
 				project_id +
 				'&KoellaId=' +
 				koella_id,
