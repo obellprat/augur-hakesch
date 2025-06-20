@@ -1,0 +1,52 @@
+{
+  "page": {
+    "dashboard": {
+      "title": "Dashboard",
+      "nav": "Dashboard",
+      "welcome": "Welcome to AUGUR",
+      "welcome_text": "Welcome to AUGR",
+      "precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios"
+    },
+    "hydrocalc": {
+      "title": "HydroCalc",
+      "nav": "HydroCalc",
+      "projects": "Projects",
+      "geodata": "Geodatas",
+      "calculate": "Calculate"
+    },
+    "precipitation": {
+      "title": "Precipitation",
+      "nav": "Precipitation"
+    },
+    "nav": {
+      "tools": "Tools",
+      "about": "About",
+      "aboutAugur": "About AUGUR",
+      "science": "Science",
+      "donate": "Donate",
+      "helpSupportUs": "Help support us. Please donate!",
+      "donateNow": "Donate now",
+      "welcome": "Welcome !",
+      "my-account": "My Account",
+      "settings": "Settings",
+      "support": "Support",
+      "sign-out": "Sign Out",
+      "login": "Login",
+      "signup": "Signup",
+      "english": "English",
+      "german": "German",
+      "contact": "Contact Us",
+      "projekt": "Project: {currentProject.title}"
+    },
+    "about": {
+      "title": "About AUGUR",
+      "text": "AUGUR is cool"
+    },
+    "general": {
+      "close": "Close"
+    },
+    "hydrocal": {
+      "overview": "Overview"
+    }
+  }
+}

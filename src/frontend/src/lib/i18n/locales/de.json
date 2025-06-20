@@ -1,0 +1,52 @@
+{
+  "page": {
+    "dashboard": {
+      "title": "Dashboard",
+      "nav": "Dashboard",
+      "welcome": "Willkommen bei AUGUR",
+      "welcome_text": "Herzlich willkommen bei AUGR",
+      "precipitation_card": "Erhalten sie die Niederschalgswerte weltweit unter einbezug der Klimaszenarien"
+    },
+    "hydrocalc": {
+      "title": "HydroCalc",
+      "nav": "HydroCalc",
+      "projects": "Projekte",
+      "geodata": "Geodaten",
+      "calculate": "Berechnen"
+    },
+    "precipitation": {
+      "title": "Precipitation",
+      "nav": "Niederschlag"
+    },
+    "nav": {
+      "tools": "Tools",
+      "about": "Information",
+      "science": "Hintergrund",
+      "aboutAugur": "Über AUGUR",
+      "donateNow": "Jetzt unterstüzten",
+      "donate": "Unterstützen",
+      "helpSupportUs": "Helfen sie uns. Wir sind froh um ihre Spende!",
+      "login": "Anmelden",
+      "signup": "Registrieren",
+      "my-account": "Mein Konto",
+      "settings": "Einstellungen",
+      "sign-out": "Abmelden",
+      "support": "Unterstützung",
+      "welcome": "Willkommen !",
+      "english": "Englisch",
+      "german": "Deutsch",
+      "contact": "Kontakt",
+      "projekt": "Projekt: {currentProject.title}"
+    },
+    "about": {
+      "title": "Informationen zu AUGUR",
+      "text": "AUGUR ist toll"
+    },
+    "hydrocal": {
+      "overview": "Übersicht"
+    },
+    "general": {
+      "close": "Schliessen"
+    }
+  }
+}

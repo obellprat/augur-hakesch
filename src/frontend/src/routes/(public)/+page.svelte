@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import pageTitle from '$lib/page/pageTitle';
+	import { _ } from 'svelte-i18n'
 
-	$pageTitle = 'Dashboard';
+	$pageTitle = $_('page.dashboard.title');
 </script>
 
 <svelte:head>
@@ -14,10 +15,9 @@
 		<div class="col">
 			<div class="card d-block">
 				<div class="card-body">
-					<h1 class="card-title">Welcome to AUGUR</h1>
+					<h1 class="card-title">{$_('page.dashboard.welcome')}</h1>
 					<p class="card-text">
-						Some quick example text to build on the card title and make up the bulk of the card's
-						content. Some quick example text to build on the card title and make up.
+						{$_('page.dashboard.welcome_text')}
 					</p>
 				</div>
 				<!-- end card-body-->
@@ -40,8 +40,7 @@
 				<div class="card-body">
 					<h3 class="card-title">Precipitation</h3>
 					<p class="card-text">
-						Some quick example text to build on the card title and make up the bulk of the card's
-						content. Some quick example text to build on the card title and make up.
+						{$_('page.dashboard.precipitation_card')}
 					</p>
 					<a href="precipitation.html" class="btn btn-primary stretched-link">Start</a>
 				</div>

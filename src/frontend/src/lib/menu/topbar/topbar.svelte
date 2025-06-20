@@ -1,11 +1,18 @@
 <script lang="ts">
 	import pageTitle from '$lib/page/pageTitle';
 
+	import { locale, locales } from 'svelte-i18n'
+	import { _ } from 'svelte-i18n'
 	import { page } from '$app/state';
 
 	import { signIn, signOut } from '@auth/sveltekit/client';
 
 	import { base } from '$app/paths';
+
+	function changeLanguage(code: string) {
+		locale.set(code);
+	}
+
 </script>
 
 <!-- Topbar Start -->
@@ -61,7 +68,6 @@
 					<i class="ri-sun-line dark-mode-icon fs-22"></i>
 				</button>
 			</div>
-
 			<!-- User Dropdown -->
 			{#if page.data.session}
 				<div class="topbar-item nav-user">
@@ -88,7 +94,7 @@
 						<div class="dropdown-menu dropdown-menu-end">
 							<!-- item-->
 							<div class="dropdown-header noti-title">
-								<h6 class="text-overflow m-0">Welcome !</h6>
+								<h6 class="text-overflow m-0">{$_('page.nav.welcome')}</h6>
 							</div>
 
 							<!-- item-->
@@ -98,19 +104,19 @@
 								class="dropdown-item"
 							>
 								<i class="ri-account-circle-line me-1 fs-16 align-middle"></i>
-								<span class="align-middle">My Account</span>
+								<span class="align-middle">{$_('page.nav.my-account')}</span>
 							</a>
 
 							<!-- item-->
 							<a href="javascript:void(0);" class="dropdown-item">
 								<i class="ri-settings-2-line me-1 fs-16 align-middle"></i>
-								<span class="align-middle">Settings</span>
+								<span class="align-middle">{$_('page.nav.settings')}</span>
 							</a>
 
 							<!-- item-->
 							<a href="javascript:void(0);" class="dropdown-item">
 								<i class="ri-question-line me-1 fs-16 align-middle"></i>
-								<span class="align-middle">Support</span>
+								<span class="align-middle">{$_('page.nav.support')}</span>
 							</a>
 
 							<div class="dropdown-divider"></div>
@@ -122,7 +128,7 @@
 								onclick={() => signOut()}
 							>
 								<i class="ri-logout-box-line me-1 fs-16 align-middle"></i>
-								<span class="align-middle">Sign Out</span>
+								<span class="align-middle">{$_('page.nav.sign-out')}</span>
 							</a>
 						</div>
 					</div>
@@ -133,7 +139,7 @@
 						class="topbar-link btn btn-primary bg-gradient rounded-pill"
 						id="loginBtn"
 						type="button"
-						onclick={() => signIn('keycloak')}>Login</button
+						onclick={() => signIn('keycloak')}>{$_('page.nav.login')}</button
 					>
 				</div>
 				<div class="" id="loginbuttonbar">
@@ -141,7 +147,7 @@
 						class="topbar-link btn btn-outline-primary rounded-pill"
 						id="loginBtn"
 						type="button"
-						onclick={() => signIn('keycloak', null, { prompt: 'create' })}>Signup</button
+						onclick={() => signIn('keycloak', null, { prompt: 'create' })}>{$_('page.nav.signup')}</button
 					>
 				</div>
 			{/if}
@@ -155,31 +161,31 @@
 						aria-haspopup="false"
 						aria-expanded="false"
 					>
-						DE
+						{$locale?.toUpperCase()}
 					</span>
 
 					<div class="dropdown-menu dropdown-menu-end">
 						<!-- item-->
-						<a href="javascript:void(0);" class="dropdown-item" data-translator-lang="en">
+						<button onclick={() => changeLanguage('en')} class="dropdown-item" data-translator-lang="en">
 							<img
 								src="{base}/assets/images/flags/gb.svg"
 								alt="user-image"
 								class="me-1 rounded"
 								height="18"
 								data-translator-image
-							/> <span class="align-middle">English</span>
-						</a>
+							/> <span class="align-middle">{$_('page.nav.english')}</span>
+						</button>
 
 						<!-- item-->
-						<a href="javascript:void(0);" class="dropdown-item">
+						<button onclick={() => changeLanguage('de')} class="dropdown-item">
 							<img
 								src="{base}/assets/images/flags/de.svg"
 								alt="user-image"
 								class="me-1 rounded"
 								height="18"
 							/>
-							<span class="align-middle">German</span>
-						</a>
+							<span class="align-middle">{$_('page.nav.german')}</span>
+						</button>
 					</div>
 				</div>
 			</div>
