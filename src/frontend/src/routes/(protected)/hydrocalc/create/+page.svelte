@@ -16,9 +16,10 @@
 	import proj4 from 'proj4';
 	import '../../../../../node_modules/ol/ol.css';
 	import type { Coordinate } from 'ol/coordinate';
+	import { _ } from 'svelte-i18n'
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
-	$pageTitle = 'HydroCalc - Projekt erstellen';
+	$pageTitle = $_('page.hydrocalc.title') + "-" + $_('page.hydrocalc.create.createproject');
 
 	let easting = $derived(2600000);
 	let northing = $derived(1200000);
@@ -114,7 +115,7 @@
 					>
 						<i class="ri-menu-2-line fs-17"></i>
 					</button>
-					<h3 class="my-0 lh-base">Neues Projekt erstellen</h3>
+					<h3 class="my-0 lh-base">{$_('page.hydrocalc.create.createproject')}</h3>
 				</div>
 			</div>
 		</div>
@@ -123,17 +124,17 @@
 				<div class="col-lg-6">
 					<form method="post">
 						<div class="mb-3">
-							<label for="title" class="form-label">Projekttitel</label>
+							<label for="title" class="form-label">{$_('page.hydrocalc.overview.projectTitle')}</label>
 							<input type="text" name="title" id="title" class="form-control" />
 						</div>
 
 						<div class="mb-3">
-							<label for="description" class="form-label">Beschreibung</label>
+							<label for="description" class="form-label">{$_('page.hydrocalc.overview.description')}</label>
 							<textarea class="form-control" name="description" rows="5"></textarea>
 						</div>
 
 						<div class="mb-3">
-							<label for="easting" class="form-label">Abflusspunkt</label>
+							<label for="easting" class="form-label">{$_('page.hydrocalc.overview.pourpoint')}</label>
 							<div class="row">
 								<div class="col-md-6">
 									<input
@@ -156,13 +157,13 @@
 							</div>
 						</div>
 
-						<button type="submit" class="btn btn-primary">Save</button>
+						<button type="submit" class="btn btn-primary">{$_('page.general.save')}</button>
 					</form>
 				</div>
 				<!-- end col -->
 				<div class="col-lg-6">
 					<div class="py-2">
-						Abflusspunkt <span class="text-muted">(mit einem Klick auf die Karte ändern)</span>
+						{$_('page.hydrocalc.overview.pourpoint')} <span class="text-muted">({$_('page.hydrocalc.overview.changePoutPoint')})</span>
 					</div>
 					<div class="d-flex flex-grow-1" style="height:500px;" id="map"></div>
 				</div>

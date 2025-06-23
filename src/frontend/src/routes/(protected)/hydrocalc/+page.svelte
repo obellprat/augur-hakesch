@@ -2,10 +2,11 @@
 	import pageTitle from '$lib/page/pageTitle';
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
+	import { _ } from 'svelte-i18n'
 
 	export let data;
 
-	$pageTitle = 'HydroCalc  - Projekte';
+	$pageTitle = $_('page.hydrocalc.title') + "-" + $_('page.hydrocalc.projects');
 
 	onMount(async () => {});
 </script>
@@ -56,7 +57,7 @@
 					<a
 						href="{base}/hydrocalc/create"
 						type="button"
-						class="btn btn-primary bg-gradient rounded-pill">Neues Projekt erstellen</a
+						class="btn btn-primary bg-gradient rounded-pill">{$_('page.hydrocalc.create.createproject')}</a
 					>
 				</div>
 			</div>
@@ -68,10 +69,10 @@
 					<thead
 						><tr>
 							<th></th>
-							<th>Titel</th>
-							<th>Beschreibung</th>
-							<th>Easting</th>
-							<th>Northing</th>
+							<th>{$_('page.hydrocalc.overview.projectTitle')}</th>
+							<th>{$_('page.hydrocalc.overview.description')}</th>
+							<th>{$_('page.hydrocalc.overview.easting')}</th>
+							<th>{$_('page.hydrocalc.overview.northing')}</th>
 						</tr>
 					</thead>
 					<tbody>

@@ -70,12 +70,12 @@
 											data-bs-target="#other"
 											aria-expanded="false"
 											aria-controls="other"
-											>{$_('page.hydrocalc.projekt')}
+											>{$_('page.hydrocalc.project')} {props.currentProject.title}
 											<i class="ri-arrow-down-s-line ms-auto"></i></a
 										>
 										<div id="other" class="collapse show">
 											<div class="email-menu-list d-flex flex-column mt-2">
-												<Navlink title="{$_('page.hydrocal.overview')}" href="{base}/hydrocalc/overview/{props.currentProject.id}" tool="overview" />
+												<Navlink title="{$_('page.hydrocalc.overviewText')}" href="{base}/hydrocalc/overview/{props.currentProject.id}" tool="overview" />
 												<Navlink title="{$_('page.hydrocalc.geodata')}" href="{base}/hydrocalc/geodata/{props.currentProject.id}" tool="geodata" />
 												<Navlink title="{$_('page.hydrocalc.calculate')}" href="{base}/hydrocalc/calculation/{props.currentProject.id}" tool="calculation" />
 											</div>
