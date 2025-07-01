@@ -333,7 +333,7 @@ def construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_h
 # idf_fn = construct_idf_curve(25, 50, 60, 120, 2.33, 100)
 
 @app.task(name="prepare_hydrocalc_hydroparameters", bind=True)
-def prepare_hydrocalc_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 10000, v_gerinne = 1.5):
+def prepare_hydrocalc_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 100, v_gerinne = 1.5):
     # Definitions
     cell_size = 5
 
@@ -442,7 +442,7 @@ def prepare_hydrocalc_hydroparameters(self, projectId: str, userId: int, northin
     acc_view = grid2.view(acc)
     obstacle_grid = acc_view.copy()
     
-    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage < 1,slope_percentage>-100), forests_raster==1), 300,obstacle_grid)
+    obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage < 1,slope_percentage>-100), forests_raster==1), 3000,obstacle_grid)
     obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage < 1,slope_percentage>-100), forests_raster==0), 1500,obstacle_grid)
     obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage >= 1,slope_percentage<5), forests_raster==1), 1500, obstacle_grid)
     obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage >= 1,slope_percentage<5), forests_raster==0), 750, obstacle_grid)
@@ -454,7 +454,7 @@ def prepare_hydrocalc_hydroparameters(self, projectId: str, userId: int, northin
     obstacle_grid = np.where(np.logical_and(np.logical_and(slope_percentage >= 20,slope_percentage<40), forests_raster==0), 188, obstacle_grid)
     obstacle_grid = np.where(np.logical_and(slope_percentage >= 40, forests_raster==1), 300, obstacle_grid)
     obstacle_grid = np.where(np.logical_and(slope_percentage >= 40, forests_raster==0), 150, obstacle_grid)
-    obstacle_grid = np.where(acc_view>10000, 100, obstacle_grid)
+    obstacle_grid = np.where(acc_view>a_crit, 100, obstacle_grid)
 
     obstacle_raster = Raster(obstacle_grid, viewfinder=grid2.viewfinder)
 
@@ -473,7 +473,7 @@ def prepare_hydrocalc_hydroparameters(self, projectId: str, userId: int, northin
     dist = dist * cell_size
     dist[dist == np.inf] = -1000000
     dist[dist <= 0] = -1000000
-    dist = np.rint(((dist)/(v_gerinne * 60 * 100)) / 10) + 1  # strecke / geschwindigkeit * 60(-> für m/min) * 100 (hindernislayer) / 10 (-> 10 Minuten klassen) +1 da wir bei Klasse 1 starten
+    dist = np.floor(((dist)/(v_gerinne * 60 * 100)) / 10) + 1  # strecke / geschwindigkeit * 60(-> für m/min) * 100 (hindernislayer) / 10 (-> 10 Minuten klassen) +1 da wir bei Klasse 1 starten
 
     dist[dist<=0] = None
 
