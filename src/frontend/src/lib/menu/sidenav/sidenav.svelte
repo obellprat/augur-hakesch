@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import Navlink from './navlink.svelte';
+	import { _ } from 'svelte-i18n'
 </script>
 
 <!-- Sidenav Menu Start -->
@@ -31,28 +32,28 @@
 	<div data-simplebar>
 		<!--- Sidenav Menu -->
 		<ul class="side-nav">
-			<li class="side-nav-title">Tools</li>
+			<li class="side-nav-title">{$_('page.nav.tools')}</li>
 
-			<Navlink title="Dashboard" href="./" icon="ti ti-home" />
+			<Navlink title="{$_('page.dashboard.nav')}" href="./" icon="ti ti-home" />
 
-			<Navlink title="Precipitation" href="precipitation" icon="ti ti-cloud-rain" />
+			<Navlink title="{$_('page.precipitation.nav')}" href="precipitation" icon="ti ti-cloud-rain" />
 
-			<Navlink title="HydroCalc" href="hydrocalc" icon="ti ti-chart-histogram" />
+			<Navlink title="{$_('page.hydrocalc.nav')}" href="hydrocalc" icon="ti ti-chart-histogram" />
 
 			<!--<Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />-->
 
-			<li class="side-nav-title mt-2">About</li>
+			<li class="side-nav-title mt-2">{$_('page.nav.about')}</li>
 
-			<Navlink title="Science" href="science" icon="ti ti-school" />
+			<Navlink title="{$_('page.nav.science')}" href="science" icon="ti ti-school" />
 
-			<Navlink title="About AUGUR" href="about" icon="ti ti-info-circle" />
+			<Navlink title="{$_('page.nav.aboutAugur')}" href="about" icon="ti ti-info-circle" />
 		</ul>
 
 		<!-- dDonate Box -->
 		<div class="help-box text-center">
-			<h5 class="fw-semibold fs-16">Donate</h5>
-			<p class="mb-3 text-muted">Help support us. Please donate!</p>
-			<a href="javascript: void(0);" class="btn btn-danger btn-sm">Donate</a>
+			<h5 class="fw-semibold fs-16">{$_('page.nav.donate')}</h5>
+			<p class="mb-3 text-muted">{$_('page.nav.helpSupportUs')}</p>
+			<a href="javascript: void(0);" class="btn btn-danger btn-sm">{$_('page.nav.donateNow')}</a>
 		</div>
 
 		<div class="clearfix"></div>

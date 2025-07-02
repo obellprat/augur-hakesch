@@ -1,0 +1,108 @@
+{
+  "page": {
+    "dashboard": {
+      "title": "Dashboard",
+      "nav": "Dashboard",
+      "welcome": "Willkommen bei AUGUR",
+      "welcome_text": "Herzlich willkommen bei AUGR",
+      "precipitation_card": "Erhalten sie die Niederschalgswerte weltweit unter einbezug der Klimaszenarien",
+      "hydrocalcdesc": "Berechnen von hydrologischen Abflussmodellierungen, wie modifiziertes Fliesszeitverfahren, Kölla oder Clark-WSL.",
+      "precipitation": "Niederschlag",
+      "precipitationtool": "Niederschlagstool"
+    },
+    "hydrocalc": {
+      "title": "HydroCalc",
+      "nav": "HydroCalc",
+      "projects": "Projekte",
+      "geodata": "Geodaten",
+      "calculate": "Berechnen",
+      "overviewText": "Übersicht",
+      "overview": {
+        "hydrocalc-projekt": "HydroCalc - Projekt",
+        "projectTitle": "Projekttitel",
+        "description": "Beschreibung",
+        "pourpoint": "Abflusspunkt",
+        "deleteProject": "Projekt löschen",
+        "shoulddeleteproject": "Soll das Projekt {title} wirklich gelöscht werden?",
+        "changePoutPoint": "Mit einem Klick auf die Karte auswählen",
+        "easting": "Easting",
+        "northing": "Northing"
+      },
+      "project": "Projekt",
+      "create": {
+        "createproject": "Projekt erstellen"
+      },
+      "calculation": {
+        "calcrunning": "Berechnung läuft...",
+        "calcsuccess": "Erfolgreich berechnet!",
+        "calculationTitle": "Berechnungen | AUGUR",
+        "addcalculation": "Hydrologische Berechnung hinzufügen",
+        "typeOfCalculation": "Welches Verfahren soll dem Projekt hinzugefügt weden?",
+        "modFliesszeit": "Modifiziertes Fliesszeitverfahren",
+        "koells": "Kölla",
+        "koella": {
+          "glacierArea": "Gletscherfläche"
+        },
+        "clarkwsl": "Clark-WSL",
+        "generalInput": "Allgemeine Angaben",
+        "inputsForPrecipitationIntensity": "Angaben zur Berechnung der Niederschlags-Intensität",
+        "successfullsave": "Erfolgreich gespeichert!",
+        "calculate": "Berechnen",
+        "deleteCalculation": "Berechnung löschen",
+        "deleteCalculationQuestion": "Soll die Berechnung wirklich gelöscht werden?",
+        "hq": "HQ",
+        "idf": {
+          "precipLowerPeriod1h": "Niederschlag [mm] für die untere Wiederkehrperiode, 1 Stunde Dauer",
+          "precipLowerPeriod24h": "Niederschlag [mm] für die untere Wiederkehrperiode, 24 Stunden Dauer",
+          "precipUpperPeriod1h": "Niederschlag [mm] für die obere Wiederkehrperiode, 1 Stunde Dauer",
+          "precipUpperPeriod24h": "Niederschlag [mm] für die obere Wiederkehrperiode, 24 Stunde Dauer",
+          "returnPeriod": "Untere Wiederkehrperiode",
+          "upperReturnPeriod": "Obere Wiederkehrperiode"
+        },
+        "modFZV": {
+          "peakFlow": "Spitzendurchflusskoeffizient [-]",
+          "wettingVolume": "Benetzungsvolumen für 20-jähriges Ereignis [mm]"
+        },
+        "results": "Resultate",
+        "returnPeriod": "Wiederkehrperiode",
+        "szenario": "Szenario"
+      }
+    },
+    "precipitation": {
+      "title": "Precipitation",
+      "nav": "Niederschlag"
+    },
+    "nav": {
+      "tools": "Tools",
+      "about": "Information",
+      "science": "Hintergrund",
+      "aboutAugur": "Über AUGUR",
+      "donateNow": "Jetzt unterstüzten",
+      "donate": "Unterstützen",
+      "helpSupportUs": "Helfen sie uns. Wir sind froh um ihre Spende!",
+      "login": "Anmelden",
+      "signup": "Registrieren",
+      "my-account": "Mein Konto",
+      "settings": "Einstellungen",
+      "sign-out": "Abmelden",
+      "support": "Unterstützung",
+      "welcome": "Willkommen !",
+      "english": "Englisch",
+      "german": "Deutsch",
+      "contact": "Kontakt"
+    },
+    "about": {
+      "title": "Informationen zu AUGUR",
+      "text": "AUGUR ist toll"
+    },
+    "general": {
+      "close": "Schliessen",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "delete": "Löschen",
+      "add": "Hinzufügen",
+      "calculate": "Berechnen",
+      "start": "Start"
+    }
+  }
+}

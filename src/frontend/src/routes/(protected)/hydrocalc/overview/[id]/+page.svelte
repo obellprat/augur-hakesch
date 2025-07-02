@@ -20,9 +20,10 @@
 	import proj4 from 'proj4';
 	import '../../../../../../node_modules/ol/ol.css';
 	import type { Coordinate } from 'ol/coordinate';
+	import { _ } from 'svelte-i18n'
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
-	$pageTitle = 'HydroCalc - Projekt ' + data.project.title;
+	$pageTitle = $_('page.hydrocalc.overview.hydrocalc-projekt') + ": " + data.project.title;
 
 	let northing = $derived(data.project.Point.northing);
 	let easting = $derived(data.project.Point.easting);
@@ -165,7 +166,7 @@
 					>
 						<input type="hidden" name="id" value={data.project.id} />
 						<div class="mb-3">
-							<label for="title" class="form-label">Projekttitel</label>
+							<label for="title" class="form-label">{$_('page.hydrocalc.overview.projectTitle')}</label>
 							<input
 								type="text"
 								name="title"
@@ -176,14 +177,14 @@
 						</div>
 
 						<div class="mb-3">
-							<label for="description" class="form-label">Beschreibung</label>
+							<label for="description" class="form-label">{$_('page.hydrocalc.overview.description')}</label>
 							<textarea class="form-control" name="description" rows="5"
 								>{data.project.description}</textarea
 							>
 						</div>
 
 						<div class="mb-3">
-							<label for="easting" class="form-label">Abflusspunkt</label>
+							<label for="easting" class="form-label">{$_('page.hydrocalc.overview.pourpoint')}</label>
 							<div class="row">
 								<div class="col-md-6">
 									<input
@@ -207,7 +208,7 @@
 						</div>
 						<div class="d-flex align-items-center justify-content-between py-1">
 							<div class="d-flex align-items-center gap-2">
-								<button type="submit" class="btn btn-primary">Save</button>
+								<button type="submit" class="btn btn-primary">{$_('page.general.save')}</button>
 							</div>
 							<div class="d-flex align-items-center gap-2">
 								<a
@@ -215,7 +216,7 @@
 									type="button"
 									class="btn btn-primary"
 								>
-									Geodaten <i class="ri-arrow-right-line"></i>
+									{$_('page.hydrocalc.geodata')} <i class="ri-arrow-right-line"></i>
 								</a>
 							</div>
 						</div>
@@ -224,7 +225,7 @@
 				<!-- end col -->
 				<div class="col-lg-6">
 					<div class="py-2">
-						Abflusspunkt <span class="text-muted">(mit einem Klick auf die Karte ändern)</span>
+						{$_('page.hydrocalc.overview.pourpoint')} <span class="text-muted">({$_('page.hydrocalc.overview.changePoutPoint')})</span>
 					</div>
 					<div class="d-flex flex-grow-1" style="height:500px;" id="map"></div>
 				</div>
@@ -245,7 +246,7 @@
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header text-bg-warning border-0">
-					<h4 class="modal-title" id="warning-header-modalLabel">Projekt löschen</h4>
+					<h4 class="modal-title" id="warning-header-modalLabel">{$_('page.hydrocalc.overview.deleteProject')}</h4>
 					<button
 						type="button"
 						class="btn-close btn-close-white"
@@ -254,13 +255,13 @@
 					></button>
 				</div>
 				<div class="modal-body">
-					<p>Soll das Projekt {data.project.title} wirklich gelöscht werden?</p>
+					<p>{$_('page.hydrocalc.overview.shoulddeleteproject', { values: { title: data.project.title} })}</p>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-light" data-bs-dismiss="modal">Abbrechen</button>
+					<button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
 					<form method="POST" action="?/delete">
 						<input type="hidden" name="id" value={data.project.id} />
-						<button type="submit" class="btn btn-warning">Löschen</button>
+						<button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
 					</form>
 				</div>
 			</div>
