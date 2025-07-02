@@ -5,7 +5,10 @@
       "nav": "Dashboard",
       "welcome": "Willkommen bei AUGUR",
       "welcome_text": "Herzlich willkommen bei AUGR",
-      "precipitation_card": "Erhalten sie die Niederschalgswerte weltweit unter einbezug der Klimaszenarien"
+      "precipitation_card": "Erhalten sie die Niederschalgswerte weltweit unter einbezug der Klimaszenarien",
+      "hydrocalcdesc": "Berechnen von hydrologischen Abflussmodellierungen, wie modifiziertes Fliesszeitverfahren, Kölla oder Clark-WSL.",
+      "precipitation": "Niederschlag",
+      "precipitationtool": "Niederschlagstool"
     },
     "hydrocalc": {
       "title": "HydroCalc",
@@ -98,7 +101,8 @@
       "cancel": "Abbrechen",
       "delete": "Löschen",
       "add": "Hinzufügen",
-      "calculate": "Berechnen"
+      "calculate": "Berechnen",
+      "start": "Start"
     }
   }
 }

@@ -5,7 +5,10 @@
       "nav": "Dashboard",
       "welcome": "Welcome to AUGUR",
       "welcome_text": "Welcome to AUGR",
-      "precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios"
+      "precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios",
+      "precipitationtool": "Precipitation Tool",
+      "precipitation": "Precipitation",
+      "hydrocalcdesc": "Calculation of hydrological runoff modelling, such as modified flow time method, Koella or Clark-WSL."
     },
     "hydrocalc": {
       "title": "HydroCalc",
@@ -98,7 +101,8 @@
       "delete": "Delete",
       "save": "Save",
       "calculate": "Calculate",
-      "add": "Add"
+      "add": "Add",
+      "start": "Start"
     }
   }
 }
