@@ -2,10 +2,6 @@
 	import pageTitle from '$lib/page/pageTitle';
 	import type { ActionData, PageServerData } from './$types';
 	import { onMount } from 'svelte';
-	import { currentProject } from '$lib/state.svelte';
-	import { enhance } from '$app/forms';
-	import { base } from '$app/paths';
-
 	import { Map, View, Feature } from 'ol';
 	import { Tile as TileLayer, Vector as VectorLayer } from 'ol/layer';
 	import { Point } from 'ol/geom';
@@ -18,18 +14,15 @@
 	import { defaults as defaultControls, ScaleLine } from 'ol/control';
 	import { register } from 'ol/proj/proj4';
 	import proj4 from 'proj4';
-	import '../../../../../../node_modules/ol/ol.css';
+	import '../../../../../node_modules/ol/ol.css';
 	import type { Coordinate } from 'ol/coordinate';
 	import { _ } from 'svelte-i18n'
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
-	$pageTitle = $_('page.hydrocalc.overview.hydrocalc-projekt') + ": " + data.project.title;
+	$pageTitle = $_('page.discharge.title') + "-" + $_('page.discharge.create.createproject');
 
-	let northing = $derived(data.project.Point.northing);
-	let easting = $derived(data.project.Point.easting);
-
-	currentProject.title = data.project.title;
-	currentProject.id = data.project.id;
+	let easting = $derived(2600000);
+	let northing = $derived(1200000);
 
 	onMount(async () => {
 		const stroke = new Stroke({ color: 'black', width: 2 });
@@ -122,69 +115,26 @@
 					>
 						<i class="ri-menu-2-line fs-17"></i>
 					</button>
-					<h3 class="my-0 lh-base">
-						{data.project.title}
-					</h3>
-				</div>
-				<div class="d-flex align-items-center gap-2">
-					<span
-						class="btn btn-sm btn-icon btn-ghost-danger d-none d-xl-flex"
-						data-bs-placement="top"
-						title="Delete"
-						aria-label="delete"
-						data-bs-toggle="modal"
-						data-bs-target="#delete-project-modal"
-					>
-						<i class="ti ti-trash fs-20"></i>
-					</span>
-					<a
-						href="javascript: void(0);"
-						class="btn btn-sm btn-icon btn-ghost-primary d-none d-xl-flex"
-						data-bs-toggle="modal"
-						data-bs-target="#userVideoCall"
-						data-bs-placement="top"
-						title="Export"
-						aria-label="export"
-					>
-						<i class="ti ti-share fs-20"></i>
-					</a>
+					<h3 class="my-0 lh-base">{$_('page.discharge.create.createproject')}</h3>
 				</div>
 			</div>
 		</div>
 		<div class="card-body">
 			<div class="row">
 				<div class="col-lg-6">
-					<form
-						method="post"
-						action="?/update"
-						use:enhance={() => {
-							return async ({ update }) => {
-								await update();
-								currentProject.title = data.project.title;
-							};
-						}}
-					>
-						<input type="hidden" name="id" value={data.project.id} />
+					<form method="post">
 						<div class="mb-3">
-							<label for="title" class="form-label">{$_('page.hydrocalc.overview.projectTitle')}</label>
-							<input
-								type="text"
-								name="title"
-								id="title"
-								class="form-control"
-								value={data.project.title}
-							/>
+							<label for="title" class="form-label">{$_('page.discharge.overview.projectTitle')}</label>
+							<input type="text" name="title" id="title" class="form-control" />
 						</div>
 
 						<div class="mb-3">
-							<label for="description" class="form-label">{$_('page.hydrocalc.overview.description')}</label>
-							<textarea class="form-control" name="description" rows="5"
-								>{data.project.description}</textarea
-							>
+							<label for="description" class="form-label">{$_('page.discharge.overview.description')}</label>
+							<textarea class="form-control" name="description" rows="5"></textarea>
 						</div>
 
 						<div class="mb-3">
-							<label for="easting" class="form-label">{$_('page.hydrocalc.overview.pourpoint')}</label>
+							<label for="easting" class="form-label">{$_('page.discharge.overview.pourpoint')}</label>
 							<div class="row">
 								<div class="col-md-6">
 									<input
@@ -206,26 +156,14 @@
 								</div>
 							</div>
 						</div>
-						<div class="d-flex align-items-center justify-content-between py-1">
-							<div class="d-flex align-items-center gap-2">
-								<button type="submit" class="btn btn-primary">{$_('page.general.save')}</button>
-							</div>
-							<div class="d-flex align-items-center gap-2">
-								<a
-									href="{base}/hydrocalc/geodata/{data.project.id}"
-									type="button"
-									class="btn btn-primary"
-								>
-									{$_('page.hydrocalc.geodata')} <i class="ri-arrow-right-line"></i>
-								</a>
-							</div>
-						</div>
+
+						<button type="submit" class="btn btn-primary">{$_('page.general.save')}</button>
 					</form>
 				</div>
 				<!-- end col -->
 				<div class="col-lg-6">
 					<div class="py-2">
-						{$_('page.hydrocalc.overview.pourpoint')} <span class="text-muted">({$_('page.hydrocalc.overview.changePoutPoint')})</span>
+						{$_('page.discharge.overview.pourpoint')} <span class="text-muted">({$_('page.discharge.overview.changePoutPoint')})</span>
 					</div>
 					<div class="d-flex flex-grow-1" style="height:500px;" id="map"></div>
 				</div>
@@ -233,41 +171,4 @@
 			<!-- end row-->
 		</div>
 	</div>
-
-	<!-- Warning Header Modal -->
-	<div
-		id="delete-project-modal"
-		class="modal fade"
-		tabindex="-1"
-		role="dialog"
-		aria-labelledby="warning-header-modalLabel"
-		aria-hidden="true"
-	>
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header text-bg-warning border-0">
-					<h4 class="modal-title" id="warning-header-modalLabel">{$_('page.hydrocalc.overview.deleteProject')}</h4>
-					<button
-						type="button"
-						class="btn-close btn-close-white"
-						data-bs-dismiss="modal"
-						aria-label="Close"
-					></button>
-				</div>
-				<div class="modal-body">
-					<p>{$_('page.hydrocalc.overview.shoulddeleteproject', { values: { title: data.project.title} })}</p>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
-					<form method="POST" action="?/delete">
-						<input type="hidden" name="id" value={data.project.id} />
-						<button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
-					</form>
-				</div>
-			</div>
-			<!-- /.modal-content -->
-		</div>
-		<!-- /.modal-dialog -->
-	</div>
-	<!-- /.modal -->
 </div>

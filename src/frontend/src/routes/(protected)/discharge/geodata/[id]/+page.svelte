@@ -39,7 +39,7 @@
 	async function calculateGeodatas() {
 		fetch(
 			env.PUBLIC_HAKESCH_API_PATH +
-				'/hydrocalc/prepare_hydrocalc_hydroparameters?ProjectId=' +
+				'/discharge/prepare_discharge_hydroparameters?ProjectId=' +
 				data.project.id,
 			{
 				method: 'GET',
@@ -363,7 +363,7 @@
 						<div class="d-flex align-items-center gap-2"></div>
 						<div class="d-flex align-items-center gap-2">
 							<a
-								href="{base}/hydrocalc/calculation/{data.project.id}"
+								href="{base}/discharge/calculation/{data.project.id}"
 								type="button"
 								class="btn btn-primary"
 							>

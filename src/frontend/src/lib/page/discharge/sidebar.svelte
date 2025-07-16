@@ -50,10 +50,10 @@
 									</div>
 
 									<div class="email-menu-list d-flex flex-column">
-										<a href="{base}/hydrocalc" class="active" onclick={closeOffcanvas}>
+										<a href="{base}/discharge" class="active" onclick={closeOffcanvas}>
 											<iconify-icon icon="solar:inbox-outline" class="me-2 fs-18 text-muted"
 											></iconify-icon>
-											<span>{$_('page.hydrocalc.projects')}</span>
+											<span>{$_('page.discharge.projects')}</span>
 											<span class="badge bg-info-subtle fs-12 text-info ms-auto"
 												>{props.projectCount}</span
 											>
@@ -70,14 +70,14 @@
 											data-bs-target="#other"
 											aria-expanded="false"
 											aria-controls="other"
-											>{$_('page.hydrocalc.project')} {props.currentProject.title}
+											>{$_('page.discharge.project')} {props.currentProject.title}
 											<i class="ri-arrow-down-s-line ms-auto"></i></a
 										>
 										<div id="other" class="collapse show">
 											<div class="email-menu-list d-flex flex-column mt-2">
-												<Navlink title="{$_('page.hydrocalc.overviewText')}" href="{base}/hydrocalc/overview/{props.currentProject.id}" tool="overview" />
-												<Navlink title="{$_('page.hydrocalc.geodata')}" href="{base}/hydrocalc/geodata/{props.currentProject.id}" tool="geodata" />
-												<Navlink title="{$_('page.hydrocalc.calculate')}" href="{base}/hydrocalc/calculation/{props.currentProject.id}" tool="calculation" />
+												<Navlink title="{$_('page.discharge.overviewText')}" href="{base}/discharge/overview/{props.currentProject.id}" tool="overview" />
+												<Navlink title="{$_('page.discharge.geodata')}" href="{base}/discharge/geodata/{props.currentProject.id}" tool="geodata" />
+												<Navlink title="{$_('page.discharge.calculate')}" href="{base}/discharge/calculation/{props.currentProject.id}" tool="calculation" />
 											</div>
 										</div>
 									</div>

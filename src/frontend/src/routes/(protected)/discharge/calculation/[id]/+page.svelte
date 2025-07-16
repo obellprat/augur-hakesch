@@ -11,7 +11,7 @@
 	import { env } from '$env/dynamic/public';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();	
-	$pageTitle = $_('page.hydrocalc.overview.hydrocalc-projekt') + ' '  + data.project.title;
+	$pageTitle = $_('page.discharge.overview.discharge-projekt') + ' '  + data.project.title;
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
@@ -72,12 +72,12 @@
 	}
 
 	function calculateModFliess(project_id: Number, mod_fliesszeit_id: Number) {
-		toast.push($_('page.hydrocalc.calculation.calcrunning'), {
+		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
 		fetch(
 			env.PUBLIC_HAKESCH_API_PATH +
-				'/hydrocalc/modifizierte_fliesszeit?ProjectId=' +
+				'/discharge/modifizierte_fliesszeit?ProjectId=' +
 				project_id +
 				'&ModFliesszeitId=' +
 				mod_fliesszeit_id,
@@ -94,12 +94,12 @@
 			});
 	}
 	function calculateKoella(project_id: Number, koella_id: Number) {
-		toast.push($_('page.hydrocalc.calculation.calcrunning'), {
+		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
 		fetch(
 			env.PUBLIC_HAKESCH_API_PATH +
-				'/hydrocalc/koella?ProjectId=' +
+				'/discharge/koella?ProjectId=' +
 				project_id +
 				'&KoellaId=' +
 				koella_id,
@@ -132,7 +132,7 @@
 				const taskStatus = res.task_status;
 				if (taskStatus === 'SUCCESS') {
 					toast.pop();
-					toast.push($_('page.hydrocalc.calculation.calcsuccess'), {
+					toast.push($_('page.discharge.calculation.calcsuccess'), {
 						theme: {
 							'--toastColor': 'mintcream',
 							'--toastBackground': 'rgba(72,187,120,0.9)',
@@ -159,7 +159,7 @@
 </script>
 
 <svelte:head>
-	<title>{$pageTitle} - {$_('page.hydrocalc.calculation.calculationTitle')} | AUGUR</title>
+	<title>{$pageTitle} - {$_('page.discharge.calculation.calculationTitle')} | AUGUR</title>
 </svelte:head>
 
 <div class="flex-grow-1 card">
@@ -185,7 +185,7 @@
 						type="button"
 						class="btn btn-primary bg-gradient rounded-pill"
 						data-bs-toggle="modal"
-						data-bs-target="#generate-modal">{$_('page.hydrocalc.calculation.addcalculation')}</button
+						data-bs-target="#generate-modal">{$_('page.discharge.calculation.addcalculation')}</button
 					>
 
 					<div
@@ -200,18 +200,18 @@
 							<div class="modal-content">
 								<div class="modal-header">
 									<h4 class="modal-title" id="standard-modalLabel">
-										 {$_('page.hydrocalc.calculation.addcalculation')}
+										 {$_('page.discharge.calculation.addcalculation')}
 									</h4>
 									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{$_('page.general.close')}"
 									></button>
 								</div>
 								<div class="modal-body">
-									<h5>$_('page.hydrocalc.calculation.typeOfCalculation')</h5>
+									<h5>{$_('page.discharge.calculation.typeOfCalculation')}</h5>
 									<hr />
 									<select id="calculation_type" class="form-select" bind:value={calulcationType}>
-										<option value="1">{$_('page.hydrocalc.calculation.modFliesszeit')}</option>
-										<option value="2">{$_('page.hydrocalc.calculation.koella')}</option>
-										<option value="3">{$_('page.hydrocalc.calculation.clarkwsl')}</option>
+										<option value="1">{$_('page.discharge.calculation.modFliesszeit')}</option>
+										<option value="2">{$_('page.discharge.calculation.koells')}</option>
+										<option value="3">{$_('page.discharge.calculation.clarkwsl')}</option>
 									</select>
 								</div>
 								<div class="modal-footer">
@@ -244,7 +244,7 @@
 									aria-expanded="true"
 									aria-controls="panelsStayOpen-collapseOne"
 								>
-									{$_('page.hydrocalc.calculation.generalInput')}
+									{$_('page.discharge.calculation.generalInput')}
 								</button>
 							</h2>
 							<div
@@ -266,11 +266,11 @@
 									>
 										<input type="hidden" name="id" value={data.project.id} />
 										<input type="hidden" name="idf_id" value={data.project.IDF_Parameters?.id} />
-										<h4 class="text-muted">{$_('page.hydrocalc.calculation.inputsForPrecipitationIntensity')}</h4>
+										<h4 class="text-muted">{$_('page.discharge.calculation.inputsForPrecipitationIntensity')}</h4>
 										<div class="row g-2 py-2 align-items-end">
 											<div class="mb-3 col-md-4">
 												<label for="P_low_1h" class="form-label"
-													>{$_('page.hydrocalc.calculation.idf.precipLowerPeriod1h')}</label
+													>{$_('page.discharge.calculation.idf.precipLowerPeriod1h')}</label
 												>
 												<input
 													type="number"
@@ -282,7 +282,7 @@
 											</div>
 											<div class="mb-3 col-md-4">
 												<label for="P_low_24h" class="form-label"
-													>{$_('page.hydrocalc.calculation.idf.precipLowerPeriod24h')}</label
+													>{$_('page.discharge.calculation.idf.precipLowerPeriod24h')}</label
 												>
 												<input
 													type="number"
@@ -293,7 +293,7 @@
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
-												<label for="rp_low" class="form-label">{$_('page.hydrocalc.calculation.idf.returnPeriod')}</label>
+												<label for="rp_low" class="form-label">{$_('page.discharge.calculation.idf.returnPeriod')}</label>
 												<select
 													id="rp_low"
 													name="rp_low"
@@ -311,7 +311,7 @@
 										<div class="row g-2 align-items-end">
 											<div class="mb-3 col-md-4">
 												<label for="P_high_1h" class="form-label"
-													>{$_('page.hydrocalc.calculation.idf.precipUpperPeriod1h')}</label
+													>{$_('page.discharge.calculation.idf.precipUpperPeriod1h')}</label
 												>
 												<input
 													type="number"
@@ -323,7 +323,7 @@
 											</div>
 											<div class="mb-3 col-md-4">
 												<label for="P_high_24h" class="form-label"
-													>{$_('page.hydrocalc.calculation.idf.precipUpperPeriod24h')}</label
+													>{$_('page.discharge.calculation.idf.precipUpperPeriod24h')}</label
 												>
 												<input
 													type="number"
@@ -334,7 +334,7 @@
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
-												<label for="rp_high" class="form-label">{$_('page.hydrocalc.calculation.idf.upperReturnPeriod')}</label>
+												<label for="rp_high" class="form-label">{$_('page.discharge.calculation.idf.upperReturnPeriod')}</label>
 
 												<select
 													id="rp_high"
@@ -366,7 +366,7 @@
 										aria-expanded="false"
 										aria-controls="panelsStayOpen-collapseThree"
 									>
-										{$_('page.hydrocalc.calculation.modFliesszeit')}
+										{$_('page.discharge.calculation.modFliesszeit')}
 									</button>
 								</h2>
 								<div
@@ -388,7 +388,7 @@
 															aria-expanded="true"
 															aria-controls="panelsStayOpen-collapsemodFZ{mod_fz.id}"
 														>
-															{$_('page.hydrocalc.calculation.szenario')}
+															{$_('page.discharge.calculation.szenario')}
 															{#if mod_fz.Annuality}
 																({mod_fz.Annuality.description})
 															{/if}
@@ -410,7 +410,7 @@
 																		await update({ reset: false });
 																		data.project = result;
 																		isMFZSaving = false;
-																		toast.push($_('page.hydrocalc.calculation.successfullsave'), {
+																		toast.push($_('page.discharge.calculation.successfullsave'), {
 																			theme: {
 																				'--toastColor': 'mintcream',
 																				'--toastBackground': 'rgba(72,187,120,0.9)',
@@ -424,7 +424,7 @@
 																<input type="hidden" name="mfzv_id" value={mod_fz.id} />
 																<div class="row g-2 py-2 align-items-end">
 																	<div class="mb-3 col-md-4">
-																		<label for="P_low_1h" class="form-label">{$_('page.hydrocalc.calculation.returnPeriod')}</label>
+																		<label for="P_low_1h" class="form-label">{$_('page.discharge.calculation.returnPeriod')}</label>
 																		<select
 																			id="x"
 																			name="x"
@@ -440,7 +440,7 @@
 																	</div>
 																	<div class="mb-3 col-md-4">
 																		<label for="P_low_24h" class="form-label"
-																			>{$_('page.hydrocalc.calculation.modFZV.wettingVolume')}</label
+																			>{$_('page.discharge.calculation.modFZV.wettingVolume')}</label
 																		>
 																		<input
 																			type="number"
@@ -452,7 +452,7 @@
 																	</div>
 																	<div class="mb-3 col-md-4">
 																		<label for="P_low_24h" class="form-label"
-																			>{$_('page.hydrocalc.calculation.modFZV.peakFlow')}</label
+																			>{$_('page.discharge.calculation.modFZV.peakFlow')}</label
 																		>
 																		<input
 																			type="number"
@@ -507,7 +507,7 @@
 																	<div class="modal-content">
 																		<div class="modal-header text-bg-warning border-0">
 																			<h4 class="modal-title" id="warning-header-modalLabel">
-																				{$_('page.hydrocalc.calculation.deleteCalculation')}
+																				{$_('page.discharge.calculation.deleteCalculation')}
 																			</h4>
 																			<button
 																				type="button"
@@ -517,7 +517,7 @@
 																			></button>
 																		</div>
 																		<div class="modal-body">
-																			<p>{$_('page.hydrocalc.calculation.deleteCalculationQuestion')}</p>
+																			<p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
 																		</div>
 																		<div class="modal-footer">
 																			<button
@@ -558,7 +558,7 @@
 										aria-expanded="false"
 										aria-controls="panelsStayOpen-collapseKoella"
 									>
-										{$_('page.hydrocalc.calculation.koells')}
+										{$_('page.discharge.calculation.koells')}
 									</button>
 								</h2>
 								<div
@@ -580,7 +580,7 @@
 															aria-expanded="true"
 															aria-controls="panelsStayOpen-collapseKoella{k.id}"
 														>
-															{$_('page.hydrocalc.calculation.szenario')}
+															{$_('page.discharge.calculation.szenario')}
 															{#if k.Annuality}
 																({k.Annuality.description})
 															{/if}
@@ -602,7 +602,7 @@
 																		await update({ reset: false });
 																		data.project = result;
 																		isMFZSaving = false;
-																		toast.push($_('page.hydrocalc.calculation.successfullsave'), {
+																		toast.push($_('page.discharge.calculation.successfullsave'), {
 																			theme: {
 																				'--toastColor': 'mintcream',
 																				'--toastBackground': 'rgba(72,187,120,0.9)',
@@ -616,7 +616,7 @@
 																<input type="hidden" name="koella_id" value={k.id} />
 																<div class="row g-2 py-2 align-items-end">
 																	<div class="mb-3 col-md-4">
-																		<label for="x" class="form-label">{$_('page.hydrocalc.calculation.returnPeriod')}</label>
+																		<label for="x" class="form-label">{$_('page.discharge.calculation.returnPeriod')}</label>
 																		<select
 																			id="x"
 																			name="x"
@@ -632,7 +632,7 @@
 																	</div>
 																	<div class="mb-3 col-md-4">
 																		<label for="Vo20" class="form-label"
-																			>{$_('page.hydrocalc.calculation.modFZV.wettingVolume')}</label
+																			>{$_('page.discharge.calculation.modFZV.wettingVolume')}</label
 																		>
 																		<input
 																			type="number"
@@ -644,7 +644,7 @@
 																	</div>
 																	<div class="mb-3 col-md-4">
 																		<label for="P_low_24h" class="form-label"
-																			>{$_('page.hydrocalc.calculation.koella.glacierArea')} km<sup>2</sup></label
+																			>{$_('page.discharge.calculation.koella.glacierArea')} km<sup>2</sup></label
 																		>
 																		<input
 																			type="number"
@@ -668,7 +668,7 @@
 																			class="btn btn-primary"
 																			disabled={isKoellaSaving}
 																			onclick={() => calculateKoella(k.project_id, k.id)}
-																			>{$_('page.hydrocalc.calculate')}</button
+																			>{$_('page.discharge.calculate')}</button
 																		>
 																	</div>
 																	<div class="d-flex align-items-center gap-2">
@@ -698,7 +698,7 @@
 																	<div class="modal-content">
 																		<div class="modal-header text-bg-warning border-0">
 																			<h4 class="modal-title" id="warning-header-modalLabel">
-																				{$_('page.hydrocalc.calculation.deleteCalculation')}
+																				{$_('page.discharge.calculation.deleteCalculation')}
 																			</h4>
 																			<button
 																				type="button"
@@ -708,7 +708,7 @@
 																			></button>
 																		</div>
 																		<div class="modal-body">
-																			<p>{$_('page.hydrocalc.calculation.deleteCalculationQuestion')}</p>
+																			<p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
 																		</div>
 																		<div class="modal-footer">
 																			<button
@@ -752,7 +752,7 @@
 									aria-expanded="true"
 									aria-controls="panelsResults-collapseOne"
 								>
-									{$_('page.hydrocalc.calculation.results')}
+									{$_('page.discharge.calculation.results')}
 								</button>
 							</h2>
 							<div
@@ -763,13 +763,13 @@
 							>
 								<div class="accordion-body">
 									{#if mod_verfahren.length > 0}
-										<h4 class="text-muted">{$_('page.hydrocalc.calculation.modFliesszeit')}</h4>
+										<h4 class="text-muted">{$_('page.discharge.calculation.modFliesszeit')}</h4>
 
 										<table class="table mb-0">
 											<thead>
 												<tr>
-													<th>{$_('page.hydrocalc.calculation.returnPeriod')}</th>
-													<th>{$_('page.hydrocalc.calculation.hq')} [m<sup>3</sup>/s]</th>
+													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
 												</tr>
 											</thead>
 											<tbody>
@@ -787,13 +787,13 @@
 										</table>
 									{/if}
 									{#if koella.length > 0}
-										<h4 class="text-muted mt-4">{$_('page.hydrocalc.calculation.koells')}</h4>
+										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.koells')}</h4>
 
 										<table class="table mb-0">
 											<thead>
 												<tr>
-													<th>{$_('page.hydrocalc.calculation.returnPeriod')}</th>
-													<th>{$_('page.hydrocalc.calculation.hq')} [m<sup>3</sup>/s]</th>
+													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
 												</tr>
 											</thead>
 											<tbody>
