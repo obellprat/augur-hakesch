@@ -54,11 +54,11 @@ export const actions = {
 	},
 	delete: async ({ request }) => {
 		const formData = Object.fromEntries(await request.formData());
-		const { id } = formData as unknown as {
+		const { id, userid } = formData as unknown as {
 			id: string | undefined;
+			userid: string;
 		};
-
-		await deleteProject(id!, page.data.session?.myuser.id);
+		await deleteProject(id!, parseInt(userid));
 		redirect(302, `${base}/discharge`);
 	}
 } satisfies Actions;
