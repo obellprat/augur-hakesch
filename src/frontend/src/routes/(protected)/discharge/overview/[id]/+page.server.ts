@@ -9,7 +9,7 @@ import { page } from '$app/state';
 export const load = async ({ params }) => {
 	if (browser) {
 		if (!page.data.session?.user?.name) {
-			redirect(303, `./login?redirect_url=` + page.url.href + '/hydrocalc');
+			redirect(303, `./login?redirect_url=` + page.url.href + '/discharge');
 		}
 	}
 
@@ -50,7 +50,7 @@ export const actions = {
 			}
 		});
 
-		redirect(302, `${base}/hydrocalc/overview/${updatedProject.id}`);
+		redirect(302, `${base}/discharge/overview/${updatedProject.id}`);
 	},
 	delete: async ({ request }) => {
 		const formData = Object.fromEntries(await request.formData());
@@ -59,6 +59,6 @@ export const actions = {
 		};
 
 		await deleteProject(id!, page.data.session?.myuser.id);
-		redirect(302, `${base}/hydrocalc`);
+		redirect(302, `${base}/discharge`);
 	}
 } satisfies Actions;

@@ -55,15 +55,15 @@
 			<div class="card d-block" >
 				<img
 					class="card-img-top"
-					src="assets/images/tools/hydrocalc.png"
-					alt="{$_('page.hydrocalc.nav')}"
+					src="assets/images/tools/discharge.png"
+					alt="{$_('page.discharge.nav')}"
 				/>
 				<div class="card-body">
-					<h3 class="card-title">{$_('page.hydrocalc.nav')}</h3>
+					<h3 class="card-title">{$_('page.discharge.nav')}</h3>
 					<p class="card-text">
-						{$_('page.dashboard.hydrocalcdesc')}
+						{$_('page.dashboard.dischargedesc')}
 					</p>
-					<a href="hydrocalc" class="btn btn-primary stretched-link">{$_('page.general.start')}</a>
+					<a href="discharge" class="btn btn-primary stretched-link">{$_('page.general.start')}</a>
 				</div>
 				<!-- end card-body-->
 			</div>

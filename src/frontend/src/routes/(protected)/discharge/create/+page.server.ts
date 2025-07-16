@@ -29,6 +29,6 @@ export const actions = {
 			}
 		});
 
-		redirect(302, `${base}/hydrocalc/overview/${createdProject.id}`);
+		redirect(302, `${base}/discharge/overview/${createdProject.id}`);
 	}
 } satisfies Actions;

@@ -6,7 +6,7 @@
 
 	export let data;
 
-	$pageTitle = $_('page.hydrocalc.title') + "-" + $_('page.hydrocalc.projects');
+	$pageTitle = $_('page.discharge.title') + "-" + $_('page.discharge.projects');
 
 	onMount(async () => {});
 </script>
@@ -55,9 +55,9 @@
                         <i class="ri-search-line fs-18 app-search-icon text-muted"></i>
                     </div>-->
 					<a
-						href="{base}/hydrocalc/create"
+						href="{base}/discharge/create"
 						type="button"
-						class="btn btn-primary bg-gradient rounded-pill">{$_('page.hydrocalc.create.createproject')}</a
+						class="btn btn-primary bg-gradient rounded-pill">{$_('page.discharge.create.createproject')}</a
 					>
 				</div>
 			</div>
@@ -69,10 +69,10 @@
 					<thead
 						><tr>
 							<th></th>
-							<th>{$_('page.hydrocalc.overview.projectTitle')}</th>
-							<th>{$_('page.hydrocalc.overview.description')}</th>
-							<th>{$_('page.hydrocalc.overview.easting')}</th>
-							<th>{$_('page.hydrocalc.overview.northing')}</th>
+							<th>{$_('page.discharge.overview.projectTitle')}</th>
+							<th>{$_('page.discharge.overview.description')}</th>
+							<th>{$_('page.discharge.overview.easting')}</th>
+							<th>{$_('page.discharge.overview.northing')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -85,7 +85,7 @@
 
 									<td>
 										<a
-											href="{base}/hydrocalc/overview/{project.id}"
+											href="{base}/discharge/overview/{project.id}"
 											class="link-reset fs-14 fw-medium stretched-link"
 										>
 											{project.title}

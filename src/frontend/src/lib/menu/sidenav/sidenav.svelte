@@ -38,7 +38,7 @@
 
 			<Navlink title="{$_('page.precipitation.nav')}" href="precipitation" icon="ti ti-cloud-rain" />
 
-			<Navlink title="{$_('page.hydrocalc.nav')}" href="hydrocalc" icon="ti ti-chart-histogram" />
+			<Navlink title="{$_('page.discharge.nav')}" href="discharge" icon="ti ti-chart-histogram" />
 
 			<!--<Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />-->
 
