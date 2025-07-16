@@ -261,6 +261,7 @@
 					<button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
 					<form method="POST" action="?/delete">
 						<input type="hidden" name="id" value={data.project.id} />
+						<input type="hidden" name="userid" value={data.session?.myuser.id} />
 						<button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
 					</form>
 				</div>
