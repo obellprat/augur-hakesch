@@ -50,7 +50,7 @@ export const actions = {
 			}
 		});
 
-		redirect(302, `${base}/discharge/overview/${updatedProject.id}`);
+		//redirect(302, `${base}/discharge/overview/${updatedProject.id}`);
 	},
 	delete: async ({ request }) => {
 		const formData = Object.fromEntries(await request.formData());

@@ -76,7 +76,6 @@
 										<div id="other" class="collapse show">
 											<div class="email-menu-list d-flex flex-column mt-2">
 												<Navlink title="{$_('page.discharge.overviewText')}" href="{base}/discharge/overview/{props.currentProject.id}" tool="overview" />
-												<Navlink title="{$_('page.discharge.geodata')}" href="{base}/discharge/geodata/{props.currentProject.id}" tool="geodata" />
 												<Navlink title="{$_('page.discharge.calculate')}" href="{base}/discharge/calculation/{props.currentProject.id}" tool="calculation" />
 											</div>
 										</div>

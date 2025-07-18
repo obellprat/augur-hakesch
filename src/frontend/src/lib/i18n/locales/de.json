@@ -26,7 +26,8 @@
         "shoulddeleteproject": "Soll das Projekt {title} wirklich gelöscht werden?",
         "changePoutPoint": "Mit einem Klick auf die Karte auswählen",
         "easting": "Easting",
-        "northing": "Northing"
+        "northing": "Northing",
+        "calculateGeodata": "Geodaten neu berechnen"
       },
       "project": "Projekt",
       "create": {
