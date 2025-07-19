@@ -2,6 +2,8 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from celery.result import AsyncResult
 
+from celery.result import GroupResult
+
 router = APIRouter(prefix="/task",
     tags=["task"],)
 
@@ -12,5 +14,24 @@ def get_status(task_id):
         "task_id": task_id,
         "task_status": task_result.status,
         "task_result": task_result.result
+    }
+    return JSONResponse(result)
+
+@router.get("/group/{task_id}")
+def get_group_status(task_id):
+    group_result = GroupResult.restore(task_id)
+    results = [
+        {
+            "task_id": res.id,
+            "task_status": res.status,
+            "task_result": res.result
+        }
+        for res in group_result.results
+    ]
+    result = {
+        "group_id": task_id,
+        "tasks": results,
+        "completed": group_result.completed_count(),
+        "total": len(group_result.results)
     }
     return JSONResponse(result)

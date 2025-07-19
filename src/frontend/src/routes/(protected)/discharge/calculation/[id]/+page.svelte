@@ -152,6 +152,63 @@
 			.catch((err) => console.log(err));
 	}
 
+
+	function calculateProject(project_id: Number) {
+		toast.push($_('page.discharge.calculation.calcrunning'), {
+			initial: 0
+		});
+		fetch(
+			env.PUBLIC_HAKESCH_API_PATH +
+				'/discharge/calculate_project?ProjectId=' +
+				project_id,
+			{
+				method: 'GET',
+				headers: {
+					Authorization: 'Bearer ' + data.session.access_token
+				}
+			}
+		)
+			.then((response) => response.json())
+			.then((data) => {
+				getGroupStatus(data.task_id);
+			});
+	}
+	function getGroupStatus(taskID: String) {
+		fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/group/${taskID}`, {
+			method: 'GET',
+			headers: {
+				Authorization: 'Bearer ' + data.session.access_token,
+				'Content-Type': 'application/json'
+			}
+		})
+			.then((response) => response.json())
+			.then((res) => {
+				// write out the state
+				const actTime = new Date();
+				//let html = `${actTime.toUTCString()} ${res.task_status} `;
+				let html = ``;
+				const completed = res.completed;
+				const total = res.total;
+				if (completed === total) {
+					toast.pop();
+					toast.push($_('page.discharge.calculation.calcsuccess'), {
+						theme: {
+							'--toastColor': 'mintcream',
+							'--toastBackground': 'rgba(72,187,120,0.9)',
+							'--toastBarBackground': '#2F855A'
+						}
+					});
+					invalidateAll();
+					return;
+				}
+
+				setTimeout(function () {
+					getGroupStatus(res.group_id);
+				}, 1000);
+			})
+			.catch((err) => console.log(err));
+	}
+
 	onMount(async () => {
 		mod_verfahren = data.project.Mod_Fliesszeit;
 		koella = data.project.Koella;
@@ -182,12 +239,28 @@
 				</div>
 				<div class="ms-auto d-xl-flex">
 					<button
-						type="button"
-						class="btn btn-primary bg-gradient rounded-pill"
-						data-bs-toggle="modal"
-						data-bs-target="#generate-modal">{$_('page.discharge.calculation.addcalculation')}</button
-					>
-
+							type="button"
+							onclick={() => calculateProject(data.project.id)}
+							class="btn btn-sm btn-icon btn-ghost-primary d-none d-xl-flex"
+							data-bs-toggle="modal"
+							data-bs-target="#generate-modal"
+							title={$_('page.discharge.calculation.calculate')}
+							aria-label={$_('page.discharge.calculation.calculate')}
+						>
+							<i class="ti ti-calculator fs-24"></i>
+						</button>
+					<button
+							type="button"
+							onclick={() => calculateProject(data.project.id)}
+							class="btn btn-sm btn-icon btn-ghost-primary d-none d-xl-flex"
+							data-bs-toggle="modal"
+						data-bs-target="#generate-modal"
+							title={$_('page.discharge.calculation.addcalculation')}
+							aria-label={$_('page.discharge.calculation.addcalculation')}
+						>
+							<i class="ti ti-plus fs-24"></i>
+						</button>
+					
 					<div
 						id="generate-modal"
 						class="modal fade"
@@ -668,7 +741,7 @@
 																			class="btn btn-primary"
 																			disabled={isKoellaSaving}
 																			onclick={() => calculateKoella(k.project_id, k.id)}
-																			>{$_('page.discharge.calculate')}</button
+																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
 																	<div class="d-flex align-items-center gap-2">
