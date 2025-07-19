@@ -303,19 +303,7 @@
 							{data.project.title}
 						</h3>
 					</div>
-					<div class="d-flex align-items-center gap-2">
-						<button
-							type="button"
-							onclick={calculateGeodatas}
-							class="btn btn-sm btn-icon btn-ghost-primary d-none d-xl-flex"
-							data-bs-toggle="modal"
-							data-bs-target="#generate-modal"
-							title={$_('page.discharge.overview.calculateGeodata')}
-							aria-label={$_('page.general.save')}
-						>
-							<i class="ti ti-restore fs-24"></i>
-						</button>
-
+					<!-- Modals -->
 						<div
 							id="generate-modal"
 							class="modal fade"
@@ -406,16 +394,107 @@
 							<!-- /.modal-dialog -->
 						</div>
 
+					<!-- End Modals -->
+					<!-- Dropdown -->
+					<div class="dropdown align-items-center d-flex d-xl-none">
+						<a
+							class="dropdown-toggle drop-arrow-none px-2"
+							data-bs-toggle="dropdown"
+							data-bs-offset="0,10"
+							type="button"
+							aria-haspopup="false"
+							aria-expanded="false"
+							aria-label="Tools"
+							title="Tools"
+						>
+							
+							<span class="pt-2 align-middle ">
+							<i class="ri-arrow-down-s-line ms-1 fs-2"></i></span>
+							</a>
+
+						<div class="dropdown-menu dropdown-menu-end">
+							<!-- item-->
+							
+							<button
+							type="button"
+							onclick={calculateGeodatas}
+							class="dropdown-item"
+							data-bs-toggle="modal"
+							data-bs-target="#generate-modal"
+							title={$_('page.discharge.overview.calculateGeodata')}
+							aria-label={$_('page.discharge.overview.calculateGeodata')}
+						>
+							<i class="ti ti-restore me-1 fs-24 align-middle"></i>
+							<span class="align-middle">{$_('page.discharge.overview.calculateGeodata')}</span>
+						</button>
+
 						<button
 							type="submit"
-							class="btn btn-sm btn-icon btn-ghost-primary d-none d-xl-flex"
+							class="dropdown-item"
+							title={$_('page.general.save')}
+							aria-label={$_('page.general.save')}
+						>
+							<i class="ti ti-device-floppy me-1 fs-24 align-middle"></i>
+							<span class="align-middle">{$_('page.general.save')}</span>
+						</button>
+						<button
+							type="button"
+							class="dropdown-item"
+							data-bs-toggle="modal"
+							data-bs-target="#delete-project-modal"
+							title={$_('page.general.delete')}
+							aria-label={$_('page.general.delete')}
+						>
+							<i class="ti ti-trash me-1 fs-24 align-middle"></i>
+							<span class="align-middle">{$_('page.general.delete')}</span>
+						</button>
+						<button
+							type="button"
+							class="dropdown-item"
+							data-bs-toggle="modal"
+							data-bs-target="#delete-project-modal"
+							title="Export"
+							aria-label="Export"
+						>
+							<i class="ti ti-share me-1 fs-24 align-middle"></i>
+							<span class="align-middle">Export</span>
+						</button>
+						<div class="dropdown-divider"></div>
+						<a
+							href="{base}/discharge/calculation/{data.project.id}"
+							type="button"
+							class="btn btn-primary bg-gradient rounded-pill align-middle mx-2 my-2 d-flex"
+						>
+							{$_('page.discharge.calculate')} <i class="ri-arrow-right-line"></i>
+						</a>
+
+						</div>
+					</div>
+					<!-- End dropdown -->
+
+					<div class="d-none d-xl-flex align-items-center gap-2">
+						<button
+							type="button"
+							onclick={calculateGeodatas}
+							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
+							data-bs-toggle="modal"
+							data-bs-target="#generate-modal"
+							title={$_('page.discharge.overview.calculateGeodata')}
+							aria-label={$_('page.discharge.overview.calculateGeodata')}
+						>
+							<i class="ti ti-restore fs-24"></i>
+						</button>
+
+						<button
+							type="submit"
+							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
 							title={$_('page.general.save')}
 							aria-label={$_('page.general.save')}
 						>
 							<i class="ti ti-device-floppy fs-24"></i>
 						</button>
 						<span
-							class="btn btn-sm btn-icon btn-ghost-danger d-none d-xl-flex"
+							class="btn btn-sm btn-icon btn-ghost-danger d-flex"
 							data-bs-placement="top"
 							title="Delete"
 							aria-label="delete"
@@ -426,7 +505,7 @@
 						</span>
 						<a
 							href="javascript: void(0);"
-							class="btn btn-sm btn-icon btn-ghost-primary d-none d-xl-flex"
+							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
 							data-bs-toggle="modal"
 							data-bs-target="#userVideoCall"
 							data-bs-placement="top"
@@ -439,10 +518,21 @@
 						<a
 							href="{base}/discharge/calculation/{data.project.id}"
 							type="button"
-							class="btn btn-primary bg-gradient rounded-pill"
+							class="btn btn-primary bg-gradient rounded-pill d-none d-xl-flex"
 						>
 							{$_('page.discharge.calculate')} <i class="ri-arrow-right-line"></i>
 						</a>
+
+						<a
+							href="{base}/discharge/calculation/{data.project.id}"
+							type="button"
+							class="btn btn-primary bg-gradient rounded-pill d-flex d-xl-none"
+							title="{$_('page.discharge.calculate')}"
+							aria-label="{$_('page.discharge.calculate')}"
+						>
+							<i class="ri-arrow-right-line"></i>
+						</a>
+
 					</div>
 				</div>
 			</div>

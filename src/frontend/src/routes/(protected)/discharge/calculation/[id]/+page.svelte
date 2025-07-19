@@ -241,7 +241,7 @@
 					<button
 							type="button"
 							onclick={() => calculateProject(data.project.id)}
-							class="btn btn-sm btn-icon btn-ghost-primary d-none d-xl-flex"
+							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
 							data-bs-toggle="modal"
 							data-bs-target="#generate-modal"
 							title={$_('page.discharge.calculation.calculate')}
@@ -252,7 +252,7 @@
 					<button
 							type="button"
 							onclick={() => calculateProject(data.project.id)}
-							class="btn btn-sm btn-icon btn-ghost-primary d-none d-xl-flex"
+							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
 							data-bs-toggle="modal"
 						data-bs-target="#generate-modal"
 							title={$_('page.discharge.calculation.addcalculation')}
