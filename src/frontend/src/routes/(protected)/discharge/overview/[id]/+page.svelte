@@ -283,6 +283,7 @@
 			return async ({ update }) => {
 				await update();
 				currentProject.title = data.project.title;
+				invalidateAll();
 			};
 		}}
 	>

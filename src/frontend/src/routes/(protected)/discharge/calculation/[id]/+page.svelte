@@ -242,8 +242,6 @@
 							type="button"
 							onclick={() => calculateProject(data.project.id)}
 							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
-							data-bs-toggle="modal"
-							data-bs-target="#generate-modal"
 							title={$_('page.discharge.calculation.calculate')}
 							aria-label={$_('page.discharge.calculation.calculate')}
 						>
@@ -251,7 +249,6 @@
 						</button>
 					<button
 							type="button"
-							onclick={() => calculateProject(data.project.id)}
 							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
 							data-bs-toggle="modal"
 						data-bs-target="#generate-modal"
