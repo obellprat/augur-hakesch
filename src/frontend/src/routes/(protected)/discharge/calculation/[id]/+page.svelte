@@ -6,12 +6,12 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { toast } from '@zerodevx/svelte-toast';
-	import { _ } from 'svelte-i18n'
+	import { _ } from 'svelte-i18n';
 
 	import { env } from '$env/dynamic/public';
 
-	let { data, form }: { data: PageServerData; form: ActionData } = $props();	
-	$pageTitle = $_('page.discharge.overview.discharge-projekt') + ' '  + data.project.title;
+	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	$pageTitle = $_('page.discharge.overview.discharge-projekt') + ' ' + data.project.title;
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
@@ -152,22 +152,16 @@
 			.catch((err) => console.log(err));
 	}
 
-
 	function calculateProject(project_id: Number) {
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
-		fetch(
-			env.PUBLIC_HAKESCH_API_PATH +
-				'/discharge/calculate_project?ProjectId=' +
-				project_id,
-			{
-				method: 'GET',
-				headers: {
-					Authorization: 'Bearer ' + data.session.access_token
-				}
+		fetch(env.PUBLIC_HAKESCH_API_PATH + '/discharge/calculate_project?ProjectId=' + project_id, {
+			method: 'GET',
+			headers: {
+				Authorization: 'Bearer ' + data.session.access_token
 			}
-		)
+		})
 			.then((response) => response.json())
 			.then((data) => {
 				getGroupStatus(data.task_id);
@@ -239,25 +233,25 @@
 				</div>
 				<div class="ms-auto d-xl-flex">
 					<button
-							type="button"
-							onclick={() => calculateProject(data.project.id)}
-							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
-							title={$_('page.discharge.calculation.calculate')}
-							aria-label={$_('page.discharge.calculation.calculate')}
-						>
-							<i class="ti ti-calculator fs-24"></i>
-						</button>
+						type="button"
+						onclick={() => calculateProject(data.project.id)}
+						class="btn btn-sm btn-icon btn-ghost-primary d-flex"
+						title={$_('page.discharge.calculation.calculate')}
+						aria-label={$_('page.discharge.calculation.calculate')}
+					>
+						<i class="ti ti-calculator fs-24"></i>
+					</button>
 					<button
-							type="button"
-							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
-							data-bs-toggle="modal"
+						type="button"
+						class="btn btn-sm btn-icon btn-ghost-primary d-flex"
+						data-bs-toggle="modal"
 						data-bs-target="#generate-modal"
-							title={$_('page.discharge.calculation.addcalculation')}
-							aria-label={$_('page.discharge.calculation.addcalculation')}
-						>
-							<i class="ti ti-plus fs-24"></i>
-						</button>
-					
+						title={$_('page.discharge.calculation.addcalculation')}
+						aria-label={$_('page.discharge.calculation.addcalculation')}
+					>
+						<i class="ti ti-plus fs-24"></i>
+					</button>
+
 					<div
 						id="generate-modal"
 						class="modal fade"
@@ -270,9 +264,13 @@
 							<div class="modal-content">
 								<div class="modal-header">
 									<h4 class="modal-title" id="standard-modalLabel">
-										 {$_('page.discharge.calculation.addcalculation')}
+										{$_('page.discharge.calculation.addcalculation')}
 									</h4>
-									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{$_('page.general.close')}"
+									<button
+										type="button"
+										class="btn-close"
+										data-bs-dismiss="modal"
+										aria-label={$_('page.general.close')}
 									></button>
 								</div>
 								<div class="modal-body">
@@ -336,7 +334,9 @@
 									>
 										<input type="hidden" name="id" value={data.project.id} />
 										<input type="hidden" name="idf_id" value={data.project.IDF_Parameters?.id} />
-										<h4 class="text-muted">{$_('page.discharge.calculation.inputsForPrecipitationIntensity')}</h4>
+										<h4 class="text-muted">
+											{$_('page.discharge.calculation.inputsForPrecipitationIntensity')}
+										</h4>
 										<div class="row g-2 py-2 align-items-end">
 											<div class="mb-3 col-md-4">
 												<label for="P_low_1h" class="form-label"
@@ -363,7 +363,9 @@
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
-												<label for="rp_low" class="form-label">{$_('page.discharge.calculation.idf.returnPeriod')}</label>
+												<label for="rp_low" class="form-label"
+													>{$_('page.discharge.calculation.idf.returnPeriod')}</label
+												>
 												<select
 													id="rp_low"
 													name="rp_low"
@@ -404,7 +406,9 @@
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
-												<label for="rp_high" class="form-label">{$_('page.discharge.calculation.idf.upperReturnPeriod')}</label>
+												<label for="rp_high" class="form-label"
+													>{$_('page.discharge.calculation.idf.upperReturnPeriod')}</label
+												>
 
 												<select
 													id="rp_high"
@@ -494,7 +498,9 @@
 																<input type="hidden" name="mfzv_id" value={mod_fz.id} />
 																<div class="row g-2 py-2 align-items-end">
 																	<div class="mb-3 col-md-4">
-																		<label for="P_low_1h" class="form-label">{$_('page.discharge.calculation.returnPeriod')}</label>
+																		<label for="P_low_1h" class="form-label"
+																			>{$_('page.discharge.calculation.returnPeriod')}</label
+																		>
 																		<select
 																			id="x"
 																			name="x"
@@ -510,7 +516,9 @@
 																	</div>
 																	<div class="mb-3 col-md-4">
 																		<label for="P_low_24h" class="form-label"
-																			>{$_('page.discharge.calculation.modFZV.wettingVolume')}</label
+																			>{$_(
+																				'page.discharge.calculation.modFZV.wettingVolume'
+																			)}</label
 																		>
 																		<input
 																			type="number"
@@ -554,7 +562,7 @@
 																		<span
 																			class="btn btn-sm btn-icon btn-ghost-danger d-xl-flex"
 																			data-bs-placement="top"
-																			title="{$_('page.general.delete')}"
+																			title={$_('page.general.delete')}
 																			aria-label="delete"
 																			data-bs-toggle="modal"
 																			data-bs-target="#delete-project-modal{mod_fz.id}"
@@ -583,11 +591,13 @@
 																				type="button"
 																				class="btn-close btn-close-white"
 																				data-bs-dismiss="modal"
-																				aria-label="{$_('page.general.close')}"
+																				aria-label={$_('page.general.close')}
 																			></button>
 																		</div>
 																		<div class="modal-body">
-																			<p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
+																			<p>
+																				{$_('page.discharge.calculation.deleteCalculationQuestion')}
+																			</p>
 																		</div>
 																		<div class="modal-footer">
 																			<button
@@ -686,7 +696,9 @@
 																<input type="hidden" name="koella_id" value={k.id} />
 																<div class="row g-2 py-2 align-items-end">
 																	<div class="mb-3 col-md-4">
-																		<label for="x" class="form-label">{$_('page.discharge.calculation.returnPeriod')}</label>
+																		<label for="x" class="form-label"
+																			>{$_('page.discharge.calculation.returnPeriod')}</label
+																		>
 																		<select
 																			id="x"
 																			name="x"
@@ -702,7 +714,9 @@
 																	</div>
 																	<div class="mb-3 col-md-4">
 																		<label for="Vo20" class="form-label"
-																			>{$_('page.discharge.calculation.modFZV.wettingVolume')}</label
+																			>{$_(
+																				'page.discharge.calculation.modFZV.wettingVolume'
+																			)}</label
 																		>
 																		<input
 																			type="number"
@@ -714,7 +728,9 @@
 																	</div>
 																	<div class="mb-3 col-md-4">
 																		<label for="P_low_24h" class="form-label"
-																			>{$_('page.discharge.calculation.koella.glacierArea')} km<sup>2</sup></label
+																			>{$_('page.discharge.calculation.koella.glacierArea')} km<sup
+																				>2</sup
+																			></label
 																		>
 																		<input
 																			type="number"
@@ -745,7 +761,7 @@
 																		<span
 																			class="btn btn-sm btn-icon btn-ghost-danger d-xl-flex"
 																			data-bs-placement="top"
-																			title="{$_('page.general.delete')}"
+																			title={$_('page.general.delete')}
 																			aria-label="delete"
 																			data-bs-toggle="modal"
 																			data-bs-target="#delete-koella-modal{k.id}"
@@ -778,7 +794,9 @@
 																			></button>
 																		</div>
 																		<div class="modal-body">
-																			<p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
+																			<p>
+																				{$_('page.discharge.calculation.deleteCalculationQuestion')}
+																			</p>
 																		</div>
 																		<div class="modal-footer">
 																			<button

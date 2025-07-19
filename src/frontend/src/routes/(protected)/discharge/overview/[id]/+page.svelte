@@ -32,11 +32,10 @@
 
 	let northing = $derived(data.project.Point.northing);
 	let easting = $derived(data.project.Point.easting);
-	
+
 	let title = $derived(data.project.title);
 	let description = $derived(data.project.description);
 	let geojson = $derived(data.project.catchment_geojson);
-
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
@@ -44,9 +43,9 @@
 	let map: Map;
 
 	async function calculateGeodatas() {
-		await fetch("?/update", {
-			body: new FormData(document.getElementById("project-form") as HTMLFormElement),	
-			method: "post",
+		await fetch('?/update', {
+			body: new FormData(document.getElementById('project-form') as HTMLFormElement),
+			method: 'post'
 		});
 		invalidateAll();
 		fetch(
@@ -95,7 +94,7 @@
 					html = 'Der Prozess wird intialisiert. Bitte warten...';
 				} else if (res.task_status == 'SUCCESS') {
 					html = 'Die Geodaten wurden erfolgrech berechnet.';
-					
+
 					invalidateAll();
 					addIsozones();
 					globalThis.$('#generate-modal').modal('hide');
@@ -158,7 +157,8 @@
 						data.session.myuser.id +
 						'/' +
 						data.project.id +
-						'/isozones_cog.tif?rndstr=' + Date.now()
+						'/isozones_cog.tif?rndstr=' +
+						Date.now()
 				}
 			],
 			normalize: false
@@ -264,7 +264,7 @@
 			northing = Math.round(e.coordinate[1]);
 			easting = Math.round(e.coordinate[0]);
 			addMarker([easting, northing]);
-			
+
 			globalThis.$('#recalculate-modal').modal('show');
 		});
 	});
@@ -305,95 +305,89 @@
 						</h3>
 					</div>
 					<!-- Modals -->
-						<div
-							id="generate-modal"
-							class="modal fade"
-							tabindex="-1"
-							role="dialog"
-							aria-labelledby="standard-modalLabel"
-							aria-hidden="true"
-						>
-							<div class="modal-dialog">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h4 class="modal-title" id="standard-modalLabel">Berechnung der Geodaten</h4>
-										<button
-											type="button"
-											class="btn-close"
-											data-bs-dismiss="modal"
-											aria-label="Close"
-										></button>
-									</div>
-									<div class="modal-body">
-										<h5>
-											Die Geodaten werden berechnet. Dieser Prozess dauert je nach
-											Einzugsgebietsgrösse einige Minuten
-										</h5>
-										<hr />
-										<p class="text-muted" id="progresstext"></p>
-										<div class="progress mb-2">
-											<div
-												class="progress-bar"
-												role="progressbar"
-												style="width: 25%"
-												aria-valuenow="0"
-												aria-valuemin="0"
-												aria-valuemax="100"
-											></div>
-										</div>
-									</div>
-									<div class="modal-footer">
-										<button type="button" class="btn btn-light" data-bs-dismiss="modal"
-											>Im Hintergrund berechnen lassen</button
-										>
+					<div
+						id="generate-modal"
+						class="modal fade"
+						tabindex="-1"
+						role="dialog"
+						aria-labelledby="standard-modalLabel"
+						aria-hidden="true"
+					>
+						<div class="modal-dialog">
+							<div class="modal-content">
+								<div class="modal-header">
+									<h4 class="modal-title" id="standard-modalLabel">Berechnung der Geodaten</h4>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+									></button>
+								</div>
+								<div class="modal-body">
+									<h5>
+										Die Geodaten werden berechnet. Dieser Prozess dauert je nach
+										Einzugsgebietsgrösse einige Minuten
+									</h5>
+									<hr />
+									<p class="text-muted" id="progresstext"></p>
+									<div class="progress mb-2">
+										<div
+											class="progress-bar"
+											role="progressbar"
+											style="width: 25%"
+											aria-valuenow="0"
+											aria-valuemin="0"
+											aria-valuemax="100"
+										></div>
 									</div>
 								</div>
-								<!-- /.modal-content -->
+								<div class="modal-footer">
+									<button type="button" class="btn btn-light" data-bs-dismiss="modal"
+										>Im Hintergrund berechnen lassen</button
+									>
+								</div>
 							</div>
-							<!-- /.modal-dialog -->
+							<!-- /.modal-content -->
 						</div>
+						<!-- /.modal-dialog -->
+					</div>
 
-						<div
-							id="recalculate-modal"
-							class="modal fade"
-							tabindex="-1"
-							role="dialog"
-							aria-labelledby="standard-modalLabel"
-							aria-hidden="true"
-						>
-							<div class="modal-dialog">
-								<div class="modal-content">
-									<div class="modal-header">
-										<h4 class="modal-title" id="standard-modalLabel">
-											Sollen die Geodaten neu berechnet werden?
-										</h4>
-										<button
-											type="button"
-											class="btn-close"
-											data-bs-dismiss="modal"
-											aria-label="Close"
-										></button>
-									</div>
-									<div class="modal-body">
-										<h5>
-											Der Abflusspunkt wurde neuerstellt. Soll das Projekt gespeichert und die Geodaten neu berechnet werden?
-										</h5>
-										<hr />
-										
-									</div>
-									<div class="modal-footer">
-										<button type="button" class="btn btn-primary" data-bs-dismiss="modal" data-bs-toggle="modal"
-							data-bs-target="#generate-modal" onclick={calculateGeodatas}
-											>Ja</button
-										><button type="button" class="btn btn-light" data-bs-dismiss="modal"
-											>Nein</button
-										>
-									</div>
+					<div
+						id="recalculate-modal"
+						class="modal fade"
+						tabindex="-1"
+						role="dialog"
+						aria-labelledby="standard-modalLabel"
+						aria-hidden="true"
+					>
+						<div class="modal-dialog">
+							<div class="modal-content">
+								<div class="modal-header">
+									<h4 class="modal-title" id="standard-modalLabel">
+										Sollen die Geodaten neu berechnet werden?
+									</h4>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+									></button>
 								</div>
-								<!-- /.modal-content -->
+								<div class="modal-body">
+									<h5>
+										Der Abflusspunkt wurde neuerstellt. Soll das Projekt gespeichert und die
+										Geodaten neu berechnet werden?
+									</h5>
+									<hr />
+								</div>
+								<div class="modal-footer">
+									<button
+										type="button"
+										class="btn btn-primary"
+										data-bs-dismiss="modal"
+										data-bs-toggle="modal"
+										data-bs-target="#generate-modal"
+										onclick={calculateGeodatas}>Ja</button
+									><button type="button" class="btn btn-light" data-bs-dismiss="modal">Nein</button>
+								</div>
 							</div>
-							<!-- /.modal-dialog -->
+							<!-- /.modal-content -->
 						</div>
+						<!-- /.modal-dialog -->
+					</div>
 
 					<!-- End Modals -->
 					<!-- Dropdown -->
@@ -408,67 +402,64 @@
 							aria-label="Tools"
 							title="Tools"
 						>
-							
-							<span class="pt-2 align-middle ">
-							<i class="ri-arrow-down-s-line ms-1 fs-2"></i></span>
-							</a>
+							<span class="pt-2 align-middle"> <i class="ri-arrow-down-s-line ms-1 fs-2"></i></span>
+						</a>
 
 						<div class="dropdown-menu dropdown-menu-end">
 							<!-- item-->
-							
+
 							<button
-							type="button"
-							onclick={calculateGeodatas}
-							class="dropdown-item"
-							data-bs-toggle="modal"
-							data-bs-target="#generate-modal"
-							title={$_('page.discharge.overview.calculateGeodata')}
-							aria-label={$_('page.discharge.overview.calculateGeodata')}
-						>
-							<i class="ti ti-restore me-1 fs-24 align-middle"></i>
-							<span class="align-middle">{$_('page.discharge.overview.calculateGeodata')}</span>
-						</button>
+								type="button"
+								onclick={calculateGeodatas}
+								class="dropdown-item"
+								data-bs-toggle="modal"
+								data-bs-target="#generate-modal"
+								title={$_('page.discharge.overview.calculateGeodata')}
+								aria-label={$_('page.discharge.overview.calculateGeodata')}
+							>
+								<i class="ti ti-restore me-1 fs-24 align-middle"></i>
+								<span class="align-middle">{$_('page.discharge.overview.calculateGeodata')}</span>
+							</button>
 
-						<button
-							type="submit"
-							class="dropdown-item"
-							title={$_('page.general.save')}
-							aria-label={$_('page.general.save')}
-						>
-							<i class="ti ti-device-floppy me-1 fs-24 align-middle"></i>
-							<span class="align-middle">{$_('page.general.save')}</span>
-						</button>
-						<button
-							type="button"
-							class="dropdown-item"
-							data-bs-toggle="modal"
-							data-bs-target="#delete-project-modal"
-							title={$_('page.general.delete')}
-							aria-label={$_('page.general.delete')}
-						>
-							<i class="ti ti-trash me-1 fs-24 align-middle"></i>
-							<span class="align-middle">{$_('page.general.delete')}</span>
-						</button>
-						<button
-							type="button"
-							class="dropdown-item"
-							data-bs-toggle="modal"
-							data-bs-target="#delete-project-modal"
-							title="Export"
-							aria-label="Export"
-						>
-							<i class="ti ti-share me-1 fs-24 align-middle"></i>
-							<span class="align-middle">Export</span>
-						</button>
-						<div class="dropdown-divider"></div>
-						<a
-							href="{base}/discharge/calculation/{data.project.id}"
-							type="button"
-							class="btn btn-primary bg-gradient rounded-pill align-middle mx-2 my-2 d-flex"
-						>
-							{$_('page.discharge.calculate')} <i class="ri-arrow-right-line"></i>
-						</a>
-
+							<button
+								type="submit"
+								class="dropdown-item"
+								title={$_('page.general.save')}
+								aria-label={$_('page.general.save')}
+							>
+								<i class="ti ti-device-floppy me-1 fs-24 align-middle"></i>
+								<span class="align-middle">{$_('page.general.save')}</span>
+							</button>
+							<button
+								type="button"
+								class="dropdown-item"
+								data-bs-toggle="modal"
+								data-bs-target="#delete-project-modal"
+								title={$_('page.general.delete')}
+								aria-label={$_('page.general.delete')}
+							>
+								<i class="ti ti-trash me-1 fs-24 align-middle"></i>
+								<span class="align-middle">{$_('page.general.delete')}</span>
+							</button>
+							<button
+								type="button"
+								class="dropdown-item"
+								data-bs-toggle="modal"
+								data-bs-target="#delete-project-modal"
+								title="Export"
+								aria-label="Export"
+							>
+								<i class="ti ti-share me-1 fs-24 align-middle"></i>
+								<span class="align-middle">Export</span>
+							</button>
+							<div class="dropdown-divider"></div>
+							<a
+								href="{base}/discharge/calculation/{data.project.id}"
+								type="button"
+								class="btn btn-primary bg-gradient rounded-pill align-middle mx-2 my-2 d-flex"
+							>
+								{$_('page.discharge.calculate')} <i class="ri-arrow-right-line"></i>
+							</a>
 						</div>
 					</div>
 					<!-- End dropdown -->
@@ -528,12 +519,11 @@
 							href="{base}/discharge/calculation/{data.project.id}"
 							type="button"
 							class="btn btn-primary bg-gradient rounded-pill d-flex d-xl-none"
-							title="{$_('page.discharge.calculate')}"
-							aria-label="{$_('page.discharge.calculate')}"
+							title={$_('page.discharge.calculate')}
+							aria-label={$_('page.discharge.calculate')}
 						>
 							<i class="ri-arrow-right-line"></i>
 						</a>
-
 					</div>
 				</div>
 			</div>
@@ -545,22 +535,14 @@
 							<label for="title" class="form-label"
 								>{$_('page.discharge.overview.projectTitle')}</label
 							>
-							<input
-								type="text"
-								name="title"
-								id="title"
-								class="form-control"
-								value={title}
-							/>
+							<input type="text" name="title" id="title" class="form-control" value={title} />
 						</div>
 
 						<div class="mb-3">
 							<label for="description" class="form-label"
 								>{$_('page.discharge.overview.description')}</label
 							>
-							<textarea class="form-control" name="description" rows="2"
-								>{description}</textarea
-							>
+							<textarea class="form-control" name="description" rows="2">{description}</textarea>
 						</div>
 					</div>
 

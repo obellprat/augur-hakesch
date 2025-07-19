@@ -1,8 +1,8 @@
 <script lang="ts">
 	import pageTitle from '$lib/page/pageTitle';
 
-	import { locale, locales } from 'svelte-i18n'
-	import { _ } from 'svelte-i18n'
+	import { locale, locales } from 'svelte-i18n';
+	import { _ } from 'svelte-i18n';
 	import { page } from '$app/state';
 
 	import { signIn, signOut } from '@auth/sveltekit/client';
@@ -12,7 +12,6 @@
 	function changeLanguage(code: string) {
 		locale.set(code);
 	}
-
 </script>
 
 <!-- Topbar Start -->
@@ -147,7 +146,8 @@
 						class="topbar-link btn btn-outline-primary rounded-pill"
 						id="loginBtn"
 						type="button"
-						onclick={() => signIn('keycloak', null, { prompt: 'create' })}>{$_('page.nav.signup')}</button
+						onclick={() => signIn('keycloak', null, { prompt: 'create' })}
+						>{$_('page.nav.signup')}</button
 					>
 				</div>
 			{/if}
@@ -166,7 +166,11 @@
 
 					<div class="dropdown-menu dropdown-menu-end">
 						<!-- item-->
-						<button onclick={() => changeLanguage('en')} class="dropdown-item" data-translator-lang="en">
+						<button
+							onclick={() => changeLanguage('en')}
+							class="dropdown-item"
+							data-translator-lang="en"
+						>
 							<img
 								src="{base}/assets/images/flags/gb.svg"
 								alt="user-image"

@@ -1,17 +1,15 @@
 import { browser } from '$app/environment';
 import type { LayoutLoad } from '../$types';
 
-import '$lib/i18n' // Import to initialize. Important :)
-import { locale, waitLocale } from 'svelte-i18n'
+import '$lib/i18n'; // Import to initialize. Important :)
+import { locale, waitLocale } from 'svelte-i18n';
 
-export const load: LayoutLoad = async() => {
-	
+export const load: LayoutLoad = async () => {
 	if (browser) {
-		locale.set(window.navigator.language)
+		locale.set(window.navigator.language);
 	}
 	await waitLocale();
-	
-	
+
 	/**
 	 * Theme: Arclon - Responsive Bootstrap 5 Admin Dashboard
 	 * Author: Coderthemes
