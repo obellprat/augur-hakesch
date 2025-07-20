@@ -218,24 +218,15 @@
 		<div class="card-header py-2 px-3 border-bottom">
 			<div class="d-flex align-items-center justify-content-between py-1">
 				<div class="d-flex align-items-center gap-2">
-					<button
-						type="button"
-						class="btn btn-light d-xxl-none d-flex p-1"
-						data-bs-toggle="offcanvas"
-						data-bs-target="#email-sidebar"
-						aria-controls="email-sidebar"
-					>
-						<i class="ri-menu-2-line fs-17"></i>
-					</button>
 					<h3 class="my-0 lh-base">
 						{data.project.title}
 					</h3>
 				</div>
-				<div class="ms-auto d-xl-flex">
+				<div class="d-xl-flex align-items-center gap-2">
 					<button
 						type="button"
 						onclick={() => calculateProject(data.project.id)}
-						class="btn btn-sm btn-icon btn-ghost-primary d-flex"
+						class="btn btn-sm btn-icon btn-ghost-primary"
 						title={$_('page.discharge.calculation.calculate')}
 						aria-label={$_('page.discharge.calculation.calculate')}
 					>
@@ -243,7 +234,7 @@
 					</button>
 					<button
 						type="button"
-						class="btn btn-sm btn-icon btn-ghost-primary d-flex"
+						class="btn btn-sm btn-icon btn-ghost-primary"
 						data-bs-toggle="modal"
 						data-bs-target="#generate-modal"
 						title={$_('page.discharge.calculation.addcalculation')}
