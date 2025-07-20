@@ -2,6 +2,9 @@
 	import { base } from '$app/paths';
 	import Navlink from './navlink.svelte';
 	import { _ } from 'svelte-i18n';
+	import { page } from '$app/state';
+
+	let props = $props();
 </script>
 
 <!-- Sidenav Menu Start -->
@@ -38,7 +41,7 @@
 
 			<Navlink title={$_('page.precipitation.nav')} href="precipitation" icon="ti ti-cloud-rain" />
 
-			<Navlink title={$_('page.discharge.nav')} href="discharge" icon="ti ti-chart-histogram" />
+			<Navlink title={$_('page.discharge.nav')} href="discharge" icon="ti ti-chart-histogram" projectcount={page.data.projects?.length} currentproject={page.data.project}/>
 
 			<!--<Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />-->
 

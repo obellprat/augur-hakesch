@@ -19,17 +19,6 @@
 	<div class="h-100">
 		<div class="card-body py-2">
 			<div class="d-flex align-items-center gap-2">
-				<button
-					type="button"
-					class="btn btn-light d-xxl-none d-flex p-1"
-					data-bs-toggle="offcanvas"
-					data-bs-target="#email-sidebar"
-					aria-controls="email-sidebar"
-					aria-label="show sidebar"
-				>
-					<i class="ri-menu-2-line fs-17"></i>
-				</button>
-
 				<div class="form-check">
 					<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" />
 				</div>
@@ -49,7 +38,7 @@
 					</button>
 				</div>
 
-				<div class="ms-auto d-xl-flex d-none">
+				<div class="ms-auto">
 					<!--<div class="app-search">
                         <input type="text" class="form-control rounded-pill" placeholder="Search mail...">
                         <i class="ri-search-line fs-18 app-search-icon text-muted"></i>
