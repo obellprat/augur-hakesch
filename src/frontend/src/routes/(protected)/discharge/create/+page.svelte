@@ -16,10 +16,10 @@
 	import proj4 from 'proj4';
 	import '../../../../../node_modules/ol/ol.css';
 	import type { Coordinate } from 'ol/coordinate';
-	import { _ } from 'svelte-i18n'
+	import { _ } from 'svelte-i18n';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
-	$pageTitle = $_('page.discharge.title') + "-" + $_('page.discharge.create.createproject');
+	$pageTitle = $_('page.discharge.title') + '-' + $_('page.discharge.create.createproject');
 
 	let easting = $derived(2600000);
 	let northing = $derived(1200000);
@@ -124,17 +124,23 @@
 				<div class="col-lg-6">
 					<form method="post">
 						<div class="mb-3">
-							<label for="title" class="form-label">{$_('page.discharge.overview.projectTitle')}</label>
+							<label for="title" class="form-label"
+								>{$_('page.discharge.overview.projectTitle')}</label
+							>
 							<input type="text" name="title" id="title" class="form-control" />
 						</div>
 
 						<div class="mb-3">
-							<label for="description" class="form-label">{$_('page.discharge.overview.description')}</label>
+							<label for="description" class="form-label"
+								>{$_('page.discharge.overview.description')}</label
+							>
 							<textarea class="form-control" name="description" rows="5"></textarea>
 						</div>
 
 						<div class="mb-3">
-							<label for="easting" class="form-label">{$_('page.discharge.overview.pourpoint')}</label>
+							<label for="easting" class="form-label"
+								>{$_('page.discharge.overview.pourpoint')}</label
+							>
 							<div class="row">
 								<div class="col-md-6">
 									<input
@@ -163,7 +169,8 @@
 				<!-- end col -->
 				<div class="col-lg-6">
 					<div class="py-2">
-						{$_('page.discharge.overview.pourpoint')} <span class="text-muted">({$_('page.discharge.overview.changePoutPoint')})</span>
+						{$_('page.discharge.overview.pourpoint')}
+						<span class="text-muted">({$_('page.discharge.overview.changePoutPoint')})</span>
 					</div>
 					<div class="d-flex flex-grow-1" style="height:500px;" id="map"></div>
 				</div>

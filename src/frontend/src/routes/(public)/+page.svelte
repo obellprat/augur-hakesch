@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import pageTitle from '$lib/page/pageTitle';
-	import { _ } from 'svelte-i18n'
+	import { _ } from 'svelte-i18n';
 
 	$pageTitle = $_('page.dashboard.title');
 </script>
@@ -35,14 +35,16 @@
 				<img
 					class="card-img-top"
 					src="assets/images/tools/precipitation.png"
-					alt="{$_('page.dashboard.precipitationtool')}"
+					alt={$_('page.dashboard.precipitationtool')}
 				/>
 				<div class="card-body">
 					<h3 class="card-title">{$_('page.dashboard.precipitation')}</h3>
 					<p class="card-text">
 						{$_('page.dashboard.precipitation_card')}
 					</p>
-					<a href="precipitation.html" class="btn btn-primary stretched-link">{$_('page.general.start')}</a>
+					<a href="precipitation.html" class="btn btn-primary stretched-link"
+						>{$_('page.general.start')}</a
+					>
 				</div>
 				<!-- end card-body-->
 			</div>
@@ -52,11 +54,11 @@
 
 		<div class="col-sm-6 col-lg-3 d-flex align-items-stretch">
 			<!-- Simple card -->
-			<div class="card d-block" >
+			<div class="card d-block">
 				<img
 					class="card-img-top"
 					src="assets/images/tools/discharge.png"
-					alt="{$_('page.discharge.nav')}"
+					alt={$_('page.discharge.nav')}
 				/>
 				<div class="card-body">
 					<h3 class="card-title">{$_('page.discharge.nav')}</h3>

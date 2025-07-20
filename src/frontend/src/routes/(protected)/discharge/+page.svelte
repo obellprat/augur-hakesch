@@ -2,11 +2,11 @@
 	import pageTitle from '$lib/page/pageTitle';
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
-	import { _ } from 'svelte-i18n'
+	import { _ } from 'svelte-i18n';
 
 	export let data;
 
-	$pageTitle = $_('page.discharge.title') + "-" + $_('page.discharge.projects');
+	$pageTitle = $_('page.discharge.title') + '-' + $_('page.discharge.projects');
 
 	onMount(async () => {});
 </script>
@@ -57,7 +57,8 @@
 					<a
 						href="{base}/discharge/create"
 						type="button"
-						class="btn btn-primary bg-gradient rounded-pill">{$_('page.discharge.create.createproject')}</a
+						class="btn btn-primary bg-gradient rounded-pill"
+						>{$_('page.discharge.create.createproject')}</a
 					>
 				</div>
 			</div>

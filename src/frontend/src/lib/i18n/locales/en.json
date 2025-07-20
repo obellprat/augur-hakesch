@@ -1,108 +1,109 @@
 {
-  "page": {
-    "dashboard": {
-      "title": "Dashboard",
-      "nav": "Dashboard",
-      "welcome": "Welcome to AUGUR",
-      "welcome_text": "Welcome to AUGR",
-      "precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios",
-      "precipitationtool": "Precipitation Tool",
-      "precipitation": "Precipitation",
-      "dischargedesc": "Calculation of hydrological runoff modelling, such as modified flow time method, Koella or Clark-WSL."
-    },
-    "discharge": {
-      "title": "Discharge",
-      "nav": "Discharge",
-      "projects": "Projects",
-      "geodata": "Geodata",
-      "calculate": "Hydrologie",
-      "overviewText": "Overview",
-      "overview": {
-        "deleteProject": "Delete project",
-        "description": "Description",
-        "discharge-projekt": "Discharge - Project",
-        "pourpoint": "Poutpoint",
-        "projectTitle": "Project title",
-        "shoulddeleteproject": "Do you want to delete the project {title}?",
-        "changePoutPoint": "Select by clicking on the map",
-        "easting": "Easting",
-        "northing": "Northing"
-      },
-      "project": "Project",
-      "create": {
-        "createproject": "Create project"
-      },
-      "calculation": {
-        "idf": {
-          "precipLowerPeriod1h": "Precipitation [mm] for lower return period, 1 hour duration",
-          "precipLowerPeriod24h": "Precipitation [mm] for lower return period, 24 hour duration",
-          "returnPeriod": "Lower return period",
-          "precipUpperPeriod1h": "Precipitation [mm] for upper return period, 1 hour duration",
-          "precipUpperPeriod24h": "Precipitation [mm] for upper return period, 24 hour duration",
-          "upperReturnPeriod": "Upper return period"
-        },
-        "szenario": "Scenario",
-        "modFZV": {
-          "wettingVolume": "Wetting volume for 20-year event [mm]",
-          "peakFlow": "Peak flow coefficient [-]"
-        },
-        "calculate": "Calculate hydrology",
-        "deleteCalculation": "Delete calculation",
-        "deleteCalculationQuestion": "Should we delete the calculation?",
-        "successfullsave": "Successfully saved!",
-        "returnPeriod": "Return period",
-        "koella": {
-          "glacierArea": "Glacier area"
-        },
-        "results": "Results",
-        "hq": "HQ",
-        "addcalculation": "Add hydrologic calculation",
-        "calcrunning": "Calculataion is running...",
-        "calcsuccess": "Successfully calculated!",
-        "calculationTitle": "- Calculation | AUGUR",
-        "clarkwsl": "Clark WSL",
-        "generalInput": "General",
-        "inputsForPrecipitationIntensity": "Information on the calculation of precipitation intensity",
-        "modFliesszeit": "Modified flow time method",
-        "koells": "Koella",
-        "typeOfCalculation": "Which process should be added to the project?"
-      }
-    },
-    "precipitation": {
-      "title": "Precipitation",
-      "nav": "Precipitation"
-    },
-    "nav": {
-      "tools": "Tools",
-      "about": "About",
-      "aboutAugur": "About AUGUR",
-      "science": "Science",
-      "donate": "Donate",
-      "helpSupportUs": "Help support us. Please donate!",
-      "donateNow": "Donate now",
-      "welcome": "Welcome !",
-      "my-account": "My Account",
-      "settings": "Settings",
-      "support": "Support",
-      "sign-out": "Sign Out",
-      "login": "Login",
-      "signup": "Signup",
-      "english": "English",
-      "german": "German",
-      "contact": "Contact Us"
-    },
-    "about": {
-      "title": "About AUGUR",
-      "text": "AUGUR is cool"
-    },
-    "general": {
-      "close": "Close",
-      "cancel": "Cancel",
-      "delete": "Delete",
-      "save": "Save",
-      "calculate": "Calculate",
-      "add": "Add",
-      "start": "Start"
-    }
-  }
+	"page": {
+		"dashboard": {
+			"title": "Dashboard",
+			"nav": "Dashboard",
+			"welcome": "Welcome to AUGUR",
+			"welcome_text": "Welcome to AUGR",
+			"precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios",
+			"precipitationtool": "Precipitation Tool",
+			"precipitation": "Precipitation",
+			"dischargedesc": "Calculation of hydrological runoff modelling, such as modified flow time method, Koella or Clark-WSL."
+		},
+		"discharge": {
+			"title": "Discharge",
+			"nav": "Discharge",
+			"projects": "Projects",
+			"geodata": "Geodata",
+			"calculate": "Hydrologie",
+			"overviewText": "Overview",
+			"overview": {
+				"deleteProject": "Delete project",
+				"description": "Description",
+				"discharge-projekt": "Discharge - Project",
+				"pourpoint": "Poutpoint",
+				"projectTitle": "Project title",
+				"shoulddeleteproject": "Do you want to delete the project {title}?",
+				"changePoutPoint": "Select by clicking on the map",
+				"easting": "Easting",
+				"northing": "Northing",
+				"calculateGeodata": "Recalculate geodata"
+			},
+			"project": "Project",
+			"create": {
+				"createproject": "Create project"
+			},
+			"calculation": {
+				"idf": {
+					"precipLowerPeriod1h": "Precipitation [mm] for lower return period, 1 hour duration",
+					"precipLowerPeriod24h": "Precipitation [mm] for lower return period, 24 hour duration",
+					"returnPeriod": "Lower return period",
+					"precipUpperPeriod1h": "Precipitation [mm] for upper return period, 1 hour duration",
+					"precipUpperPeriod24h": "Precipitation [mm] for upper return period, 24 hour duration",
+					"upperReturnPeriod": "Upper return period"
+				},
+				"szenario": "Scenario",
+				"modFZV": {
+					"wettingVolume": "Wetting volume for 20-year event [mm]",
+					"peakFlow": "Peak flow coefficient [-]"
+				},
+				"calculate": "Calculate hydrology",
+				"deleteCalculation": "Delete calculation",
+				"deleteCalculationQuestion": "Should we delete the calculation?",
+				"successfullsave": "Successfully saved!",
+				"returnPeriod": "Return period",
+				"koella": {
+					"glacierArea": "Glacier area"
+				},
+				"results": "Results",
+				"hq": "HQ",
+				"addcalculation": "Add hydrologic calculation",
+				"calcrunning": "Calculataion is running...",
+				"calcsuccess": "Successfully calculated!",
+				"calculationTitle": "- Calculation | AUGUR",
+				"clarkwsl": "Clark WSL",
+				"generalInput": "General",
+				"inputsForPrecipitationIntensity": "Information on the calculation of precipitation intensity",
+				"modFliesszeit": "Modified flow time method",
+				"koells": "Koella",
+				"typeOfCalculation": "Which process should be added to the project?"
+			}
+		},
+		"precipitation": {
+			"title": "Precipitation",
+			"nav": "Precipitation"
+		},
+		"nav": {
+			"tools": "Tools",
+			"about": "About",
+			"aboutAugur": "About AUGUR",
+			"science": "Science",
+			"donate": "Donate",
+			"helpSupportUs": "Help support us. Please donate!",
+			"donateNow": "Donate now",
+			"welcome": "Welcome !",
+			"my-account": "My Account",
+			"settings": "Settings",
+			"support": "Support",
+			"sign-out": "Sign Out",
+			"login": "Login",
+			"signup": "Signup",
+			"english": "English",
+			"german": "German",
+			"contact": "Contact Us"
+		},
+		"about": {
+			"title": "About AUGUR",
+			"text": "AUGUR is cool"
+		},
+		"general": {
+			"close": "Close",
+			"cancel": "Cancel",
+			"delete": "Delete",
+			"save": "Save",
+			"calculate": "Calculate",
+			"add": "Add",
+			"start": "Start"
+		}
+	}
 }

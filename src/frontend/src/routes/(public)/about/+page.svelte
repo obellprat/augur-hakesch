@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import pageTitle from '$lib/page/pageTitle';
-	import { _ } from 'svelte-i18n'
+	import { _ } from 'svelte-i18n';
 
 	$pageTitle = $_('page.about.title');
 </script>

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { currentProject } from '$lib/state.svelte';
-	import Navlink from './navlink.svelte'
-	
-	import { _ } from 'svelte-i18n'
+	import Navlink from './navlink.svelte';
+
+	import { _ } from 'svelte-i18n';
 
 	let props = $props();
 	// Function to close the offcanvas menu
@@ -43,7 +43,7 @@
 											class="btn btn-sm btn-icon btn-soft-danger ms-auto d-xl-none"
 											data-bs-dismiss="offcanvas"
 											data-bs-target="#email-sidebar"
-											aria-label="{$_('page.general.close')}"
+											aria-label={$_('page.general.close')}
 										>
 											<i class="ri-close-line"></i>
 										</button>
@@ -58,7 +58,6 @@
 												>{props.projectCount}</span
 											>
 										</a>
-										
 									</div>
 								</div>
 								{#if props.currentProject.id != ''}
@@ -70,14 +69,22 @@
 											data-bs-target="#other"
 											aria-expanded="false"
 											aria-controls="other"
-											>{$_('page.discharge.project')} {props.currentProject.title}
+											>{$_('page.discharge.project')}
+											{props.currentProject.title}
 											<i class="ri-arrow-down-s-line ms-auto"></i></a
 										>
 										<div id="other" class="collapse show">
 											<div class="email-menu-list d-flex flex-column mt-2">
-												<Navlink title="{$_('page.discharge.overviewText')}" href="{base}/discharge/overview/{props.currentProject.id}" tool="overview" />
-												<Navlink title="{$_('page.discharge.geodata')}" href="{base}/discharge/geodata/{props.currentProject.id}" tool="geodata" />
-												<Navlink title="{$_('page.discharge.calculate')}" href="{base}/discharge/calculation/{props.currentProject.id}" tool="calculation" />
+												<Navlink
+													title={$_('page.discharge.overviewText')}
+													href="{base}/discharge/overview/{props.currentProject.id}"
+													tool="overview"
+												/>
+												<Navlink
+													title={$_('page.discharge.calculate')}
+													href="{base}/discharge/calculation/{props.currentProject.id}"
+													tool="calculation"
+												/>
 											</div>
 										</div>
 									</div>
