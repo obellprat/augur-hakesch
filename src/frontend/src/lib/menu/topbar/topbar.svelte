@@ -8,7 +8,6 @@
 	import { signIn, signOut } from '@auth/sveltekit/client';
 
 	import { base } from '$app/paths';
-
 	function changeLanguage(code: string) {
 		locale.set(code);
 	}
@@ -161,7 +160,7 @@
 						aria-haspopup="false"
 						aria-expanded="false"
 					>
-						{$locale?.toUpperCase()}
+						{$locale?.toLocaleLowerCase() === 'de-de' || $locale?.toLocaleLowerCase() === 'de' ? 'DE' : 'EN'}
 					</span>
 
 					<div class="dropdown-menu dropdown-menu-end">
