@@ -280,6 +280,128 @@ def koella(self,
         "i_korrigiert": i_corrected,
     }
 
+@app.task(name="clark-wsl", bind=True)
+def clark_wsl_modified(self,
+    discharge_types_parameters,# dict: ID -> {"WSV", "psi"}
+    x,                         # Return period [y]
+    fractions,                 # DataFrame with fractions by zone
+    clark_wsl,                 # Clark WSL id
+    project_id,                # Project ID for getting isozone raster
+    user_id,                   # User ID for getting isozone raster
+    intensity_fn=None,         # Precipitation intensity function: i(x, Tc) in mm/h
+    dt=10,                     # Time step [min]
+    pixel_area_m2=25           # Cell area [m²] (e.g. 5x5 m)
+):
+    # read the isozone_raster
+    isozone = f"data/{user_id}/{project_id}/isozones_cog.tif"
+    grid = Grid.from_raster(isozone)
+    isozone_raster = grid.read_raster(isozone)
+
+    max_zone = int(np.nanmax(isozone_raster))
+    Tc = dt * (max_zone + 1)
+    Ptotal = intensity_fn(rp_years = x, duration_minutes = Tc) * Tc / 60  # mm
+    W_iso = np.zeros((1, max_zone + 1))
+    WSV_weighted_sum = 0
+    total_area = 0
+    P_deficit = 0
+
+    for z in range(max_zone + 1):
+        zone_mask = isozone_raster == z
+        if not np.any(zone_mask):
+            continue
+
+        zone_area = np.sum(zone_mask) * pixel_area_m2  # m²
+                
+        for typ, pct in fractions.items():
+            if pd.isna(pct) or pct == 0:
+                continue
+            frac = pct / 100
+            area = frac * zone_area  # m²
+            total_area += area
+
+            if typ not in discharge_types_parameters:
+                continue
+          
+            params = discharge_types_parameters[typ]
+            WSV60min = params["WSV"]
+            
+            # WSV correction
+            WSVcorr = WSV60min * (0.5 + Tc / 120)
+
+            # Effective precipitation
+            Peff = ((Ptotal - 0.2 * WSVcorr) ** 2) / (Ptotal + 0.8 * WSVcorr)
+            Pinfilt_total = Ptotal - Peff
+
+            # Infiltration capacity
+            if WSV60min >= 30:
+                f0_fc = 1
+                r_val = 0.0000001
+            elif 25 <= WSV60min < 30:
+                f0_fc = 2
+                r_val = 0.02
+            elif 20 <= WSV60min < 25:
+                f0_fc = 5
+                r_val = 0.04
+            else:  # WSV < 20
+                f0_fc = 8
+                r_val = 0.06
+
+            r = r_val
+            t_sec_z = Tc * 60 / (max_zone + 1) 
+
+            # Step 1: Distribute total infiltration across zones
+            Pinfilt_available = Pinfilt_total / (max_zone + 1)
+
+            # Step 2: Compute fc from that available infiltration
+            denominator = t_sec_z + ((f0_fc - 1) / r) * (1 - np.exp(-r * t_sec_z))
+            fc = Pinfilt_available / denominator
+            f0 = f0_fc * fc
+
+            # Step 3: Reconstruct cumulative infiltration for the zone
+            Pinfilt_z = fc * t_sec_z + ((f0 - fc) / r) * (1 - np.exp(-r * t_sec_z))
+
+            # Step 4: Ensure that cumulative infiltration does not exceed available
+            Pinfilt_z = min(Pinfilt_z, Pinfilt_available)
+                      
+            # Effective precipitation after infiltration and deficit from previous time step
+            P_step = Ptotal / (max_zone + 1) - Pinfilt_z - P_deficit
+            if P_step < 0:
+                P_step = 0
+            else:
+                P_deficit = 0
+
+            Q_step = P_step * area / 1000 / 60 / dt # [m³/s]
+            WSV_weighted_sum += WSV60min * area
+            W_iso[0][z] += Q_step
+
+    # Clark W(t) by time step
+    W = np.zeros(max_zone + 1)
+    for t in range(len(W)):
+        for z in range(len(W_iso[0])):
+            if t - z >= 0:
+                W[t] += W_iso[0, t - z]
+
+    # Linear reservoir
+    WSV_mean = WSV_weighted_sum / total_area
+    K = 2.25 * WSV_mean - 18.5  # in minutes
+    K_sec = K * 60 
+
+    # Muskingum routing
+    c1 = dt * 60 / (2 * K_sec + dt * 60)
+    c2 = c1
+    c3 = (2 * K_sec - dt * 60) / (2 * K_sec + dt * 60)
+
+    Q = np.zeros_like(W)
+    for t in range(1, len(Q)):
+        Q[t] = c1 * W[t] + c2 * W[t - 1] + c3 * Q[t - 1]
+
+    return {
+        "Q": Q.tolist(),
+        "W": W.tolist(),
+        "K": K,
+        "Tc": Tc
+    }
+
 def construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high2):
     
     """
@@ -604,3 +726,5 @@ def cumulative_length(geojson_featurecollection):
         # For LineString or MultiLineString
         total_length += geom.length
     return total_length
+
+
