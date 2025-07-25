@@ -5,7 +5,8 @@ import type { LayoutServerLoad } from './$types';
 export const load: LayoutServerLoad = async (event) => {
 	try { 
 		const response = await fetch(env_priv.ORIGIN + env.PUBLIC_HAKESCH_API_PATH + '/version/', {
-			method: 'GET'
+			method: 'GET',
+			signal: AbortSignal.timeout(200)
 		});
 
 		const versionObject = await response.json();	
