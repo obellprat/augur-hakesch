@@ -44,6 +44,7 @@ model Project {
   IDF_Parameters IDF_Parameters?  @relation(fields: [idfParameterId], references: [id], onDelete: Cascade)
   Mod_Fliesszeit Mod_Fliesszeit[]
   Koella Koella[]
+  ClarkWSL ClarkWSL[]
 }
 
 model Point {
@@ -119,10 +120,52 @@ model Koella_Result {
   Koella  Koella?
 }
 
+
+model ClarkWSL {
+  id                       Int                    @id @default(autoincrement())
+  x                        Int
+  Annuality                Annualities            @relation(fields: [x], references: [id])
+  dt                       Int                    @default(10)
+  pixel_area_m2            Int                    @default(25)
+  Fractions                Fractions[]
+  project_id               String
+  Project                  Project                @relation(fields: [project_id], references: [id])
+  clarkwsl_result_id       Int?                   @unique
+  ClarkWSL_Result          ClarkWSL_Result? @relation(fields: [clarkwsl_result_id], references: [id], onDelete: Cascade)
+}
+
+model Fractions {
+  id                       Int                    @id @default(autoincrement())
+  ZoneParameterTyp         String
+  ZoneParameter            ZoneParameter @relation(fields: [ZoneParameterTyp], references: [typ])
+  pct                      Float
+  clarkwsl_id              Int 
+  ClarkWSL                 ClarkWSL @relation(fields: [clarkwsl_id], references: [id])
+}
+
+model ZoneParameter {
+  typ                      String   @id
+  V0_20                    Float
+  WSV                      Float
+  psi                      Float
+  alpha                    Float
+  Fractions                Fractions[]
+}
+
+model ClarkWSL_Result {
+  id             Int             @id @default(autoincrement())
+  Q             Float
+  W             Float
+  K             Float
+  Tc            Float
+  ClarkWSL  ClarkWSL?
+}
+
 model Annualities {
   id             Int              @id @default(autoincrement())
   description    String
   number         Float            @unique
   Mod_Fliesszeit Mod_Fliesszeit[]
   Koella Koella[]
+  ClarkWSL ClarkWSL[]
 }

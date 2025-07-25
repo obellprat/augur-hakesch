@@ -5,7 +5,7 @@ from helpers.user import get_user
 from prisma.models import User
 from celery import group
 
-from calculations.discharge import construct_idf_curve, modifizierte_fliesszeit, prepare_discharge_hydroparameters, koella
+from calculations.discharge import construct_idf_curve, modifizierte_fliesszeit, prepare_discharge_hydroparameters, koella, clark_wsl_modified
 
 router = APIRouter(prefix="/discharge",
     tags=["discharge"],)
@@ -137,6 +137,34 @@ def get_koella(ProjectId:str, KoellaId: int, user: User = Depends(get_user)):
             detail="Unable to retrieve project",
         )
 
+@router.get("/clark-wsl")
+def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)):
+    try:
+        project =  prisma.project.find_unique_or_raise(
+            where = {
+                'userId' : user.id,
+                'id' :  ProjectId
+            },
+            include = {
+                'IDF_Parameters' : True,
+                'ClarkWSL' : {
+                    'include' :  {
+                        'Annuality' : True
+                    }
+                }
+            }
+        )
+
+        clark_wsl_obj = next((x for x in project.ClarkWSL if x.id == ClarkWSLId), None)
+        # TODO: Change parameters to use Clark WSL parameters
+        task = clark_wsl_modified.delay(project.IDF_Parameters.P_low_1h, project.IDF_Parameters.P_high_1h, project.IDF_Parameters.P_low_24h, project.IDF_Parameters.P_high_24h, project.IDF_Parameters.rp_low, project.IDF_Parameters.rp_high, clark_wsl_obj.Annuality.number, clark_wsl_obj.Vo20, project.channel_length, project.catchment_area, clark_wsl_obj.glacier_area, clark_wsl_obj.id)
+        return JSONResponse({"task_id": task.id}) 
+    except:
+        # Handle missing user scenario
+        raise HTTPException(
+            status_code=404,
+            detail="Unable to retrieve project",
+        )
 
 @router.get("/prepare_discharge_hydroparameters")
 async def get_prepare_discharge_hydroparametersisozones(ProjectId:str, user: User = Depends(get_user)):
