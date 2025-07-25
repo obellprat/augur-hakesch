@@ -1,4 +1,4 @@
-## 0.3.0.dev1 (2025-07-25)
+## 0.3.0.dev2 (2025-07-25)
 
 ### Feat
 
@@ -6,6 +6,10 @@
 - **frontend**: Show results as Plots
 - **frontend**: Show results as Plots
 - **frontend**: Show results as Plots
+
+### Fix
+
+- **frontend**: show version in frontend
 
 ### Refactor
 
