@@ -1,6 +1,10 @@
 [project]
 name = "augur.world"
 version = "0.3.0.dev1"
+version_files = [
+    "src/api/version.py",
+    "src/frontend/src/routes/+layout.server.ts:version"
+]
 
 [tool.commitizen]
 name = "cz_conventional_commits"

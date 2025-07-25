@@ -1,9 +1,10 @@
 import { env } from '$env/dynamic/public';
+import { env as env_priv } from '$env/dynamic/private';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async (event) => {
 	try { 
-		const response = await fetch(env.PUBLIC_HAKESCH_API_PATH + '/version', {
+		const response = await fetch(env_priv.ORIGIN + env.PUBLIC_HAKESCH_API_PATH + '/version/', {
 			method: 'GET'
 		});
 
@@ -11,7 +12,7 @@ export const load: LayoutServerLoad = async (event) => {
 
 		return {
 			apiversion: versionObject.version, // This will include the version from the API response
-		version: '0.3.0.dev1', // This is dynamically set in the build process
+			version: '0.3.0.dev1', // This is dynamically set in the build process
 			session: await event.locals.auth()
 		};
 	} catch (error) {
