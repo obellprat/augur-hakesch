@@ -2,7 +2,7 @@
 name = "augur.world"
 version = "0.3.0.dev2"
 version_files = [
-    "src/api/version.py",
+    "src/api/version.py:__version__",
     "src/frontend/src/routes/+layout.server.ts:version"
 ]
 

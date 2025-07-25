@@ -4,8 +4,6 @@
 
 - **api,frontend**: integrating version display in frontend and backend
 - **frontend**: Show results as Plots
-- **frontend**: Show results as Plots
-- **frontend**: Show results as Plots
 
 ### Fix
 
@@ -14,7 +12,7 @@
 ### Refactor
 
 - **api**: delete unused api calculation files
-- **Change-the-versioning-system-to-Commitizen**: Previously, semantic versioning was used. Commitizen is more widely used
+- **api,frontend**: Previously, semantic versioning was used. Commitizen is more widely used
 
 ## 0.2.0 (2025-07-25)
 
