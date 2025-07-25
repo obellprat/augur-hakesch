@@ -42,9 +42,8 @@
 					<p class="card-text">
 						{$_('page.dashboard.precipitation_card')}
 					</p>
-					<a href="precipitation.html" class="btn btn-primary stretched-link"
-						>{$_('page.general.start')}</a
-					>
+					<a href="precipitation" class="btn btn-primary stretched-link">{$_('page.general.start')}</a>
+
 				</div>
 				<!-- end card-body-->
 			</div>
