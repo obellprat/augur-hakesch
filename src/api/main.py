@@ -10,7 +10,7 @@ from helpers.user import map_user
 import logging
 import uvicorn
 
-from routers import catchment, file, task, isozones, project, discharge
+from routers import file, task, project, discharge, version
 
 from version import __version__
 
@@ -44,6 +44,7 @@ excluded_routes = [
     "/docs",
     "/openapi.json",
     "/data",
+    "/version",
 ]
 # Add middleware with basic config
 setup_keycloak_middleware(
@@ -68,10 +69,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(catchment.router)
 app.include_router(file.router)
 app.include_router(task.router)
-app.include_router(isozones.router)
+app.include_router(version.router)
 app.include_router(project.router)
 app.include_router(discharge.router)
 

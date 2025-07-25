@@ -5,6 +5,8 @@
 	import { page } from '$app/state';
 
 	let props = $props();
+
+
 </script>
 
 <!-- Sidenav Menu Start -->
@@ -60,6 +62,14 @@
 		</div>
 
 		<div class="clearfix"></div>
+		<div class="help-box mt-1">
+				<h5 class="fw-semibold fs-16 text-center pb-2">{$_('page.nav.version')}</h5>
+				<p class="text-muted">{$_('page.nav.frontend')}: {page.data.version}
+					<br>
+					{$_('page.nav.backend')}: {page.data.apiversion}
+				</p>
+		</div>
+
 	</div>
 </div>
 <!-- Sidenav Menu End -->
