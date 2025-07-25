@@ -126,3 +126,10 @@ model Annualities {
   Mod_Fliesszeit Mod_Fliesszeit[]
   Koella Koella[]
 }
+
+model Precipitation {
+  id              Int            @id @default(autoincrement())
+  latitude        Float
+  longitude       Float
+  data            String
+}
