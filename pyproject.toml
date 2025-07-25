@@ -1,18 +1,15 @@
 [project]
 name = "augur.world"
-version = "0.3.0.dev2"
-version_files = [
-    "src/api/version.py:__version__",
-    "src/frontend/src/routes/+layout.server.ts:version"
-]
+version = "0.3.0-dev.1"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-tag_format = "${version}"
-legacy_tag_formats = [
-    "${version}",
+version_files = [
+    "./src/api/version.py:__version__",
+    "./src/frontend/src/routes/+layout.server.ts:version"
 ]
-version_scheme = "pep440"
+tag_format = "${version}"
+version_scheme = "semver2"
 version_provider = "pep621"
 update_changelog_on_bump = true
 major_version_zero = true

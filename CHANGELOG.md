@@ -1,18 +1,21 @@
-## 0.3.0.dev2 (2025-07-25)
+## 0.3.0-dev.1 (2025-07-25)
 
 ### Feat
 
 - **api,frontend**: integrating version display in frontend and backend
 - **frontend**: Show results as Plots
+- **frontend**: Show results as Plots
+- **frontend**: Show results as Plots
 
 ### Fix
 
+- bump version files
 - **frontend**: show version in frontend
 
 ### Refactor
 
 - **api**: delete unused api calculation files
-- **api,frontend**: Previously, semantic versioning was used. Commitizen is more widely used
+- **Change-the-versioning-system-to-Commitizen**: Previously, semantic versioning was used. Commitizen is more widely used
 
 ## 0.2.0 (2025-07-25)
 
