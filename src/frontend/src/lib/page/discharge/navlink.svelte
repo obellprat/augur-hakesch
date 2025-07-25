@@ -16,12 +16,7 @@
 	let url = base + '/' + href;
 </script>
 
-<a
-	href="{href}"
-	onclick={closeOffcanvas}
-	class="{active?'active':''}"
->
-	<iconify-icon icon="solar:mailbox-outline" class="me-2 fs-18 text-muted"
-	></iconify-icon>
+<a {href} onclick={closeOffcanvas} class={active ? 'active side-nav-link' : ' side-nav-link'}>
+	<iconify-icon icon="solar:mailbox-outline" class="me-2 fs-18 text-muted"></iconify-icon>
 	<span>{title}</span>
 </a>

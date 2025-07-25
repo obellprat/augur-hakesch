@@ -39,4 +39,4 @@ def after_setup_celery_logger(logger, **kwargs):
     """ This function sets the 'celery' logger handler and formatter """
     create_celery_logger_handler(logger, False)
 
-app.autodiscover_tasks(['calculations.catchment','calculations.isozones','calculations.hydrocalc'])
+app.autodiscover_tasks(['calculations.discharge'])

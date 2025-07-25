@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import Navlink from './navlink.svelte';
-	import { _ } from 'svelte-i18n'
+	import { _ } from 'svelte-i18n';
+	import { page } from '$app/state';
+
+	let props = $props();
+
+
 </script>
 
 <!-- Sidenav Menu Start -->
@@ -34,19 +39,19 @@
 		<ul class="side-nav">
 			<li class="side-nav-title">{$_('page.nav.tools')}</li>
 
-			<Navlink title="{$_('page.dashboard.nav')}" href="./" icon="ti ti-home" />
+			<Navlink title={$_('page.dashboard.nav')} href="./" icon="ti ti-home" />
 
-			<Navlink title="{$_('page.precipitation.nav')}" href="precipitation" icon="ti ti-cloud-rain" />
+			<Navlink title={$_('page.precipitation.nav')} href="precipitation" icon="ti ti-cloud-rain" />
 
-			<Navlink title="{$_('page.hydrocalc.nav')}" href="hydrocalc" icon="ti ti-chart-histogram" />
+			<Navlink title={$_('page.discharge.nav')} href="discharge" icon="ti ti-chart-histogram" projectcount={page.data.projects?.length} currentproject={page.data.project}/>
 
 			<!--<Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />-->
 
 			<li class="side-nav-title mt-2">{$_('page.nav.about')}</li>
 
-			<Navlink title="{$_('page.nav.science')}" href="science" icon="ti ti-school" />
+			<Navlink title={$_('page.nav.science')} href="science" icon="ti ti-school" />
 
-			<Navlink title="{$_('page.nav.aboutAugur')}" href="about" icon="ti ti-info-circle" />
+			<Navlink title={$_('page.nav.aboutAugur')} href="about" icon="ti ti-info-circle" />
 		</ul>
 
 		<!-- dDonate Box -->
@@ -57,6 +62,14 @@
 		</div>
 
 		<div class="clearfix"></div>
+		<div class="help-box mt-1">
+				<h5 class="fw-semibold fs-16 text-center pb-2">{$_('page.nav.version')}</h5>
+				<p class="text-muted">{$_('page.nav.frontend')}: {page.data.version}
+					<br>
+					{$_('page.nav.backend')}: {page.data.apiversion}
+				</p>
+		</div>
+
 	</div>
 </div>
 <!-- Sidenav Menu End -->

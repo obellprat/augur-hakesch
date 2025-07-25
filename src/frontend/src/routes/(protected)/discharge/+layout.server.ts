@@ -7,7 +7,7 @@ import { base } from '$app/paths';
 export const load: PageServerLoad = async (events) => {
 	if (browser) {
 		if (!data.session?.user) {
-			redirect(303, `./login?redirect_url=` + '{base}/hydrocalc');
+			redirect(303, `./login?redirect_url=` + '{base}/discharge');
 		}
 	}
 
@@ -19,5 +19,5 @@ export const load: PageServerLoad = async (events) => {
 			session,
 			projects
 		};
-	} else redirect(303, base + `/login?redirect_url=` + base + '/hydrocalc');
+	} else redirect(303, base + `/login?redirect_url=` + base + '/discharge');
 };

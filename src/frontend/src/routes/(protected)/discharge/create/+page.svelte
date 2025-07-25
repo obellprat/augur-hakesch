@@ -16,10 +16,10 @@
 	import proj4 from 'proj4';
 	import '../../../../../node_modules/ol/ol.css';
 	import type { Coordinate } from 'ol/coordinate';
-	import { _ } from 'svelte-i18n'
+	import { _ } from 'svelte-i18n';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
-	$pageTitle = $_('page.hydrocalc.title') + "-" + $_('page.hydrocalc.create.createproject');
+	$pageTitle = $_('page.discharge.title') + '-' + $_('page.discharge.create.createproject');
 
 	let easting = $derived(2600000);
 	let northing = $derived(1200000);
@@ -105,17 +105,8 @@
 	<div class="h-100">
 		<div class="card-header py-2 px-3 border-bottom">
 			<div class="d-flex align-items-center justify-content-between py-1">
-				<div class="d-flex align-items-center gap-2">
-					<button
-						type="button"
-						class="btn btn-light d-xxl-none d-flex p-1"
-						data-bs-toggle="offcanvas"
-						data-bs-target="#email-sidebar"
-						aria-controls="email-sidebar"
-					>
-						<i class="ri-menu-2-line fs-17"></i>
-					</button>
-					<h3 class="my-0 lh-base">{$_('page.hydrocalc.create.createproject')}</h3>
+				<div class="d-flex align-items-center gap-2">	
+					<h3 class="my-0 lh-base">{$_('page.discharge.create.createproject')}</h3>
 				</div>
 			</div>
 		</div>
@@ -124,17 +115,23 @@
 				<div class="col-lg-6">
 					<form method="post">
 						<div class="mb-3">
-							<label for="title" class="form-label">{$_('page.hydrocalc.overview.projectTitle')}</label>
+							<label for="title" class="form-label"
+								>{$_('page.discharge.overview.projectTitle')}</label
+							>
 							<input type="text" name="title" id="title" class="form-control" />
 						</div>
 
 						<div class="mb-3">
-							<label for="description" class="form-label">{$_('page.hydrocalc.overview.description')}</label>
+							<label for="description" class="form-label"
+								>{$_('page.discharge.overview.description')}</label
+							>
 							<textarea class="form-control" name="description" rows="5"></textarea>
 						</div>
 
 						<div class="mb-3">
-							<label for="easting" class="form-label">{$_('page.hydrocalc.overview.pourpoint')}</label>
+							<label for="easting" class="form-label"
+								>{$_('page.discharge.overview.pourpoint')}</label
+							>
 							<div class="row">
 								<div class="col-md-6">
 									<input
@@ -163,7 +160,8 @@
 				<!-- end col -->
 				<div class="col-lg-6">
 					<div class="py-2">
-						{$_('page.hydrocalc.overview.pourpoint')} <span class="text-muted">({$_('page.hydrocalc.overview.changePoutPoint')})</span>
+						{$_('page.discharge.overview.pourpoint')}
+						<span class="text-muted">({$_('page.discharge.overview.changePoutPoint')})</span>
 					</div>
 					<div class="d-flex flex-grow-1" style="height:500px;" id="map"></div>
 				</div>

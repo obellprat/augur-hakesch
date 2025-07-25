@@ -1,15 +1,13 @@
-import { getProjectById, updateProject, deleteProject } from '$lib/server/project';
+import { getProjectById } from '$lib/server/project';
 import { error } from '@sveltejs/kit';
-import { fail, redirect } from '@sveltejs/kit';
-import type { Actions } from './$types';
-import { base } from '$app/paths';
+import { redirect } from '@sveltejs/kit';
 import { browser } from '$app/environment';
 import { page } from '$app/state';
 
 export const load = async ({ params }) => {
 	if (browser) {
 		if (!page.data.session?.user?.name) {
-			redirect(303, `./login?redirect_url=` + page.url.href + '/hydrocalc');
+			redirect(303, `./login?redirect_url=` + page.url.href + '/discharge');
 		}
 	}
 

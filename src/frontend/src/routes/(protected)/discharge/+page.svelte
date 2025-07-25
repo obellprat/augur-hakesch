@@ -2,11 +2,11 @@
 	import pageTitle from '$lib/page/pageTitle';
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
-	import { _ } from 'svelte-i18n'
+	import { _ } from 'svelte-i18n';
 
 	export let data;
 
-	$pageTitle = $_('page.hydrocalc.title') + "-" + $_('page.hydrocalc.projects');
+	$pageTitle = $_('page.discharge.title') + '-' + $_('page.discharge.projects');
 
 	onMount(async () => {});
 </script>
@@ -19,17 +19,6 @@
 	<div class="h-100">
 		<div class="card-body py-2">
 			<div class="d-flex align-items-center gap-2">
-				<button
-					type="button"
-					class="btn btn-light d-xxl-none d-flex p-1"
-					data-bs-toggle="offcanvas"
-					data-bs-target="#email-sidebar"
-					aria-controls="email-sidebar"
-					aria-label="show sidebar"
-				>
-					<i class="ri-menu-2-line fs-17"></i>
-				</button>
-
 				<div class="form-check">
 					<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" />
 				</div>
@@ -49,15 +38,16 @@
 					</button>
 				</div>
 
-				<div class="ms-auto d-xl-flex d-none">
+				<div class="ms-auto">
 					<!--<div class="app-search">
                         <input type="text" class="form-control rounded-pill" placeholder="Search mail...">
                         <i class="ri-search-line fs-18 app-search-icon text-muted"></i>
                     </div>-->
 					<a
-						href="{base}/hydrocalc/create"
+						href="{base}/discharge/create"
 						type="button"
-						class="btn btn-primary bg-gradient rounded-pill">{$_('page.hydrocalc.create.createproject')}</a
+						class="btn btn-primary bg-gradient rounded-pill"
+						>{$_('page.discharge.create.createproject')}</a
 					>
 				</div>
 			</div>
@@ -69,10 +59,10 @@
 					<thead
 						><tr>
 							<th></th>
-							<th>{$_('page.hydrocalc.overview.projectTitle')}</th>
-							<th>{$_('page.hydrocalc.overview.description')}</th>
-							<th>{$_('page.hydrocalc.overview.easting')}</th>
-							<th>{$_('page.hydrocalc.overview.northing')}</th>
+							<th>{$_('page.discharge.overview.projectTitle')}</th>
+							<th>{$_('page.discharge.overview.description')}</th>
+							<th>{$_('page.discharge.overview.easting')}</th>
+							<th>{$_('page.discharge.overview.northing')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -85,7 +75,7 @@
 
 									<td>
 										<a
-											href="{base}/hydrocalc/overview/{project.id}"
+											href="{base}/discharge/overview/{project.id}"
 											class="link-reset fs-14 fw-medium stretched-link"
 										>
 											{project.title}

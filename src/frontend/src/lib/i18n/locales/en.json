@@ -8,25 +8,26 @@
       "precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios",
       "precipitationtool": "Precipitation Tool",
       "precipitation": "Precipitation",
-      "hydrocalcdesc": "Calculation of hydrological runoff modelling, such as modified flow time method, Koella or Clark-WSL."
+      "dischargedesc": "Calculation of hydrological runoff modelling, such as modified flow time method, Koella or Clark-WSL."
     },
-    "hydrocalc": {
-      "title": "HydroCalc",
-      "nav": "HydroCalc",
+    "discharge": {
+      "title": "Discharge",
+      "nav": "Discharge",
       "projects": "Projects",
       "geodata": "Geodata",
-      "calculate": "Calculate",
+      "calculate": "Hydrologie",
       "overviewText": "Overview",
       "overview": {
         "deleteProject": "Delete project",
         "description": "Description",
-        "hydrocalc-projekt": "HydroCalc - Project",
+        "discharge-projekt": "Discharge - Project",
         "pourpoint": "Poutpoint",
         "projectTitle": "Project title",
         "shoulddeleteproject": "Do you want to delete the project {title}?",
         "changePoutPoint": "Select by clicking on the map",
         "easting": "Easting",
-        "northing": "Northing"
+        "northing": "Northing",
+        "calculateGeodata": "Recalculate geodata"
       },
       "project": "Project",
       "create": {
@@ -46,9 +47,9 @@
           "wettingVolume": "Wetting volume for 20-year event [mm]",
           "peakFlow": "Peak flow coefficient [-]"
         },
-        "calculate": "Calculate",
+        "calculate": "Calculate hydrology",
         "deleteCalculation": "Delete calculation",
-        "deleteCalculationQuestion": "Soll die Berechnung wirklich gelöscht werden?",
+        "deleteCalculationQuestion": "Should we delete the calculation?",
         "successfullsave": "Successfully saved!",
         "returnPeriod": "Return period",
         "koella": {
@@ -89,7 +90,10 @@
       "signup": "Signup",
       "english": "English",
       "german": "German",
-      "contact": "Contact Us"
+      "contact": "Contact Us",
+      "version": "Version",
+      "backend": "Backend",
+      "frontend": "Frontend"
     },
     "about": {
       "title": "About AUGUR",

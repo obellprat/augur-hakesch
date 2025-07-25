@@ -6,12 +6,94 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { toast } from '@zerodevx/svelte-toast';
-	import { _ } from 'svelte-i18n'
+	import { _ } from 'svelte-i18n';
+	import type ApexCharts from 'apexcharts';
+	import type { ApexOptions } from 'apexcharts';
+	
+	import type { Action } from 'svelte/action';
 
 	import { env } from '$env/dynamic/public';
+	//import Apexchart from '$lib/apexchart.svelte';
 
-	let { data, form }: { data: PageServerData; form: ActionData } = $props();	
-	$pageTitle = $_('page.hydrocalc.overview.hydrocalc-projekt') + ' '  + data.project.title;
+	type Chart = {
+		options: ApexOptions;
+		node?: HTMLDivElement;
+		ref?: ApexCharts;
+	};
+
+	const renderChart: Action<HTMLDivElement, Chart> = (node, parameter) => {
+		import('apexcharts')
+			.then((module) => module.default)
+			.then((ApexCharts) => {
+				const chart = new ApexCharts(node, parameter.options);
+				parameter.node = node;
+				parameter.ref = chart;
+				chart.render();
+			});
+		return {
+			// { destroy: parameter.ref?.destroy } causes error.
+			// height 속성 파싱 중 알 수 없는 NaN 값이 발생했습니다.
+			destroy: () => {
+				parameter.ref?.destroy();
+			}
+		};
+	};
+
+	const chartOneOptions: any = {
+		series: [
+			{
+				name: 'Clark-WSL',
+				data: [2.3,2.5, 2.8],
+				color: "#13e4ef"
+			}
+			
+		],
+		chart: {
+			type: 'bar',
+			height: 350
+		},
+		plotOptions: {
+			bar: {
+				horizontal: false,
+				columnWidth: '70%',
+				borderRadius: 5,
+				borderRadiusApplication: 'end'
+			}
+		},
+		dataLabels: {
+			enabled: false
+		},
+		stroke: {
+			show: true,
+			width: 2,
+			colors: ['transparent']
+		},
+		xaxis: {
+			categories: ['2.3', '20', '100'],
+		},
+		yaxis: {
+			title: {
+				text: 'HQ [m3/s]'
+			}
+		},
+		fill: {
+			opacity: 1
+		},
+		tooltip: {
+			y: {
+				formatter: function (val) {
+					return '$ ' + val + '  m3/s';
+				}
+			}
+		}
+	};
+	
+  const chart: Chart = {
+    options: chartOneOptions
+  };
+
+	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	$pageTitle = $_('page.discharge.overview.discharge-projekt') + ' ' + data.project.title;
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
@@ -52,6 +134,32 @@
 	let calulcationType = $state(0);
 	let mod_verfahren = $derived(data.project.Mod_Fliesszeit);
 	let koella = $derived(data.project.Koella);
+	//k.Koella_Result?.HQ.toFixed(2)
+
+	function showResults() {
+		let mod_fliesszeit_data: { name: string; color: string; data: (number | null)[] } = {
+			name: 'Mod. Fliesszeitverfahren',
+			color: "#1376ef",
+			data: []
+		};
+		mod_fliesszeit_data.data.push(mod_verfahren.find((mf: { Annuality: { number: number; }; }) => mf.Annuality?.number == 2.3)?.Mod_Fliesszeit_Result?.HQ ? Number(mod_verfahren.find(mf => mf.Annuality?.number == 2.3).Mod_Fliesszeit_Result.HQ.toFixed(2)) : null);
+		mod_fliesszeit_data.data.push(mod_verfahren.find((mf: { Annuality: { number: number; }; }) => mf.Annuality?.number == 20)?.Mod_Fliesszeit_Result?.HQ ? Number(mod_verfahren.find(mf => mf.Annuality?.number == 20).Mod_Fliesszeit_Result.HQ.toFixed(2)) : null);
+		mod_fliesszeit_data.data.push(mod_verfahren.find((mf: { Annuality: { number: number; }; }) => mf.Annuality?.number == 100)?.Mod_Fliesszeit_Result?.HQ ? Number(mod_verfahren.find(mf => mf.Annuality?.number == 100).Mod_Fliesszeit_Result.HQ.toFixed(2)) : null);
+		let koella_data : { name: string; color: string; data: (number | null)[] } = {
+			name: 'Kölla',
+			color: "#1e13ef",
+			data: []
+		}
+		koella_data.data.push(koella.find((k: { Annuality: { number: number; }; }) => k.Annuality?.number == 2.3)?.Koella_Result?.HQ ? Number(koella.find(k => k.Annuality?.number == 2.3).Koella_Result.HQ.toFixed(2)) : null);
+		koella_data.data.push(koella.find((k: { Annuality: { number: number; }; }) => k.Annuality?.number == 20)?.Koella_Result?.HQ ? Number(koella.find(k => k.Annuality?.number == 20).Koella_Result.HQ.toFixed(2)) : null);
+		koella_data.data.push(koella.find((k: { Annuality: { number: number; }; }) => k.Annuality?.number == 100)?.Koella_Result?.HQ ? Number(koella.find(k => k.Annuality?.number == 100).Koella_Result.HQ.toFixed(2)) : null);
+		chartOneOptions.series = [mod_fliesszeit_data, koella_data];
+		chart.ref?.updateSeries(chartOneOptions.series);
+
+	}
+	$effect(() => {
+		showResults();
+	});
 
 	function addCalculation() {
 		if (calulcationType == 1) {
@@ -72,12 +180,12 @@
 	}
 
 	function calculateModFliess(project_id: Number, mod_fliesszeit_id: Number) {
-		toast.push($_('page.hydrocalc.calculation.calcrunning'), {
+		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
 		fetch(
 			env.PUBLIC_HAKESCH_API_PATH +
-				'/hydrocalc/modifizierte_fliesszeit?ProjectId=' +
+				'/discharge/modifizierte_fliesszeit?ProjectId=' +
 				project_id +
 				'&ModFliesszeitId=' +
 				mod_fliesszeit_id,
@@ -94,12 +202,12 @@
 			});
 	}
 	function calculateKoella(project_id: Number, koella_id: Number) {
-		toast.push($_('page.hydrocalc.calculation.calcrunning'), {
+		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
 		fetch(
 			env.PUBLIC_HAKESCH_API_PATH +
-				'/hydrocalc/koella?ProjectId=' +
+				'/discharge/koella?ProjectId=' +
 				project_id +
 				'&KoellaId=' +
 				koella_id,
@@ -132,7 +240,7 @@
 				const taskStatus = res.task_status;
 				if (taskStatus === 'SUCCESS') {
 					toast.pop();
-					toast.push($_('page.hydrocalc.calculation.calcsuccess'), {
+					toast.push($_('page.discharge.calculation.calcsuccess'), {
 						theme: {
 							'--toastColor': 'mintcream',
 							'--toastBackground': 'rgba(72,187,120,0.9)',
@@ -152,6 +260,57 @@
 			.catch((err) => console.log(err));
 	}
 
+	function calculateProject(project_id: Number) {
+		toast.push($_('page.discharge.calculation.calcrunning'), {
+			initial: 0
+		});
+		fetch(env.PUBLIC_HAKESCH_API_PATH + '/discharge/calculate_project?ProjectId=' + project_id, {
+			method: 'GET',
+			headers: {
+				Authorization: 'Bearer ' + data.session.access_token
+			}
+		})
+			.then((response) => response.json())
+			.then((data) => {
+				getGroupStatus(data.task_id);
+			});
+	}
+	function getGroupStatus(taskID: String) {
+		fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/group/${taskID}`, {
+			method: 'GET',
+			headers: {
+				Authorization: 'Bearer ' + data.session.access_token,
+				'Content-Type': 'application/json'
+			}
+		})
+			.then((response) => response.json())
+			.then((res) => {
+				// write out the state
+				const actTime = new Date();
+				//let html = `${actTime.toUTCString()} ${res.task_status} `;
+				let html = ``;
+				const completed = res.completed;
+				const total = res.total;
+				if (completed === total) {
+					toast.pop();
+					toast.push($_('page.discharge.calculation.calcsuccess'), {
+						theme: {
+							'--toastColor': 'mintcream',
+							'--toastBackground': 'rgba(72,187,120,0.9)',
+							'--toastBarBackground': '#2F855A'
+						}
+					});
+					invalidateAll();
+					return;
+				}
+
+				setTimeout(function () {
+					getGroupStatus(res.group_id);
+				}, 1000);
+			})
+			.catch((err) => console.log(err));
+	}
+
 	onMount(async () => {
 		mod_verfahren = data.project.Mod_Fliesszeit;
 		koella = data.project.Koella;
@@ -159,7 +318,7 @@
 </script>
 
 <svelte:head>
-	<title>{$pageTitle} - {$_('page.hydrocalc.calculation.calculationTitle')} | AUGUR</title>
+	<title>{$pageTitle} - {$_('page.discharge.calculation.calculationTitle')} | AUGUR</title>
 </svelte:head>
 
 <div class="flex-grow-1 card">
@@ -167,26 +326,30 @@
 		<div class="card-header py-2 px-3 border-bottom">
 			<div class="d-flex align-items-center justify-content-between py-1">
 				<div class="d-flex align-items-center gap-2">
-					<button
-						type="button"
-						class="btn btn-light d-xxl-none d-flex p-1"
-						data-bs-toggle="offcanvas"
-						data-bs-target="#email-sidebar"
-						aria-controls="email-sidebar"
-					>
-						<i class="ri-menu-2-line fs-17"></i>
-					</button>
 					<h3 class="my-0 lh-base">
 						{data.project.title}
 					</h3>
 				</div>
-				<div class="ms-auto d-xl-flex">
+				<div class="d-xl-flex align-items-center gap-2">
 					<button
 						type="button"
-						class="btn btn-primary bg-gradient rounded-pill"
-						data-bs-toggle="modal"
-						data-bs-target="#generate-modal">{$_('page.hydrocalc.calculation.addcalculation')}</button
+						onclick={() => calculateProject(data.project.id)}
+						class="btn btn-sm btn-icon btn-ghost-primary"
+						title={$_('page.discharge.calculation.calculate')}
+						aria-label={$_('page.discharge.calculation.calculate')}
 					>
+						<i class="ti ti-calculator fs-24"></i>
+					</button>
+					<button
+						type="button"
+						class="btn btn-sm btn-icon btn-ghost-primary"
+						data-bs-toggle="modal"
+						data-bs-target="#generate-modal"
+						title={$_('page.discharge.calculation.addcalculation')}
+						aria-label={$_('page.discharge.calculation.addcalculation')}
+					>
+						<i class="ti ti-plus fs-24"></i>
+					</button>
 
 					<div
 						id="generate-modal"
@@ -200,18 +363,22 @@
 							<div class="modal-content">
 								<div class="modal-header">
 									<h4 class="modal-title" id="standard-modalLabel">
-										 {$_('page.hydrocalc.calculation.addcalculation')}
+										{$_('page.discharge.calculation.addcalculation')}
 									</h4>
-									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{$_('page.general.close')}"
+									<button
+										type="button"
+										class="btn-close"
+										data-bs-dismiss="modal"
+										aria-label={$_('page.general.close')}
 									></button>
 								</div>
 								<div class="modal-body">
-									<h5>$_('page.hydrocalc.calculation.typeOfCalculation')</h5>
+									<h5>{$_('page.discharge.calculation.typeOfCalculation')}</h5>
 									<hr />
 									<select id="calculation_type" class="form-select" bind:value={calulcationType}>
-										<option value="1">{$_('page.hydrocalc.calculation.modFliesszeit')}</option>
-										<option value="2">{$_('page.hydrocalc.calculation.koella')}</option>
-										<option value="3">{$_('page.hydrocalc.calculation.clarkwsl')}</option>
+										<option value="1">{$_('page.discharge.calculation.modFliesszeit')}</option>
+										<option value="2">{$_('page.discharge.calculation.koells')}</option>
+										<option value="3">{$_('page.discharge.calculation.clarkwsl')}</option>
 									</select>
 								</div>
 								<div class="modal-footer">
@@ -244,7 +411,7 @@
 									aria-expanded="true"
 									aria-controls="panelsStayOpen-collapseOne"
 								>
-									{$_('page.hydrocalc.calculation.generalInput')}
+									{$_('page.discharge.calculation.generalInput')}
 								</button>
 							</h2>
 							<div
@@ -266,11 +433,13 @@
 									>
 										<input type="hidden" name="id" value={data.project.id} />
 										<input type="hidden" name="idf_id" value={data.project.IDF_Parameters?.id} />
-										<h4 class="text-muted">{$_('page.hydrocalc.calculation.inputsForPrecipitationIntensity')}</h4>
+										<h4 class="text-muted">
+											{$_('page.discharge.calculation.inputsForPrecipitationIntensity')}
+										</h4>
 										<div class="row g-2 py-2 align-items-end">
 											<div class="mb-3 col-md-4">
 												<label for="P_low_1h" class="form-label"
-													>{$_('page.hydrocalc.calculation.idf.precipLowerPeriod1h')}</label
+													>{$_('page.discharge.calculation.idf.precipLowerPeriod1h')}</label
 												>
 												<input
 													type="number"
@@ -282,7 +451,7 @@
 											</div>
 											<div class="mb-3 col-md-4">
 												<label for="P_low_24h" class="form-label"
-													>{$_('page.hydrocalc.calculation.idf.precipLowerPeriod24h')}</label
+													>{$_('page.discharge.calculation.idf.precipLowerPeriod24h')}</label
 												>
 												<input
 													type="number"
@@ -293,7 +462,9 @@
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
-												<label for="rp_low" class="form-label">{$_('page.hydrocalc.calculation.idf.returnPeriod')}</label>
+												<label for="rp_low" class="form-label"
+													>{$_('page.discharge.calculation.idf.returnPeriod')}</label
+												>
 												<select
 													id="rp_low"
 													name="rp_low"
@@ -311,7 +482,7 @@
 										<div class="row g-2 align-items-end">
 											<div class="mb-3 col-md-4">
 												<label for="P_high_1h" class="form-label"
-													>{$_('page.hydrocalc.calculation.idf.precipUpperPeriod1h')}</label
+													>{$_('page.discharge.calculation.idf.precipUpperPeriod1h')}</label
 												>
 												<input
 													type="number"
@@ -323,7 +494,7 @@
 											</div>
 											<div class="mb-3 col-md-4">
 												<label for="P_high_24h" class="form-label"
-													>{$_('page.hydrocalc.calculation.idf.precipUpperPeriod24h')}</label
+													>{$_('page.discharge.calculation.idf.precipUpperPeriod24h')}</label
 												>
 												<input
 													type="number"
@@ -334,7 +505,9 @@
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
-												<label for="rp_high" class="form-label">{$_('page.hydrocalc.calculation.idf.upperReturnPeriod')}</label>
+												<label for="rp_high" class="form-label"
+													>{$_('page.discharge.calculation.idf.upperReturnPeriod')}</label
+												>
 
 												<select
 													id="rp_high"
@@ -366,7 +539,7 @@
 										aria-expanded="false"
 										aria-controls="panelsStayOpen-collapseThree"
 									>
-										{$_('page.hydrocalc.calculation.modFliesszeit')}
+										{$_('page.discharge.calculation.modFliesszeit')}
 									</button>
 								</h2>
 								<div
@@ -388,7 +561,7 @@
 															aria-expanded="true"
 															aria-controls="panelsStayOpen-collapsemodFZ{mod_fz.id}"
 														>
-															{$_('page.hydrocalc.calculation.szenario')}
+															{$_('page.discharge.calculation.szenario')}
 															{#if mod_fz.Annuality}
 																({mod_fz.Annuality.description})
 															{/if}
@@ -410,7 +583,7 @@
 																		await update({ reset: false });
 																		data.project = result;
 																		isMFZSaving = false;
-																		toast.push($_('page.hydrocalc.calculation.successfullsave'), {
+																		toast.push($_('page.discharge.calculation.successfullsave'), {
 																			theme: {
 																				'--toastColor': 'mintcream',
 																				'--toastBackground': 'rgba(72,187,120,0.9)',
@@ -424,7 +597,9 @@
 																<input type="hidden" name="mfzv_id" value={mod_fz.id} />
 																<div class="row g-2 py-2 align-items-end">
 																	<div class="mb-3 col-md-4">
-																		<label for="P_low_1h" class="form-label">{$_('page.hydrocalc.calculation.returnPeriod')}</label>
+																		<label for="P_low_1h" class="form-label"
+																			>{$_('page.discharge.calculation.returnPeriod')}</label
+																		>
 																		<select
 																			id="x"
 																			name="x"
@@ -440,7 +615,9 @@
 																	</div>
 																	<div class="mb-3 col-md-4">
 																		<label for="P_low_24h" class="form-label"
-																			>{$_('page.hydrocalc.calculation.modFZV.wettingVolume')}</label
+																			>{$_(
+																				'page.discharge.calculation.modFZV.wettingVolume'
+																			)}</label
 																		>
 																		<input
 																			type="number"
@@ -452,7 +629,7 @@
 																	</div>
 																	<div class="mb-3 col-md-4">
 																		<label for="P_low_24h" class="form-label"
-																			>{$_('page.hydrocalc.calculation.modFZV.peakFlow')}</label
+																			>{$_('page.discharge.calculation.modFZV.peakFlow')}</label
 																		>
 																		<input
 																			type="number"
@@ -484,7 +661,7 @@
 																		<span
 																			class="btn btn-sm btn-icon btn-ghost-danger d-xl-flex"
 																			data-bs-placement="top"
-																			title="{$_('page.general.delete')}"
+																			title={$_('page.general.delete')}
 																			aria-label="delete"
 																			data-bs-toggle="modal"
 																			data-bs-target="#delete-project-modal{mod_fz.id}"
@@ -507,17 +684,19 @@
 																	<div class="modal-content">
 																		<div class="modal-header text-bg-warning border-0">
 																			<h4 class="modal-title" id="warning-header-modalLabel">
-																				{$_('page.hydrocalc.calculation.deleteCalculation')}
+																				{$_('page.discharge.calculation.deleteCalculation')}
 																			</h4>
 																			<button
 																				type="button"
 																				class="btn-close btn-close-white"
 																				data-bs-dismiss="modal"
-																				aria-label="{$_('page.general.close')}"
+																				aria-label={$_('page.general.close')}
 																			></button>
 																		</div>
 																		<div class="modal-body">
-																			<p>{$_('page.hydrocalc.calculation.deleteCalculationQuestion')}</p>
+																			<p>
+																				{$_('page.discharge.calculation.deleteCalculationQuestion')}
+																			</p>
 																		</div>
 																		<div class="modal-footer">
 																			<button
@@ -558,7 +737,7 @@
 										aria-expanded="false"
 										aria-controls="panelsStayOpen-collapseKoella"
 									>
-										{$_('page.hydrocalc.calculation.koells')}
+										{$_('page.discharge.calculation.koells')}
 									</button>
 								</h2>
 								<div
@@ -580,7 +759,7 @@
 															aria-expanded="true"
 															aria-controls="panelsStayOpen-collapseKoella{k.id}"
 														>
-															{$_('page.hydrocalc.calculation.szenario')}
+															{$_('page.discharge.calculation.szenario')}
 															{#if k.Annuality}
 																({k.Annuality.description})
 															{/if}
@@ -602,7 +781,7 @@
 																		await update({ reset: false });
 																		data.project = result;
 																		isMFZSaving = false;
-																		toast.push($_('page.hydrocalc.calculation.successfullsave'), {
+																		toast.push($_('page.discharge.calculation.successfullsave'), {
 																			theme: {
 																				'--toastColor': 'mintcream',
 																				'--toastBackground': 'rgba(72,187,120,0.9)',
@@ -616,7 +795,9 @@
 																<input type="hidden" name="koella_id" value={k.id} />
 																<div class="row g-2 py-2 align-items-end">
 																	<div class="mb-3 col-md-4">
-																		<label for="x" class="form-label">{$_('page.hydrocalc.calculation.returnPeriod')}</label>
+																		<label for="x" class="form-label"
+																			>{$_('page.discharge.calculation.returnPeriod')}</label
+																		>
 																		<select
 																			id="x"
 																			name="x"
@@ -632,7 +813,9 @@
 																	</div>
 																	<div class="mb-3 col-md-4">
 																		<label for="Vo20" class="form-label"
-																			>{$_('page.hydrocalc.calculation.modFZV.wettingVolume')}</label
+																			>{$_(
+																				'page.discharge.calculation.modFZV.wettingVolume'
+																			)}</label
 																		>
 																		<input
 																			type="number"
@@ -644,7 +827,9 @@
 																	</div>
 																	<div class="mb-3 col-md-4">
 																		<label for="P_low_24h" class="form-label"
-																			>{$_('page.hydrocalc.calculation.koella.glacierArea')} km<sup>2</sup></label
+																			>{$_('page.discharge.calculation.koella.glacierArea')} km<sup
+																				>2</sup
+																			></label
 																		>
 																		<input
 																			type="number"
@@ -668,14 +853,14 @@
 																			class="btn btn-primary"
 																			disabled={isKoellaSaving}
 																			onclick={() => calculateKoella(k.project_id, k.id)}
-																			>{$_('page.hydrocalc.calculate')}</button
+																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
 																	<div class="d-flex align-items-center gap-2">
 																		<span
 																			class="btn btn-sm btn-icon btn-ghost-danger d-xl-flex"
 																			data-bs-placement="top"
-																			title="{$_('page.general.delete')}"
+																			title={$_('page.general.delete')}
 																			aria-label="delete"
 																			data-bs-toggle="modal"
 																			data-bs-target="#delete-koella-modal{k.id}"
@@ -698,7 +883,7 @@
 																	<div class="modal-content">
 																		<div class="modal-header text-bg-warning border-0">
 																			<h4 class="modal-title" id="warning-header-modalLabel">
-																				{$_('page.hydrocalc.calculation.deleteCalculation')}
+																				{$_('page.discharge.calculation.deleteCalculation')}
 																			</h4>
 																			<button
 																				type="button"
@@ -708,7 +893,9 @@
 																			></button>
 																		</div>
 																		<div class="modal-body">
-																			<p>{$_('page.hydrocalc.calculation.deleteCalculationQuestion')}</p>
+																			<p>
+																				{$_('page.discharge.calculation.deleteCalculationQuestion')}
+																			</p>
 																		</div>
 																		<div class="modal-footer">
 																			<button
@@ -752,7 +939,7 @@
 									aria-expanded="true"
 									aria-controls="panelsResults-collapseOne"
 								>
-									{$_('page.hydrocalc.calculation.results')}
+									{$_('page.discharge.calculation.results')}
 								</button>
 							</h2>
 							<div
@@ -762,14 +949,16 @@
 								style=""
 							>
 								<div class="accordion-body">
+									<div use:renderChart={chart}></div>
+
 									{#if mod_verfahren.length > 0}
-										<h4 class="text-muted">{$_('page.hydrocalc.calculation.modFliesszeit')}</h4>
+										<h4 class="text-muted">{$_('page.discharge.calculation.modFliesszeit')}</h4>
 
 										<table class="table mb-0">
 											<thead>
 												<tr>
-													<th>{$_('page.hydrocalc.calculation.returnPeriod')}</th>
-													<th>{$_('page.hydrocalc.calculation.hq')} [m<sup>3</sup>/s]</th>
+													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
 												</tr>
 											</thead>
 											<tbody>
@@ -787,13 +976,13 @@
 										</table>
 									{/if}
 									{#if koella.length > 0}
-										<h4 class="text-muted mt-4">{$_('page.hydrocalc.calculation.koells')}</h4>
+										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.koells')}</h4>
 
 										<table class="table mb-0">
 											<thead>
 												<tr>
-													<th>{$_('page.hydrocalc.calculation.returnPeriod')}</th>
-													<th>{$_('page.hydrocalc.calculation.hq')} [m<sup>3</sup>/s]</th>
+													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
 												</tr>
 											</thead>
 											<tbody>
