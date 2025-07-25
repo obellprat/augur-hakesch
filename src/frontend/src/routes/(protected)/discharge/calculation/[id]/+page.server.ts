@@ -95,7 +95,6 @@ export const actions = {
 				number: Number(x) || 0
 			}
 		});
-		console.log('Da noch');
 		const mfzv = await prisma.Mod_Fliesszeit.upsert({
 			where: {
 				id: Number(mfzv_id) || 0
@@ -125,7 +124,6 @@ export const actions = {
 			}
 		});
 
-		console.log('Da noch immer');
 		const project = await prisma.project.update({
 			where: { id: id! },
 			data: {

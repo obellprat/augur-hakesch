@@ -7,8 +7,90 @@
 	import { invalidateAll } from '$app/navigation';
 	import { toast } from '@zerodevx/svelte-toast';
 	import { _ } from 'svelte-i18n';
+	import type ApexCharts from 'apexcharts';
+	import type { ApexOptions } from 'apexcharts';
+	
+	import type { Action } from 'svelte/action';
 
 	import { env } from '$env/dynamic/public';
+	//import Apexchart from '$lib/apexchart.svelte';
+
+	type Chart = {
+		options: ApexOptions;
+		node?: HTMLDivElement;
+		ref?: ApexCharts;
+	};
+
+	const renderChart: Action<HTMLDivElement, Chart> = (node, parameter) => {
+		import('apexcharts')
+			.then((module) => module.default)
+			.then((ApexCharts) => {
+				const chart = new ApexCharts(node, parameter.options);
+				parameter.node = node;
+				parameter.ref = chart;
+				chart.render();
+			});
+		return {
+			// { destroy: parameter.ref?.destroy } causes error.
+			// height 속성 파싱 중 알 수 없는 NaN 값이 발생했습니다.
+			destroy: () => {
+				parameter.ref?.destroy();
+			}
+		};
+	};
+
+	const chartOneOptions: any = {
+		series: [
+			{
+				name: 'Clark-WSL',
+				data: [2.3,2.5, 2.8],
+				color: "#13e4ef"
+			}
+			
+		],
+		chart: {
+			type: 'bar',
+			height: 350
+		},
+		plotOptions: {
+			bar: {
+				horizontal: false,
+				columnWidth: '70%',
+				borderRadius: 5,
+				borderRadiusApplication: 'end'
+			}
+		},
+		dataLabels: {
+			enabled: false
+		},
+		stroke: {
+			show: true,
+			width: 2,
+			colors: ['transparent']
+		},
+		xaxis: {
+			categories: ['2.3', '20', '100'],
+		},
+		yaxis: {
+			title: {
+				text: 'HQ [m3/s]'
+			}
+		},
+		fill: {
+			opacity: 1
+		},
+		tooltip: {
+			y: {
+				formatter: function (val) {
+					return '$ ' + val + '  m3/s';
+				}
+			}
+		}
+	};
+	
+  const chart: Chart = {
+    options: chartOneOptions
+  };
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	$pageTitle = $_('page.discharge.overview.discharge-projekt') + ' ' + data.project.title;
@@ -52,6 +134,32 @@
 	let calulcationType = $state(0);
 	let mod_verfahren = $derived(data.project.Mod_Fliesszeit);
 	let koella = $derived(data.project.Koella);
+	//k.Koella_Result?.HQ.toFixed(2)
+
+	function showResults() {
+		let mod_fliesszeit_data: { name: string; color: string; data: (number | null)[] } = {
+			name: 'Mod. Fliesszeitverfahren',
+			color: "#1376ef",
+			data: []
+		};
+		mod_fliesszeit_data.data.push(mod_verfahren.find((mf: { Annuality: { number: number; }; }) => mf.Annuality?.number == 2.3)?.Mod_Fliesszeit_Result?.HQ ? Number(mod_verfahren.find(mf => mf.Annuality?.number == 2.3).Mod_Fliesszeit_Result.HQ.toFixed(2)) : null);
+		mod_fliesszeit_data.data.push(mod_verfahren.find((mf: { Annuality: { number: number; }; }) => mf.Annuality?.number == 20)?.Mod_Fliesszeit_Result?.HQ ? Number(mod_verfahren.find(mf => mf.Annuality?.number == 20).Mod_Fliesszeit_Result.HQ.toFixed(2)) : null);
+		mod_fliesszeit_data.data.push(mod_verfahren.find((mf: { Annuality: { number: number; }; }) => mf.Annuality?.number == 100)?.Mod_Fliesszeit_Result?.HQ ? Number(mod_verfahren.find(mf => mf.Annuality?.number == 100).Mod_Fliesszeit_Result.HQ.toFixed(2)) : null);
+		let koella_data : { name: string; color: string; data: (number | null)[] } = {
+			name: 'Kölla',
+			color: "#1e13ef",
+			data: []
+		}
+		koella_data.data.push(koella.find((k: { Annuality: { number: number; }; }) => k.Annuality?.number == 2.3)?.Koella_Result?.HQ ? Number(koella.find(k => k.Annuality?.number == 2.3).Koella_Result.HQ.toFixed(2)) : null);
+		koella_data.data.push(koella.find((k: { Annuality: { number: number; }; }) => k.Annuality?.number == 20)?.Koella_Result?.HQ ? Number(koella.find(k => k.Annuality?.number == 20).Koella_Result.HQ.toFixed(2)) : null);
+		koella_data.data.push(koella.find((k: { Annuality: { number: number; }; }) => k.Annuality?.number == 100)?.Koella_Result?.HQ ? Number(koella.find(k => k.Annuality?.number == 100).Koella_Result.HQ.toFixed(2)) : null);
+		chartOneOptions.series = [mod_fliesszeit_data, koella_data];
+		chart.ref?.updateSeries(chartOneOptions.series);
+
+	}
+	$effect(() => {
+		showResults();
+	});
 
 	function addCalculation() {
 		if (calulcationType == 1) {
@@ -841,6 +949,8 @@
 								style=""
 							>
 								<div class="accordion-body">
+									<div use:renderChart={chart}></div>
+
 									{#if mod_verfahren.length > 0}
 										<h4 class="text-muted">{$_('page.discharge.calculation.modFliesszeit')}</h4>
 
