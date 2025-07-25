@@ -11,7 +11,7 @@ export const load: LayoutServerLoad = async (event) => {
 
 		return {
 			apiversion: versionObject.version, // This will include the version from the API response
-			version: '0.2.0', // This is dynamically set in the build process
+		version: '0.3.0.dev1', // This is dynamically set in the build process
 			session: await event.locals.auth()
 		};
 	} catch (error) {
@@ -22,7 +22,7 @@ export const load: LayoutServerLoad = async (event) => {
 
 	return {
 		apiversion: 'undefined', // Fallback in case of error
-		version: '0.2.0', // This is dynamically set in the build process
+		version: '0.3.0.dev1', // This is dynamically set in the build process
 		session: await event.locals.auth()
 	};
 };
