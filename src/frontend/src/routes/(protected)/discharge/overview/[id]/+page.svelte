@@ -36,6 +36,7 @@
 	let title = $derived(data.project.title);
 	let description = $derived(data.project.description);
 	let geojson = $derived(data.project.catchment_geojson);
+	let branches_geojson = $derived(data.project.branches_geojson);
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
@@ -147,6 +148,38 @@
 		map.addLayer(catchmentLayer);
 	}
 
+	function addBranches() {
+		const branchesSource = new VectorSource({
+			features: new GeoJSON().readFeatures(branches_geojson, {
+				dataProjection: 'EPSG:2056',
+				featureProjection: map.getView().getProjection()
+			})
+		});
+
+		const branchesLayer = new VectorLayer({
+			source: branchesSource,
+			name: 'branches',
+			style: new Style({
+				stroke: new Stroke({
+					color: 'blue',
+					width: 3
+				}),
+				fill: new Fill({
+					color: 'rgba(0, 0, 255, 0.1)'
+				})
+			})
+		});
+
+		map.getLayers().forEach((layer) => {
+			if (layer && layer.get('name') && layer.get('name') == 'branches') {
+				map.removeLayer(layer);
+			}
+		});
+
+		map.addLayer(branchesLayer);
+	}
+
+
 	function addIsozones() {
 		const isozone_source = new GeoTIFF({
 			sources: [
@@ -257,6 +290,7 @@
 		//addCatchment();
 		$effect(() => {
 			addCatchment();
+			addBranches();
 		});
 		addIsozones();
 
