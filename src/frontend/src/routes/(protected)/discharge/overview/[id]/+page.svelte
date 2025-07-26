@@ -179,7 +179,6 @@
 		map.addLayer(branchesLayer);
 	}
 
-
 	function addIsozones() {
 		const isozone_source = new GeoTIFF({
 			sources: [
@@ -592,6 +591,48 @@
 						</div>
 						<div class="d-flex flex-grow-1" style="height:500px;" id="map"></div>
 					</div>
+					<div class="col-lg-12">
+						<div class="card border-secondary border mt-3">
+							<div class="card-body">
+								<h3 class="card-title">Geodaten</h3>
+								{#if data.project.isozones_taskid === ''}
+						<p>Geodaten noch nicht berechnen. Neu berechnen?</p>
+					{:else if data.project.isozones_running}
+						<p>Daten werden aktuell neu berechnet. Bitte warten</p>
+					{:else}
+							<div class="table-responsive-sm">
+								<table class="table table-striped mb-0">
+									<thead>
+										<tr>
+											<th>Einzugsgebietsgrösse [km<sup>2</sup>]</th>
+											<th>Max Fliesslänge [m]</th>
+											<th>Kumulativ Fliesslänge [m]</th>
+											<th>Höhendifferenz (delta_h) [m]</th>
+											<th>Isozonen</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td>
+												{data.project.catchment_area} km<sup>2</sup>
+											</td>
+											<td>{data.project.channel_length} m</td>
+											<td>{Math.round(data.project.cummulative_channel_length)} m</td>
+											<td>{Math.round(data.project.delta_h)} m</td>
+											<td class="text-muted">
+												<a href="javascript: void(0);" class="link-reset fs-20 p-1">
+													Herunterladen</a
+												>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+					{/if}
+						</div> <!-- end card-body-->
+					</div>
+				</div>
+					
 				</div>
 				<!-- end row-->
 			</div>
