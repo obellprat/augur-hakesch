@@ -282,9 +282,15 @@ def koella(self,
 
 @app.task(name="clark-wsl", bind=True)
 def clark_wsl_modified(self,
+    P_low_1h,
+    P_high_1h,
+    P_low_24h,
+    P_high_24h,
+    rp_low,
+    rp_high, 
     discharge_types_parameters,# dict: ID -> {"WSV", "psi"}
     x,                         # Return period [y]
-    fractions,                 # DataFrame with fractions by zone
+    fractions_dict,            # Dict with fractions by zone
     clark_wsl,                 # Clark WSL id
     project_id,                # Project ID for getting isozone raster
     user_id,                   # User ID for getting isozone raster
@@ -292,10 +298,13 @@ def clark_wsl_modified(self,
     dt=10,                     # Time step [min]
     pixel_area_m2=25           # Cell area [m²] (e.g. 5x5 m)
 ):
+    intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
     # read the isozone_raster
     isozone = f"data/{user_id}/{project_id}/isozones_cog.tif"
     grid = Grid.from_raster(isozone)
     isozone_raster = grid.read_raster(isozone)
+
+    fractions = fractions_dict
 
     max_zone = int(np.nanmax(isozone_raster))
     Tc = dt * (max_zone + 1)
@@ -311,8 +320,10 @@ def clark_wsl_modified(self,
             continue
 
         zone_area = np.sum(zone_mask) * pixel_area_m2  # m²
-                
-        for typ, pct in fractions.items():
+
+        for item in fractions:
+            pct = item["pct"]
+            typ = item["typ"]
             if pd.isna(pct) or pct == 0:
                 continue
             frac = pct / 100
@@ -398,7 +409,7 @@ def clark_wsl_modified(self,
     return {
         "Q": Q.tolist(),
         "W": W.tolist(),
-        "K": K,
+        # "K": K,
         "Tc": Tc
     }
 
