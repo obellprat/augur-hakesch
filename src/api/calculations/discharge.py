@@ -406,6 +406,40 @@ def clark_wsl_modified(self,
     for t in range(1, len(Q)):
         Q[t] = c1 * W[t] + c2 * W[t - 1] + c3 * Q[t - 1]
 
+    prisma = Prisma()
+    prisma.connect()
+
+    
+    Q_max = float(np.max(Q))
+
+    updatedResults = prisma.clarkwsl.update(
+        where = {
+            'id' : clark_wsl
+        },
+        data = {
+            'ClarkWSL_Result': {
+                'upsert' : {
+                    'update' : {
+                        "Q": Q_max,
+                        "W": 0,
+                        "K": 0,
+                        "Tc": 0
+                    },
+                    'create' : {
+                        "Q": Q_max,
+                        "W": 0,
+                        "K": 0,
+                        "Tc": 0
+                    }
+                }
+            }
+            
+        }
+        
+    )
+
+    prisma.disconnect(5)
+
     return {
         "Q": Q.tolist(),
         "W": W.tolist(),

@@ -31,6 +31,12 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                     'include' :  {
                         'Annuality' : True
                     }       
+                },
+                'ClarkWSL' : {
+                    'include' :  {
+                        'Annuality' : True,
+                        'Fractions' : True
+                    }
                 }
             }
         )
@@ -53,7 +59,7 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                 project.catchment_area, 
                 mod_fliesszeit.id
             ))
-        
+
         for koella_obj in project.Koella:
             doDoTasks.append(koella.s(
                 project.IDF_Parameters.P_low_1h, 
@@ -68,6 +74,41 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                 project.catchment_area, 
                 koella_obj.glacier_area, 
                 koella_obj.id
+            ))
+
+                # TODO: get zone parameters from DB
+        zone_parameters = {
+                "Atyp 1": {'V0_20': 22.5, 'WSV': 12.5, 'psi': 0.475, 'alpha': 82},
+                "Atyp 2": {'V0_20': 27.5, 'WSV': 22.5, 'psi': 0.375, 'alpha': 76},
+                "Atyp 3": {'V0_20': 37.5, 'WSV': 37.5, 'psi': 0.15,  'alpha': 63.5},
+                "Atyp 4": {'V0_20': 40,   'WSV': 42.5, 'psi': 0.1,   'alpha': 54},
+                "Atyp 5": {'V0_20': 42.5, 'WSV': 52.5, 'psi': 0.075, 'alpha': 42},
+                "Siedl.typ 1": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
+                "Siedl.typ 2": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
+                "Siedl.typ 3": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
+            }
+
+        for clark_wsl_obj in project.ClarkWSL:
+            fractions_dict = [
+                {"typ": f.ZoneParameterTyp, "pct": f.pct}
+                for f in clark_wsl_obj.Fractions
+            ]
+            doDoTasks.append(clark_wsl_modified.s(
+                P_low_1h=project.IDF_Parameters.P_low_1h,
+                P_high_1h=project.IDF_Parameters.P_high_1h,
+                P_low_24h=project.IDF_Parameters.P_low_24h,
+                P_high_24h=project.IDF_Parameters.P_high_24h,
+                rp_low=project.IDF_Parameters.rp_low,
+                rp_high=project.IDF_Parameters.rp_high,
+                discharge_types_parameters=zone_parameters,
+                x=clark_wsl_obj.Annuality.number,
+                fractions_dict=fractions_dict,
+                clark_wsl=clark_wsl_obj.id,
+                project_id=project.id,
+                user_id=user.id,
+                intensity_fn=None,
+                dt=clark_wsl_obj.dt,
+                pixel_area_m2=clark_wsl_obj.pixel_area_m2
             ))
 
         if len(doDoTasks) > 0:

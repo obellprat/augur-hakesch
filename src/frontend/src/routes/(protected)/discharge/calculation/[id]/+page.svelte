@@ -9,7 +9,7 @@
 	import { _ } from 'svelte-i18n';
 	import type ApexCharts from 'apexcharts';
 	import type { ApexOptions } from 'apexcharts';
-	
+
 	import type { Action } from 'svelte/action';
 
 	import { env } from '$env/dynamic/public';
@@ -20,6 +20,16 @@
 		node?: HTMLDivElement;
 		ref?: ApexCharts;
 	};
+
+	function getPctForZone(zone: string, clarkwsl: any) {
+		if (clarkwsl.Fractions === undefined || clarkwsl.Fractions.length === 0) {
+			return 0;
+		}
+		const found = clarkwsl.Fractions.find(
+			(f: { ZoneParameterTyp: string }) => f.ZoneParameterTyp === zone
+		);
+		return found ? found.pct : 0;
+	}
 
 	const renderChart: Action<HTMLDivElement, Chart> = (node, parameter) => {
 		import('apexcharts')
@@ -43,10 +53,9 @@
 		series: [
 			{
 				name: 'Clark-WSL',
-				data: [2.3,2.5, 2.8],
-				color: "#13e4ef"
+				data: [2.3, 2.5, 2.8],
+				color: '#13e4ef'
 			}
-			
 		],
 		chart: {
 			type: 'bar',
@@ -69,7 +78,7 @@
 			colors: ['transparent']
 		},
 		xaxis: {
-			categories: ['2.3', '20', '100'],
+			categories: ['2.3', '20', '100']
 		},
 		yaxis: {
 			title: {
@@ -87,19 +96,21 @@
 			}
 		}
 	};
-	
-  const chart: Chart = {
-    options: chartOneOptions
-  };
+
+	const chart: Chart = {
+		options: chartOneOptions
+	};
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	$pageTitle = $_('page.discharge.overview.discharge-projekt') + ' ' + data.project.title;
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
+	let zones = data.zones;
 
 	let isMFZSaving = $state(false);
 	let isKoellaSaving = $state(false);
+	let isClarkWSLSaving = $state(false);
 
 	let returnPeriod = $state([
 		{
@@ -134,28 +145,93 @@
 	let calulcationType = $state(0);
 	let mod_verfahren = $derived(data.project.Mod_Fliesszeit);
 	let koella = $derived(data.project.Koella);
+	let clark_wsl = $derived(data.project.ClarkWSL);
 	//k.Koella_Result?.HQ.toFixed(2)
 
 	function showResults() {
 		let mod_fliesszeit_data: { name: string; color: string; data: (number | null)[] } = {
 			name: 'Mod. Fliesszeitverfahren',
-			color: "#1376ef",
+			color: '#1376ef',
 			data: []
 		};
-		mod_fliesszeit_data.data.push(mod_verfahren.find((mf: { Annuality: { number: number; }; }) => mf.Annuality?.number == 2.3)?.Mod_Fliesszeit_Result?.HQ ? Number(mod_verfahren.find(mf => mf.Annuality?.number == 2.3).Mod_Fliesszeit_Result.HQ.toFixed(2)) : null);
-		mod_fliesszeit_data.data.push(mod_verfahren.find((mf: { Annuality: { number: number; }; }) => mf.Annuality?.number == 20)?.Mod_Fliesszeit_Result?.HQ ? Number(mod_verfahren.find(mf => mf.Annuality?.number == 20).Mod_Fliesszeit_Result.HQ.toFixed(2)) : null);
-		mod_fliesszeit_data.data.push(mod_verfahren.find((mf: { Annuality: { number: number; }; }) => mf.Annuality?.number == 100)?.Mod_Fliesszeit_Result?.HQ ? Number(mod_verfahren.find(mf => mf.Annuality?.number == 100).Mod_Fliesszeit_Result.HQ.toFixed(2)) : null);
-		let koella_data : { name: string; color: string; data: (number | null)[] } = {
+		mod_fliesszeit_data.data.push(
+			mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 2.3)
+				?.Mod_Fliesszeit_Result?.HQ
+				? Number(
+						mod_verfahren
+							.find((mf) => mf.Annuality?.number == 2.3)
+							.Mod_Fliesszeit_Result.HQ.toFixed(2)
+					)
+				: null
+		);
+		mod_fliesszeit_data.data.push(
+			mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 20)
+				?.Mod_Fliesszeit_Result?.HQ
+				? Number(
+						mod_verfahren
+							.find((mf) => mf.Annuality?.number == 20)
+							.Mod_Fliesszeit_Result.HQ.toFixed(2)
+					)
+				: null
+		);
+		mod_fliesszeit_data.data.push(
+			mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 100)
+				?.Mod_Fliesszeit_Result?.HQ
+				? Number(
+						mod_verfahren
+							.find((mf) => mf.Annuality?.number == 100)
+							.Mod_Fliesszeit_Result.HQ.toFixed(2)
+					)
+				: null
+		);
+		let koella_data: { name: string; color: string; data: (number | null)[] } = {
 			name: 'Kölla',
-			color: "#1e13ef",
+			color: '#1e13ef',
 			data: []
-		}
-		koella_data.data.push(koella.find((k: { Annuality: { number: number; }; }) => k.Annuality?.number == 2.3)?.Koella_Result?.HQ ? Number(koella.find(k => k.Annuality?.number == 2.3).Koella_Result.HQ.toFixed(2)) : null);
-		koella_data.data.push(koella.find((k: { Annuality: { number: number; }; }) => k.Annuality?.number == 20)?.Koella_Result?.HQ ? Number(koella.find(k => k.Annuality?.number == 20).Koella_Result.HQ.toFixed(2)) : null);
-		koella_data.data.push(koella.find((k: { Annuality: { number: number; }; }) => k.Annuality?.number == 100)?.Koella_Result?.HQ ? Number(koella.find(k => k.Annuality?.number == 100).Koella_Result.HQ.toFixed(2)) : null);
-		chartOneOptions.series = [mod_fliesszeit_data, koella_data];
+		};
+		koella_data.data.push(
+			koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 2.3)
+				?.Koella_Result?.HQ
+				? Number(koella.find((k) => k.Annuality?.number == 2.3).Koella_Result.HQ.toFixed(2))
+				: null
+		);
+		koella_data.data.push(
+			koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 20)
+				?.Koella_Result?.HQ
+				? Number(koella.find((k) => k.Annuality?.number == 20).Koella_Result.HQ.toFixed(2))
+				: null
+		);
+		koella_data.data.push(
+			koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 100)
+				?.Koella_Result?.HQ
+				? Number(koella.find((k) => k.Annuality?.number == 100).Koella_Result.HQ.toFixed(2))
+				: null
+		);
+		let clark_wsl_data: { name: string; color: string; data: (number | null)[] } = {
+			name: 'Clark WSL',
+			color: '#13e4ef',
+			data: []
+		};
+		clark_wsl_data.data.push(
+			clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 2.3)
+				?.ClarkWSL_Result?.Q
+				? Number(clark_wsl.find((c) => c.Annuality?.number == 2.3).ClarkWSL_Result.Q.toFixed(2))
+				: null
+		);
+		clark_wsl_data.data.push(
+			clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 20)
+				?.ClarkWSL_Result?.Q
+				? Number(clark_wsl.find((c) => c.Annuality?.number == 20).ClarkWSL_Result.Q.toFixed(2))
+				: null
+		);
+		clark_wsl_data.data.push(
+			clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 100)
+				?.ClarkWSL_Result?.Q
+				? Number(clark_wsl.find((c) => c.Annuality?.number == 100).ClarkWSL_Result.Q.toFixed(2))
+				: null
+		);
+		chartOneOptions.series = [mod_fliesszeit_data, koella_data, clark_wsl_data];
 		chart.ref?.updateSeries(chartOneOptions.series);
-
 	}
 	$effect(() => {
 		showResults();
@@ -176,6 +252,13 @@
 				project_id: data.project.id
 			};
 			koella.push(newkoella);
+		} else if (calulcationType == 3) {
+			// add Clark WSL
+			const newclark_wsl = {
+				id: 0,
+				project_id: data.project.id
+			};
+			clark_wsl.push(newclark_wsl);
 		}
 	}
 
@@ -211,6 +294,28 @@
 				project_id +
 				'&KoellaId=' +
 				koella_id,
+			{
+				method: 'GET',
+				headers: {
+					Authorization: 'Bearer ' + data.session.access_token
+				}
+			}
+		)
+			.then((response) => response.json())
+			.then((data) => {
+				getStatus(data.task_id);
+			});
+	}
+	function calculateClarkWSL(project_id: Number, clark_wsl_id: Number) {
+		toast.push($_('page.discharge.calculation.calcrunning'), {
+			initial: 0
+		});
+		fetch(
+			env.PUBLIC_HAKESCH_API_PATH +
+				'/discharge/clark-wsl?ProjectId=' +
+				project_id +
+				'&ClarkWSLId=' +
+				clark_wsl_id,
 			{
 				method: 'GET',
 				headers: {
@@ -314,6 +419,7 @@
 	onMount(async () => {
 		mod_verfahren = data.project.Mod_Fliesszeit;
 		koella = data.project.Koella;
+		clark_wsl = data.project.ClarkWSL;
 	});
 </script>
 
@@ -776,11 +882,11 @@
 																method="post"
 																action="?/updatekoella"
 																use:enhance={() => {
-																	isMFZSaving = true;
+																	isKoellaSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
 																		data.project = result;
-																		isMFZSaving = false;
+																		isKoellaSaving = false;
 																		toast.push($_('page.discharge.calculation.successfullsave'), {
 																			theme: {
 																				'--toastColor': 'mintcream',
@@ -925,6 +1031,200 @@
 								</div>
 							</div>
 						{/if}
+						{#if clark_wsl.length > 0}
+							<div class="accordion-item">
+								<h2 class="accordion-header" id="panelsStayOpen-headingClarkWSL">
+									<button
+										class="accordion-button collapsed"
+										type="button"
+										data-bs-toggle="collapse"
+										data-bs-target="#panelsStayOpen-collapseClarkWSL"
+										aria-expanded="false"
+										aria-controls="panelsStayOpen-collapseClarkWSL"
+									>
+										{$_('page.discharge.calculation.clarkwslname')}
+									</button>
+								</h2>
+								<div
+									id="panelsStayOpen-collapseClarkWSL"
+									class="accordion-collapse collapse"
+									aria-labelledby="panelsStayOpen-headingClarkWSL"
+									style=""
+								>
+									<div class="accordion-body">
+										<div class="accordion" id="accordionPanelsClarkWSL">
+											{#each clark_wsl as k}
+												<div class="accordion-item">
+													<h1 class="accordion-header" id="panelsStayOpen-ClarkWSL{k.id}">
+														<button
+															class="accordion-button collapsed"
+															type="button"
+															data-bs-toggle="collapse"
+															data-bs-target="#panelsStayOpen-collapseClarkWSL{k.id}"
+															aria-expanded="true"
+															aria-controls="panelsStayOpen-collapseClarkWSL{k.id}"
+														>
+															{$_('page.discharge.calculation.szenario')}
+															{#if k.Annuality}
+																({k.Annuality.description})
+															{/if}
+														</button>
+													</h1>
+													<div
+														id="panelsStayOpen-collapseClarkWSL{k.id}"
+														class="collapse"
+														aria-labelledby="panelsStayOpen-ClarkWSL{k.id}"
+														style=""
+													>
+														<div class="accordion-body">
+															<form
+																method="post"
+																action="?/updateclarkwsl"
+																use:enhance={() => {
+																	isClarkWSLSaving = true;
+																	return async ({ result, update }) => {
+																		await update({ reset: false });
+																		data.project = result;
+																		isClarkWSLSaving = false;
+																		toast.push($_('page.discharge.calculation.successfullsave'), {
+																			theme: {
+																				'--toastColor': 'mintcream',
+																				'--toastBackground': 'rgba(72,187,120,0.9)',
+																				'--toastBarBackground': '#2F855A'
+																			}
+																		});
+																	};
+																}}
+															>
+																<input type="hidden" name="id" value={k.project_id} />
+																<input type="hidden" name="clarkwsl_id" value={k.id} />
+																<div class="row g-2 py-2 align-items-start">
+																	<div class="mb-3 col-md-4">
+																		<label for="x" class="form-label"
+																			>{$_('page.discharge.calculation.returnPeriod')}</label
+																		>
+																		<select
+																			id="x"
+																			name="x"
+																			class="form-select"
+																			value={k.Annuality?.number}
+																		>
+																			{#each returnPeriod as rp}
+																				<option value={rp.id}>
+																					{rp.text}
+																				</option>
+																			{/each}
+																		</select>
+																	</div>
+																	<div class="mb-3 col-md-8 d-flex">
+																		<div
+																			class="d-flex align-items-stretch align-self-center justify-content-between flex-column"
+																		>
+																			{#each zones as z, i}
+																				<div class="d-flex align-items-center gap-2 flex-row">
+																					<label for="zone_{i}" class="flex-fill text-end"
+																						>{z.typ}</label
+																					>
+																					<div class="" style="max-width:130px;">
+																						<input
+																							type="number"
+																							class="form-control text-end"
+																							style="-webkit-appearance: none; -moz-appearance: textfield;"
+																							id="zone_{i}"
+																							name="zone_{i}"
+																							value={getPctForZone(z.typ, k)}
+																						/>
+																					</div>
+																					<div class="text-start">%</div>
+																				</div>
+																			{/each}
+																		</div>
+																	</div>
+																</div>
+																<div class="d-flex align-items-center justify-content-between py-1">
+																	<div class="d-flex align-items-center gap-2">
+																		<button
+																			type="submit"
+																			class="btn btn-primary"
+																			disabled={isClarkWSLSaving}>{$_('page.general.save')}</button
+																		>
+																		<button
+																			type="button"
+																			class="btn btn-primary"
+																			disabled={isClarkWSLSaving}
+																			onclick={() => calculateClarkWSL(k.project_id, k.id)}
+																			>{$_('page.general.calculate')}</button
+																		>
+																	</div>
+																	<div class="d-flex align-items-center gap-2">
+																		<span
+																			class="btn btn-sm btn-icon btn-ghost-danger d-xl-flex"
+																			data-bs-placement="top"
+																			title={$_('page.general.delete')}
+																			aria-label="delete"
+																			data-bs-toggle="modal"
+																			data-bs-target="#delete-clarkwsl-modal{k.id}"
+																		>
+																			<i class="ti ti-trash fs-20"></i>
+																		</span>
+																	</div>
+																</div>
+															</form>
+															<!-- Delete Calculation Modal -->
+															<div
+																id="delete-clarkwsl-modal{k.id}"
+																class="modal fade"
+																tabindex="-1"
+																role="dialog"
+																aria-labelledby="warning-header-modalLabel"
+																aria-hidden="true"
+															>
+																<div class="modal-dialog">
+																	<div class="modal-content">
+																		<div class="modal-header text-bg-warning border-0">
+																			<h4 class="modal-title" id="warning-header-modalLabel">
+																				{$_('page.discharge.calculation.deleteCalculation')}
+																			</h4>
+																			<button
+																				type="button"
+																				class="btn-close btn-close-white"
+																				data-bs-dismiss="modal"
+																				aria-label="Close"
+																			></button>
+																		</div>
+																		<div class="modal-body">
+																			<p>
+																				{$_('page.discharge.calculation.deleteCalculationQuestion')}
+																			</p>
+																		</div>
+																		<div class="modal-footer">
+																			<button
+																				type="button"
+																				class="btn btn-light"
+																				data-bs-dismiss="modal">{$_('page.general.cancel')}</button
+																			>
+																			<form method="POST" action="?/deleteClarkWSL">
+																				<input type="hidden" name="id" value={k.id} />
+																				<button type="submit" class="btn btn-warning"
+																					>{$_('page.general.delete')}</button
+																				>
+																			</form>
+																		</div>
+																	</div>
+																	<!-- /.modal-content -->
+																</div>
+																<!-- /.modal-dialog -->
+															</div>
+															<!-- /.modal -->
+														</div>
+													</div>
+												</div>
+											{/each}
+										</div>
+									</div>
+								</div>
+							</div>
+						{/if}
 					</div>
 				</div>
 				<div class="col-lg-4">
@@ -994,6 +1294,30 @@
 															{/if}
 														</td>
 														<td>{k.Koella_Result?.HQ.toFixed(2)}</td>
+													</tr>
+												{/each}
+											</tbody>
+										</table>
+									{/if}
+									{#if clark_wsl.length > 0}
+										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.clarkwsl')}</h4>
+
+										<table class="table mb-0">
+											<thead>
+												<tr>
+													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
+												</tr>
+											</thead>
+											<tbody>
+												{#each clark_wsl as k}
+													<tr>
+														<td>
+															{#if k.Annuality}
+																{k.Annuality.description}
+															{/if}
+														</td>
+														<td>{k.ClarkWSL_Result?.Q.toFixed(2)}</td>
 													</tr>
 												{/each}
 											</tbody>
