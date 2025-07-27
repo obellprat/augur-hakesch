@@ -1,3 +1,9 @@
+## 0.3.0-dev.3 (2025-07-27)
+
+### Feat
+
+- **frontend,api**: integration of clark-wsl calculation
+
 ## 0.3.0-dev.2 (2025-07-26)
 
 ### Feat
