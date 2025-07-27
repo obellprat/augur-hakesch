@@ -32,6 +32,16 @@ const getProjectById = async (id: string) => {
 					Annuality: true,
 					Koella_Result: true
 				}
+			},
+			ClarkWSL: {
+				orderBy: {
+					id: 'asc'
+				},
+				include: {
+					Annuality: true,
+					ClarkWSL_Result: true,
+					Fractions: true,
+				}
 			}
 		}
 	});
@@ -58,6 +68,11 @@ const getAllProjects = async (userId: number) => {
 	});
 };
 
+const getAllZones = async () => {
+	return await prisma.ZoneParameter.findMany({
+	});
+};
+
 const deleteProject = async (projectId: string, userId: number) => {
 	return await prisma.project.delete({
 		where: {
@@ -67,4 +82,4 @@ const deleteProject = async (projectId: string, userId: number) => {
 	});
 };
 
-export { createNewProject, getProjectById, updateProject, getAllProjects, deleteProject };
+export { createNewProject, getProjectById, updateProject, getAllProjects, deleteProject, getAllZones };
