@@ -25,7 +25,10 @@ services:
 
   view:
     image: stumpisuter/augur-hakesch-frontend:latest
-    build: ./src/frontend
+    build: 
+      context: ./src/frontend
+      args:
+        DATABASE_URL: ${DATABASE_URL}
     ports:
       - 3000:3000
     command: node build/index.js
