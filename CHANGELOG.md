@@ -1,3 +1,9 @@
+## 0.3.0-dev.4 (2025-07-28)
+
+### Fix
+
+- **frontend**: Displays an error message if there was an exception in the API functions
+
 ## 0.3.0-dev.3 (2025-07-27)
 
 ### Feat
