@@ -353,11 +353,23 @@
 						}
 					});
 					invalidateAll();
-				}
-				if (taskStatus === 'SUCCESS' || taskStatus === 'FAILURE') {
+					
 					return false;
 				}
+				else if (taskStatus === 'FAILURE') {
+					toast.pop();
+					toast.push('<h3 style="padding:5;">'+$_('page.discharge.calculation.calcerror') + '</h3>' + res.task_result, {
+						theme: {
+							'--toastColor': 'white',
+							'--toastBackground': 'darkred'
+						},
+						initial: 0
+					});
+					invalidateAll();
 
+					
+					return false;
+				}
 				setTimeout(function () {
 					getStatus(res.task_id);
 				}, 1000);
@@ -407,6 +419,20 @@
 					});
 					invalidateAll();
 					return;
+				}
+				else if (res.status === 'FAILURE') {
+					toast.pop();
+					toast.push('<h3 style="padding:5;">'+$_('page.discharge.calculation.calcerror') + '</h3>' + res.task_result, {
+						theme: {
+							'--toastColor': 'white',
+							'--toastBackground': 'darkred'
+						},
+						initial: 0
+					});
+					invalidateAll();
+
+					
+					return false;
 				}
 
 				setTimeout(function () {

@@ -78,13 +78,11 @@
 		})
 			.then((response) => response.json())
 			.then((res) => {
-				console.log('res');
-				console.log(res);
 				// write out the state
 				const actTime = new Date();
 				//let html = `${actTime.toUTCString()} ${res.task_status} `;
 				let html = ``;
-				if (res.task_status != 'SUCCESS' && res.task_status != 'PENDING') {
+				if (res.task_status != 'SUCCESS' && res.task_status != 'PENDING' && res.task_status != 'FAILURE') {
 					html = `${JSON.stringify(res.task_result.text.replace('"', ''))}`;
 
 					globalThis
@@ -93,6 +91,10 @@
 						.attr('aria-valuenow', res.task_result.progress);
 				} else if (res.task_status == 'PENDING') {
 					html = 'Der Prozess wird intialisiert. Bitte warten...';
+				}
+				else if (res.task_status == 'FAILURE') {
+					html = 'Die Geodaten konnten nicht berechnet werden. Bitte versuchen Sie es später erneut.<br> ' +
+						'Fehler: ' + res.task_result.text.replace('"', '');
 				} else if (res.task_status == 'SUCCESS') {
 					html = 'Die Geodaten wurden erfolgrech berechnet.';
 
