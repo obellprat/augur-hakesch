@@ -67,7 +67,8 @@
         "results": "Resultate",
         "returnPeriod": "Wiederkehrperiode",
         "szenario": "Szenario",
-        "clarkwslname": "Clark-WSL"
+        "clarkwslname": "Clark-WSL",
+        "calcerror": "Fehler"
       }
     },
     "precipitation": {
