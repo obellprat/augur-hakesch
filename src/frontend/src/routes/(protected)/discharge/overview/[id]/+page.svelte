@@ -36,6 +36,7 @@
 	let title = $derived(data.project.title);
 	let description = $derived(data.project.description);
 	let geojson = $derived(data.project.catchment_geojson);
+	let branches_geojson = $derived(data.project.branches_geojson);
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
@@ -77,13 +78,11 @@
 		})
 			.then((response) => response.json())
 			.then((res) => {
-				console.log('res');
-				console.log(res);
 				// write out the state
 				const actTime = new Date();
 				//let html = `${actTime.toUTCString()} ${res.task_status} `;
 				let html = ``;
-				if (res.task_status != 'SUCCESS' && res.task_status != 'PENDING') {
+				if (res.task_status != 'SUCCESS' && res.task_status != 'PENDING' && res.task_status != 'FAILURE') {
 					html = `${JSON.stringify(res.task_result.text.replace('"', ''))}`;
 
 					globalThis
@@ -92,6 +91,10 @@
 						.attr('aria-valuenow', res.task_result.progress);
 				} else if (res.task_status == 'PENDING') {
 					html = 'Der Prozess wird intialisiert. Bitte warten...';
+				}
+				else if (res.task_status == 'FAILURE') {
+					html = 'Die Geodaten konnten nicht berechnet werden. Bitte versuchen Sie es später erneut.<br> ' +
+						'Fehler: ' + res.task_result.text.replace('"', '');
 				} else if (res.task_status == 'SUCCESS') {
 					html = 'Die Geodaten wurden erfolgrech berechnet.';
 
@@ -145,6 +148,37 @@
 		});
 
 		map.addLayer(catchmentLayer);
+	}
+
+	function addBranches() {
+		const branchesSource = new VectorSource({
+			features: new GeoJSON().readFeatures(branches_geojson, {
+				dataProjection: 'EPSG:2056',
+				featureProjection: map.getView().getProjection()
+			})
+		});
+
+		const branchesLayer = new VectorLayer({
+			source: branchesSource,
+			name: 'branches',
+			style: new Style({
+				stroke: new Stroke({
+					color: 'blue',
+					width: 3
+				}),
+				fill: new Fill({
+					color: 'rgba(0, 0, 255, 0.1)'
+				})
+			})
+		});
+
+		map.getLayers().forEach((layer) => {
+			if (layer && layer.get('name') && layer.get('name') == 'branches') {
+				map.removeLayer(layer);
+			}
+		});
+
+		map.addLayer(branchesLayer);
 	}
 
 	function addIsozones() {
@@ -257,6 +291,7 @@
 		//addCatchment();
 		$effect(() => {
 			addCatchment();
+			addBranches();
 		});
 		addIsozones();
 
@@ -558,6 +593,48 @@
 						</div>
 						<div class="d-flex flex-grow-1" style="height:500px;" id="map"></div>
 					</div>
+					<div class="col-lg-12">
+						<div class="card border-secondary border mt-3">
+							<div class="card-body">
+								<h3 class="card-title">Geodaten</h3>
+								{#if data.project.isozones_taskid === ''}
+						<p>Geodaten noch nicht berechnen. Neu berechnen?</p>
+					{:else if data.project.isozones_running}
+						<p>Daten werden aktuell neu berechnet. Bitte warten</p>
+					{:else}
+							<div class="table-responsive-sm">
+								<table class="table table-striped mb-0">
+									<thead>
+										<tr>
+											<th>Einzugsgebietsgrösse [km<sup>2</sup>]</th>
+											<th>Max Fliesslänge [m]</th>
+											<th>Kumulativ Fliesslänge [m]</th>
+											<th>Höhendifferenz (delta_h) [m]</th>
+											<th>Isozonen</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td>
+												{data.project.catchment_area} km<sup>2</sup>
+											</td>
+											<td>{data.project.channel_length} m</td>
+											<td>{Math.round(data.project.cummulative_channel_length)} m</td>
+											<td>{Math.round(data.project.delta_h)} m</td>
+											<td class="text-muted">
+												<a href="javascript: void(0);" class="link-reset fs-20 p-1">
+													Herunterladen</a
+												>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+					{/if}
+						</div> <!-- end card-body-->
+					</div>
+				</div>
+					
 				</div>
 				<!-- end row-->
 			</div>

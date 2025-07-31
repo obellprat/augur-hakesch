@@ -1,12 +1,15 @@
 FROM node:23-alpine AS build
 
+ARG DATABASE_URL=${DATABASE_URL}
+
+ENV DATABASE_URL=${DATABASE_URL}
+
 WORKDIR /app
 
-COPY package*.json .
+COPY . .
 
 RUN npm ci
 
-COPY . .
 RUN npx prisma generate
 RUN npm run build
 

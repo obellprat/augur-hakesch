@@ -1,4 +1,4 @@
-import { getProjectById, updateProject, deleteProject } from '$lib/server/project';
+import { getProjectById, getAllZones} from '$lib/server/project';
 import { error } from '@sveltejs/kit';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
@@ -6,6 +6,7 @@ import { base } from '$app/paths';
 import { browser } from '$app/environment';
 import { page } from '$app/state';
 import { prisma } from '$lib/prisma';
+import type { ZoneParameter } from '../../../../../../prisma/src/generated/prisma/client';
 
 export const load = async ({ params }) => {
 	if (browser) {
@@ -16,12 +17,13 @@ export const load = async ({ params }) => {
 
 	const { id } = params;
 	const project = await getProjectById(id);
+	const zones = await getAllZones();
 	if (!project) {
 		error(404, 'Project not found');
 	}
 
 	return {
-		project
+		project, zones
 	};
 };
 
@@ -224,6 +226,102 @@ export const actions = {
 		//redirect(302, `${base}/discharge/calculation/${id}`);
 	},
 
+	updateclarkwsl: async ({ request }) => {
+		const formData = Object.fromEntries(await request.formData());
+		const { id, clarkwsl_id, x, zone_0, zone_1, zone_2, zone_3, zone_4, zone_5, zone_6, zone_7 } = formData as unknown as {
+			id: string | undefined;
+			clarkwsl_id: number | undefined;
+			x: number | undefined;
+			zone_0: number | undefined;
+			zone_1: number | undefined;
+			zone_2: number | undefined;
+			zone_3: number | undefined;
+			zone_4: number | undefined;
+			zone_5: number | undefined;
+			zone_6: number | undefined;
+			zone_7: number | undefined;
+		};
+
+		if (!id) {
+			return fail(400, { message: 'Missing required fields' });
+		}
+		const annuality = await prisma.Annualities.findUnique({
+			where: {
+				number: Number(x) || 0
+			}
+		});
+		const newclarkwsl = await prisma.ClarkWSL.upsert({
+			where: {
+				id: Number(clarkwsl_id) || 0
+			},
+			update: {
+				Annuality: {
+					connect: {
+						id: annuality.id
+					}
+				},
+			},
+			create: {
+				Annuality: {
+					connect: {
+						number: Number(x) || 0
+					}
+				},
+				Project: {
+					connect: {
+						id: id
+					}
+				}
+			}
+		});
+
+		const zones = await getAllZones();
+
+		await prisma.Fractions.deleteMany({
+			where: {
+				ClarkWSL: {
+					id: newclarkwsl.id
+				}
+			}
+		});
+
+		const fractions = zones.map((zone: ZoneParameter, index: number) => ({
+			ZoneParameterTyp: zone.typ,
+			pct: Number(formData[`zone_${index}`]) || 0,
+			clarkwsl_id: newclarkwsl.id,
+		}));
+
+		await prisma.Fractions.createMany({
+			data: fractions,
+			skipDuplicates: true
+		});
+
+		const project = await prisma.project.update({
+			where: { id: id! },
+			data: {
+				ClarkWSL: {
+					connect: {
+						id: newclarkwsl.id
+					}
+				}
+			},
+			include: {
+				Point: true,
+				IDF_Parameters: true,
+				ClarkWSL: {
+					orderBy: {
+						id: 'asc'
+					},
+					include: {
+						Annuality: true,
+						ClarkWSL_Result: true
+					}
+				}
+			}
+		});
+		return project;
+	},
+
 	delete: async ({ request }) => {
 		const formData = Object.fromEntries(await request.formData());
 		const { id } = formData as unknown as {
@@ -244,6 +342,25 @@ export const actions = {
 		};
 
 		await await prisma.Koella.delete({
+			where: {
+				id: Number(id)
+			}
+		});
+	},
+
+	deleteClarWSL: async ({ request }) => {
+		const formData = Object.fromEntries(await request.formData());
+		const { id } = formData as unknown as {
+			id: number | undefined;
+		};
+
+		await await prisma.Fractions.deleteMany({
+			where: {
+				clarkwsl_id: Number(id)
+			}
+		});
+
+		await prisma.ClarkWSL.delete({
 			where: {
 				id: Number(id)
 			}

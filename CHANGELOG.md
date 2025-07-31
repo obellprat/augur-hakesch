@@ -1,21 +1,41 @@
+## 0.3.0-dev.4 (2025-07-28)
+
+### Fix
+
+- **frontend**: Displays an error message if there was an exception in the API functions
+
+## 0.3.0-dev.3 (2025-07-27)
+
+### Feat
+
+- **frontend,api**: integration of clark-wsl calculation
+
+## 0.3.0-dev.2 (2025-07-26)
+
+### Feat
+
+- **frontend**: Display the geodata in project overview
+- **frontend**: Show the calculated river network
+
+### Fix
+
+- **frontend**: Frontend starts even the backend is not accessible
+
 ## 0.3.0-dev.1 (2025-07-25)
 
 ### Feat
 
 - **api,frontend**: integrating version display in frontend and backend
 - **frontend**: Show results as Plots
-- **frontend**: Show results as Plots
-- **frontend**: Show results as Plots
 
 ### Fix
 
-- bump version files
 - **frontend**: show version in frontend
 
 ### Refactor
 
 - **api**: delete unused api calculation files
-- **Change-the-versioning-system-to-Commitizen**: Previously, semantic versioning was used. Commitizen is more widely used
+- **api,frontend**: Previously, semantic versioning was used. Commitizen is more widely used
 
 ## 0.2.0 (2025-07-25)
 

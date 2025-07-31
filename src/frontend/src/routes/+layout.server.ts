@@ -5,14 +5,15 @@ import type { LayoutServerLoad } from './$types';
 export const load: LayoutServerLoad = async (event) => {
 	try { 
 		const response = await fetch(env_priv.ORIGIN + env.PUBLIC_HAKESCH_API_PATH + '/version/', {
-			method: 'GET'
+			method: 'GET',
+			signal: AbortSignal.timeout(200)
 		});
 
 		const versionObject = await response.json();	
 
 		return {
 			apiversion: versionObject.version, // This will include the version from the API response
-			version: '0.3.0-dev.1', // This is dynamically set in the build process
+			version: '0.3.0-dev.4', // This is dynamically set in the build process
 			session: await event.locals.auth()
 		};
 	} catch (error) {
