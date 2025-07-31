@@ -241,7 +241,7 @@
 			precipitationData = await response.json();
 			updateChart();
 		} catch (error) {
-			console.error('Error fetching precipitation data:', error);
+			// Error handled silently
 		} finally {
 			isLoading = false;
 		}
@@ -350,7 +350,6 @@
 					isBottomSheetOpen = true;
 				},
 				(error) => {
-					console.error('Error getting location:', error);
 					alert('Unable to get your location. Please click on the map to select a location.');
 				}
 			);
@@ -398,7 +397,6 @@
 				alert('Location not found. Please try a different search term.');
 			}
 		} catch (error) {
-			console.error('Error searching location:', error);
 			alert('Error searching for location. Please try again.');
 		}
 	}
@@ -433,12 +431,7 @@
 	<title>{$pageTitle} | AUGUR</title>
 </svelte:head>
 
-<div class="page-container">
-	<div class="row row-cols-xxl-1 row-cols-md-1 row-cols-1">
-		<div class="col">
-			<div class="card d-block">
-				<div class="card-body">
-					<div class="precipitation-page">
+<div class="precipitation-page">
 						<!-- Top Search Bar with Location Button and Period Selector -->
 						<div class="top-search-container">
 							<div class="search-card">
@@ -532,18 +525,15 @@
 								</div>
 							</div>
 						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
 </div>
 
 <style lang="scss">
 	.precipitation-page {
 		position: relative;
 		width: 100%;
-		height: 100vh;
+		padding-left: 24px;
+		padding-right: 24px;
+		height: calc(100vh - 65px - 80px - 40px); /* Subtract topbar (65px), footer (~80px), and extra 40px */
 		overflow: hidden;
 	}
 
@@ -551,6 +541,8 @@
 		width: 100%;
 		height: 100%;
 		position: relative;
+		border-radius: 16px;
+		overflow: hidden;
 	}
 
 	.map-controls {
@@ -566,9 +558,11 @@
 	.top-search-container {
 		position: absolute;
 		top: 20px;
-		left: 20px;
-		right: 20px;
+		left: 24px;
+		right: 24px;
 		z-index: 1001;
+		margin-left: 8px;
+		margin-right: 8px;
 	}
 
 	.location-button {
@@ -723,11 +717,29 @@
 		transform: translateY(100%);
 		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		touch-action: pan-y;
-		max-height: 80vh;
+		max-width: calc(100% - 48px);
+		left: 24px;
+		right: 24px;
 		overflow: hidden;
 
 		&.open {
 			transform: translateY(0);
+		}
+	}
+
+	@media (max-width: 768px) {
+		.bottom-sheet {
+			max-width: calc(100% - 24px);
+			left: 12px;
+			right: 12px;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.bottom-sheet {
+			max-width: calc(100% - 8px);
+			left: 4px;
+			right: 4px;
 		}
 	}
 
@@ -953,6 +965,12 @@
 
 	// Responsive design
 	@media (max-width: 768px) {
+		.precipitation-page {
+			padding-left: 12px;
+			padding-right: 12px;
+			height: calc(100vh - 65px - 60px - 40px); /* Topbar (65px) + smaller footer (60px) + extra 40px */
+		}
+
 		.map-controls {
 			.period-selector,
 			.location-button {
@@ -1022,6 +1040,12 @@
 	}
 
 	@media (max-width: 480px) {
+		.precipitation-page {
+			padding-left: 4px;
+			padding-right: 4px;
+			height: calc(100vh - 65px - 50px - 40px); /* Topbar (65px) + even smaller footer (50px) + extra 40px */
+		}
+
 		.map-controls {
 			.period-selector,
 			.location-button {
