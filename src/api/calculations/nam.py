@@ -173,7 +173,6 @@ def nam(self,
     
     dt = 10  # Time step [min]
     Tc_total = dt * (max_zone + 1)  # Total simulation time [min]
-    
     print(f"Simulation parameters: max_zone={max_zone}, dt={dt}min, Tc_total={Tc_total}min")
     
     # Validate isozone data
@@ -188,10 +187,10 @@ def nam(self,
     runoff_timesteps = [0.0] * max_timesteps  # Pre-allocate with zeros
     
     # Calculate total storm precipitation for SCS method
+
     # We need the total precipitation for the entire storm duration
     i_total = intensity_fn(rp_years=x, duration_minutes=Tc_total)  # [mm/h]
-    P_total_storm = i_total #* Tc_total / 60  # [mm] - total storm precipitation
-    
+    P_total_storm = i_total * Tc_total / 60  # [mm] - total storm precipitation
     print(f"Total storm precipitation: {P_total_storm:.2f} mm over {Tc_total} minutes")
     
     # Debug: Check if P_total_storm is sufficient to generate runoff
