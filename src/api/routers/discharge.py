@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from helpers.prisma import prisma
 from helpers.user import get_user
@@ -7,6 +7,7 @@ from celery import group
 import pandas as pd
 
 from calculations.discharge import construct_idf_curve, modifizierte_fliesszeit, prepare_discharge_hydroparameters, koella, clark_wsl_modified
+from calculations.nam import nam, get_curve_numbers
 
 router = APIRouter(prefix="/discharge",
     tags=["discharge"],)
@@ -36,6 +37,11 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                     'include' :  {
                         'Annuality' : True,
                         'Fractions' : True
+                    }
+                },
+                'NAM' : {
+                    'include' :  {
+                        'Annuality' : True
                     }
                 }
             }
@@ -109,6 +115,28 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                 intensity_fn=None,
                 dt=clark_wsl_obj.dt,
                 pixel_area_m2=clark_wsl_obj.pixel_area_m2
+            ))
+
+        for nam_obj in project.NAM:
+            doDoTasks.append(nam.s(
+                P_low_1h=project.IDF_Parameters.P_low_1h,
+                P_high_1h=project.IDF_Parameters.P_high_1h,
+                P_low_24h=project.IDF_Parameters.P_low_24h,
+                P_high_24h=project.IDF_Parameters.P_high_24h,
+                rp_low=project.IDF_Parameters.rp_low,
+                rp_high=project.IDF_Parameters.rp_high,
+                x=nam_obj.Annuality.number,
+                curve_number=nam_obj.curve_number,
+                catchment_area=nam_obj.catchment_area,
+                channel_length=nam_obj.channel_length,
+                delta_h=nam_obj.delta_h,
+                nam_id=nam_obj.id,
+                project_id=project.id,
+                user_id=user.id,
+                TB_start=nam_obj.TB_start,
+                istep=nam_obj.istep,
+                tol=nam_obj.tol,
+                max_iter=nam_obj.max_iter
             ))
 
         if len(doDoTasks) > 0:
@@ -255,6 +283,72 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
         return JSONResponse({"task_id": task.id})
     except:
         # Handle missing user scenario
+        raise HTTPException(
+            status_code=404,
+            detail="Unable to retrieve project",
+        )
+
+@router.get("/nam")
+def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
+    try:
+        project = prisma.project.find_unique_or_raise(
+            where={
+                'userId': user.id,
+                'id': ProjectId
+            },
+            include={
+                'IDF_Parameters': True,
+                'NAM': {
+                    'include': {
+                        'Annuality': True
+                    }
+                }
+            }
+        )
+
+        nam_obj = next((x for x in project.NAM if x.id == NAMId), None)
+
+        task = nam.delay(
+            P_low_1h=project.IDF_Parameters.P_low_1h,
+            P_high_1h=project.IDF_Parameters.P_high_1h,
+            P_low_24h=project.IDF_Parameters.P_low_24h,
+            P_high_24h=project.IDF_Parameters.P_high_24h,
+            rp_low=project.IDF_Parameters.rp_low,
+            rp_high=project.IDF_Parameters.rp_high,
+            x=nam_obj.Annuality.number,
+            curve_number=nam_obj.curve_number,
+            catchment_area=nam_obj.catchment_area,
+            channel_length=nam_obj.channel_length,
+            delta_h=nam_obj.delta_h,
+            nam_id=nam_obj.id,
+            project_id=project.id,
+            user_id=user.id,
+            TB_start=nam_obj.TB_start,
+            istep=nam_obj.istep,
+            tol=nam_obj.tol,
+            max_iter=nam_obj.max_iter
+        )
+        return JSONResponse({"task_id": task.id})
+    except:
+        # Handle missing user scenario
+        raise HTTPException(
+            status_code=404,
+            detail="Unable to retrieve project",
+        )
+
+@router.get("/get_curve_numbers")
+def get_curve_numbers_endpoint(ProjectId:str, user: User = Depends(get_user)):
+    try:
+        project = prisma.project.find_unique_or_raise(
+            where={
+                'userId': user.id,
+                'id': ProjectId
+            }
+        )
+        
+        task = get_curve_numbers.delay(project.id, user.id)
+        return JSONResponse({"task_id": task.id})
+    except:
         raise HTTPException(
             status_code=404,
             detail="Unable to retrieve project",
