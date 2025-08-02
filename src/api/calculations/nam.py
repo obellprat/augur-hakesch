@@ -180,13 +180,17 @@ def nam(self,
     valid_isozones = np.isfinite(isozone_data) & (isozone_data >= 0)
     print(f"Valid isozone cells: {np.sum(valid_isozones)} out of {isozone_data.size}")
     
+    # Calculate max_timesteps for simulation
+    max_timesteps = max_zone + 50  # Allow extra timesteps for runoff to decay
+    
     # Initialize runoff time series for each timestep
-    runoff_timesteps = []
+    # This will store runoff volumes that arrive at each timestep
+    runoff_timesteps = [0.0] * max_timesteps  # Pre-allocate with zeros
     
     # Calculate total storm precipitation for SCS method
     # We need the total precipitation for the entire storm duration
     i_total = intensity_fn(rp_years=x, duration_minutes=Tc_total)  # [mm/h]
-    P_total_storm = i_total * Tc_total / 60  # [mm] - total storm precipitation
+    P_total_storm = i_total #* Tc_total / 60  # [mm] - total storm precipitation
     
     print(f"Total storm precipitation: {P_total_storm:.2f} mm over {Tc_total} minutes")
     
@@ -208,126 +212,93 @@ def nam(self,
         Pe_theoretical = (P_excess_theoretical ** 2) / (P_excess_theoretical + mean_S)
         print(f"Theoretical max Pe: {Pe_theoretical:.2f} mm")
     
-    # Initialize cumulative precipitation for each cell
-    # We need to track how much precipitation has fallen on each cell over time
-    cumulative_P = np.zeros_like(cn_data, dtype=np.float32)
+    # Apply total precipitation to all cells at the beginning
+    # This represents a single precipitation event at time t0
+    P_total_storm = P_total_storm  # Total precipitation for the event [mm]
     
-    print(f"Starting distributed NAM calculation with {max_zone + 1} timesteps...")
+    print(f"Starting distributed NAM calculation with {max_timesteps} timesteps...")
     
-    # Calculate runoff for each 10-minute timestep
-    # Continue until runoff becomes negligible (< 1 m³/s) or maximum iterations reached
-    max_timesteps = max_zone + 50  # Allow extra timesteps for runoff to decay
-    runoff_below_threshold_count = 0  # Count consecutive timesteps with low runoff
+    # Apply total precipitation to all cells at the beginning
+    # This represents a single precipitation event at time t0
+    print(f"Applying total precipitation: {P_total_storm:.2f} mm to all cells")
     
-    for timestep in range(max_timesteps):
-        current_time = timestep * dt  # [min]
+    # Calculate runoff for each zone
+    for zone in range(max_zone + 1):
+        # Get cells in current isozone
+        zone_mask = (isozone_data == zone) & valid_mask & valid_isozones
         
-        # Calculate precipitation intensity for current timestep
-        i_current = intensity_fn(rp_years=x, duration_minutes=current_time + dt)  # [mm/h]
-        P_current = i_current * dt / 60  # [mm] for this timestep
-
+        if not np.any(zone_mask):
+            continue
         
-        print(f"Timestep {timestep}: P_current={P_current:.3f}mm, i_current={i_current:.2f}mm/h")
+        print(f"Processing Zone {zone}: {np.sum(zone_mask)} cells")
         
-        # Initialize total runoff for this timestep
-        total_runoff = 0.0
+        # Apply total precipitation to cells in this zone
+        # All cells receive the same total precipitation amount
         
-        # Calculate runoff for each cell
-        for zone in range(max_zone + 1):
-            # Get cells in current isozone
-            zone_mask = (isozone_data == zone) & valid_mask & valid_isozones
+        # Calculate effective precipitation using SCS method for each cell
+        Pe_cells = np.zeros_like(cn_data, dtype=np.float32)
+        
+        # Apply SCS method: Pe = ((P - Ia)²) / (P - Ia + S) if P > Ia, else 0
+        # Use total precipitation for SCS calculation (single event)
+        P_mask = P_total_storm > Ia_cells[zone_mask]
+        if np.any(P_mask):
+            P_excess = P_total_storm - Ia_cells[zone_mask][P_mask]
+            S_zone = S_cells[zone_mask][P_mask]
             
-            if not np.any(zone_mask):
-                continue
+            # Calculate effective precipitation for total storm
+            Pe_values = (P_excess ** 2) / (P_excess + S_zone)
             
-            # For cells in zone 'zone', precipitation starts arriving at timestep 'zone'
-            # We need to accumulate precipitation for cells that have started receiving rain
-            if timestep >= zone:
-                # Add current precipitation to cumulative for this zone
-                cumulative_P[zone_mask] += P_current
-                
-                # Debug: Show cumulative precipitation for first zone
-                if timestep == zone and np.sum(zone_mask) > 0:
-                    print(f"  Zone {zone}: Added {P_current:.2f}mm, cumulative_P now ranges from {np.min(cumulative_P[zone_mask]):.2f} to {np.max(cumulative_P[zone_mask]):.2f}mm")
-                
-                # Calculate effective precipitation using SCS method for each cell
-                Pe_cells = np.zeros_like(cn_data, dtype=np.float32)
-                
-                # Apply SCS method: Pe = ((P - Ia)²) / (P - Ia + S) if P > Ia, else 0
-                # Use cumulative precipitation for SCS calculation
-                P_mask = cumulative_P[zone_mask] > Ia_cells[zone_mask]
-                if np.any(P_mask):
-                    P_excess = cumulative_P[zone_mask][P_mask] - Ia_cells[zone_mask][P_mask]
-                    S_zone = S_cells[zone_mask][P_mask]
-                    Pe_total = (P_excess ** 2) / (P_excess + S_zone)
-                    
-                    # Calculate incremental effective precipitation for this timestep
-                    # We need to calculate how much additional effective precipitation is generated
-                    # by the current timestep's precipitation
-                    
-                    # For cells that have received precipitation, calculate incremental Pe
-                    cells_with_precip = cumulative_P[zone_mask][P_mask] > 0
-                    if np.any(cells_with_precip):
-                        # Calculate effective precipitation for current cumulative precipitation
-                        current_Pe = (P_excess ** 2) / (P_excess + S_zone)
-                        
-                        # Calculate effective precipitation for previous cumulative precipitation (if any)
-                        prev_cumulative_P = cumulative_P[zone_mask][P_mask] - P_current
-                        prev_P_excess = np.maximum(prev_cumulative_P - Ia_cells[zone_mask][P_mask], 0)
-                        prev_Pe = (prev_P_excess ** 2) / (prev_P_excess + S_zone)
-                        
-                        # Incremental effective precipitation for this timestep
-                        # Fix: Use proper indexing to assign values to Pe_cells
-                        incremental_pe_values = current_Pe - prev_Pe
-                        
-                        # Create a temporary array for this zone's Pe values
-                        zone_pe_values = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
-                        zone_pe_values[P_mask] = incremental_pe_values
-                        
-                        # Assign to the main Pe_cells array
-                        Pe_cells[zone_mask] = zone_pe_values
-                        
-                        # Debug info for first few cells
-                        if timestep == zone and np.sum(P_mask) > 0:
-                            incremental_pe_value = current_Pe[0] - prev_Pe[0]
-                            print(f"  Zone {zone}: {np.sum(P_mask)} cells with P>Ia")
-                            print(f"    Sample: cumulative_P={cumulative_P[zone_mask][P_mask][0]:.2f}mm, Ia={Ia_cells[zone_mask][P_mask][0]:.2f}mm, S={S_zone[0]:.2f}mm")
-                            print(f"    Sample: P_excess={P_excess[0]:.2f}mm, current_Pe={current_Pe[0]:.2f}mm, prev_Pe={prev_Pe[0]:.2f}mm, incremental_Pe={incremental_pe_value:.2f}mm")
-                            print(f"    Sample: prev_cumulative_P={prev_cumulative_P[0]:.2f}mm, prev_P_excess={prev_P_excess[0]:.2f}mm")
-                
-                # Convert effective precipitation to runoff volume [m³]
-                # Pe is in mm, convert to m³: Pe_mm * area_m² / 1000
-                runoff_volume = np.sum(Pe_cells[zone_mask]) * pixel_area_m2 / 1000  # [m³]
-                total_runoff += runoff_volume
-                
-                # Debug: Show runoff volume for all zones
-                if timestep == zone:
-                    print(f"  Zone {zone}: {np.sum(zone_mask)} cells, Pe_sum={np.sum(Pe_cells[zone_mask]):.2f}mm, runoff_volume={runoff_volume:.3f} m³")
-                elif runoff_volume > 0:
-                    print(f"  Zone {zone}: {np.sum(zone_mask)} cells, Pe_sum={np.sum(Pe_cells[zone_mask]):.2f}mm, runoff_volume={runoff_volume:.3f} m³")
+            # Create a temporary array for this zone's Pe values
+            zone_pe_values = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
+            zone_pe_values[P_mask] = Pe_values
+            
+            # Assign to the main Pe_cells array
+            Pe_cells[zone_mask] = zone_pe_values
+            
+            # Debug info for first few cells
+            if np.sum(P_mask) > 0:
+                print(f"  Zone {zone}: {np.sum(P_mask)} cells with P>Ia")
+                print(f"    Sample: P_total={P_total_storm:.2f}mm, Ia={Ia_cells[zone_mask][P_mask][0]:.2f}mm, S={S_zone[0]:.2f}mm")
+                print(f"    Sample: P_excess={P_excess[0]:.2f}mm, Pe={Pe_values[0]:.2f}mm")
         
-        # Convert total runoff volume to discharge [m³/s]
-        # Discharge = volume / time = m³ / (dt * 60 s)
-        discharge = total_runoff / (dt * 60)  # [m³/s]
-        runoff_timesteps.append(discharge)
+        # Convert effective precipitation to runoff volume [m³]
+        # Pe is in mm, convert to m³: Pe_mm * area_m² / 1000
+        runoff_volume = np.sum(Pe_cells[zone_mask]) * pixel_area_m2 / 1000  # [m³]
         
-        print(f"Timestep {timestep}: total_runoff={total_runoff:.3f} m³, Q={discharge:.3f} m³/s")
+        # The runoff from this zone reaches the drainage point after 'zone' timesteps
+        # So we need to add this runoff to the discharge at timestep 'zone'
+        arrival_timestep = zone
         
-        # Check if runoff is below threshold for early termination
-        if discharge < 1.0:
-            runoff_below_threshold_count += 1
-            if runoff_below_threshold_count >= 3:  # Stop after 3 consecutive timesteps below threshold
-                print(f"Stopping calculation: Runoff below 1 m³/s for {runoff_below_threshold_count} consecutive timesteps")
-                break
+        # Store the runoff contribution for the arrival timestep
+        if arrival_timestep < len(runoff_timesteps):
+            # Add to existing runoff for this arrival timestep
+            runoff_timesteps[arrival_timestep] += runoff_volume
         else:
-            runoff_below_threshold_count = 0  # Reset counter if runoff is above threshold
+            # Extend the runoff_timesteps list if needed
+            while len(runoff_timesteps) <= arrival_timestep:
+                runoff_timesteps.append(0.0)
+            runoff_timesteps[arrival_timestep] += runoff_volume
+        
+        # Debug: Show runoff volume for all zones
+        print(f"  Zone {zone}: {np.sum(zone_mask)} cells, Pe_sum={np.sum(Pe_cells[zone_mask]):.2f}mm, runoff_volume={runoff_volume:.3f} m³, arrives at timestep {arrival_timestep}")
+        
+    # Convert runoff volumes to discharge [m³/s]
+    # Discharge = volume / time = m³ / (dt * 60 s)
+    discharge_timesteps = []
+    for i, runoff_volume in enumerate(runoff_timesteps):
+        if runoff_volume > 0:
+            discharge = runoff_volume / (dt * 60)  # [m³/s]
+            discharge_timesteps.append(discharge)
+            print(f"Timestep {i}: runoff_volume={runoff_volume:.3f} m³, Q={discharge:.3f} m³/s")
+        else:
+            discharge_timesteps.append(0.0)
     
     # 4. Find maximum discharge (HQ)
-    HQ = max(runoff_timesteps)
-    max_timestep = runoff_timesteps.index(HQ)
+    HQ = max(discharge_timesteps)
+    max_timestep = discharge_timesteps.index(HQ)
     
     print(f"Maximum discharge: {HQ:.3f} m³/s at timestep {max_timestep}")
-    print(f"Runoff time series: {[f'{q:.3f}' for q in runoff_timesteps]}")
+    print(f"Discharge time series: {[f'{q:.3f}' for q in discharge_timesteps]}")
     
     # 5. Calculate additional parameters for compatibility
     # Use the timestep of maximum discharge for other calculations
@@ -377,6 +348,7 @@ def nam(self,
         "Pe": Pe_final,
         "effective_curve_number": effective_curve_number,
         "runoff_timesteps": runoff_timesteps,
+        "discharge_timesteps": discharge_timesteps,
         "max_timestep": max_timestep,
         "total_cells": np.sum(valid_mask),
         "pixel_area_m2": pixel_area_m2
