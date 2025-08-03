@@ -59,13 +59,13 @@ def nam(self,
     tol=5,                  # Convergence tolerance [mm]
     max_iter=1000,
     water_balance_mode="simple",  # Options: "simple", "cumulative", "hybrid", "uniform", "conservative"
-    precipitation_factor=1,  # Factor to scale precipitation (0.5 = 50% of calculated)
+    precipitation_factor=0.5,  # Factor to scale precipitation (0.5 = 50% of calculated)
     storm_center_mode="centroid",  # Options: "centroid", "discharge_point", "user_point" - where to place storm center
     discharge_point_coords=None,  # User-provided discharge point coordinates (x, y) in raster coordinates
     discharge_point_lon_lat=None,  # User-provided discharge point coordinates (longitude, latitude) in geographic coordinates
     discharge_point_epsg2056=None,  # User-provided discharge point coordinates (easting, northing) in EPSG:2056
     use_kirpich=True,  # Use Kirpich method for travel time calculation
-    routing_method="travel_time"  # Options: "travel_time", "isozone" - method for routing runoff to discharge point
+    routing_method="time_values"  # Options: "travel_time", "isozone", "time_values" - method for routing runoff to discharge point
 ):
     """
     NAM (Nedbør-Afstrømnings-Model) calculation based on distributed curve numbers and travel times.
@@ -148,6 +148,57 @@ def nam(self,
                     print(f"DEM raster not found: {dem_file}")
                     print("Warning: DEM not available, travel time calculation will be limited")
                     use_kirpich = False
+            
+            # Load time_values.tif for time_values routing method
+            time_values_data = None
+            if routing_method == "time_values":
+                time_values_file = f"data/{user_id}/{project_id}/time_values.tif"
+                if os.path.exists(time_values_file):
+                    print(f"Loading time values raster from: {time_values_file}")
+                    with rasterio.open(time_values_file) as src:
+                        time_values_data = src.read(1)
+                        time_values_transform = src.transform
+                        time_values_crs = src.crs
+                        print(f"Time values raster loaded, shape: {time_values_data.shape}")
+                        
+                        # Check if time_values has the same shape as other rasters
+                        if time_values_data.shape != isozone_data.shape:
+                            print(f"Time values shape differs: TimeValues={time_values_data.shape}, Isozones={isozone_data.shape}")
+                            print("Resampling time values to match isozones grid...")
+                            
+                            from rasterio.warp import reproject, Resampling
+                            
+                            # Resample time values data to match isozone raster
+                            resampled_time_values_data = np.empty(isozone_data.shape, dtype=time_values_data.dtype)
+                            reproject(
+                                time_values_data,
+                                resampled_time_values_data,
+                                src_transform=time_values_transform,
+                                src_crs=time_values_crs,
+                                dst_transform=isozone_transform,
+                                dst_crs=isozone_crs,
+                                resampling=Resampling.bilinear
+                            )
+                            time_values_data = resampled_time_values_data
+                            print(f"Resampled time values data to shape: {time_values_data.shape}")
+                        else:
+                            print("Time values shape matches isozones, no resampling needed")
+                        
+                        # Print statistics about time values
+                        valid_time_mask = ~np.isnan(time_values_data) & (time_values_data > 0)
+                        if np.any(valid_time_mask):
+                            print(f"Time values statistics:")
+                            print(f"  Min travel time: {np.nanmin(time_values_data[valid_time_mask]):.2f} minutes")
+                            print(f"  Max travel time: {np.nanmax(time_values_data[valid_time_mask]):.2f} minutes")
+                            print(f"  Mean travel time: {np.nanmean(time_values_data[valid_time_mask]):.2f} minutes")
+                            print(f"  Median travel time: {np.nanmedian(time_values_data[valid_time_mask]):.2f} minutes")
+                            print(f"  Valid cells: {np.sum(valid_time_mask)} out of {time_values_data.size}")
+                        else:
+                            print("Warning: No valid time values found in raster")
+                else:
+                    print(f"Time values raster not found: {time_values_file}")
+                    print("Warning: Time values not available, falling back to travel_time method")
+                    routing_method = "travel_time"
             
             # Check if rasters have the same shape and resample if necessary
             if cn_data.shape != isozone_data.shape:
@@ -818,38 +869,72 @@ def nam(self,
         
         # Create filename with timestamp to avoid conflicts
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        travel_times_file = f"{temp_dir}/travel_times_{timestamp}.tif"
         
-        # Create a copy of travel times for saving (only valid cells)
-        travel_times_raster = np.zeros_like(travel_times, dtype=np.float32)
-        travel_times_raster[valid_mask] = travel_times[valid_mask]
-        
-        # Save as GeoTIFF using the same transform and CRS as the curve number raster
-        profile = {
-            'driver': 'GTiff',
-            'height': travel_times_raster.shape[0],
-            'width': travel_times_raster.shape[1],
-            'count': 1,
-            'dtype': travel_times_raster.dtype.name,
-            'crs': cn_crs,
-            'transform': cn_transform,
-            'nodata': 0,
-            'compress': 'lzw'
-        }
-        
-        with rasterio.open(travel_times_file, 'w', **profile) as dst:
-            dst.write(travel_times_raster, 1)
-        
-        print(f"Travel times saved as TIFF: {travel_times_file}")
-        print(f"  - File size: {os.path.getsize(travel_times_file) / 1024:.1f} KB")
-        print(f"  - Travel time range: {np.min(travel_times_raster[valid_mask]):.2f} - {np.max(travel_times_raster[valid_mask]):.2f} minutes")
-        print(f"  - Mean travel time: {np.mean(travel_times_raster[valid_mask]):.2f} minutes")
-        print(f"  - Method: {'Overland Flow' if use_kirpich and dem_data is not None else 'Simplified'}")
-        if not use_kirpich or dem_data is None:
-            print(f"  - Velocity: 60 m/min (1.0 m/s)")
+        if routing_method == "time_values" and arrival_timesteps is not None and valid_time_mask is not None:
+            # Save time values routing results
+            time_values_routing_file = f"{temp_dir}/time_values_routing_{timestamp}.tif"
+            
+            # Create a copy of arrival timesteps for saving (only valid cells)
+            arrival_timesteps_raster = np.zeros_like(arrival_timesteps, dtype=np.float32)
+            arrival_timesteps_raster[valid_time_mask] = arrival_timesteps[valid_time_mask]
+            
+            # Save as GeoTIFF using the same transform and CRS as the curve number raster
+            profile = {
+                'driver': 'GTiff',
+                'height': arrival_timesteps_raster.shape[0],
+                'width': arrival_timesteps_raster.shape[1],
+                'count': 1,
+                'dtype': arrival_timesteps_raster.dtype.name,
+                'crs': cn_crs,
+                'transform': cn_transform,
+                'nodata': 0,
+                'compress': 'lzw'
+            }
+            
+            with rasterio.open(time_values_routing_file, 'w', **profile) as dst:
+                dst.write(arrival_timesteps_raster, 1)
+            
+            print(f"Time values routing results saved as TIFF: {time_values_routing_file}")
+            print(f"  - File size: {os.path.getsize(time_values_routing_file) / 1024:.1f} KB")
+            print(f"  - Arrival timestep range: {np.min(arrival_timesteps_raster[valid_time_mask]):.0f} - {np.max(arrival_timesteps_raster[valid_time_mask]):.0f} timesteps")
+            print(f"  - Time range: {np.min(arrival_timesteps_raster[valid_time_mask])*dt:.0f} - {np.max(arrival_timesteps_raster[valid_time_mask])*dt:.0f} minutes")
+            print(f"  - Method: Time Values from time_values.tif")
+        elif routing_method == "time_values":
+            print(f"Time values routing selected but no routing data available for saving")
+        else:
+            # Save travel times for other methods
+            travel_times_file = f"{temp_dir}/travel_times_{timestamp}.tif"
+            
+            # Create a copy of travel times for saving (only valid cells)
+            travel_times_raster = np.zeros_like(travel_times, dtype=np.float32)
+            travel_times_raster[valid_mask] = travel_times[valid_mask]
+            
+            # Save as GeoTIFF using the same transform and CRS as the curve number raster
+            profile = {
+                'driver': 'GTiff',
+                'height': travel_times_raster.shape[0],
+                'width': travel_times_raster.shape[1],
+                'count': 1,
+                'dtype': travel_times_raster.dtype.name,
+                'crs': cn_crs,
+                'transform': cn_transform,
+                'nodata': 0,
+                'compress': 'lzw'
+            }
+            
+            with rasterio.open(travel_times_file, 'w', **profile) as dst:
+                dst.write(travel_times_raster, 1)
+            
+            print(f"Travel times saved as TIFF: {travel_times_file}")
+            print(f"  - File size: {os.path.getsize(travel_times_file) / 1024:.1f} KB")
+            print(f"  - Travel time range: {np.min(travel_times_raster[valid_mask]):.2f} - {np.max(travel_times_raster[valid_mask]):.2f} minutes")
+            print(f"  - Mean travel time: {np.mean(travel_times_raster[valid_mask]):.2f} minutes")
+            print(f"  - Method: {'Overland Flow' if use_kirpich and dem_data is not None else 'Simplified'}")
+            if not use_kirpich or dem_data is None:
+                print(f"  - Velocity: 60 m/min (1.0 m/s)")
         
     except Exception as e:
-        print(f"Warning: Could not save travel times as TIFF: {e}")
+        print(f"Warning: Could not save routing results as TIFF: {e}")
     
     # Convert effective precipitation to runoff volume [m³] for each cell
     # Pe is in mm, convert to m³: Pe_mm * area_m² / 1000
@@ -870,7 +955,51 @@ def nam(self,
     # This will store runoff volumes that arrive at each timestep
     runoff_timesteps = [0.0] * max_timesteps  # Pre-allocate with zeros
     
-    if routing_method == "isozone":
+    # Initialize variables for routing
+    arrival_timesteps = None
+    valid_time_mask = None
+    
+    if routing_method == "time_values":
+        # Use time_values.tif-based routing method
+        print(f"Using time_values.tif-based routing method...")
+        
+        if time_values_data is None:
+            return {"error": "Time values data not available for time_values routing method"}
+        
+        # Calculate arrival timestep for each cell using time_values.tif
+        # time_values_data contains travel time in minutes for each cell
+        arrival_timesteps = np.round(time_values_data / dt).astype(int)  # Convert to timestep index
+        
+        # Calculate maximum timestep needed based on time_values
+        max_time_value = np.nanmax(time_values_data[valid_mask])
+        max_timesteps_needed = int(np.ceil(max_time_value / dt)) + 10  # Add buffer
+        
+        # Extend runoff_timesteps if needed
+        if max_timesteps_needed > len(runoff_timesteps):
+            runoff_timesteps.extend([0.0] * (max_timesteps_needed - len(runoff_timesteps)))
+            print(f"Extended simulation to {max_timesteps_needed} timesteps based on time_values")
+        
+        # Sum runoff volumes by arrival timestep
+        valid_time_mask = valid_mask & ~np.isnan(time_values_data) & (time_values_data > 0)
+        
+        print(f"Time values routing: max_time={max_time_value:.2f}min, dt={dt}min, max_timesteps={max_timesteps_needed}")
+        print(f"Valid time values cells: {np.sum(valid_time_mask)} out of {np.sum(valid_mask)}")
+        
+        # Group cells by arrival timestep and sum runoff volumes
+        for i in range(max_timesteps_needed):
+            timestep_mask = (arrival_timesteps == i) & valid_time_mask
+            if np.any(timestep_mask):
+                runoff_volume = np.sum(runoff_volumes[timestep_mask])
+                runoff_timesteps[i] += runoff_volume
+                if runoff_volume > 0:
+                    print(f"Timestep {i} ({i*dt}min): {np.sum(timestep_mask)} cells arrive, runoff_volume={runoff_volume:.3f} m³")
+        
+        print(f"Time values routing completed. Max timesteps: {max_timesteps_needed}")
+        
+        # Update max_timesteps for the rest of the calculation
+        max_timesteps = max_timesteps_needed
+        
+    elif routing_method == "isozone":
         # Use isozone-based routing (original method)
         print(f"Using isozone-based routing method...")
         
@@ -967,25 +1096,41 @@ def nam(self,
     print(f"\n=== TRAVEL TIME STATISTICS ===")
     print(f"Storm center: ({center_row}, {center_col})")
     print(f"Discharge point: ({discharge_row}, {discharge_col})")
-    print(f"Method: {'Overland Flow' if use_kirpich and dem_data is not None else 'Simplified'}")
-    if use_kirpich and dem_data is not None:
-        print(f"Discharge elevation: {discharge_elevation:.1f} m")
-        print(f"Mean flow length: {np.mean(flow_lengths[valid_mask]):.1f} meters")
-        print(f"Max flow length: {np.max(flow_lengths[valid_mask]):.1f} meters")
-        valid_elev_diffs = elevation_diffs[valid_mask & ~np.isnan(elevation_diffs)]
-        if len(valid_elev_diffs) > 0:
-            print(f"Mean elevation difference: {np.mean(valid_elev_diffs):.1f} meters")
-            print(f"Max elevation difference: {np.max(valid_elev_diffs):.1f} meters")
-        else:
-            print(f"Mean elevation difference: No valid elevation differences")
-            print(f"Max elevation difference: No valid elevation differences")
+    print(f"Routing method: {routing_method}")
+    
+    if routing_method == "time_values":
+        print(f"Method: Time Values from time_values.tif")
+        if time_values_data is not None:
+            valid_time_mask = valid_mask & ~np.isnan(time_values_data) & (time_values_data > 0)
+            if np.any(valid_time_mask):
+                print(f"Mean travel time: {np.nanmean(time_values_data[valid_time_mask]):.1f} minutes")
+                print(f"Max travel time: {np.nanmax(time_values_data[valid_time_mask]):.1f} minutes")
+                print(f"Min travel time: {np.nanmin(time_values_data[valid_time_mask]):.1f} minutes")
+                print(f"Valid cells: {np.sum(valid_time_mask)} out of {np.sum(valid_mask)}")
+            else:
+                print(f"Mean travel time: No valid time values")
+                print(f"Max travel time: No valid time values")
+                print(f"Min travel time: No valid time values")
     else:
-        print(f"Velocity: 1000 m/min (16.7 m/s)")
-        print(f"Mean distance to discharge point: {np.mean(distances[valid_mask]):.1f} meters")
-        print(f"Max distance to discharge point: {np.max(distances[valid_mask]):.1f} meters")
-    print(f"Mean travel time: {np.mean(travel_times[valid_mask]):.1f} minutes")
-    print(f"Max travel time: {np.max(travel_times[valid_mask]):.1f} minutes")
-    print(f"Min travel time: {np.min(travel_times[valid_mask]):.1f} minutes")
+        print(f"Method: {'Overland Flow' if use_kirpich and dem_data is not None else 'Simplified'}")
+        if use_kirpich and dem_data is not None:
+            print(f"Discharge elevation: {discharge_elevation:.1f} m")
+            print(f"Mean flow length: {np.mean(flow_lengths[valid_mask]):.1f} meters")
+            print(f"Max flow length: {np.max(flow_lengths[valid_mask]):.1f} meters")
+            valid_elev_diffs = elevation_diffs[valid_mask & ~np.isnan(elevation_diffs)]
+            if len(valid_elev_diffs) > 0:
+                print(f"Mean elevation difference: {np.mean(valid_elev_diffs):.1f} meters")
+                print(f"Max elevation difference: {np.max(valid_elev_diffs):.1f} meters")
+            else:
+                print(f"Mean elevation difference: No valid elevation differences")
+                print(f"Max elevation difference: No valid elevation differences")
+        else:
+            print(f"Velocity: 60 m/min (1.0 m/s)")
+            print(f"Mean distance to discharge point: {np.mean(distances[valid_mask]):.1f} meters")
+            print(f"Max distance to discharge point: {np.max(distances[valid_mask]):.1f} meters")
+        print(f"Mean travel time: {np.mean(travel_times[valid_mask]):.1f} minutes")
+        print(f"Max travel time: {np.max(travel_times[valid_mask]):.1f} minutes")
+        print(f"Min travel time: {np.min(travel_times[valid_mask]):.1f} minutes")
         
     # Print cell-based summary
     print(f"\n=== CELL-BASED SUMMARY ===")
@@ -1058,10 +1203,8 @@ def nam(self,
             "total_initial_water": float(total_initial_water),
             "total_infiltration": float(total_infiltration),
             "total_runoff_generated": float(total_runoff_generated),
-            "total_remaining_water": float(total_remaining) if use_cumulative_water_balance else 0.0,
             "infiltration_percentage": float(total_infiltration/total_initial_water*100),
-            "runoff_percentage": float(total_runoff_generated/total_initial_water*100),
-            "remaining_percentage": float(total_remaining/total_initial_water*100) if use_cumulative_water_balance else 0.0
+            "runoff_percentage": float(total_runoff_generated/total_initial_water*100)
         },
         "storm_distribution": {
             "storm_center": (int(center_row), int(center_col)),
@@ -1071,7 +1214,14 @@ def nam(self,
             "min_precipitation": float(min_precip),
             "mean_precipitation": float(mean_precip),
             "distribution_type": "exponential_decay"
-        }
+        },
+        "routing_method": routing_method,
+        "time_values_info": {
+            "used_time_values": routing_method == "time_values",
+            "max_travel_time": float(np.nanmax(time_values_data[valid_mask])) if routing_method == "time_values" and time_values_data is not None else None,
+            "mean_travel_time": float(np.nanmean(time_values_data[valid_mask])) if routing_method == "time_values" and time_values_data is not None else None,
+            "min_travel_time": float(np.nanmin(time_values_data[valid_mask])) if routing_method == "time_values" and time_values_data is not None else None
+        } if routing_method == "time_values" else None
     }
 
 

@@ -4,6 +4,7 @@ import gc
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
 from rasterio.io import MemoryFile
+import rasterio
 from pysheds.view import Raster,View
 from scipy.ndimage import gaussian_filter
 import geopandas as gpd
@@ -641,6 +642,13 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     dist = dist * cell_size
     dist[dist == np.inf] = -1000000
     dist[dist <= 0] = -1000000
+    
+    # Save raw time values before discretization
+    raw_time_values = dist.copy()
+    raw_time_values[raw_time_values == -1000000] = np.nan
+    raw_time_values = (raw_time_values)/(v_gerinne * 60 * 100)
+    
+    # Discretize into time classes for isozones
     dist = np.floor(((dist)/(v_gerinne * 60 * 100)) / 10) + 1  # strecke / geschwindigkeit * 60(-> für m/min) * 100 (hindernislayer) / 10 (-> 10 Minuten klassen) +1 da wir bei Klasse 1 starten
 
     dist[dist<=0] = None
@@ -702,6 +710,36 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
                 use_cog_driver=True,
                 in_memory=False
             )
+
+    # Save raw time values as TIF
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Writing time values file', 'progress' : 91})
+    
+    # Create raw time values raster
+    raw_time_raster = Raster(raw_time_values, viewfinder=grid2.viewfinder)
+    
+    # Define the output filename for raw time values
+    raw_time_filename = f"data/{userId}/{projectId}/time_values.tif"
+    
+    # Profile for raw time values (float data type)
+    raw_time_profile = default_profile.copy()
+    raw_time_profile_updates = {
+        'crs' : raw_time_raster.crs.srs,
+        'transform' : raw_time_raster.affine,
+        'dtype' : 'float32',
+        'nodata' : np.nan,
+        'height' : height,
+        'width' : width
+    }
+    raw_time_profile.update(raw_time_profile_updates)
+    
+    with MemoryFile() as memfile:
+        with memfile.open(**raw_time_profile) as mem:
+            mem.write(np.asarray(raw_time_raster), 1)
+            
+            # Save as regular GeoTIFF (not COG for raw values)
+            with rasterio.open(raw_time_filename, 'w', **raw_time_profile) as dst:
+                dst.write(np.asarray(raw_time_raster), 1)
 
     self.update_state(state='PROGRESS',
                 meta={'text': 'Polygonize catchment', 'progress' : 92})

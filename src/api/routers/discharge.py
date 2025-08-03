@@ -317,7 +317,7 @@ def get_nam(ProjectId:str, NAMId: int,
         )
     
     # Validate routing_method
-    valid_routing_methods = ["travel_time", "isozone"]
+    valid_routing_methods = ["travel_time", "isozone", "time_values"]
     if routing_method not in valid_routing_methods:
         print(f"Invalid routing_method: {routing_method}")
         raise HTTPException(
