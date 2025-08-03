@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from datetime import datetime
 from prisma import Prisma
 from calculations.calculations import app
 import json
@@ -10,6 +11,31 @@ import rasterio
 from rasterio.features import rasterize
 
 from calculations.discharge import construct_idf_curve
+
+def geographic_to_raster_coords(lon, lat, transform, shape):
+    """
+    Convert geographic coordinates (longitude, latitude) to raster coordinates (row, col).
+    
+    Args:
+        lon (float): Longitude coordinate
+        lat (float): Latitude coordinate  
+        transform: Rasterio transform object
+        shape (tuple): Raster shape (height, width)
+    
+    Returns:
+        tuple: (row, col) raster coordinates
+    """
+    from rasterio.transform import rowcol
+    
+    try:
+        row, col = rowcol(transform, lon, lat)
+        # Ensure coordinates are within bounds
+        row = max(0, min(row, shape[0] - 1))
+        col = max(0, min(col, shape[1] - 1))
+        return int(row), int(col)
+    except Exception as e:
+        print(f"Warning: Error converting geographic coordinates ({lon}, {lat}) to raster coordinates: {e}")
+        return None, None
 
 @app.task(name="nam", bind=True)
 def nam(self,
@@ -30,7 +56,12 @@ def nam(self,
     TB_start=30,            # Initial value for TB [min]
     istep=5,                # Step size for TB [min]
     tol=5,                  # Convergence tolerance [mm]
-    max_iter=1000
+    max_iter=1000,
+    water_balance_mode="uniform",  # Options: "simple", "cumulative", "hybrid", "uniform", "conservative"
+    precipitation_factor=0.5,  # Factor to scale precipitation (0.5 = 50% of calculated)
+    storm_center_mode="discharge_point",  # Options: "centroid", "discharge_point", "user_point" - where to place storm center
+    discharge_point_coords=None,  # User-provided discharge point coordinates (x, y) in raster coordinates
+    discharge_point_lon_lat=None  # User-provided discharge point coordinates (longitude, latitude) in geographic coordinates
 ):
     """
     NAM (Nedbør-Afstrømnings-Model) calculation based on distributed curve numbers and isozones.
@@ -78,23 +109,28 @@ def nam(self,
             # Check if rasters have the same shape and resample if necessary
             if cn_data.shape != isozone_data.shape:
                 print(f"Raster shapes differ: CN={cn_data.shape}, Isozones={isozone_data.shape}")
-                print("Resampling isozones to match curve number raster...")
+                print("Resampling curve number raster to match isozones grid...")
                 
                 from rasterio.warp import reproject, Resampling
                 
-                # Resample isozones to match curve number raster
-                resampled_isozones = np.empty(cn_data.shape, dtype=isozone_data.dtype)
+                # Resample curve number data to match isozone raster
+                resampled_cn_data = np.empty(isozone_data.shape, dtype=cn_data.dtype)
                 reproject(
-                    isozone_data,
-                    resampled_isozones,
-                    src_transform=isozone_transform,
-                    src_crs=isozone_crs,
-                    dst_transform=cn_transform,
-                    dst_crs=cn_crs,
+                    cn_data,
+                    resampled_cn_data,
+                    src_transform=cn_transform,
+                    src_crs=cn_crs,
+                    dst_transform=isozone_transform,
+                    dst_crs=isozone_crs,
                     resampling=Resampling.nearest
                 )
-                isozone_data = resampled_isozones
-                print(f"Resampled isozones to shape: {isozone_data.shape}")
+                cn_data = resampled_cn_data
+                cn_transform = isozone_transform  # Update transform to match isozones
+                cn_crs = isozone_crs  # Update CRS to match isozones
+                # Update pixel area calculation to use isozone grid
+                pixel_area_m2 = abs(isozone_transform[0] * isozone_transform[4])
+                print(f"Resampled curve number data to shape: {cn_data.shape}")
+                print(f"Updated pixel area to match isozone grid: {pixel_area_m2:.2f} m²")
             else:
                 print("Raster shapes match, no resampling needed")
                 
@@ -135,7 +171,7 @@ def nam(self,
     S_cells[valid_mask] = (25400 / cn_data[valid_mask]) - 254
     
     # Calculate initial abstraction Ia for each cell: Ia = 0.2 * S [mm]
-    Ia_cells = 0.2 * S_cells  # Changed back to 0.2 * S
+    Ia_cells = 0.02 * S_cells  # Changed back to 0.2 * S
     
     # Debug: Print statistics about curve numbers and retention
     print(f"Curve number statistics:")
@@ -172,7 +208,8 @@ def nam(self,
         return {"error": "Invalid isozone data: max_zone <= 0"}
     
     dt = 10  # Time step [min]
-    Tc_total = dt * (max_zone + 1)  # Total simulation time [min]
+    #Tc_total = dt * (max_zone + 1)  # Total simulation time [min]
+    Tc_total = 60
     print(f"Simulation parameters: max_zone={max_zone}, dt={dt}min, Tc_total={Tc_total}min")
     
     # Validate isozone data
@@ -217,9 +254,168 @@ def nam(self,
     
     print(f"Starting distributed NAM calculation with {max_timesteps} timesteps...")
     
-    # Apply total precipitation to all cells at the beginning
-    # This represents a single precipitation event at time t0
-    print(f"Applying total precipitation: {P_total_storm:.2f} mm to all cells")
+    # Create natural storm distribution (circular storm with maximum at center)
+    if storm_center_mode == "user_point":
+        storm_location = "user-provided point"
+    elif storm_center_mode == "discharge_point":
+        storm_location = "discharge point"
+    else:
+        storm_location = "catchment centroid"
+    print(f"Creating natural storm distribution with maximum: {P_total_storm:.2f} mm at {storm_location}")
+    
+    # Initialize water balance tracking for each cell
+    # Track remaining water in each cell over time
+    remaining_water = np.zeros_like(cn_data, dtype=np.float32)  # [mm]
+    cumulative_infiltration = np.zeros_like(cn_data, dtype=np.float32)  # [mm]
+    cumulative_runoff = np.zeros_like(cn_data, dtype=np.float32)  # [mm]
+    
+    print(f"Water balance approach: {water_balance_mode}")
+    print(f"Storm center mode: {storm_center_mode}")
+
+    # Find the storm center based on the selected mode
+    if storm_center_mode == "user_point":
+        # Use user-provided discharge point coordinates
+        center_row = None
+        center_col = None
+        
+        # Try raster coordinates first
+        if discharge_point_coords is not None and len(discharge_point_coords) == 2:
+            center_row, center_col = discharge_point_coords
+            # Validate coordinates are within raster bounds
+            if 0 <= center_row < cn_data.shape[0] and 0 <= center_col < cn_data.shape[1]:
+                print(f"Storm center at user-provided raster coordinates: ({center_row}, {center_col})")
+            else:
+                print(f"Warning: User-provided raster coordinates ({center_row}, {center_col}) outside raster bounds")
+                center_row = None
+                center_col = None
+        
+        # Try geographic coordinates if raster coordinates failed or weren't provided
+        if center_row is None and discharge_point_lon_lat is not None and len(discharge_point_lon_lat) == 2:
+            lon, lat = discharge_point_lon_lat
+            center_row, center_col = geographic_to_raster_coords(lon, lat, cn_transform, cn_data.shape)
+            if center_row is not None and center_col is not None:
+                print(f"Storm center at user-provided geographic coordinates ({lon:.6f}, {lat:.6f}): raster ({center_row}, {center_col})")
+            else:
+                print(f"Warning: Could not convert geographic coordinates ({lon:.6f}, {lat:.6f}) to raster coordinates")
+        
+        # Fallback to centroid if no valid coordinates provided
+        if center_row is None or center_col is None:
+            print("Warning: No valid user-provided coordinates, falling back to centroid")
+            valid_indices = np.where(valid_mask)
+            center_row = int(np.mean(valid_indices[0]))
+            center_col = int(np.mean(valid_indices[1]))
+            print(f"Storm center at catchment centroid: ({center_row}, {center_col})")
+    elif storm_center_mode == "discharge_point":
+        # Find the discharge point (lowest isozone = zone 0)
+        discharge_mask = (isozone_data == 0) & valid_mask & valid_isozones
+        if np.any(discharge_mask):
+            # Find the centroid of the discharge point area
+            discharge_indices = np.where(discharge_mask)
+            center_row = int(np.mean(discharge_indices[0]))
+            center_col = int(np.mean(discharge_indices[1]))
+            print(f"Storm center at discharge point (zone 0): ({center_row}, {center_col})")
+        else:
+            # Fallback to centroid if no discharge point found
+            print("Warning: No discharge point (zone 0) found, falling back to centroid")
+            valid_indices = np.where(valid_mask)
+            center_row = int(np.mean(valid_indices[0]))
+            center_col = int(np.mean(valid_indices[1]))
+            print(f"Storm center at catchment centroid: ({center_row}, {center_col})")
+    else:
+        # Default: Find the center of the catchment (centroid of valid cells)
+        valid_indices = np.where(valid_mask)
+        center_row = int(np.mean(valid_indices[0]))
+        center_col = int(np.mean(valid_indices[1]))
+        print(f"Storm center at catchment centroid: ({center_row}, {center_col})")
+    
+    # Create storm distribution
+    # Use a Gaussian-like distribution that decreases from center
+    storm_radius = min(cn_data.shape) * 0.3  # Storm radius as fraction of catchment size
+    
+    # Calculate distance from storm center for each cell
+    rows, cols = np.meshgrid(np.arange(cn_data.shape[0]), np.arange(cn_data.shape[1]), indexing='ij')
+    distances = np.sqrt((rows - center_row)**2 + (cols - center_col)**2)
+    
+    # Create storm distribution: maximum at center, decreases with distance
+    # Option 1: Exponential decay (more realistic for convective storms)
+    storm_distribution = P_total_storm * np.exp(-distances / storm_radius)
+    
+    # Option 2: Gaussian distribution (alternative, more gradual decay)
+    # storm_distribution = P_total_storm * np.exp(-(distances / storm_radius)**2)
+    
+    # Option 3: Linear decay (simpler, more uniform)
+    # storm_distribution = P_total_storm * np.maximum(0, 1 - distances / storm_radius)
+    
+    # Ensure no negative precipitation
+    storm_distribution = np.maximum(storm_distribution, 0)
+    
+    # Apply storm distribution to valid cells only
+    remaining_water[valid_mask] = storm_distribution[valid_mask]
+    
+    # Calculate statistics
+    max_precip = np.max(storm_distribution[valid_mask])
+    min_precip = np.min(storm_distribution[valid_mask])
+    mean_precip = np.mean(storm_distribution[valid_mask])
+    
+    print(f"Storm distribution: max={max_precip:.2f}mm, min={min_precip:.2f}mm, mean={mean_precip:.2f}mm")
+    print(f"Total water applied: {np.sum(remaining_water[valid_mask]):.2f} mm")
+    
+    # Debug: Compare with uniform distribution
+    uniform_total = np.sum(valid_mask) * P_total_storm
+    print(f"Comparison: Uniform distribution would give {uniform_total:.2f} mm total")
+    print(f"Storm distribution gives {np.sum(remaining_water[valid_mask]):.2f} mm total")
+    print(f"Ratio: {np.sum(remaining_water[valid_mask])/uniform_total:.2f}")
+    
+    # Show storm distribution by zones
+    print(f"\n=== STORM DISTRIBUTION BY ZONES ===")
+    for zone in range(max_zone + 1):
+        zone_mask = (isozone_data == zone) & valid_mask & valid_isozones
+        if np.any(zone_mask):
+            zone_precip = storm_distribution[zone_mask]
+            zone_max = np.max(zone_precip)
+            zone_min = np.min(zone_precip)
+            zone_mean = np.mean(zone_precip)
+            zone_total = np.sum(zone_precip)
+            print(f"Zone {zone}: {np.sum(zone_mask)} cells, precip={zone_min:.1f}-{zone_max:.1f}mm (mean={zone_mean:.1f}mm), total={zone_total:.1f}mm")
+    
+    print(f"Initial water balance: {np.sum(remaining_water[valid_mask]):.2f} mm total water")
+    
+    # Save rain distribution as TIFF file
+    try:
+        temp_dir = "./data/temp"
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # Create filename with timestamp to avoid conflicts
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        rain_distribution_file = f"{temp_dir}/rain_distribution_{timestamp}.tif"
+        
+        # Create a copy of storm distribution for saving (only valid cells)
+        rain_distribution_raster = np.zeros_like(storm_distribution, dtype=np.float32)
+        rain_distribution_raster[valid_mask] = storm_distribution[valid_mask]
+        
+        # Save as GeoTIFF using the same transform and CRS as the curve number raster
+        profile = {
+            'driver': 'GTiff',
+            'height': rain_distribution_raster.shape[0],
+            'width': rain_distribution_raster.shape[1],
+            'count': 1,
+            'dtype': rain_distribution_raster.dtype.name,
+            'crs': cn_crs,
+            'transform': cn_transform,
+            'nodata': 0,
+            'compress': 'lzw'
+        }
+        
+        with rasterio.open(rain_distribution_file, 'w', **profile) as dst:
+            dst.write(rain_distribution_raster, 1)
+        
+        print(f"Rain distribution saved as TIFF: {rain_distribution_file}")
+        print(f"  - File size: {os.path.getsize(rain_distribution_file) / 1024:.1f} KB")
+        print(f"  - Precipitation range: {np.min(rain_distribution_raster[valid_mask]):.2f} - {np.max(rain_distribution_raster[valid_mask]):.2f} mm")
+        print(f"  - Total precipitation: {np.sum(rain_distribution_raster[valid_mask]):.2f} mm")
+        
+    except Exception as e:
+        print(f"Warning: Could not save rain distribution as TIFF: {e}")
     
     # Calculate runoff for each zone
     for zone in range(max_zone + 1):
@@ -237,28 +433,176 @@ def nam(self,
         # Calculate effective precipitation using SCS method for each cell
         Pe_cells = np.zeros_like(cn_data, dtype=np.float32)
         
-        # Apply SCS method: Pe = ((P - Ia)²) / (P - Ia + S) if P > Ia, else 0
-        # Use total precipitation for SCS calculation (single event)
-        P_mask = P_total_storm > Ia_cells[zone_mask]
-        if np.any(P_mask):
-            P_excess = P_total_storm - Ia_cells[zone_mask][P_mask]
-            S_zone = S_cells[zone_mask][P_mask]
+        if water_balance_mode == "cumulative":
+            # Apply SCS method with water balance tracking
+            # Calculate for cells in this zone that have remaining water
+            water_mask = remaining_water[zone_mask] > 0
+            if np.any(water_mask):
+                # Get cells with water in this zone
+                zone_cells_with_water = np.where(water_mask)[0]
+                
+                # Calculate initial abstraction for cells with water
+                Ia_zone = Ia_cells[zone_mask][water_mask]
+                S_zone = S_cells[zone_mask][water_mask]
+                water_zone = remaining_water[zone_mask][water_mask]
+                
+                # Apply initial abstraction (Ia)
+                Ia_applied = np.minimum(water_zone, Ia_zone)
+                remaining_water[zone_mask][water_mask] -= Ia_applied
+                cumulative_infiltration[zone_mask][water_mask] += Ia_applied
+                
+                # Calculate effective precipitation for remaining water
+                P_excess_mask = remaining_water[zone_mask][water_mask] > 0
+                if np.any(P_excess_mask):
+                    P_excess_cells = remaining_water[zone_mask][water_mask][P_excess_mask]
+                    S_excess = S_zone[P_excess_mask]
+                    
+                    # Calculate effective precipitation using SCS method
+                    Pe_values = (P_excess_cells ** 2) / (P_excess_cells + S_excess)
+                    
+                    # Calculate infiltration (remaining water - effective precipitation)
+                    infiltration_values = P_excess_cells - Pe_values
+                    
+                    # Update water balance for cells with excess
+                    cells_with_excess_in_zone = zone_cells_with_water[P_excess_mask]
+                    
+                    # Apply infiltration
+                    cumulative_infiltration[zone_mask][cells_with_excess_in_zone] += infiltration_values
+                    remaining_water[zone_mask][cells_with_excess_in_zone] -= infiltration_values
+                    
+                    # Calculate runoff (effective precipitation)
+                    cumulative_runoff[zone_mask][cells_with_excess_in_zone] += Pe_values
+                    
+                    # Store effective precipitation for routing
+                    zone_pe_values = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
+                    zone_pe_values[cells_with_excess_in_zone] = Pe_values
+                    Pe_cells[zone_mask] = zone_pe_values
+                    
+                    # Debug info for first few cells
+                    if np.sum(P_excess_mask) > 0:
+                        print(f"  Zone {zone}: {np.sum(P_excess_mask)} cells with runoff")
+                        print(f"    Sample: initial_water={water_zone[P_excess_mask][0]:.2f}mm, Ia={Ia_applied[P_excess_mask][0]:.2f}mm, S={S_excess[0]:.2f}mm")
+                        print(f"    Sample: P_excess={P_excess_cells[0]:.2f}mm, Pe={Pe_values[0]:.2f}mm, infiltration={infiltration_values[0]:.2f}mm")
+                        print(f"    Sample: remaining_water={remaining_water[zone_mask][cells_with_excess_in_zone][0]:.2f}mm")
+                else:
+                    # All water was used for initial abstraction
+                    Pe_cells[zone_mask] = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
+            else:
+                # No water in this zone
+                Pe_cells[zone_mask] = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
+        elif water_balance_mode == "simple":
+            # Simple SCS approach (original method)
+            # Apply SCS method: Pe = ((P - Ia)²) / (P - Ia + S) if P > Ia, else 0
+            # Use storm distribution for SCS calculation
+            P_mask = storm_distribution[zone_mask] > Ia_cells[zone_mask]
+            if np.any(P_mask):
+                P_excess = storm_distribution[zone_mask][P_mask] - Ia_cells[zone_mask][P_mask]
+                S_zone = S_cells[zone_mask][P_mask]
+                
+                # Calculate effective precipitation for total storm
+                Pe_values = (P_excess ** 2) / (P_excess + S_zone)
+                
+                # Create a temporary array for this zone's Pe values
+                zone_pe_values = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
+                zone_pe_values[P_mask] = Pe_values
+                Pe_cells[zone_mask] = zone_pe_values
+                
+                # Debug info for first few cells
+                if np.sum(P_mask) > 0:
+                    print(f"  Zone {zone}: {np.sum(P_mask)} cells with runoff")
+                    print(f"    Sample: P_total={storm_distribution[zone_mask][P_mask][0]:.2f}mm, Ia={Ia_cells[zone_mask][P_mask][0]:.2f}mm, S={S_zone[0]:.2f}mm")
+                    print(f"    Sample: P_excess={P_excess[0]:.2f}mm, Pe={Pe_values[0]:.2f}mm")
+            else:
+                # No runoff from this zone
+                Pe_cells[zone_mask] = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
+        
+        elif water_balance_mode == "hybrid":
+            # Hybrid approach: Use average of storm distribution and uniform precipitation
+            # This gives intermediate results between cumulative and simple
+            uniform_precip = P_total_storm  # Use uniform precipitation
+            avg_precip = (uniform_precip + np.mean(storm_distribution[zone_mask])) / 2
             
-            # Calculate effective precipitation for total storm
-            Pe_values = (P_excess ** 2) / (P_excess + S_zone)
+            print(f"  Zone {zone}: Hybrid approach - uniform={uniform_precip:.2f}mm, storm_avg={np.mean(storm_distribution[zone_mask]):.2f}mm, avg={avg_precip:.2f}mm")
             
-            # Create a temporary array for this zone's Pe values
-            zone_pe_values = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
-            zone_pe_values[P_mask] = Pe_values
+            P_mask = avg_precip > Ia_cells[zone_mask]
+            if np.any(P_mask):
+                P_excess = avg_precip - Ia_cells[zone_mask][P_mask]
+                S_zone = S_cells[zone_mask][P_mask]
+                
+                # Calculate effective precipitation for hybrid storm
+                Pe_values = (P_excess ** 2) / (P_excess + S_zone)
+                
+                # Create a temporary array for this zone's Pe values
+                zone_pe_values = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
+                zone_pe_values[P_mask] = Pe_values
+                Pe_cells[zone_mask] = zone_pe_values
+                
+                # Debug info for first few cells
+                if np.sum(P_mask) > 0:
+                    print(f"  Zone {zone}: {np.sum(P_mask)} cells with runoff (hybrid)")
+                    print(f"    Sample: P_hybrid={avg_precip:.2f}mm, Ia={Ia_cells[zone_mask][P_mask][0]:.2f}mm, S={S_zone[0]:.2f}mm")
+                    print(f"    Sample: P_excess={P_excess[0]:.2f}mm, Pe={Pe_values[0]:.2f}mm")
+            else:
+                # No runoff from this zone
+                Pe_cells[zone_mask] = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
+        
+        elif water_balance_mode == "uniform":
+            # Uniform approach: Use uniform precipitation for SCS calculation
+            # This should give higher results than simple but lower than cumulative
+            uniform_precip = P_total_storm * precipitation_factor  # Apply scaling factor
             
-            # Assign to the main Pe_cells array
-            Pe_cells[zone_mask] = zone_pe_values
+            print(f"  Zone {zone}: Uniform approach - uniform={uniform_precip:.2f}mm (factor={precipitation_factor})")
             
-            # Debug info for first few cells
-            if np.sum(P_mask) > 0:
-                print(f"  Zone {zone}: {np.sum(P_mask)} cells with P>Ia")
-                print(f"    Sample: P_total={P_total_storm:.2f}mm, Ia={Ia_cells[zone_mask][P_mask][0]:.2f}mm, S={S_zone[0]:.2f}mm")
-                print(f"    Sample: P_excess={P_excess[0]:.2f}mm, Pe={Pe_values[0]:.2f}mm")
+            P_mask = uniform_precip > Ia_cells[zone_mask]
+            if np.any(P_mask):
+                P_excess = uniform_precip - Ia_cells[zone_mask][P_mask]
+                S_zone = S_cells[zone_mask][P_mask]
+                
+                # Calculate effective precipitation for uniform storm
+                Pe_values = (P_excess ** 2) / (P_excess + S_zone)
+                
+                # Create a temporary array for this zone's Pe values
+                zone_pe_values = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
+                zone_pe_values[P_mask] = Pe_values
+                Pe_cells[zone_mask] = zone_pe_values
+                
+                # Debug info for first few cells
+                if np.sum(P_mask) > 0:
+                    print(f"  Zone {zone}: {np.sum(P_mask)} cells with runoff (uniform)")
+                    print(f"    Sample: P_uniform={uniform_precip:.2f}mm, Ia={Ia_cells[zone_mask][P_mask][0]:.2f}mm, S={S_zone[0]:.2f}mm")
+                    print(f"    Sample: P_excess={P_excess[0]:.2f}mm, Pe={Pe_values[0]:.2f}mm")
+            else:
+                # No runoff from this zone
+                Pe_cells[zone_mask] = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
+        
+        elif water_balance_mode == "conservative":
+            # Conservative approach: Use reduced precipitation for SCS calculation
+            # This gives lower, more conservative results
+            conservative_precip = P_total_storm * 0.7  # Use 70% of calculated precipitation
+            
+            print(f"  Zone {zone}: Conservative approach - precip={conservative_precip:.2f}mm (70% of {P_total_storm:.2f}mm)")
+            
+            P_mask = conservative_precip > Ia_cells[zone_mask]
+            if np.any(P_mask):
+                P_excess = conservative_precip - Ia_cells[zone_mask][P_mask]
+                S_zone = S_cells[zone_mask][P_mask]
+                
+                # Calculate effective precipitation for conservative storm
+                Pe_values = (P_excess ** 2) / (P_excess + S_zone)
+                
+                # Create a temporary array for this zone's Pe values
+                zone_pe_values = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
+                zone_pe_values[P_mask] = Pe_values
+                Pe_cells[zone_mask] = zone_pe_values
+                
+                # Debug info for first few cells
+                if np.sum(P_mask) > 0:
+                    print(f"  Zone {zone}: {np.sum(P_mask)} cells with runoff (conservative)")
+                    print(f"    Sample: P_conservative={conservative_precip:.2f}mm, Ia={Ia_cells[zone_mask][P_mask][0]:.2f}mm, S={S_zone[0]:.2f}mm")
+                    print(f"    Sample: P_excess={P_excess[0]:.2f}mm, Pe={Pe_values[0]:.2f}mm")
+            else:
+                # No runoff from this zone
+                Pe_cells[zone_mask] = np.zeros_like(cn_data[zone_mask], dtype=np.float32)
         
         # Convert effective precipitation to runoff volume [m³]
         # Pe is in mm, convert to m³: Pe_mm * area_m² / 1000
@@ -299,6 +643,114 @@ def nam(self,
     print(f"Maximum discharge: {HQ:.3f} m³/s at timestep {max_timestep}")
     print(f"Discharge time series: {[f'{q:.3f}' for q in discharge_timesteps]}")
     
+    # Print water balance summary
+    if water_balance_mode == "cumulative":
+        total_initial_water = np.sum(valid_mask) * P_total_storm
+        total_infiltration = np.sum(cumulative_infiltration[valid_mask])
+        total_runoff_generated = np.sum(cumulative_runoff[valid_mask])
+        total_remaining = np.sum(remaining_water[valid_mask])
+        
+        print(f"\n=== WATER BALANCE SUMMARY (Cumulative) ===")
+        print(f"Total initial water: {total_initial_water:.2f} mm")
+        print(f"Total infiltration: {total_infiltration:.2f} mm ({total_infiltration/total_initial_water*100:.1f}%)")
+        print(f"Total runoff generated: {total_runoff_generated:.2f} mm ({total_runoff_generated/total_initial_water*100:.1f}%)")
+        print(f"Total remaining water: {total_remaining:.2f} mm ({total_remaining/total_initial_water*100:.1f}%)")
+        print(f"Water balance check: {total_infiltration + total_runoff_generated + total_remaining:.2f} mm (should equal {total_initial_water:.2f} mm)")
+        
+        # Print zone-wise water balance
+        print(f"\n=== ZONE-WISE WATER BALANCE ===")
+        for zone in range(max_zone + 1):
+            zone_mask = (isozone_data == zone) & valid_mask & valid_isozones
+            if np.any(zone_mask):
+                zone_initial = np.sum(zone_mask) * P_total_storm
+                zone_infiltration = np.sum(cumulative_infiltration[zone_mask])
+                zone_runoff = np.sum(cumulative_runoff[zone_mask])
+                zone_remaining = np.sum(remaining_water[zone_mask])
+                print(f"Zone {zone}: {np.sum(zone_mask)} cells, Initial={zone_initial:.1f}mm, Infiltration={zone_infiltration:.1f}mm, Runoff={zone_runoff:.1f}mm, Remaining={zone_remaining:.1f}mm")
+    elif water_balance_mode == "simple":
+        # Simple approach - calculate totals from storm distribution
+        total_initial_water = np.sum(storm_distribution[valid_mask])
+        total_runoff_generated = np.sum(Pe_cells[valid_mask])
+        total_infiltration = total_initial_water - total_runoff_generated
+        
+        print(f"\n=== WATER BALANCE SUMMARY (Simple SCS) ===")
+        print(f"Total precipitation applied: {total_initial_water:.2f} mm")
+        print(f"Total runoff generated: {total_runoff_generated:.2f} mm ({total_runoff_generated/total_initial_water*100:.1f}%)")
+        print(f"Total infiltration: {total_infiltration:.2f} mm ({total_infiltration/total_initial_water*100:.1f}%)")
+        
+        # Print zone-wise summary
+        print(f"\n=== ZONE-WISE SUMMARY ===")
+        for zone in range(max_zone + 1):
+            zone_mask = (isozone_data == zone) & valid_mask & valid_isozones
+            if np.any(zone_mask):
+                zone_precip = np.sum(storm_distribution[zone_mask])
+                zone_runoff = np.sum(Pe_cells[zone_mask])
+                zone_infiltration = zone_precip - zone_runoff
+                print(f"Zone {zone}: {np.sum(zone_mask)} cells, Precip={zone_precip:.1f}mm, Runoff={zone_runoff:.1f}mm, Infiltration={zone_infiltration:.1f}mm")
+    
+    elif water_balance_mode == "hybrid":
+        # Hybrid approach - calculate totals from average precipitation
+        total_initial_water = np.sum(valid_mask) * P_total_storm
+        total_runoff_generated = np.sum(Pe_cells[valid_mask])
+        total_infiltration = total_initial_water - total_runoff_generated
+        
+        print(f"\n=== WATER BALANCE SUMMARY (Hybrid) ===")
+        print(f"Total precipitation applied: {total_initial_water:.2f} mm")
+        print(f"Total runoff generated: {total_runoff_generated:.2f} mm ({total_runoff_generated/total_initial_water*100:.1f}%)")
+        print(f"Total infiltration: {total_infiltration:.2f} mm ({total_infiltration/total_initial_water*100:.1f}%)")
+        
+        # Print zone-wise summary
+        print(f"\n=== ZONE-WISE SUMMARY ===")
+        for zone in range(max_zone + 1):
+            zone_mask = (isozone_data == zone) & valid_mask & valid_isozones
+            if np.any(zone_mask):
+                zone_precip = np.sum(zone_mask) * P_total_storm
+                zone_runoff = np.sum(Pe_cells[zone_mask])
+                zone_infiltration = zone_precip - zone_runoff
+                print(f"Zone {zone}: {np.sum(zone_mask)} cells, Precip={zone_precip:.1f}mm, Runoff={zone_runoff:.1f}mm, Infiltration={zone_infiltration:.1f}mm")
+    
+    elif water_balance_mode == "uniform":
+        # Uniform approach - calculate totals from uniform precipitation
+        total_initial_water = np.sum(valid_mask) * P_total_storm * precipitation_factor
+        total_runoff_generated = np.sum(Pe_cells[valid_mask])
+        total_infiltration = total_initial_water - total_runoff_generated
+        
+        print(f"\n=== WATER BALANCE SUMMARY (Uniform) ===")
+        print(f"Total precipitation applied: {total_initial_water:.2f} mm (factor={precipitation_factor})")
+        print(f"Total runoff generated: {total_runoff_generated:.2f} mm ({total_runoff_generated/total_initial_water*100:.1f}%)")
+        print(f"Total infiltration: {total_infiltration:.2f} mm ({total_infiltration/total_initial_water*100:.1f}%)")
+        
+        # Print zone-wise summary
+        print(f"\n=== ZONE-WISE SUMMARY ===")
+        for zone in range(max_zone + 1):
+            zone_mask = (isozone_data == zone) & valid_mask & valid_isozones
+            if np.any(zone_mask):
+                zone_precip = np.sum(zone_mask) * P_total_storm * precipitation_factor
+                zone_runoff = np.sum(Pe_cells[zone_mask])
+                zone_infiltration = zone_precip - zone_runoff
+                print(f"Zone {zone}: {np.sum(zone_mask)} cells, Precip={zone_precip:.1f}mm, Runoff={zone_runoff:.1f}mm, Infiltration={zone_infiltration:.1f}mm")
+    
+    elif water_balance_mode == "conservative":
+        # Conservative approach - calculate totals from reduced precipitation
+        total_initial_water = np.sum(valid_mask) * P_total_storm * 0.7
+        total_runoff_generated = np.sum(Pe_cells[valid_mask])
+        total_infiltration = total_initial_water - total_runoff_generated
+        
+        print(f"\n=== WATER BALANCE SUMMARY (Conservative) ===")
+        print(f"Total precipitation applied: {total_initial_water:.2f} mm (70% of calculated)")
+        print(f"Total runoff generated: {total_runoff_generated:.2f} mm ({total_runoff_generated/total_initial_water*100:.1f}%)")
+        print(f"Total infiltration: {total_infiltration:.2f} mm ({total_infiltration/total_initial_water*100:.1f}%)")
+        
+        # Print zone-wise summary
+        print(f"\n=== ZONE-WISE SUMMARY ===")
+        for zone in range(max_zone + 1):
+            zone_mask = (isozone_data == zone) & valid_mask & valid_isozones
+            if np.any(zone_mask):
+                zone_precip = np.sum(zone_mask) * P_total_storm * 0.7
+                zone_runoff = np.sum(Pe_cells[zone_mask])
+                zone_infiltration = zone_precip - zone_runoff
+                print(f"Zone {zone}: {np.sum(zone_mask)} cells, Precip={zone_precip:.1f}mm, Runoff={zone_runoff:.1f}mm, Infiltration={zone_infiltration:.1f}mm")
+    
     # 5. Calculate additional parameters for compatibility
     # Use the timestep of maximum discharge for other calculations
     Tc = (max_timestep + 1) * dt  # [min]
@@ -337,20 +789,39 @@ def nam(self,
     prisma.disconnect(5)
     """
     return {
-        "HQ": HQ,
-        "Tc": Tc,
-        "TB": TB,
-        "TFl": TFl,
-        "i": i_final,
-        "S": S,
-        "Ia": Ia,
-        "Pe": Pe_final,
-        "effective_curve_number": effective_curve_number,
-        "runoff_timesteps": runoff_timesteps,
-        "discharge_timesteps": discharge_timesteps,
-        "max_timestep": max_timestep,
-        "total_cells": np.sum(valid_mask),
-        "pixel_area_m2": pixel_area_m2
+        "HQ": float(HQ),
+        "Tc": float(Tc),
+        "TB": float(TB),
+        "TFl": float(TFl),
+        "i": float(i_final),
+        "S": float(S),
+        "Ia": float(Ia),
+        "Pe": float(Pe_final),
+        "effective_curve_number": float(effective_curve_number),
+        "runoff_timesteps": [float(x) for x in runoff_timesteps],
+        "discharge_timesteps": [float(x) for x in discharge_timesteps],
+        "max_timestep": int(max_timestep),
+        "total_cells": int(np.sum(valid_mask)),
+        "pixel_area_m2": float(pixel_area_m2),
+        "water_balance": {
+            "approach": water_balance_mode,
+            "total_initial_water": float(total_initial_water),
+            "total_infiltration": float(total_infiltration),
+            "total_runoff_generated": float(total_runoff_generated),
+            "total_remaining_water": float(total_remaining) if use_cumulative_water_balance else 0.0,
+            "infiltration_percentage": float(total_infiltration/total_initial_water*100),
+            "runoff_percentage": float(total_runoff_generated/total_initial_water*100),
+            "remaining_percentage": float(total_remaining/total_initial_water*100) if use_cumulative_water_balance else 0.0
+        },
+        "storm_distribution": {
+            "storm_center": (int(center_row), int(center_col)),
+            "storm_center_mode": storm_center_mode,
+            "storm_radius": float(storm_radius),
+            "max_precipitation": float(max_precip),
+            "min_precipitation": float(min_precip),
+            "mean_precipitation": float(mean_precip),
+            "distribution_type": "exponential_decay"
+        }
     }
 
 

@@ -298,6 +298,7 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
             },
             include={
                 'IDF_Parameters': True,
+                'Point': True,
                 'NAM': {
                     'include': {
                         'Annuality': True
@@ -308,6 +309,11 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
 
         nam_obj = next((x for x in project.NAM if x.id == NAMId), None)
 
+        # Get discharge point coordinates from project if available
+        discharge_point_lon_lat = None
+        if hasattr(project, 'Point') and project.Point:
+            discharge_point_lon_lat = (project.Point.easting, project.Point.northing)
+        
         task = nam.delay(
             P_low_1h=project.IDF_Parameters.P_low_1h,
             P_high_1h=project.IDF_Parameters.P_high_1h,
@@ -326,7 +332,9 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
             TB_start=nam_obj.TB_start,
             istep=nam_obj.istep,
             tol=nam_obj.tol,
-            max_iter=nam_obj.max_iter
+            max_iter=nam_obj.max_iter,
+            storm_center_mode="user_point" if discharge_point_lon_lat else "discharge_point",
+            discharge_point_lon_lat=discharge_point_lon_lat
         )
         return JSONResponse({"task_id": task.id})
     except:
