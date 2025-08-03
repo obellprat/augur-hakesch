@@ -7,7 +7,7 @@ from celery import group
 import pandas as pd
 
 from calculations.discharge import construct_idf_curve, modifizierte_fliesszeit, prepare_discharge_hydroparameters, koella, clark_wsl_modified
-from calculations.nam import nam, get_curve_numbers
+from calculations.nam import nam, get_curve_numbers, extract_dem
 
 router = APIRouter(prefix="/discharge",
     tags=["discharge"],)
@@ -289,7 +289,44 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
         )
 
 @router.get("/nam")
-def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
+def get_nam(ProjectId:str, NAMId: int, 
+            water_balance_mode: str = "simple",  # Options: "simple", "cumulative", "hybrid", "uniform", "conservative"
+            storm_center_mode: str = "centroid",  # Options: "centroid", "discharge_point", "user_point"
+            routing_method: str = "travel_time",  # Options: "travel_time", "isozone"
+            user: User = Depends(get_user)):
+    
+    print(f"NAM request - ProjectId: {ProjectId}, NAMId: {NAMId}")
+    print(f"Parameters - water_balance_mode: {water_balance_mode}, storm_center_mode: {storm_center_mode}, routing_method: {routing_method}")
+    
+    # Validate water_balance_mode
+    valid_water_balance_modes = ["simple", "cumulative", "hybrid", "uniform", "conservative"]
+    if water_balance_mode not in valid_water_balance_modes:
+        print(f"Invalid water_balance_mode: {water_balance_mode}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid water_balance_mode: {water_balance_mode}. Valid options: {valid_water_balance_modes}"
+        )
+    
+    # Validate storm_center_mode
+    valid_storm_center_modes = ["centroid", "discharge_point", "user_point"]
+    if storm_center_mode not in valid_storm_center_modes:
+        print(f"Invalid storm_center_mode: {storm_center_mode}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid storm_center_mode: {storm_center_mode}. Valid options: {valid_storm_center_modes}"
+        )
+    
+    # Validate routing_method
+    valid_routing_methods = ["travel_time", "isozone"]
+    if routing_method not in valid_routing_methods:
+        print(f"Invalid routing_method: {routing_method}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid routing_method: {routing_method}. Valid options: {valid_routing_methods}"
+        )
+    
+    print("Parameter validation passed")
+    
     try:
         project = prisma.project.find_unique_or_raise(
             where={
@@ -297,22 +334,43 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
                 'id': ProjectId
             },
             include={
-                'IDF_Parameters': True,
-                'Point': True,
                 'NAM': {
                     'include': {
                         'Annuality': True
                     }
-                }
+                },
+                'IDF_Parameters': True,
+                'Point': True
             }
         )
-
+        
         nam_obj = next((x for x in project.NAM if x.id == NAMId), None)
+        
+        if nam_obj is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"NAM with ID {NAMId} not found in project {ProjectId}"
+            )
 
         # Get discharge point coordinates from project if available
         discharge_point_lon_lat = None
+        discharge_point_epsg2056 = None
         if hasattr(project, 'Point') and project.Point:
-            discharge_point_lon_lat = (project.Point.easting, project.Point.northing)
+            # Keep original EPSG:2056 coordinates for elevation calculations
+            discharge_point_epsg2056 = (project.Point.easting, project.Point.northing)
+            
+            # Convert from EPSG:2056 (Swiss coordinates) to geographic coordinates for routing
+            try:
+                import pyproj
+                transformer = pyproj.Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
+                lon, lat = transformer.transform(project.Point.easting, project.Point.northing)
+                discharge_point_lon_lat = (lon, lat)
+                print(f"Discharge point coordinates:")
+                print(f"  EPSG:2056: ({project.Point.easting:.2f}, {project.Point.northing:.2f})")
+                print(f"  WGS84: ({lon:.6f}, {lat:.6f})")
+            except Exception as e:
+                print(f"Warning: Could not convert discharge point coordinates: {e}")
+                discharge_point_lon_lat = None
         
         task = nam.delay(
             P_low_1h=project.IDF_Parameters.P_low_1h,
@@ -333,8 +391,12 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
             istep=nam_obj.istep,
             tol=nam_obj.tol,
             max_iter=nam_obj.max_iter,
-            storm_center_mode="user_point" if discharge_point_lon_lat else "discharge_point",
-            discharge_point_lon_lat=discharge_point_lon_lat
+            water_balance_mode=water_balance_mode,
+            storm_center_mode=storm_center_mode,
+            discharge_point_lon_lat=discharge_point_lon_lat,
+            discharge_point_epsg2056=discharge_point_epsg2056,
+            use_kirpich=True,  # Use Kirpich method for travel time calculation
+            routing_method=routing_method
         )
         return JSONResponse({"task_id": task.id})
     except:
@@ -388,6 +450,24 @@ async def get_prepare_discharge_hydroparametersisozones(ProjectId:str, user: Use
         return JSONResponse({"task_id": task.id})
     except:
         # Handle missing user scenario
+        raise HTTPException(
+            status_code=404,
+            detail="Unable to retrieve project",
+        )
+
+@router.get("/extract_dem")
+def get_extract_dem(ProjectId:str, user: User = Depends(get_user)):
+    try:
+        project = prisma.project.find_unique_or_raise(
+            where={
+                'userId': user.id,
+                'id': ProjectId
+            }
+        )
+        
+        task = extract_dem.delay(project.id, user.id)
+        return JSONResponse({"task_id": task.id})
+    except:
         raise HTTPException(
             status_code=404,
             detail="Unable to retrieve project",
