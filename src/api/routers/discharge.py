@@ -289,46 +289,12 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
         )
 
 @router.get("/nam")
-def get_nam(ProjectId:str, NAMId: int, 
-            water_balance_mode: str = "simple",  # Options: "simple", "cumulative", "hybrid", "uniform", "conservative"
-            storm_center_mode: str = "centroid",  # Options: "centroid", "discharge_point", "user_point"
-            routing_method: str = "travel_time",  # Options: "travel_time", "isozone"
-            user: User = Depends(get_user)):
+def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
     
     print(f"NAM request - ProjectId: {ProjectId}, NAMId: {NAMId}")
-    print(f"Parameters - water_balance_mode: {water_balance_mode}, storm_center_mode: {storm_center_mode}, routing_method: {routing_method}")
-    
-    # Validate water_balance_mode
-    valid_water_balance_modes = ["simple", "cumulative", "hybrid", "uniform", "conservative"]
-    if water_balance_mode not in valid_water_balance_modes:
-        print(f"Invalid water_balance_mode: {water_balance_mode}")
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid water_balance_mode: {water_balance_mode}. Valid options: {valid_water_balance_modes}"
-        )
-    
-    # Validate storm_center_mode
-    valid_storm_center_modes = ["centroid", "discharge_point", "user_point"]
-    if storm_center_mode not in valid_storm_center_modes:
-        print(f"Invalid storm_center_mode: {storm_center_mode}")
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid storm_center_mode: {storm_center_mode}. Valid options: {valid_storm_center_modes}"
-        )
-    
-    # Validate routing_method
-    valid_routing_methods = ["travel_time", "isozone", "time_values"]
-    if routing_method not in valid_routing_methods:
-        print(f"Invalid routing_method: {routing_method}")
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid routing_method: {routing_method}. Valid options: {valid_routing_methods}"
-        )
-    
-    print("Parameter validation passed")
     
     try:
-        project = prisma.project.find_unique_or_raise(
+        project = prisma.project.find_unique(
             where={
                 'userId': user.id,
                 'id': ProjectId
@@ -336,14 +302,17 @@ def get_nam(ProjectId:str, NAMId: int,
             include={
                 'NAM': {
                     'include': {
-                        'Annuality': True
+                        'Annuality': True,
+                        'WaterBalanceMode': True,
+                        'StormCenterMode': True,
+                        'RoutingMethod': True
                     }
                 },
                 'IDF_Parameters': True,
                 'Point': True
             }
         )
-        
+        print("hmm")
         nam_obj = next((x for x in project.NAM if x.id == NAMId), None)
         
         if nam_obj is None:
@@ -353,24 +322,18 @@ def get_nam(ProjectId:str, NAMId: int,
             )
 
         # Get discharge point coordinates from project if available
-        discharge_point_lon_lat = None
-        discharge_point_epsg2056 = None
+        discharge_point = None
+        discharge_point_crs = "EPSG:4326"
         if hasattr(project, 'Point') and project.Point:
-            # Keep original EPSG:2056 coordinates for elevation calculations
-            discharge_point_epsg2056 = (project.Point.easting, project.Point.northing)
-            
             # Convert from EPSG:2056 (Swiss coordinates) to geographic coordinates for routing
             try:
                 import pyproj
                 transformer = pyproj.Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
                 lon, lat = transformer.transform(project.Point.easting, project.Point.northing)
-                discharge_point_lon_lat = (lon, lat)
-                print(f"Discharge point coordinates:")
-                print(f"  EPSG:2056: ({project.Point.easting:.2f}, {project.Point.northing:.2f})")
-                print(f"  WGS84: ({lon:.6f}, {lat:.6f})")
+                discharge_point = (lon, lat)
             except Exception as e:
                 print(f"Warning: Could not convert discharge point coordinates: {e}")
-                discharge_point_lon_lat = None
+                discharge_point = None
         
         task = nam.delay(
             P_low_1h=project.IDF_Parameters.P_low_1h,
@@ -380,23 +343,19 @@ def get_nam(ProjectId:str, NAMId: int,
             rp_low=project.IDF_Parameters.rp_low,
             rp_high=project.IDF_Parameters.rp_high,
             x=nam_obj.Annuality.number,
-            curve_number=nam_obj.curve_number,
-            catchment_area=nam_obj.catchment_area,
-            channel_length=nam_obj.channel_length,
-            delta_h=nam_obj.delta_h,
+            curve_number=70.0,  # Default fallback value
+            catchment_area=project.catchment_area,
+            channel_length=project.channel_length,
+            delta_h=project.delta_h,
             nam_id=nam_obj.id,
             project_id=project.id,
             user_id=user.id,
-            TB_start=nam_obj.TB_start,
-            istep=nam_obj.istep,
-            tol=nam_obj.tol,
-            max_iter=nam_obj.max_iter,
-            water_balance_mode=water_balance_mode,
-            storm_center_mode=storm_center_mode,
-            discharge_point_lon_lat=discharge_point_lon_lat,
-            discharge_point_epsg2056=discharge_point_epsg2056,
-            use_kirpich=True,  # Use Kirpich method for travel time calculation
-            routing_method=routing_method
+            water_balance_mode=nam_obj.water_balance_mode,
+            precipitation_factor=nam_obj.precipitation_factor,
+            storm_center_mode=nam_obj.storm_center_mode,
+            routing_method=nam_obj.routing_method,
+            discharge_point=discharge_point,
+            discharge_point_crs=discharge_point_crs
         )
         return JSONResponse({"task_id": task.id})
     except:

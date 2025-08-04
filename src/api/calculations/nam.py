@@ -38,6 +38,53 @@ def geographic_to_raster_coords(lon, lat, transform, shape):
         print(f"Warning: Error converting geographic coordinates ({lon}, {lat}) to raster coordinates: {e}")
         return None, None
 
+def parse_discharge_point(discharge_point, discharge_point_crs, transform=None, shape=None):
+    """
+    Parse discharge point coordinates and convert to raster coordinates.
+    
+    Args:
+        discharge_point: Coordinates as tuple (x, y)
+        discharge_point_crs: CRS string ("EPSG:4326", "EPSG:2056", or "raster")
+        transform: Rasterio transform object (needed for coordinate conversion)
+        shape: Raster shape (height, width) (needed for bounds checking)
+    
+    Returns:
+        tuple: (row, col) raster coordinates or (None, None) if conversion failed
+    """
+    if discharge_point is None or len(discharge_point) != 2:
+        return None, None
+    
+    x, y = discharge_point
+    
+    if discharge_point_crs == "raster":
+        # Already in raster coordinates
+        if shape is not None:
+            row = max(0, min(int(x), shape[0] - 1))
+            col = max(0, min(int(y), shape[1] - 1))
+            return row, col
+        else:
+            return int(x), int(y)
+    
+    elif discharge_point_crs == "EPSG:4326":
+        # Geographic coordinates (WGS84)
+        if transform is not None and shape is not None:
+            return geographic_to_raster_coords(x, y, transform, shape)
+        else:
+            print("Warning: Transform and shape needed for EPSG:4326 coordinate conversion")
+            return None, None
+    
+    elif discharge_point_crs == "EPSG:2056":
+        # Swiss coordinates
+        if transform is not None and shape is not None:
+            return geographic_to_raster_coords(x, y, transform, shape)
+        else:
+            print("Warning: Transform and shape needed for EPSG:2056 coordinate conversion")
+            return None, None
+    
+    else:
+        print(f"Warning: Unknown CRS: {discharge_point_crs}")
+        return None, None
+
 @app.task(name="nam", bind=True)
 def nam(self,
     P_low_1h,
@@ -54,24 +101,50 @@ def nam(self,
     nam_id,                 # db id for updating results
     project_id=None,        # Project ID for loading curve number raster
     user_id=None,           # User ID for loading curve number raster
-    TB_start=30,            # Initial value for TB [min]
-    istep=5,                # Step size for TB [min]
-    tol=5,                  # Convergence tolerance [mm]
-    max_iter=1000,
-    water_balance_mode="simple",  # Options: "simple", "cumulative", "hybrid", "uniform", "conservative"
-    precipitation_factor=0.5,  # Factor to scale precipitation (0.5 = 50% of calculated)
-    storm_center_mode="centroid",  # Options: "centroid", "discharge_point", "user_point" - where to place storm center
-    discharge_point_coords=None,  # User-provided discharge point coordinates (x, y) in raster coordinates
-    discharge_point_lon_lat=None,  # User-provided discharge point coordinates (longitude, latitude) in geographic coordinates
-    discharge_point_epsg2056=None,  # User-provided discharge point coordinates (easting, northing) in EPSG:2056
-    use_kirpich=True,  # Use Kirpich method for travel time calculation
-    routing_method="time_values"  # Options: "travel_time", "isozone", "time_values" - method for routing runoff to discharge point
+    water_balance_mode=None,  # Override water balance mode from database
+    precipitation_factor=None,  # Override precipitation factor from database
+    storm_center_mode=None,  # Override storm center mode from database
+    routing_method=None,  # Override routing method from database
+    discharge_point=None,  # Discharge point coordinates: (lon, lat) or (easting, northing) or (row, col)
+    discharge_point_crs="EPSG:4326"  # CRS of discharge point: "EPSG:4326", "EPSG:2056", or "raster"
 ):
     """
     NAM (Nedbør-Afstrømnings-Model) calculation based on distributed curve numbers and travel times.
     This is a distributed rainfall-runoff model that uses curve numbers for each cell and 
     calculates runoff at 10-minute timesteps using either travel time or isozone routing methods.
     """
+    
+    # Get NAM parameters from database only if not provided
+    nam_obj = None
+    if any(param is None for param in [water_balance_mode, precipitation_factor, storm_center_mode, routing_method]):
+        from helpers.prisma import prisma
+        nam_obj = prisma.nam.find_unique_or_raise(
+            where={'id': nam_id},
+            include={
+                'WaterBalanceMode': True,
+                'StormCenterMode': True,
+                'RoutingMethod': True
+            }
+        )
+        
+        # Use database values for any None parameters
+        water_balance_mode = water_balance_mode if water_balance_mode is not None else nam_obj.water_balance_mode
+        precipitation_factor = precipitation_factor if precipitation_factor is not None else nam_obj.precipitation_factor
+        storm_center_mode = storm_center_mode if storm_center_mode is not None else nam_obj.storm_center_mode
+        routing_method = routing_method if routing_method is not None else nam_obj.routing_method
+    
+    print(f"NAM parameters:")
+    print(f"  Water balance mode: {water_balance_mode}")
+    print(f"  Precipitation factor: {precipitation_factor}")
+    print(f"  Storm center mode: {storm_center_mode}")
+    print(f"  Routing method: {routing_method}")
+    
+    # Add descriptions if we have the database object
+    if nam_obj:
+        print(f"  Water balance mode description: {nam_obj.WaterBalanceMode.description}")
+        print(f"  Storm center mode description: {nam_obj.StormCenterMode.description}")
+        print(f"  Routing method description: {nam_obj.RoutingMethod.description}")
+    
     intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
     
     # Initialize variables for distributed calculation
@@ -110,44 +183,42 @@ def nam(self,
                 print(f"Isozones raster not found: {isozone_file}")
                 return {"error": "Isozones raster not found"}
             
-            # Load DEM data for Kirpich calculation
+            # Load DEM data for elevation-based calculations
             dem_data = None
-            if use_kirpich:
-                dem_file = f"data/{user_id}/{project_id}/dem.tif"
-                if os.path.exists(dem_file):
-                    print(f"Loading DEM raster from: {dem_file}")
-                    with rasterio.open(dem_file) as src:
-                        dem_data = src.read(1)
-                        dem_transform = src.transform
-                        dem_crs = src.crs
-                        print(f"DEM raster loaded, shape: {dem_data.shape}")
+            dem_file = f"data/{user_id}/{project_id}/dem.tif"
+            if os.path.exists(dem_file):
+                print(f"Loading DEM raster from: {dem_file}")
+                with rasterio.open(dem_file) as src:
+                    dem_data = src.read(1)
+                    dem_transform = src.transform
+                    dem_crs = src.crs
+                    print(f"DEM raster loaded, shape: {dem_data.shape}")
+                    
+                    # Check if DEM has the same shape as other rasters
+                    if dem_data.shape != isozone_data.shape:
+                        print(f"DEM shape differs: DEM={dem_data.shape}, Isozones={isozone_data.shape}")
+                        print("Resampling DEM to match isozones grid...")
                         
-                        # Check if DEM has the same shape as other rasters
-                        if dem_data.shape != isozone_data.shape:
-                            print(f"DEM shape differs: DEM={dem_data.shape}, Isozones={isozone_data.shape}")
-                            print("Resampling DEM to match isozones grid...")
-                            
-                            from rasterio.warp import reproject, Resampling
-                            
-                            # Resample DEM data to match isozone raster
-                            resampled_dem_data = np.empty(isozone_data.shape, dtype=dem_data.dtype)
-                            reproject(
-                                dem_data,
-                                resampled_dem_data,
-                                src_transform=dem_transform,
-                                src_crs=dem_crs,
-                                dst_transform=isozone_transform,
-                                dst_crs=isozone_crs,
-                                resampling=Resampling.bilinear
-                            )
-                            dem_data = resampled_dem_data
-                            print(f"Resampled DEM data to shape: {dem_data.shape}")
-                        else:
-                            print("DEM shape matches isozones, no resampling needed")
-                else:
-                    print(f"DEM raster not found: {dem_file}")
-                    print("Warning: DEM not available, travel time calculation will be limited")
-                    use_kirpich = False
+                        from rasterio.warp import reproject, Resampling
+                        
+                        # Resample DEM data to match isozone raster
+                        resampled_dem_data = np.empty(isozone_data.shape, dtype=dem_data.dtype)
+                        reproject(
+                            dem_data,
+                            resampled_dem_data,
+                            src_transform=dem_transform,
+                            src_crs=dem_crs,
+                            dst_transform=isozone_transform,
+                            dst_crs=isozone_crs,
+                            resampling=Resampling.bilinear
+                        )
+                        dem_data = resampled_dem_data
+                        print(f"Resampled DEM data to shape: {dem_data.shape}")
+                    else:
+                        print("DEM shape matches isozones, no resampling needed")
+            else:
+                print(f"DEM raster not found: {dem_file}")
+                print("Warning: DEM not available, will use simplified travel time calculation")
             
             # Load time_values.tif for time_values routing method
             time_values_data = None
@@ -318,23 +389,14 @@ def nam(self,
     P_total_storm = i_total * Tc_total / 60  # [mm] - total storm precipitation
     print(f"Total storm precipitation: {P_total_storm:.2f} mm over {Tc_total} minutes")
     
-    # Debug: Check if P_total_storm is sufficient to generate runoff
+    # Check if P_total_storm is sufficient to generate runoff
     mean_Ia = np.nanmean(Ia_cells[valid_mask])
     mean_S = np.nanmean(S_cells[valid_mask])
-    print(f"Mean Ia: {mean_Ia:.2f} mm, Mean S: {mean_S:.2f} mm")
-    print(f"P_total_storm vs Ia: {P_total_storm:.2f} vs {mean_Ia:.2f} mm")
     if P_total_storm <= mean_Ia:
         print("WARNING: Total storm precipitation is less than mean initial abstraction!")
-        print("This will result in zero runoff. Consider:")
-        print("1. Increasing return period (x)")
-        print("2. Adjusting curve numbers (lower CN = higher S)")
-        print("3. Using longer storm duration")
+        print("This will result in zero runoff. Consider increasing return period or precipitation factor.")
     else:
         print(f"P_total_storm > Ia: {P_total_storm:.2f} > {mean_Ia:.2f} ✓")
-        # Calculate theoretical maximum Pe
-        P_excess_theoretical = P_total_storm - mean_Ia
-        Pe_theoretical = (P_excess_theoretical ** 2) / (P_excess_theoretical + mean_S)
-        print(f"Theoretical max Pe: {Pe_theoretical:.2f} mm")
     
     # Apply total precipitation to all cells at the beginning
     # This represents a single precipitation event at time t0
@@ -367,34 +429,13 @@ def nam(self,
     # Find the storm center based on the selected mode
     if storm_center_mode == "user_point":
         # Use user-provided discharge point coordinates
-        center_row = None
-        center_col = None
+        center_row, center_col = parse_discharge_point(discharge_point, discharge_point_crs, cn_transform, cn_data.shape)
         
-        # Try raster coordinates first
-        if discharge_point_coords is not None and len(discharge_point_coords) == 2:
-            center_row, center_col = discharge_point_coords
-            # Validate coordinates are within raster bounds
-            if 0 <= center_row < cn_data.shape[0] and 0 <= center_col < cn_data.shape[1]:
-                print(f"Storm center at user-provided raster coordinates: ({center_row}, {center_col})")
-            else:
-                print(f"Warning: User-provided raster coordinates ({center_row}, {center_col}) outside raster bounds")
-                center_row = None
-                center_col = None
-        
-        # Try geographic coordinates if raster coordinates failed or weren't provided
-        if center_row is None and discharge_point_lon_lat is not None and len(discharge_point_lon_lat) == 2:
-            lon, lat = discharge_point_lon_lat
-            center_row, center_col = geographic_to_raster_coords(lon, lat, cn_transform, cn_data.shape)
-            if center_row is not None and center_col is not None:
-                print(f"Storm center at user-provided geographic coordinates ({lon:.6f}, {lat:.6f}): raster ({center_row}, {center_col})")
-            else:
-                print(f"Warning: Could not convert geographic coordinates ({lon:.6f}, {lat:.6f}) to raster coordinates")
-        
-        # Fallback to centroid if no valid coordinates provided
-        if center_row is None or center_col is None:
+        if center_row is not None and center_col is not None:
+            print(f"Storm center at user-provided coordinates: ({center_row}, {center_col})")
+        else:
+            # Fallback to centroid if no valid coordinates provided
             print("Warning: No valid user-provided coordinates, falling back to centroid")
-            print(f"Debug: discharge_point_coords={discharge_point_coords}")
-            print(f"Debug: discharge_point_lon_lat={discharge_point_lon_lat}")
             valid_indices = np.where(valid_mask)
             center_row = int(np.mean(valid_indices[0]))
             center_col = int(np.mean(valid_indices[1]))
@@ -454,12 +495,6 @@ def nam(self,
     print(f"Storm distribution: max={max_precip:.2f}mm, min={min_precip:.2f}mm, mean={mean_precip:.2f}mm")
     print(f"Total water applied: {np.sum(remaining_water[valid_mask]):.2f} mm")
     
-    # Debug: Compare with uniform distribution
-    uniform_total = np.sum(valid_mask) * P_total_storm
-    print(f"Comparison: Uniform distribution would give {uniform_total:.2f} mm total")
-    print(f"Storm distribution gives {np.sum(remaining_water[valid_mask]):.2f} mm total")
-    print(f"Ratio: {np.sum(remaining_water[valid_mask])/uniform_total:.2f}")
-    
     print(f"Initial water balance: {np.sum(remaining_water[valid_mask]):.2f} mm total water")
     
     # Save rain distribution as TIFF file
@@ -511,15 +546,9 @@ def nam(self,
         uniform_precip = P_total_storm * precipitation_factor  # Apply scaling factor
         
         print(f"Uniform approach - uniform={uniform_precip:.2f}mm (factor={precipitation_factor})")
-        print(f"Debug: P_total_storm={P_total_storm:.2f}mm, precipitation_factor={precipitation_factor}")
-        print(f"Debug: P_total_storm calculation: intensity={intensity_fn(rp_years=x, duration_minutes=Tc_total):.2f} mm/h * {Tc_total} min / 60 = {P_total_storm:.2f} mm")
         
         P_mask = uniform_precip > Ia_cells[valid_mask]
-        print(f"Debug: {np.sum(P_mask)} cells have P > Ia out of {np.sum(valid_mask)} valid cells")
-        print(f"Debug: uniform_precip={uniform_precip:.2f}mm, mean_Ia={np.mean(Ia_cells[valid_mask]):.2f}mm, max_Ia={np.max(Ia_cells[valid_mask]):.2f}mm")
-        print(f"Debug: Ia statistics - min={np.min(Ia_cells[valid_mask]):.2f}mm, median={np.median(Ia_cells[valid_mask]):.2f}mm, max={np.max(Ia_cells[valid_mask]):.2f}mm")
-        print(f"Debug: Curve number statistics - min={np.min(cn_data[valid_mask]):.1f}, median={np.median(cn_data[valid_mask]):.1f}, max={np.max(cn_data[valid_mask]):.1f}")
-        print(f"Debug: S statistics - min={np.min(S_cells[valid_mask]):.1f}mm, median={np.median(S_cells[valid_mask]):.1f}mm, max={np.max(S_cells[valid_mask]):.1f}mm")
+        print(f"{np.sum(P_mask)} cells have P > Ia out of {np.sum(valid_mask)} valid cells")
         
         if np.any(P_mask):
             P_excess = uniform_precip - Ia_cells[valid_mask][P_mask]
@@ -545,17 +574,11 @@ def nam(self,
                 print(f"    Total Pe generated: {np.sum(Pe_values):.2f}mm")
         else:
             print(f"  WARNING: No cells have P > Ia! This will result in zero runoff.")
-            print(f"  Consider increasing precipitation or reducing curve numbers.")
-            print(f"  Debug: uniform_precip={uniform_precip:.2f}mm, min_Ia={np.min(Ia_cells[valid_mask]):.2f}mm")
-            print(f"  Debug: To generate runoff, need P > min_Ia: {uniform_precip:.2f} > {np.min(Ia_cells[valid_mask]):.2f} = {uniform_precip > np.min(Ia_cells[valid_mask])}")
-            print(f"  Debug: Try increasing precipitation_factor or return period")
+            print(f"  Consider increasing precipitation_factor or return period.")
     elif water_balance_mode == "cumulative":
         # Cumulative approach: Use storm distribution with iterative water retention calculation
         # This approach considers the spatially varying storm and calculates retained water iteratively
         print(f"Cumulative approach - using storm distribution with iterative retention")
-        print(f"Debug: storm_distribution range: {np.min(storm_distribution[valid_mask]):.2f} - {np.max(storm_distribution[valid_mask]):.2f}mm")
-        print(f"Debug: mean storm_distribution: {np.mean(storm_distribution[valid_mask]):.2f}mm")
-        print(f"Debug: precipitation_factor: {precipitation_factor}")
         
         # Initialize cumulative precipitation and retained water arrays
         cumulative_precip = storm_distribution * precipitation_factor  # Spatially varying precipitation
@@ -635,16 +658,8 @@ def nam(self,
         print(f"  Pe_cells mean: {np.mean(Pe_cells[valid_mask]):.6f}mm")
     else:
         # Simple SCS approach for other modes (simple, hybrid, conservative)
-        print(f"Debug: storm_distribution range: {np.min(storm_distribution[valid_mask]):.2f} - {np.max(storm_distribution[valid_mask]):.2f}mm")
-        print(f"Debug: mean storm_distribution: {np.mean(storm_distribution[valid_mask]):.2f}mm")
-        print(f"Debug: mean Ia: {np.mean(Ia_cells[valid_mask]):.2f}mm")
-        print(f"Debug: P_total_storm calculation: intensity={intensity_fn(rp_years=x, duration_minutes=Tc_total):.2f} mm/h * {Tc_total} min / 60 = {P_total_storm:.2f} mm")
-        print(f"Debug: Ia statistics - min={np.min(Ia_cells[valid_mask]):.2f}mm, median={np.median(Ia_cells[valid_mask]):.2f}mm, max={np.max(Ia_cells[valid_mask]):.2f}mm")
-        print(f"Debug: Curve number statistics - min={np.min(cn_data[valid_mask]):.1f}, median={np.median(cn_data[valid_mask]):.1f}, max={np.max(cn_data[valid_mask]):.1f}")
-        print(f"Debug: S statistics - min={np.min(S_cells[valid_mask]):.1f}mm, median={np.median(S_cells[valid_mask]):.1f}mm, max={np.max(S_cells[valid_mask]):.1f}mm")
-        
         P_mask = storm_distribution[valid_mask] > Ia_cells[valid_mask]
-        print(f"Debug: {np.sum(P_mask)} cells have storm_distribution > Ia out of {np.sum(valid_mask)} valid cells")
+        print(f"{np.sum(P_mask)} cells have storm_distribution > Ia out of {np.sum(valid_mask)} valid cells")
         
         if np.any(P_mask):
             P_excess = storm_distribution[valid_mask][P_mask] - Ia_cells[valid_mask][P_mask]
@@ -675,49 +690,10 @@ def nam(self,
                 print(f"    Pe_cells range after assignment: {np.min(Pe_cells):.6f} - {np.max(Pe_cells):.6f}mm")
         else:
             print(f"  WARNING: No cells have storm_distribution > Ia! This will result in zero runoff.")
-            print(f"  Consider increasing precipitation or reducing curve numbers.")
-            print(f"  Debug: max_storm_distribution={np.max(storm_distribution[valid_mask]):.2f}mm, min_Ia={np.min(Ia_cells[valid_mask]):.2f}mm")
-            print(f"  Debug: To generate runoff, need max_storm_distribution > min_Ia: {np.max(storm_distribution[valid_mask]):.2f} > {np.min(Ia_cells[valid_mask]):.2f} = {np.max(storm_distribution[valid_mask]) > np.min(Ia_cells[valid_mask])}")
-            print(f"  Debug: Try increasing precipitation_factor or return period")
+            print(f"  Consider increasing precipitation_factor or return period.")
     # Calculate travel time for each cell
     # Determine discharge point coordinates (separate from storm center)
-    discharge_row = None
-    discharge_col = None
-    
-    # Try user-provided discharge point coordinates first
-    if discharge_point_coords is not None and len(discharge_point_coords) == 2:
-        discharge_row, discharge_col = discharge_point_coords
-        if 0 <= discharge_row < cn_data.shape[0] and 0 <= discharge_col < cn_data.shape[1]:
-            print(f"Using user-provided discharge point: ({discharge_row}, {discharge_col})")
-        else:
-            print(f"Warning: User-provided discharge point ({discharge_row}, {discharge_col}) outside raster bounds")
-            discharge_row = None
-            discharge_col = None
-    
-    # Try EPSG:2056 coordinates for elevation calculations (most accurate for DEM)
-    if discharge_row is None and discharge_point_epsg2056 is not None and len(discharge_point_epsg2056) == 2:
-        easting, northing = discharge_point_epsg2056
-        # Convert EPSG:2056 coordinates to raster coordinates using DEM transform
-        if dem_data is not None:
-            # Use DEM transform to convert EPSG:2056 coordinates to raster coordinates
-            discharge_row, discharge_col = rasterio.transform.rowcol(dem_transform, easting, northing)
-            if 0 <= discharge_row < dem_data.shape[0] and 0 <= discharge_col < dem_data.shape[1]:
-                print(f"Using EPSG:2056 discharge point ({easting:.2f}, {northing:.2f}): raster ({discharge_row}, {discharge_col})")
-            else:
-                print(f"Warning: EPSG:2056 discharge point ({easting:.2f}, {northing:.2f}) outside DEM bounds")
-                discharge_row = None
-                discharge_col = None
-        else:
-            print(f"Warning: DEM not available for EPSG:2056 coordinate conversion")
-    
-    # Try geographic coordinates if raster coordinates failed or weren't provided
-    if discharge_row is None and discharge_point_lon_lat is not None and len(discharge_point_lon_lat) == 2:
-        lon, lat = discharge_point_lon_lat
-        discharge_row, discharge_col = geographic_to_raster_coords(lon, lat, cn_transform, cn_data.shape)
-        if discharge_row is not None and discharge_col is not None:
-            print(f"Using geographic discharge point ({lon:.6f}, {lat:.6f}): raster ({discharge_row}, {discharge_col})")
-        else:
-            print(f"Warning: Could not convert geographic discharge point ({lon:.6f}, {lat:.6f}) to raster coordinates")
+    discharge_row, discharge_col = parse_discharge_point(discharge_point, discharge_point_crs, cn_transform, cn_data.shape)
     
     # Fallback to isozone 0 (discharge point) if no user coordinates provided
     if discharge_row is None:
@@ -731,18 +707,17 @@ def nam(self,
             # Final fallback to storm center
             discharge_row, discharge_col = center_row, center_col
             print(f"Warning: No discharge point found, using storm center as discharge point: ({discharge_row}, {discharge_col})")
+    else:
+        print(f"Using discharge point: ({discharge_row}, {discharge_col})")
     
-    # Calculate travel times using overland flow method or simplified approach
-    if use_kirpich and dem_data is not None:
+    # Calculate travel times using the best available method
+    if dem_data is not None:
         print("Calculating travel times using overland flow method...")
         
         # Get discharge point elevation
         discharge_elevation = dem_data[discharge_row, discharge_col]
         print(f"Discharge point coordinates: ({discharge_row}, {discharge_col})")
         print(f"Discharge point elevation: {discharge_elevation:.1f} m")
-        print(f"DEM data range: {np.nanmin(dem_data):.1f} - {np.nanmax(dem_data):.1f} m")
-        print(f"DEM data shape: {dem_data.shape}")
-        print(f"Valid DEM cells: {np.sum(~np.isnan(dem_data))} out of {dem_data.size}")
         
         # Check if discharge point has valid DEM data
         if np.isnan(discharge_elevation):
@@ -765,8 +740,8 @@ def nam(self,
                 print(f"Updated discharge point to nearest valid DEM: ({discharge_row}, {discharge_col})")
                 print(f"New discharge elevation: {discharge_elevation:.1f} m")
             else:
-                print(f"Error: No valid DEM cells found in catchment, falling back to simplified approach")
-                use_kirpich = False
+                print(f"Error: No valid DEM cells found in catchment, using simplified approach")
+                dem_data = None
         
         # Only proceed with overland flow if we have a valid discharge point
         if not np.isnan(discharge_elevation):
@@ -778,13 +753,6 @@ def nam(self,
             
             # Elevation difference: elevation of each cell minus discharge elevation [m]
             elevation_diffs = dem_data - discharge_elevation
-            
-            # Debug elevation differences
-            print(f"Elevation difference range: {np.nanmin(elevation_diffs):.1f} - {np.nanmax(elevation_diffs):.1f} m")
-            print(f"Cells with positive elevation difference: {np.sum(elevation_diffs > 0)}")
-            print(f"Cells with negative elevation difference: {np.sum(elevation_diffs < 0)}")
-            print(f"Cells with zero elevation difference: {np.sum(elevation_diffs == 0)}")
-            print(f"Cells with NaN elevation difference: {np.sum(np.isnan(elevation_diffs))}")
             
             # Apply overland flow calculation
             travel_times = np.zeros_like(flow_lengths, dtype=np.float32)
@@ -800,15 +768,8 @@ def nam(self,
                 # Calculate H/L ratio (slope as decimal, not degrees)
                 slope = H / L
                 
-                # Debug slope calculation
-                print(f"Slope range: {np.min(slope):.6f} - {np.max(slope):.6f} (decimal)")
-                print(f"Slope range: {np.min(slope)*100:.2f}% - {np.max(slope)*100:.2f}% (percentage)")
-                print(f"Slope range: {np.arctan(np.min(slope))*180/np.pi:.2f}° - {np.arctan(np.max(slope))*180/np.pi:.2f}° (degrees)")
-                
                 # Use overland flow velocity based on slope
-                # For realistic travel times, use a simple velocity approach
                 # Typical overland flow velocities: 0.5-2.0 m/s depending on slope and surface
-                # Use a conservative approach: velocity = 1.0 * sqrt(slope) [m/s]
                 velocities = 1.0 * np.sqrt(slope)  # [m/s] - conservative overland flow
                 velocities = np.clip(velocities, 0.5, 2.0)  # [m/s] - realistic range
                 
@@ -818,15 +779,8 @@ def nam(self,
                 # Calculate travel time: T = L / velocity [minutes]
                 travel_times[valid_kirpich_mask] = L / velocities_m_per_min  # [minutes]
                 
-                print(f"Overland flow velocities: {np.min(velocities):.2f} - {np.max(velocities):.2f} m/s")
-                print(f"Effective velocities (with obstacle factor): {np.min(velocities_m_per_min):.2f} - {np.max(velocities_m_per_min):.2f} m/min")
-                print(f"Travel time range: {np.min(travel_times[valid_kirpich_mask]):.2f} - {np.max(travel_times[valid_kirpich_mask]):.2f} minutes")
-                
                 print(f"Overland flow calculation completed:")
                 print(f"  - Valid cells: {np.sum(valid_kirpich_mask)} out of {np.sum(valid_mask)}")
-                print(f"  - Flow length range: {np.min(L):.1f} - {np.max(L):.1f} m")
-                print(f"  - Elevation difference range: {np.min(H):.1f} - {np.max(H):.1f} m")
-                print(f"  - Slope range: {np.min(slope):.4f} - {np.max(slope):.4f}")
                 print(f"  - Travel time range: {np.min(travel_times[valid_kirpich_mask]):.2f} - {np.max(travel_times[valid_kirpich_mask]):.2f} minutes")
                 
                 # Handle cells that don't meet overland flow criteria
@@ -838,15 +792,14 @@ def nam(self,
                     # Use a reasonable fallback velocity: 1.0 m/s = 60 m/min
                     fallback_times = fallback_distances / 60  # 60 m/min velocity
                     travel_times[invalid_kirpich_mask] = fallback_times
-                    print(f"  - Fallback travel time range: {np.min(fallback_times):.2f} - {np.max(fallback_times):.2f} minutes")
             else:
                 print("Warning: No valid cells for overland flow calculation, using simplified approach")
-                use_kirpich = False
+                dem_data = None
         else:
             print("Warning: No valid discharge elevation, using simplified approach")
-            use_kirpich = False
+            dem_data = None
     
-    if not use_kirpich or dem_data is None:
+    if dem_data is None:
         print("Calculating travel times using simplified approach...")
         
         # Calculate distance from each cell to the discharge point
@@ -929,8 +882,8 @@ def nam(self,
             print(f"  - File size: {os.path.getsize(travel_times_file) / 1024:.1f} KB")
             print(f"  - Travel time range: {np.min(travel_times_raster[valid_mask]):.2f} - {np.max(travel_times_raster[valid_mask]):.2f} minutes")
             print(f"  - Mean travel time: {np.mean(travel_times_raster[valid_mask]):.2f} minutes")
-            print(f"  - Method: {'Overland Flow' if use_kirpich and dem_data is not None else 'Simplified'}")
-            if not use_kirpich or dem_data is None:
+            print(f"  - Method: {'Overland Flow' if dem_data is not None else 'Simplified'}")
+            if dem_data is None:
                 print(f"  - Velocity: 60 m/min (1.0 m/s)")
         
     except Exception as e:
@@ -940,16 +893,10 @@ def nam(self,
     # Pe is in mm, convert to m³: Pe_mm * area_m² / 1000
     runoff_volumes = Pe_cells * pixel_area_m2 / 1000  # [m³]
     
-    # Debug runoff volumes
-    print(f"Debug: Pe_cells range: {np.min(Pe_cells[valid_mask]):.6f} - {np.max(Pe_cells[valid_mask]):.6f}mm")
-    print(f"Debug: Total Pe_cells: {np.sum(Pe_cells[valid_mask]):.2f}mm")
-    print(f"Debug: runoff_volumes range: {np.min(runoff_volumes[valid_mask]):.6f} - {np.max(runoff_volumes[valid_mask]):.6f}m³")
-    print(f"Debug: Total runoff_volumes: {np.sum(runoff_volumes[valid_mask]):.2f}m³")
-    print(f"Debug: Cells with runoff: {np.sum(runoff_volumes[valid_mask] > 0)} out of {np.sum(valid_mask)}")
-    print(f"Debug: Water balance mode: {water_balance_mode}")
-    print(f"Debug: Routing method: {routing_method}")
-    print(f"Debug: Pixel area: {pixel_area_m2:.2f} m²")
-    print(f"Debug: Conversion factor: {pixel_area_m2 / 1000:.6f}")
+    # Runoff volume summary
+    print(f"Total effective precipitation: {np.sum(Pe_cells[valid_mask]):.2f}mm")
+    print(f"Total runoff volume: {np.sum(runoff_volumes[valid_mask]):.2f}m³")
+    print(f"Cells with runoff: {np.sum(runoff_volumes[valid_mask] > 0)} out of {np.sum(valid_mask)}")
     
     # Initialize runoff time series for each timestep
     # This will store runoff volumes that arrive at each timestep
@@ -1112,8 +1059,8 @@ def nam(self,
                 print(f"Max travel time: No valid time values")
                 print(f"Min travel time: No valid time values")
     else:
-        print(f"Method: {'Overland Flow' if use_kirpich and dem_data is not None else 'Simplified'}")
-        if use_kirpich and dem_data is not None:
+        print(f"Method: {'Overland Flow' if dem_data is not None else 'Simplified'}")
+        if dem_data is not None:
             print(f"Discharge elevation: {discharge_elevation:.1f} m")
             print(f"Mean flow length: {np.mean(flow_lengths[valid_mask]):.1f} meters")
             print(f"Max flow length: {np.max(flow_lengths[valid_mask]):.1f} meters")

@@ -160,14 +160,13 @@ model NAM {
   id                       Int                    @id @default(autoincrement())
   x                        Int
   Annuality                Annualities            @relation(fields: [x], references: [id])
-  curve_number             Float
-  catchment_area           Float
-  channel_length           Float
-  delta_h                  Float
-  TB_start                 Int                    @default(30)
-  istep                    Int                    @default(5)
-  tol                      Int                    @default(5)
-  max_iter                 Int                    @default(1000)
+  precipitation_factor     Float                  @default(1.0)
+  water_balance_mode       String                 @default("simple")
+  WaterBalanceMode         WaterBalanceMode       @relation(fields: [water_balance_mode], references: [mode])
+  storm_center_mode        String                 @default("centroid")
+  StormCenterMode          StormCenterMode        @relation(fields: [storm_center_mode], references: [mode])
+  routing_method           String                 @default("time_values")
+  RoutingMethod            RoutingMethod          @relation(fields: [routing_method], references: [method])
   project_id               String
   Project                  Project                @relation(fields: [project_id], references: [id])
   nam_result_id            Int?                   @unique
@@ -175,16 +174,17 @@ model NAM {
 }
 
 model NAM_Result {
-  id             Int             @id @default(autoincrement())
-  HQ             Float
-  Tc             Float
-  TB             Float
-  TFl            Float
-  i              Float
-  S              Float
-  Ia             Float
-  Pe             Float
-  NAM            NAM?
+  id                     Int             @id @default(autoincrement())
+  HQ                     Float
+  Tc                     Float
+  TB                     Float
+  TFl                    Float
+  i                      Float
+  S                      Float
+  Ia                     Float
+  Pe                     Float
+  effective_curve_number Float?
+  NAM                    NAM?
 }
 
 model Annualities {
@@ -202,4 +202,22 @@ model Precipitation {
   latitude        Float
   longitude       Float
   data            String
+}
+
+model WaterBalanceMode {
+  mode            String   @id
+  description     String
+  NAM             NAM[]
+}
+
+model StormCenterMode {
+  mode            String   @id
+  description     String
+  NAM             NAM[]
+}
+
+model RoutingMethod {
+  method          String   @id
+  description     String
+  NAM             NAM[]
 }
