@@ -1,3 +1,9 @@
+## 0.3.0-dev.5 (2025-08-10)
+
+### Fix
+
+- **api,frontend**: Calculation progress display fix
+
 ## 0.3.0-dev.4 (2025-07-28)
 
 ### Fix
