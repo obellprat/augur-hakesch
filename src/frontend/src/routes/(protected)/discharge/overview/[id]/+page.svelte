@@ -80,30 +80,35 @@
 			.then((res) => {
 				// write out the state
 				const actTime = new Date();
-				//let html = `${actTime.toUTCString()} ${res.task_status} `;
-				let html = ``;
-				if (res.task_status != 'SUCCESS' && res.task_status != 'PENDING' && res.task_status != 'FAILURE') {
-					html = `${JSON.stringify(res.task_result.text.replace('"', ''))}`;
+				try {
+					let obj = JSON.parse(res.task_result);
+					//let html = `${actTime.toUTCString()} ${res.task_status} `;
+					let html = ``;
+					if (res.task_status != 'SUCCESS' && res.task_status != 'PENDING' && res.task_status != 'FAILURE') {
+						html = `${JSON.stringify(obj.text)}`;
 
-					globalThis
-						.$('.progress-bar')
-						.css('width', res.task_result.progress + '%')
-						.attr('aria-valuenow', res.task_result.progress);
-				} else if (res.task_status == 'PENDING') {
-					html = 'Der Prozess wird intialisiert. Bitte warten...';
+						globalThis
+							.$('.progress-bar')
+							.css('width', obj.progress + '%')
+							.attr('aria-valuenow', obj.progress);
+					} else if (res.task_status == 'PENDING') {
+						html = 'Der Prozess wird intialisiert. Bitte warten...';
+					}
+					else if (res.task_status == 'FAILURE') {
+						html = 'Die Geodaten konnten nicht berechnet werden. Bitte versuchen Sie es später erneut.<br> ' +
+							'Fehler: ' + obj.text;
+					} else if (res.task_status == 'SUCCESS') {
+						html = 'Die Geodaten wurden erfolgrech berechnet.';
+
+						invalidateAll();
+						addIsozones();
+						globalThis.$('#generate-modal').modal('hide');
+					}
+					document.getElementById('progresstext')!.innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
 				}
-				else if (res.task_status == 'FAILURE') {
-					html = 'Die Geodaten konnten nicht berechnet werden. Bitte versuchen Sie es später erneut.<br> ' +
-						'Fehler: ' + res.task_result.text.replace('"', '');
-				} else if (res.task_status == 'SUCCESS') {
-					html = 'Die Geodaten wurden erfolgrech berechnet.';
-
-					invalidateAll();
-					addIsozones();
-					globalThis.$('#generate-modal').modal('hide');
+				catch (e) {
+					console.log(e);
 				}
-				document.getElementById('progresstext')!.innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
-
 				const taskStatus = res.task_status;
 				if (taskStatus === 'SUCCESS') {
 				}
@@ -112,7 +117,7 @@
 				}
 
 				setTimeout(function () {
-					getStatus(res.task_id);
+					getStatus(taskID);
 				}, 1000);
 			})
 			.catch((err) => console.log(err));
@@ -289,11 +294,12 @@
 
 		addMarker([easting, northing]);
 		//addCatchment();
+		
 		$effect(() => {
+			addIsozones();
 			addCatchment();
 			addBranches();
 		});
-		addIsozones();
 
 		map.on('singleclick', function (e) {
 			northing = Math.round(e.coordinate[1]);
