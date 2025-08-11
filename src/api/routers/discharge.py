@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from helpers.prisma import prisma
 from helpers.user import get_user
@@ -6,13 +6,13 @@ from prisma.models import User
 from celery import group
 import pandas as pd
 
-from calculations.discharge import construct_idf_curve, modifizierte_fliesszeit, prepare_discharge_hydroparameters, koella, clark_wsl_modified
+from calculations.discharge import construct_idf_curve, modifizierte_fliesszeit, prepare_discharge_hydroparameters, koella, clark_wsl_modified, get_zone_parameters
 
 router = APIRouter(prefix="/discharge",
     tags=["discharge"],)
 
 @router.get("/calculate_project")
-def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
+def get_calculate_project(ProjectId:str, region: str = "switzerland", user: User = Depends(get_user)):
     try:
         project =  prisma.project.find_unique_or_raise(
             where = {
@@ -77,16 +77,7 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
             ))
 
                 # TODO: get zone parameters from DB
-        zone_parameters = {
-                "Atyp 1": {'V0_20': 22.5, 'WSV': 12.5, 'psi': 0.475, 'alpha': 82},
-                "Atyp 2": {'V0_20': 27.5, 'WSV': 22.5, 'psi': 0.375, 'alpha': 76},
-                "Atyp 3": {'V0_20': 37.5, 'WSV': 37.5, 'psi': 0.15,  'alpha': 63.5},
-                "Atyp 4": {'V0_20': 40,   'WSV': 42.5, 'psi': 0.1,   'alpha': 54},
-                "Atyp 5": {'V0_20': 42.5, 'WSV': 52.5, 'psi': 0.075, 'alpha': 42},
-                "Siedl.typ 1": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
-                "Siedl.typ 2": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
-                "Siedl.typ 3": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
-            }
+        zone_parameters = get_zone_parameters(region)
 
         for clark_wsl_obj in project.ClarkWSL:
             fractions_dict = [
@@ -198,7 +189,7 @@ def clark_wsl_modified(self,
 
 
 @router.get("/clark-wsl")
-def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)):
+def get_clark_wsl(ProjectId:str, ClarkWSLId: int, region: str = "switzerland", user: User = Depends(get_user)):
     try:
         project =  prisma.project.find_unique_or_raise(
             where = {
@@ -217,16 +208,7 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
         )
 
         # TODO: get zone parameters from DB
-        zone_parameters = {
-                "Atyp 1": {'V0_20': 22.5, 'WSV': 12.5, 'psi': 0.475, 'alpha': 82},
-                "Atyp 2": {'V0_20': 27.5, 'WSV': 22.5, 'psi': 0.375, 'alpha': 76},
-                "Atyp 3": {'V0_20': 37.5, 'WSV': 37.5, 'psi': 0.15,  'alpha': 63.5},
-                "Atyp 4": {'V0_20': 40,   'WSV': 42.5, 'psi': 0.1,   'alpha': 54},
-                "Atyp 5": {'V0_20': 42.5, 'WSV': 52.5, 'psi': 0.075, 'alpha': 42},
-                "Siedl.typ 1": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
-                "Siedl.typ 2": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
-                "Siedl.typ 3": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
-            }
+        zone_parameters = get_zone_parameters(region)
 
         clark_wsl_obj = next((x for x in project.ClarkWSL if x.id == ClarkWSLId), None)
 
@@ -291,3 +273,13 @@ async def get_prepare_discharge_hydroparametersisozones(ProjectId:str, user: Use
             detail="Unable to retrieve project",
         )
 
+@router.get("/zone_parameters")
+def get_zone_parameters_endpoint(region: str = "switzerland"):
+    """Get available zone parameters for a specific region"""
+    try:
+        return {"zone_parameters": get_zone_parameters(region)}
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )

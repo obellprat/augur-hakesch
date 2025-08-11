@@ -530,6 +530,47 @@
 			</div>
 		</div>
 		<div class="card-body">
+			<!-- Tabs Navigation -->
+			<ul class="nav nav-pills nav-justified mb-3" id="region-tabs" role="tablist">
+				<li class="nav-item" role="presentation">
+					<button
+						class="nav-link active"
+						id="switzerland-tab"
+						data-bs-toggle="pill"
+						data-bs-target="#switzerland"
+						type="button"
+						role="tab"
+						aria-controls="switzerland"
+						aria-selected="true"
+					>
+						{$_('page.discharge.calculation.switzerland')}
+					</button>
+				</li>
+				<li class="nav-item" role="presentation">
+					<button
+						class="nav-link"
+						id="global-tab"
+						data-bs-toggle="pill"
+						data-bs-target="#global"
+						type="button"
+						role="tab"
+						aria-controls="global"
+						aria-selected="false"
+					>
+						{$_('page.discharge.calculation.global')}
+					</button>
+				</li>
+			</ul>
+
+			<!-- Tab Content -->
+			<div class="tab-content" id="region-tabs-content">
+				<!-- Switzerland Tab -->
+				<div
+					class="tab-pane fade show active"
+					id="switzerland"
+					role="tabpanel"
+					aria-labelledby="switzerland-tab"
+				>
 			<div class="row">
 				<div class="col-lg-8">
 					<div class="accordion" id="accordionPanelsStayOpenExample">
@@ -1355,6 +1396,40 @@
 					</div>
 				</div>
 			</div>
+				</div>
+				<!-- End Switzerland Tab -->
+
+				<!-- Global Tab -->
+				<div
+					class="tab-pane fade"
+					id="global"
+					role="tabpanel"
+					aria-labelledby="global-tab"
+				>
+					<div class="row">
+						<div class="col-lg-12">
+							<div class="alert alert-info" role="alert">
+								<h4 class="alert-heading">{$_('page.discharge.calculation.global')}</h4>
+								<p>{$_('page.discharge.calculation.globalDescription')}</p>
+								<hr>
+								<p class="mb-0">{$_('page.discharge.calculation.globalNote')}</p>
+							</div>
+							
+							<!-- Global calculations would go here -->
+							<div class="d-flex justify-content-center">
+								<div class="card text-center">
+									<div class="card-body">
+										<h5 class="card-title">{$_('page.discharge.calculation.comingSoon')}</h5>
+										<p class="card-text">{$_('page.discharge.calculation.globalImplementation')}</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- End Global Tab -->
+			</div>
+			<!-- End Tab Content -->
 		</div>
 	</div>
 </div>

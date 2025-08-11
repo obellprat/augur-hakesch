@@ -68,7 +68,13 @@
         "returnPeriod": "Wiederkehrperiode",
         "szenario": "Szenario",
         "clarkwslname": "Clark-WSL",
-        "calcerror": "Fehler"
+        "calcerror": "Fehler",
+        "switzerland": "Schweiz",
+        "global": "Global",
+        "globalDescription": "Globale Abflussberechnungen verwenden international standardisierte Parameter und Methoden.",
+        "globalNote": "Dieser Ansatz eignet sich für Regionen außerhalb der Schweiz oder bei Verwendung internationaler hydrologischer Standards.",
+        "comingSoon": "Demnächst verfügbar",
+        "globalImplementation": "Globale Abflussberechnungsmethoden sind derzeit in Entwicklung."
       }
     },
     "precipitation": {

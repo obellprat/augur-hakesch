@@ -62,11 +62,19 @@
         "calcsuccess": "Successfully calculated!",
         "calculationTitle": "- Calculation | AUGUR",
         "clarkwsl": "Clark WSL",
+        "clarkwslname": "Clark WSL",
         "generalInput": "General",
         "inputsForPrecipitationIntensity": "Information on the calculation of precipitation intensity",
         "modFliesszeit": "Modified flow time method",
         "koells": "Koella",
-        "typeOfCalculation": "Which process should be added to the project?"
+        "typeOfCalculation": "Which process should be added to the project?",
+        "switzerland": "Switzerland",
+        "global": "Global",
+        "globalDescription": "Global discharge calculations use internationally standardized parameters and methods.",
+        "globalNote": "This approach is suitable for regions outside of Switzerland or when using international hydrological standards.",
+        "comingSoon": "Coming Soon",
+        "globalImplementation": "Global discharge calculation methods are currently under development.",
+        "calcerror": "Calculation Error"
       }
     },
     "precipitation": {

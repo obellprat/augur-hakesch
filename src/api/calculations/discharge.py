@@ -21,6 +21,41 @@ from shapely.geometry import shape
 
 from calculations.calculations import app
 
+def get_zone_parameters(region="switzerland"):
+    """
+    Get zone parameters for different regions.
+    
+    Args:
+        region (str): Either "switzerland" or "global"
+    
+    Returns:
+        dict: Zone parameters for the specified region
+    """
+    if region.lower() == "switzerland":
+        return {
+            "Atyp 1": {'V0_20': 22.5, 'WSV': 12.5, 'psi': 0.475, 'alpha': 82},
+            "Atyp 2": {'V0_20': 27.5, 'WSV': 22.5, 'psi': 0.375, 'alpha': 76},
+            "Atyp 3": {'V0_20': 37.5, 'WSV': 37.5, 'psi': 0.15,  'alpha': 63.5},
+            "Atyp 4": {'V0_20': 40,   'WSV': 42.5, 'psi': 0.1,   'alpha': 54},
+            "Atyp 5": {'V0_20': 42.5, 'WSV': 52.5, 'psi': 0.075, 'alpha': 42},
+            "Siedl.typ 1": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
+            "Siedl.typ 2": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
+            "Siedl.typ 3": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
+        }
+    elif region.lower() == "global":
+        return {
+            "Forest": {'V0_20': 30.0, 'WSV': 25.0, 'psi': 0.35, 'alpha': 75},
+            "Agriculture": {'V0_20': 25.0, 'WSV': 20.0, 'psi': 0.45, 'alpha': 80},
+            "Urban Dense": {'V0_20': 15.0, 'WSV': 15.0, 'psi': 0.55, 'alpha': 85},
+            "Urban Sparse": {'V0_20': 20.0, 'WSV': 18.0, 'psi': 0.50, 'alpha': 82},
+            "Grassland": {'V0_20': 35.0, 'WSV': 30.0, 'psi': 0.25, 'alpha': 70},
+            "Rocky/Bare": {'V0_20': 10.0, 'WSV': 8.0, 'psi': 0.65, 'alpha': 90},
+            "Wetland": {'V0_20': 40.0, 'WSV': 35.0, 'psi': 0.20, 'alpha': 65},
+            "Mixed": {'V0_20': 27.5, 'WSV': 22.5, 'psi': 0.40, 'alpha': 78},
+        }
+    else:
+        raise ValueError("Region must be either 'switzerland' or 'global'")
+
 @app.task(name="modifizierte_fliesszeit", bind=True)
 def modifizierte_fliesszeit(self, 
     P_low_1h,
