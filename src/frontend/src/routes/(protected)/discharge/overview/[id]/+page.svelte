@@ -230,6 +230,51 @@
 		map.addLayer(isozone);
 	}
 
+	async function downloadFile(url: string, filename: string) {
+		try {
+			const response = await fetch(url, {
+				headers: {
+					Authorization: 'Bearer ' + data.session.access_token
+				}
+			});
+			if (!response.ok) {
+				throw new Error('Download failed');
+			}
+			const blob = await response.blob();
+			const link = document.createElement('a');
+			link.href = URL.createObjectURL(blob);
+			link.download = filename;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(link.href);
+		} catch (e) {
+			console.error(e);
+		}
+	}
+
+	function downloadIsozones() {
+		return downloadFile(
+			`${env.PUBLIC_HAKESCH_API_PATH}/file/isozones/${data.project.id}`,
+			`isozones_${data.project.id}.tif`
+		);
+	}
+
+	function downloadCatchment() {
+		return downloadFile(
+			`${env.PUBLIC_HAKESCH_API_PATH}/file/catchment/${data.project.id}`,
+			`catchment_${data.project.id}.geojson`
+		);
+	}
+
+	function downloadBranches() {
+		return downloadFile(
+			`${env.PUBLIC_HAKESCH_API_PATH}/file/branches/${data.project.id}`,
+			`branches_${data.project.id}.geojson`
+		);
+	}
+
+
 	onMount(async () => {
 		const stroke = new Stroke({ color: 'black', width: 2 });
 		const fill = new Fill({ color: 'blue' });
@@ -616,7 +661,9 @@
 											<th>Max Fliesslänge [m]</th>
 											<th>Kumulativ Fliesslänge [m]</th>
 											<th>Höhendifferenz (delta_h) [m]</th>
-											<th>Isozonen</th>
+									<th>Isozonen</th>
+									<th>Einzugsgebiet</th>
+									<th>Gerinne</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -627,11 +674,18 @@
 											<td>{data.project.channel_length} m</td>
 											<td>{Math.round(data.project.cummulative_channel_length)} m</td>
 											<td>{Math.round(data.project.delta_h)} m</td>
-											<td class="text-muted">
-												<a href="javascript: void(0);" class="link-reset fs-20 p-1">
-													Herunterladen</a
-												>
-											</td>
+									<td class="text-muted">
+										<a href="javascript: void(0);" class="link-reset fs-20 p-1" onclick={downloadIsozones}>
+											Herunterladen</a>
+									</td>
+									<td class="text-muted">
+										<a href="javascript: void(0);" class="link-reset fs-20 p-1" onclick={downloadCatchment}>
+											Herunterladen</a>
+									</td>
+									<td class="text-muted">
+										<a href="javascript: void(0);" class="link-reset fs-20 p-1" onclick={downloadBranches}>
+											Herunterladen</a>
+									</td>
 										</tr>
 									</tbody>
 								</table>
