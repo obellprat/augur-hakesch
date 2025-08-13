@@ -358,11 +358,13 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
             discharge_point_crs=discharge_point_crs
         )
         return JSONResponse({"task_id": task.id})
-    except:
+    except Exception as e:
         # Handle missing user scenario
         raise HTTPException(
+            err = type(e).__name__,
+            message = e.message,
             status_code=404,
-            detail="Unable to retrieve project",
+            detail="Unable to retrieve project: " + err + " " + message,
         )
 
 @router.get("/get_curve_numbers")

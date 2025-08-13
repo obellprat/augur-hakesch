@@ -502,7 +502,7 @@ def construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_h
 # idf_fn = construct_idf_curve(25, 50, 60, 120, 2.33, 100)
 
 @app.task(name="prepare_discharge_hydroparameters", bind=True)
-def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 1000, v_gerinne = 1.5):
+def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 700, v_gerinne = 1.5):
     # Definitions
     cell_size = 5
 

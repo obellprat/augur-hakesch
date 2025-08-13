@@ -1,0 +1,2 @@
+nam_id,project_id,user_id,return_period,return_period_desc,catchment_area_km2,channel_length_m,delta_h_m,water_balance_mode,precipitation_factor,storm_center_mode,routing_method,HQ,Tc,TB,TFl,i,S,Pe,effective_curve_number,calculation_status,error_message,calculation_time
+1,aHcYKEGy92V0U8Xk9uu_F,1,3,100,7.328175,3835.0,81.65814208984375,uniform,0.8,centroid,time_values,,,,,,,,,failed,"Calculation returned None - likely missing raster files (curvenumbers.tif, isozones_cog.tif)",2025-08-13T16:52:04.300665

@@ -113,7 +113,7 @@ def nam(self,
     This is a distributed rainfall-runoff model that uses curve numbers for each cell and 
     calculates runoff at 10-minute timesteps using either travel time or isozone routing methods.
     """
-    
+
     # Get NAM parameters from database only if not provided
     nam_obj = None
     if any(param is None for param in [water_balance_mode, precipitation_factor, storm_center_mode, routing_method]):
@@ -356,14 +356,7 @@ def nam(self,
     print(f"  Max Ia: {np.nanmax(Ia_cells[valid_mask]):.1f} mm")
     print(f"  Mean Ia: {np.nanmean(Ia_cells[valid_mask]):.1f} mm")
     print(f"  Median Ia: {np.nanmedian(Ia_cells[valid_mask]):.1f} mm")
-    
-    # Show typical S values for reference
-    print(f"Typical S values for different curve numbers:")
-    for cn in [30, 40, 50, 60, 70, 80, 90, 100]:
-        s_val = (25400 / cn) - 254
-        ia_val = 0.2 * s_val
-        print(f"  CN={cn}: S={s_val:.1f}mm, Ia={ia_val:.1f}mm")
-    
+        
     # 3. Calculate runoff for each cell using travel time calculation
     print("Calculating runoff for each cell using travel time calculation...")
     
@@ -462,10 +455,27 @@ def nam(self,
         center_row = int(np.mean(valid_indices[0]))
         center_col = int(np.mean(valid_indices[1]))
         print(f"Storm center at catchment centroid: ({center_row}, {center_col})")
+    # Large stratiform storm
+    storm_radius_km = 3.0
+
+    # Create storm distribution with physically meaningful radius for Swiss storms
+    # Get grid resolution in meters (EPSG:2056 coordinates)
+    cell_size_m = abs(cn_transform.a)  # meters per pixel in x direction
+    if cell_size_m <= 0:
+        cell_size_m = 30.0  # fallback to typical 30m resolution
     
-    # Create storm distribution
-    # Use a Gaussian-like distribution that decreases from center
-    storm_radius = min(cn_data.shape) * 0.5
+    # Define storm radius in kilometers based on typical Swiss storm characteristics
+    # Can be overridden by setting storm_radius_km variable
+    try:
+        storm_radius_km = storm_radius_km
+    except NameError:
+        # Default: convective storm ~3km radius (typical for Swiss summer storms)
+        storm_radius_km = 3.0
+    
+    # Convert to pixels
+    storm_radius_pixels = (storm_radius_km * 1000.0) / cell_size_m
+    
+    print(f"Storm parameters: radius={storm_radius_km:.1f}km ({storm_radius_pixels:.1f} pixels), cell_size={cell_size_m:.1f}m")
     
     # Calculate distance from storm center for each cell
     rows, cols = np.meshgrid(np.arange(cn_data.shape[0]), np.arange(cn_data.shape[1]), indexing='ij')
@@ -473,13 +483,13 @@ def nam(self,
     
     # Create storm distribution: maximum at center, decreases with distance
     # Option 1: Exponential decay (more realistic for convective storms)
-    storm_distribution = P_total_storm * np.exp(-distances / storm_radius)
+    storm_distribution = P_total_storm * np.exp(-distances / storm_radius_pixels)
     
     # Option 2: Gaussian distribution (alternative, more gradual decay)
-    # storm_distribution = P_total_storm * np.exp(-(distances / storm_radius)**2)
+    # storm_distribution = P_total_storm * np.exp(-(distances / storm_radius_pixels)**2)
     
     # Option 3: Linear decay (simpler, more uniform)
-    # storm_distribution = P_total_storm * np.maximum(0, 1 - distances / storm_radius)
+    #storm_distribution = P_total_storm * np.maximum(0, 1 - distances / storm_radius_pixels)
     
     # Ensure no negative precipitation
     storm_distribution = np.maximum(storm_distribution, 0)
@@ -1156,7 +1166,7 @@ def nam(self,
         "storm_distribution": {
             "storm_center": (int(center_row), int(center_col)),
             "storm_center_mode": storm_center_mode,
-            "storm_radius": float(storm_radius),
+            "storm_radius": float(storm_radius_km),
             "max_precipitation": float(max_precip),
             "min_precipitation": float(min_precip),
             "mean_precipitation": float(mean_precip),
@@ -1392,8 +1402,12 @@ def get_curve_numbers(self, projectId: str, userId: int):
     self.update_state(state='PROGRESS',
                 meta={'text': 'Downloading soil data', 'progress': 40})
     
-    # Download soil data (FAO HWSD or USDA SSURGO)
-    soil_data = download_soil_data(bbox_wgs84)
+    # Download soil data (try local HYSOGs250m GeoTIFF first, then fallback to online)
+    try:
+        soil_data = load_local_hysogs_soil_data(bbox_wgs84)
+    except Exception as e:
+        print(f"Local HYSOGs250m read failed, falling back to online: {e}")
+        soil_data = download_soil_data(bbox_wgs84)
     
     self.update_state(state='PROGRESS',
                 meta={'text': 'Processing curve number data', 'progress': 60})
@@ -1598,6 +1612,117 @@ def create_fallback_landcover_data(bbox, center_lat, center_lon):
         'description': 'Fallback land cover data based on location'
     }
 
+
+def load_local_hysogs_soil_data(bbox):
+    """
+    Load soil data from local Global Hydrologic Soil Groups (HYSOGs250m) GeoTIFF.
+    The local dataset is expected at `src/api/data/HYSOGs250m.tif` in EPSG:4326.
+    Returns the same structure as the online downloader.
+    """
+    # Path to local HYSOGs250m GeoTIFF
+    local_tif_path = "./data/HYSOGs250m.tif"
+    
+    # Create temp directory if it doesn't exist
+    temp_dir = "./data/temp"
+    os.makedirs(temp_dir, exist_ok=True)
+    
+    if not os.path.exists(local_tif_path):
+        raise FileNotFoundError(f"Local HYSOGs250m GeoTIFF not found at {local_tif_path}")
+    
+    # Add buffer cells like the QGIS plugin (2 cells on each side)
+    soils_pixel_size = 0.00208333  # ~250m in degrees
+    extent_local = (
+        bbox[0] - 2 * soils_pixel_size,
+        bbox[1] - 2 * soils_pixel_size,
+        bbox[2] + 2 * soils_pixel_size,
+        bbox[3] + 2 * soils_pixel_size,
+    )
+    
+    with rasterio.open(local_tif_path) as src:
+        # Verify CRS
+        src_crs = src.crs
+        if src_crs is None:
+            raise ValueError("Local HYSOGs250m GeoTIFF has no CRS; expected EPSG:4326")
+        if str(src_crs).upper() not in ("EPSG:4326", "WGS84") and src_crs.to_epsg() != 4326:
+            raise ValueError(f"Local HYSOGs250m GeoTIFF CRS is {src_crs}, expected EPSG:4326")
+        
+        # Compute window for the requested bounds
+        window = rasterio.windows.from_bounds(
+            extent_local[0], extent_local[1], extent_local[2], extent_local[3],
+            src.transform
+        )
+        
+        # Clamp window to dataset bounds
+        full_window = rasterio.windows.Window(0, 0, src.width, src.height)
+        try:
+            window = window.intersection(full_window)
+        except Exception:
+            # If intersection fails, fallback to full window
+            window = full_window
+        
+        # Read data in the window
+        data = src.read(1, window=window)
+        window_transform = rasterio.windows.transform(window, src.transform)
+        
+        # Save the extracted data to temp directory
+        temp_filename = f"hysogs250m_local_bbox_{bbox[0]:.3f}_{bbox[1]:.3f}_{bbox[2]:.3f}_{bbox[3]:.3f}.tif"
+        temp_file_path = os.path.join(temp_dir, temp_filename)
+        
+        with rasterio.open(
+            temp_file_path,
+            'w',
+            driver='GTiff',
+            height=data.shape[0],
+            width=data.shape[1],
+            count=1,
+            dtype=data.dtype,
+            crs=src.crs,
+            transform=window_transform
+        ) as dst:
+            dst.write(data, 1)
+    
+    # HYSOGs250m classification values and their HSG equivalents
+    hysogs_to_hsg = {
+        1: 'A',
+        2: 'B',
+        3: 'C',
+        4: 'D',
+        5: 'A/D',
+        6: 'B/D',
+        7: 'C/D',
+        8: 'A/B',
+        9: 'B/C',
+        10: 'A/C',
+        11: 'D',
+        12: 'D',
+        13: 'D',
+        14: 'D',
+        15: 'D'
+    }
+    
+    # HSG to curve number adjustments
+    hsg_adjustments = {
+        'A': 0.9,
+        'B': 1.0,
+        'C': 1.1,
+        'D': 1.2,
+        'A/D': 1.05,
+        'B/D': 1.1,
+        'C/D': 1.15,
+        'A/B': 0.95,
+        'B/C': 1.05,
+        'A/C': 1.0
+    }
+    
+    return {
+        'source': 'ORNL_HYSOGs250m',  # Keep same source label for downstream logic
+        'data_file': temp_file_path,
+        'hysogs_to_hsg': hysogs_to_hsg,
+        'hsg_adjustments': hsg_adjustments,
+        'bbox': bbox,
+        'resolution': 250,
+        'description': 'Global Hydrologic Soil Groups (HYSOGs250m) loaded from local GeoTIFF'
+    }
 
 def download_soil_data(bbox):
     """
