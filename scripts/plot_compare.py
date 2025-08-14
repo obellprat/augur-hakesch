@@ -253,7 +253,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create comparison bar chart grid from CSV")
     parser.add_argument(
         "--csv-path",
-        default=os.path.join("src", "api", "compare.csv"),
+        default=os.path.join(os.path.dirname(__file__), "compare.csv"),
         help="Path to the semicolon-separated input CSV",
     )
     parser.add_argument(

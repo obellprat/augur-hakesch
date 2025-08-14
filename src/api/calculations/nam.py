@@ -159,9 +159,24 @@ def nam(self,
     # 1. Load curve number raster and isozones raster
     if project_id and user_id:
         try:
+            # Resolve potential base directories for data
+            base_dirs = []
+            env_dir = os.getenv("DATA_DIR")
+            if env_dir:
+                base_dirs.append(env_dir)
+            # Path relative to this file: src/api/calculations/ -> src/api/data
+            base_dirs.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data')))
+            # CWD fallback
+            base_dirs.append(os.path.join(os.getcwd(), 'data'))
+
             # Load curve number raster
-            curve_number_file = f"data/{user_id}/{project_id}/curvenumbers.tif"
-            if os.path.exists(curve_number_file):
+            curve_number_file = None
+            for base in base_dirs:
+                candidate = os.path.join(base, str(user_id), str(project_id), 'curvenumbers.tif')
+                if os.path.exists(candidate):
+                    curve_number_file = candidate
+                    break
+            if curve_number_file:
                 print(f"Loading curve number raster from: {curve_number_file}")
                 with rasterio.open(curve_number_file) as src:
                     cn_data = src.read(1)
@@ -170,12 +185,20 @@ def nam(self,
                     pixel_area_m2 = abs(src.transform[0] * src.transform[4])  # Calculate actual pixel area
                     print(f"Curve number raster loaded, shape: {cn_data.shape}, pixel area: {pixel_area_m2:.2f} m²")
             else:
-                print(f"Curve number raster not found: {curve_number_file}")
+                tried = [os.path.join(b, str(user_id), str(project_id), 'curvenumbers.tif') for b in base_dirs]
+                print("Curve number raster not found in any of:")
+                for t in tried:
+                    print(f"  - {t}")
                 return {"error": "Curve number raster not found"}
             
             # Load isozones raster
-            isozone_file = f"data/{user_id}/{project_id}/isozones_cog.tif"
-            if os.path.exists(isozone_file):
+            isozone_file = None
+            for base in base_dirs:
+                candidate = os.path.join(base, str(user_id), str(project_id), 'isozones_cog.tif')
+                if os.path.exists(candidate):
+                    isozone_file = candidate
+                    break
+            if isozone_file:
                 print(f"Loading isozones raster from: {isozone_file}")
                 with rasterio.open(isozone_file) as src:
                     isozone_data = src.read(1)
@@ -183,13 +206,21 @@ def nam(self,
                     isozone_crs = src.crs
                     print(f"Isozones raster loaded, shape: {isozone_data.shape}, max zone: {int(np.nanmax(isozone_data))}")
             else:
-                print(f"Isozones raster not found: {isozone_file}")
+                tried = [os.path.join(b, str(user_id), str(project_id), 'isozones_cog.tif') for b in base_dirs]
+                print("Isozones raster not found in any of:")
+                for t in tried:
+                    print(f"  - {t}")
                 return {"error": "Isozones raster not found"}
             
             # Load DEM data for elevation-based calculations
             dem_data = None
-            dem_file = f"data/{user_id}/{project_id}/dem.tif"
-            if os.path.exists(dem_file):
+            dem_file = None
+            for base in base_dirs:
+                candidate = os.path.join(base, str(user_id), str(project_id), 'dem.tif')
+                if os.path.exists(candidate):
+                    dem_file = candidate
+                    break
+            if dem_file:
                 print(f"Loading DEM raster from: {dem_file}")
                 with rasterio.open(dem_file) as src:
                     dem_data = src.read(1)

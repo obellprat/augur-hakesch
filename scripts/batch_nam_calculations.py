@@ -23,10 +23,18 @@ import traceback
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 
-# Add the current directory to the Python path
-sys.path.insert(0, os.path.dirname(__file__))
+# Resolve project root and API module path
+_SCRIPT_DIR = os.path.dirname(__file__)
+_PROJECT_ROOT = os.path.abspath(os.path.join(_SCRIPT_DIR, '..'))
+_API_DIR = os.path.join(_PROJECT_ROOT, 'src', 'api')
+
+# Load environment from project root .env
+load_dotenv(os.path.join(_PROJECT_ROOT, '.env'))
+
+# Ensure API modules are importable
+sys.path.insert(0, _API_DIR)
+sys.path.insert(0, _PROJECT_ROOT)
 
 # Import required modules
 from helpers.prisma import prisma
@@ -420,9 +428,12 @@ def main():
                     'error_message': 'Calculation returned None - likely missing raster files (curvenumbers.tif, isozones_cog.tif)'
                 })
                 print(f"  Calculation returned None - likely missing raster files")
-                print(f"  Expected files:")
+                print(f"  Expected files (any of these locations):")
                 print(f"    data/{nam_entry.Project.userId}/{nam_entry.Project.id}/curvenumbers.tif")
                 print(f"    data/{nam_entry.Project.userId}/{nam_entry.Project.id}/isozones_cog.tif")
+                print(f"    src/api/data/{nam_entry.Project.userId}/{nam_entry.Project.id}/curvenumbers.tif")
+                print(f"    src/api/data/{nam_entry.Project.userId}/{nam_entry.Project.id}/isozones_cog.tif")
+                print(f"  Or set DATA_DIR to your data root (e.g. DATA_DIR=src/api/data)")
             
             result_record['calculation_time'] = end_time.isoformat()
             results.append(result_record)

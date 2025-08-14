@@ -9,6 +9,10 @@ import os
 import sys
 from datetime import datetime
 from dotenv import load_dotenv
+import_path_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+api_dir = os.path.join(import_path_root, 'src', 'api')
+sys.path.insert(0, api_dir)
+sys.path.insert(0, import_path_root)
 from helpers.prisma import prisma
 
 def load_csv_data(file_path):
@@ -282,7 +286,8 @@ def main():
     print("Starting database import from dbimport.csv...")
     
     # Load environment variables
-    load_dotenv()
+    # Load .env from project root
+    load_dotenv(os.path.join(import_path_root, '.env'))
     
     # Check if DATABASE_URL is set
     if not os.getenv('DATABASE_URL'):
