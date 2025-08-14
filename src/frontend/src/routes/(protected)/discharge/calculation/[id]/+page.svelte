@@ -41,8 +41,6 @@
 				chart.render();
 			});
 		return {
-			// { destroy: parameter.ref?.destroy } causes error.
-			// height 속성 파싱 중 알 수 없는 NaN 값이 발생했습니다.
 			destroy: () => {
 				parameter.ref?.destroy();
 			}
@@ -238,6 +236,7 @@
 	});
 
 	function addCalculation() {
+		console.log("in add Calculation");
 		if (calulcationType == 1) {
 			// add modifiziertes Fliesszeitverfahren
 			const mod_fliesszeit = {
@@ -245,6 +244,8 @@
 				project_id: data.project.id
 			};
 			mod_verfahren.push(mod_fliesszeit);
+			console.log(mod_fliesszeit);
+			console.log(mod_verfahren);	
 		} else if (calulcationType == 2) {
 			// add Koella
 			const newkoella = {
@@ -713,7 +714,8 @@
 																	isMFZSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result;
+																		data.project = result.data!;
+																		mod_verfahren = data.project.Mod_Fliesszeit;
 																		isMFZSaving = false;
 																		toast.push($_('page.discharge.calculation.successfullsave'), {
 																			theme: {
@@ -752,7 +754,7 @@
 																			)}</label
 																		>
 																		<input
-																			type="number"
+																			type="number" step="any"
 																			class="form-control"
 																			id="Vo20"
 																			name="Vo20"
@@ -765,7 +767,7 @@
 																		>
 																		<input
 																			type="number"
-																			step="0.01"
+																			step="any"
 																			class="form-control"
 																			id="psi"
 																			name="psi"
@@ -911,7 +913,8 @@
 																	isKoellaSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result;
+																		data.project = result.data;
+																		koella = data.project.Koella;
 																		isKoellaSaving = false;
 																		toast.push($_('page.discharge.calculation.successfullsave'), {
 																			theme: {
@@ -950,7 +953,7 @@
 																			)}</label
 																		>
 																		<input
-																			type="number"
+																			type="number"  step="any"
 																			class="form-control"
 																			id="Vo20"
 																			name="Vo20"
@@ -1110,7 +1113,8 @@
 																	isClarkWSLSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result;
+																		data.project = result.data;
+																		clark_wsl = data.project.ClarkWSL;
 																		isClarkWSLSaving = false;
 																		toast.push($_('page.discharge.calculation.successfullsave'), {
 																			theme: {
@@ -1153,7 +1157,7 @@
 																					>
 																					<div class="" style="max-width:130px;">
 																						<input
-																							type="number"
+																							type="number"  step="any"
 																							class="form-control text-end"
 																							style="-webkit-appearance: none; -moz-appearance: textfield;"
 																							id="zone_{i}"
