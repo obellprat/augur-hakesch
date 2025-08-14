@@ -236,7 +236,6 @@
 	});
 
 	function addCalculation() {
-		console.log("in add Calculation");
 		if (calulcationType == 1) {
 			// add modifiziertes Fliesszeitverfahren
 			const mod_fliesszeit = {
@@ -244,8 +243,6 @@
 				project_id: data.project.id
 			};
 			mod_verfahren.push(mod_fliesszeit);
-			console.log(mod_fliesszeit);
-			console.log(mod_verfahren);	
 		} else if (calulcationType == 2) {
 			// add Koella
 			const newkoella = {
