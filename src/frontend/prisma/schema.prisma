@@ -173,6 +173,7 @@ model NAM {
   StormCenterMode          StormCenterMode        @relation(fields: [storm_center_mode], references: [mode])
   routing_method           String                 @default("time_values")
   RoutingMethod            RoutingMethod          @relation(fields: [routing_method], references: [method])
+  readiness_to_drain       Int                    @default(0)
   project_id               String
   Project                  Project                @relation(fields: [project_id], references: [id])
   nam_result_id            Int?                   @unique

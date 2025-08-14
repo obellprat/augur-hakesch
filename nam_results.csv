@@ -1,2 +1,21 @@
-nam_id,project_id,user_id,return_period,return_period_desc,catchment_area_km2,channel_length_m,delta_h_m,water_balance_mode,precipitation_factor,storm_center_mode,routing_method,HQ,Tc,TB,TFl,i,S,Pe,effective_curve_number,calculation_status,error_message,calculation_time
-1,aHcYKEGy92V0U8Xk9uu_F,1,3,100,7.328175,3835.0,81.65814208984375,uniform,0.8,centroid,time_values,,,,,,,,,failed,"Calculation returned None - likely missing raster files (curvenumbers.tif, isozones_cog.tif)",2025-08-13T16:52:04.300665
+nam_id,project_id,project_name,user_id,return_period,return_period_desc,catchment_area_km2,channel_length_m,delta_h_m,water_balance_mode,precipitation_factor,storm_center_mode,routing_method,readiness_to_drain,HQ,Tc,TB,TFl,i,S,Pe,effective_curve_number,calculation_status,error_message,calculation_time
+13,cD_mUdXMWyAuBI1aSkr4q,Wileringbächli,1,3,100,4.2786,5325.0,139.5607299804688,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.716943
+14,edw2sspU1LXhtThKIS9_A,Brüggelbächli,1,3,100,1.17175,2590.0,125.4453735351562,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.717351
+5,FoY8NHu-VeDxY43-RkWJ8,Bruuchbach in Fraubrunnen,1,3,100,9.46205,5045.0,118.1672058105469,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.717613
+3,GFH_KNcBPiH5uAALNiPVJ,Hettiswilbach,1,3,100,5.000875,4020.0,207.2139892578125,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.717842
+7,HTsoqW6k6gMTZjWCCqsqt,Steinbach,1,3,100,3.158225,3360.0,537.9562377929688,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.718353
+23,lh9y-yAaTC5lNwgp3Tai7,Obere Frittebach,1,3,100,8.30895,7075.0,537.101318359375,cumulative,0.7,centroid,time_values,-4,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.718980
+18,Ljnhq9tWXen1pF-fjpUQf,Lindentalbach,1,3,100,1.1583,1975.0,341.884765625,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.719713
+16,Ln-KXHmtYuH5OGROT1xuQ,Bächu,1,3,100,4.643575,5465.0,328.2504272460938,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.720143
+6,oiK7Ft3UkZpqezsEiaZBV,Mutzgraben,1,3,100,7.327725,4515.0,352.6048278808594,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.720500
+2,p0rQeezeL4-fzzZRDcqQn,Bäreriedbach / Schöneggbach,1,3,100,2.1207,4015.0,152.6170043945312,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.720924
+22,P5QfdweVgL6LhJeHqUFGU,Nidermattgrabe,1,3,100,4.0164,3150.0,457.0424194335938,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.721202
+8,PrqsOJQEol4lLdxNmpbk7,Chrümpelgrabebach,1,3,100,6.24395,4630.0,528.82275390625,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.721489
+4,s6PPVu65pUKPpPtgnNyw0,Dorfbach Jegenstorf,1,3,100,7.3346,3840.0,81.65814208984375,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.721774
+9,w26McYb6wIBzz76p0A6he,Hüenerbach,1,3,100,2.415275,2605.0,394.3074951171875,cumulative,0.7,centroid,time_values,-4,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.722030
+10,Wv3NMr8yDswu755YjEf27,Dürrbach,1,3,100,9.0106,4310.0,472.5619506835938,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.722277
+20,1Y7DNlCuBbQhxXvYDvLvQ,Aeschougrabe,1,3,100,3.65635,3210.0,412.0089111328125,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.722491
+15,60uV93hIH19_Mrys53lgI,"Muttergebiet: Neuenegg, Brüggelbächli / Wileringbächli",1,3,100,5.816375,5610.0,154.4347534179688,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.722762
+19,6seGUSh3iWrQm8-AN3IUc,Geissbach,1,3,100,7.998075,4490.0,576.0554809570312,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.723006
+21,7Zl7mJeECz7NSn5HgyJkC,Steinebach,1,3,100,7.510025,5085.0,432.8861083984375,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.723161
+11,bw99E61BEYfi7a_9qHDtB,Schwändigrabe,1,3,100,3.53165,3725.0,422.908935546875,cumulative,0.7,centroid,time_values,0,,,,,,,,,failed,Curve number raster not found,2025-08-14T11:07:48.723401

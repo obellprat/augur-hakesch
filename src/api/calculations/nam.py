@@ -105,6 +105,7 @@ def nam(self,
     precipitation_factor=None,  # Override precipitation factor from database
     storm_center_mode=None,  # Override storm center mode from database
     routing_method=None,  # Override routing method from database
+    readiness_to_drain=None,  # Readiness to drain parameter (negative values) to add to curve numbers
     discharge_point=None,  # Discharge point coordinates: (lon, lat) or (easting, northing) or (row, col)
     discharge_point_crs="EPSG:4326"  # CRS of discharge point: "EPSG:4326", "EPSG:2056", or "raster"
 ):
@@ -132,12 +133,14 @@ def nam(self,
         precipitation_factor = precipitation_factor if precipitation_factor is not None else nam_obj.precipitation_factor
         storm_center_mode = storm_center_mode if storm_center_mode is not None else nam_obj.storm_center_mode
         routing_method = routing_method if routing_method is not None else nam_obj.routing_method
+        readiness_to_drain = readiness_to_drain if readiness_to_drain is not None else nam_obj.readiness_to_drain
     
     print(f"NAM parameters:")
     print(f"  Water balance mode: {water_balance_mode}")
     print(f"  Precipitation factor: {precipitation_factor}")
     print(f"  Storm center mode: {storm_center_mode}")
     print(f"  Routing method: {routing_method}")
+    print(f"  Readiness to drain: {readiness_to_drain}")
     
     # Add descriptions if we have the database object
     if nam_obj:
@@ -312,6 +315,18 @@ def nam(self,
     if cn_data.shape != isozone_data.shape:
         return {"error": f"Raster shapes still don't match after resampling: CN={cn_data.shape}, Isozones={isozone_data.shape}"}
     
+    # Apply readiness to drain adjustment to curve numbers
+    if readiness_to_drain is not None and readiness_to_drain != 0:
+        print(f"Applying readiness to drain adjustment: {readiness_to_drain}")
+        # Add readiness_to_drain value to each cell's curve number
+        cn_data_adjusted = cn_data + readiness_to_drain
+        print(f"Curve number adjustment applied: {readiness_to_drain}")
+        print(f"  Original CN range: {np.nanmin(cn_data):.1f} - {np.nanmax(cn_data):.1f}")
+        print(f"  Adjusted CN range: {np.nanmin(cn_data_adjusted):.1f} - {np.nanmax(cn_data_adjusted):.1f}")
+        cn_data = cn_data_adjusted
+    else:
+        print(f"No readiness to drain adjustment (value: {readiness_to_drain})")
+    
     # Calculate potential maximum retention S for each cell
     valid_mask = (cn_data > 0) & (cn_data <= 100)  # Valid curve numbers are 30-100
     if not np.any(valid_mask):
@@ -328,8 +343,8 @@ def nam(self,
         print("This will cause unrealistic S values. Clamping curve numbers to valid range...")
         
         # Clamp curve numbers to valid range
-        cn_data_clamped = np.clip(cn_data, 30, 100)
-        valid_mask = (cn_data_clamped > 0) & (cn_data_clamped <= 100)
+        cn_data = np.clip(cn_data, 30, 100)
+        valid_mask = (cn_data > 0) & (cn_data <= 100)
     
     # Calculate S for each cell: S = (25400 / CN) - 254 [mm]
     S_cells = np.full_like(cn_data, np.nan, dtype=np.float32)

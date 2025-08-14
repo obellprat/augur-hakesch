@@ -2,11 +2,15 @@
 """
 Batch NAM Calculations Script
 
-This script iterates through all entries in the NAM table, calls the NAM calculation function,
+This script iterates through entries in the NAM table, calls the NAM calculation function,
 and saves the output values (HQ, Tc, TB, TFl, i, S, Pe) to a CSV file.
 
 Usage:
-    python batch_nam_calculations.py [--output output.csv] [--limit 100] [--dry-run]
+    python batch_nam_calculations.py \
+        [--output output.csv] \
+        [--limit 100] \
+        [--project-id <uuid>] \
+        [--dry-run]
 """
 
 import os
@@ -29,12 +33,13 @@ from helpers.prisma import prisma
 # Import the NAM function directly (not the task wrapper)
 import calculations.nam
 
-def get_all_nam_entries(limit: Optional[int] = None) -> List[Dict[str, Any]]:
+def get_all_nam_entries(limit: Optional[int] = None, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Fetch all NAM entries from the database with related data.
     
     Args:
         limit: Optional limit on number of entries to fetch
+        project_id: Optional project id to restrict entries
         
     Returns:
         List of NAM entries with related data
@@ -44,6 +49,10 @@ def get_all_nam_entries(limit: Optional[int] = None) -> List[Dict[str, Any]]:
         prisma.connect()
         
         # Build query
+        where_clause = None
+        if project_id:
+            where_clause = { 'project_id': project_id }
+
         nam_entries = prisma.nam.find_many(
             include={
                 'Project': {
@@ -58,10 +67,12 @@ def get_all_nam_entries(limit: Optional[int] = None) -> List[Dict[str, Any]]:
                 'RoutingMethod': True,
                 'NAM_Result': True
             },
+            where=where_clause,
             take=limit if limit else None
         )
         
-        print(f"Found {len(nam_entries)} NAM entries in database")
+        scope_info = f" for project {project_id}" if project_id else ""
+        print(f"Found {len(nam_entries)} NAM entries in database{scope_info}")
         return nam_entries
         
     except Exception as e:
@@ -170,6 +181,7 @@ def call_nam_calculation(nam_entry) -> Optional[Dict[str, Any]]:
         precipitation_factor = getattr(nam_entry, 'precipitation_factor', None)
         storm_center_mode = getattr(nam_entry, 'storm_center_mode', None)
         routing_method = getattr(nam_entry, 'routing_method', None)
+        readiness_to_drain = getattr(nam_entry, 'readiness_to_drain', None)
         
         # Extract discharge point from project's Point relation
         discharge_point = None
@@ -206,6 +218,7 @@ def call_nam_calculation(nam_entry) -> Optional[Dict[str, Any]]:
         print(f"    precipitation_factor: {precipitation_factor}")
         print(f"    storm_center_mode: {storm_center_mode}")
         print(f"    routing_method: {routing_method}")
+        print(f"    readiness_to_drain: {readiness_to_drain}")
         
         # Call the NAM function directly (not through Celery)
         # Get the underlying function from the module
@@ -231,6 +244,7 @@ def call_nam_calculation(nam_entry) -> Optional[Dict[str, Any]]:
             'precipitation_factor': precipitation_factor,
             'storm_center_mode': storm_center_mode,
             'routing_method': routing_method,
+            'readiness_to_drain': readiness_to_drain,
             'discharge_point': discharge_point,
             'discharge_point_crs': discharge_point_crs
         }
@@ -265,6 +279,7 @@ def save_results_to_csv(results: List[Dict[str, Any]], output_file: str):
             'nam_id', 'project_id', 'project_name', 'user_id', 'return_period', 'return_period_desc',
             'catchment_area_km2', 'channel_length_m', 'delta_h_m',
             'water_balance_mode', 'precipitation_factor', 'storm_center_mode', 'routing_method',
+            'readiness_to_drain',
             'HQ', 'Tc', 'TB', 'TFl', 'i', 'S', 'Pe', 'effective_curve_number',
             'calculation_status', 'error_message', 'calculation_time'
         ]
@@ -290,6 +305,8 @@ def main():
                        help='Output CSV file (default: nam_results.csv)')
     parser.add_argument('--limit', type=int, default=None,
                        help='Limit number of entries to process')
+    parser.add_argument('--project-id', dest='project_id', default=None,
+                       help='Filter calculations to a specific project id')
     parser.add_argument('--dry-run', action='store_true',
                        help='Show what would be processed without running calculations')
     
@@ -305,7 +322,7 @@ def main():
     
     try:
         # Get all NAM entries
-        nam_entries = get_all_nam_entries(limit=args.limit)
+        nam_entries = get_all_nam_entries(limit=args.limit, project_id=args.project_id)
         
         if not nam_entries:
             print("No NAM entries found in database")
@@ -337,6 +354,7 @@ def main():
                 'precipitation_factor': getattr(nam_entry, 'precipitation_factor', 1.0),
                 'storm_center_mode': getattr(nam_entry, 'storm_center_mode', ''),
                 'routing_method': getattr(nam_entry, 'routing_method', ''),
+                'readiness_to_drain': getattr(nam_entry, 'readiness_to_drain', ''),
                 'HQ': None,
                 'Tc': None,
                 'TB': None,

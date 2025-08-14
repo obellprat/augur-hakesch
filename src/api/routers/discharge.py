@@ -126,17 +126,18 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                 rp_low=project.IDF_Parameters.rp_low,
                 rp_high=project.IDF_Parameters.rp_high,
                 x=nam_obj.Annuality.number,
-                curve_number=nam_obj.curve_number,
-                catchment_area=nam_obj.catchment_area,
-                channel_length=nam_obj.channel_length,
-                delta_h=nam_obj.delta_h,
+                curve_number=70.0,  # Default fallback value
+                catchment_area=project.catchment_area,
+                channel_length=project.channel_length,
+                delta_h=project.delta_h,
                 nam_id=nam_obj.id,
                 project_id=project.id,
                 user_id=user.id,
-                TB_start=nam_obj.TB_start,
-                istep=nam_obj.istep,
-                tol=nam_obj.tol,
-                max_iter=nam_obj.max_iter
+                water_balance_mode=nam_obj.water_balance_mode,
+                precipitation_factor=nam_obj.precipitation_factor,
+                storm_center_mode=nam_obj.storm_center_mode,
+                routing_method=nam_obj.routing_method,
+                readiness_to_drain=nam_obj.readiness_to_drain
             ))
 
         if len(doDoTasks) > 0:
@@ -354,6 +355,7 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
             precipitation_factor=nam_obj.precipitation_factor,
             storm_center_mode=nam_obj.storm_center_mode,
             routing_method=nam_obj.routing_method,
+            readiness_to_drain=nam_obj.readiness_to_drain,
             discharge_point=discharge_point,
             discharge_point_crs=discharge_point_crs
         )
