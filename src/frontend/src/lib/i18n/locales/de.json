@@ -132,6 +132,17 @@
         "p1": "AUGUR implementiert Verfahren wie das modifizierte Fliesszeitverfahren, Kölla und Clark‑WSL und nutzt klimatologische Datensätze offizieller Stellen. Resultate sind indikativ und ersetzen keine fachliche Studie."
       }
     },
+    "login": {
+      "title": "Bei AUGUR anmelden",
+      "why_heading": "Warum muss ich mich anmelden?",
+      "why_p1": "Mit der Anmeldung können Sie Projekte speichern, Ergebnisse wiederfinden und Ihre Daten geschützt verwalten.",
+      "why_p2": "Zudem erlaubt es uns, längere hydrologische Berechnungen zuverlässig im Hintergrund auszuführen.",
+      "free_heading": "Kostenlos und unkompliziert",
+      "free_p1": "Die Registrierung ist kostenlos. Sie können Ihre Projekte jederzeit löschen.",
+      "btn_login": "Anmelden",
+      "btn_register": "Kostenloses Konto erstellen",
+      "privacy_note": "Wir verwenden Ihre Angaben nur zur Bereitstellung dieses Dienstes."
+    },
     "general": {
       "close": "Schliessen",
       "save": "Speichern",

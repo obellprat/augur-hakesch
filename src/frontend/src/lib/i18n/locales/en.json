@@ -130,6 +130,17 @@
         "p1": "AUGUR implements methods such as the modified flow time method, Kölla and Clark‑WSL, and uses climatological datasets from official sources. Results are indicative and do not replace professional studies."
       }
     },
+    "login": {
+      "title": "Sign in to AUGUR",
+      "why_heading": "Why do I need an account?",
+      "why_p1": "Signing in lets you save projects, revisit results and keep your data private.",
+      "why_p2": "It also helps us run longer hydrologic calculations reliably in the background.",
+      "free_heading": "Free and easy",
+      "free_p1": "Registration is free. You can delete your projects at any time.",
+      "btn_login": "Sign in",
+      "btn_register": "Create a free account",
+      "privacy_note": "We only use your information to provide this service."
+    },
     "general": {
       "close": "Close",
       "cancel": "Cancel",
