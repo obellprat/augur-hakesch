@@ -20,21 +20,27 @@ Mermaid source (for reference):
 
 ```mermaid
 flowchart TD
-  A[Project catchment_geojson] --> B[Union polygons + bbox (EPSG:2056)]
+  A[Project catchment geojson] --> B[Union polygons and bbox (EPSG:2056)]
   B --> C[Transform bbox to EPSG:4326]
   C --> D{ESA WorldCover VRT available?}
   D -- yes --> E[Read ESA VRT window]
-  D -- no --> F[Create fallback landcover distribution]
+  D -- no  --> F[Create fallback landcover distribution]
   C --> G{Local HYSOGs250m available?}
   G -- yes --> H[Read local HYSOGs window]
-  G -- no --> I[Download HYSOGs via ORNL WCS]
-  E & F & H & I --> J[Create EPSG:2056 catchment grid (30 m)]
+  G -- no  --> I[Download HYSOGs via ORNL WCS]
+  E --> J[Create EPSG:2056 catchment grid (30 m)]
+  F --> J
+  H --> J
+  I --> J
   J --> K[Rasterize catchment mask]
-  E & F --> L[Landcover → CN mapping]
-  H & I --> M[HYSOGs → HSG mapping + adjustments]
-  L --> N[Combine LC + Soil (QGIS-style lookup or fallback)]
+  E --> L[Landcover to CN mapping]
+  F --> L
+  H --> M[HYSOGs to HSG mapping and adjustments]
+  I --> M
+  L --> N[Combine LC and Soil (lookup or fallback)]
   M --> N
-  K & N --> O[Apply catchment mask]
+  K --> O[Apply catchment mask]
+  N --> O
   O --> P[Write curvenumbers.tif]
 ```
 

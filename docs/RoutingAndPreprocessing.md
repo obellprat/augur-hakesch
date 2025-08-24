@@ -39,29 +39,30 @@ Mermaid source (for reference):
 ```mermaid
 flowchart TD
   A[DEM: data/geotiffminusriver.tif] --> B[Read subset around outlet]
-  B --> C[Fill pits → Fill depressions → Resolve flats]
-  C --> D[Flow direction (D8) & Accumulation]
+  B --> C[Fill pits, fill depressions, resolve flats]
+  C --> D[Flow direction (D8) and accumulation]
   D --> E[Snap outlet to stream (a_crit)]
   E --> F[Catchment delineation]
   F --> G[Clip to catchment]
-  G --> H[Forest overlay (ch_wald.shp) & slope]
+  G --> H[Forest overlay (ch_wald.shp) and slope]
   H --> I[Obstacle layer (slowdown factors)]
-  I --> J[Distance to outlet (weighted by obstacles)]
-  J --> K[Raw time values (min) = dist / (v_gerinne*60*100)]
-  K --> L[Discretize to 10-min classes → isozones]
+  I --> J[Distance to outlet (weighted)]
+  J --> K[Raw time values (minutes)]
+  K --> L[Discretize to 10-min classes]
   L --> M[Write isozones_cog.tif]
   K --> N[Write time_values.tif]
 ```
 
 ```mermaid
 flowchart TD
-  A[Project catchment_geojson (EPSG:2056)] --> B[Union polygons]
+  A[Project catchment geojson (EPSG:2056)] --> B[Union polygons]
   B --> C[Bounds in EPSG:2056]
   C --> D[Open DEM: data/geotiffminusriver.tif]
-  D --> E{CRS == EPSG:2056?}
-  E -- no --> F[Transform catchment->DEM CRS]
+  D --> E{CRS equals EPSG:2056?}
+  E -- no  --> F[Transform catchment to DEM CRS]
   E -- yes --> G[Use original bounds]
-  F & G --> H[Windowed read DEM]
+  F --> H[Windowed read DEM]
+  G --> H
   H --> I[Mask outside catchment]
   I --> J[Write data/{user}/{project}/dem.tif]
 ```

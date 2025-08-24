@@ -96,25 +96,25 @@ Mermaid source (for reference):
 
 ```mermaid
 flowchart TD
-  A[Load inputs & NAM overrides] --> B[Load CN, isozones; align rasters]
+  A[Load inputs and overrides] --> B[Load CN and isozones; align rasters]
   B --> C[Load DEM; align if present]
   B --> D[If time_values method: load time_values]
   C --> E[Apply readiness_to_drain to CN]
-  E --> F[Compute S = 25400/CN-254; Ia = 0.2S]
-  F --> G[Build storm (IDF, dt=10min, duration=60min)]
+  E --> F[Compute S and Ia]
+  F --> G[Build storm: IDF; dt 10 min; duration 60 min]
   G --> H[Choose center by storm_center_mode]
-  H --> I[Water balance by mode (uniform/cumulative/other) → Pe per cell]
+  H --> I[Water balance by mode to Pe per cell]
   I --> J[Compute travel time by routing method]
   J --> K[Sum runoff volumes per arrival timestep]
-  K --> L[Convert to discharge (m³/s)]
-  L --> M[HQ = max(Q); report diagnostics]
+  K --> L[Convert to discharge (m3/s)]
+  L --> M[HQ is max discharge; diagnostics]
 ```
 
 ```mermaid
 flowchart TD
   A{Routing method} -->|travel_time| B{DEM available?}
   B -- yes --> C[Overland flow speeds from slope]
-  B -- no --> D[Constant-velocity distance-based]
-  A -->|isozone| E[Isozone index → arrival timestep]
-  A -->|time_values| F[time_values.tif minutes → arrival timestep]
+  B -- no  --> D[Constant velocity distance based]
+  A -->|isozone| E[Isozone index to arrival timestep]
+  A -->|time_values| F[time_values minutes to arrival timestep]
 ```
