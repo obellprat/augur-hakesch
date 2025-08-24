@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#555" />
+    </marker>
+    <style><![CDATA[
+      .box{fill:#fff;stroke:#444;stroke-width:2;rx:8;ry:8}
+      .label{font:400 14px sans-serif; fill:#222}
+      .title{font:700 18px sans-serif; fill:#222}
+    ]]></style>
+  </defs>
+
+  <text class="title" x="40" y="40">Curve Numbers Flow</text>
+
+  <!-- Row 1 -->
+  <rect class="box" x="40" y="80" width="260" height="60"/>
+  <text class="label" x="60" y="115">catchment_geojson (EPSG:2056)</text>
+
+  <rect class="box" x="340" y="80" width="260" height="60"/>
+  <text class="label" x="360" y="115">Union polygons + bbox</text>
+
+  <rect class="box" x="640" y="80" width="260" height="60"/>
+  <text class="label" x="660" y="115">Transform bbox to EPSG:4326</text>
+
+  <line x1="300" y1="110" x2="340" y2="110" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="600" y1="110" x2="640" y2="110" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 2: LC and Soil branches -->
+  <rect class="box" x="40" y="190" width="320" height="60"/>
+  <text class="label" x="60" y="225">ESA WorldCover VRT available?</text>
+  <rect class="box" x="40" y="270" width="320" height="60"/>
+  <text class="label" x="60" y="305">Read ESA window or fallback LC</text>
+
+  <rect class="box" x="420" y="190" width="320" height="60"/>
+  <text class="label" x="440" y="225">Local HYSOGs available?</text>
+  <rect class="box" x="420" y="270" width="320" height="60"/>
+  <text class="label" x="440" y="305">Read local or download WCS</text>
+
+  <line x1="770" y1="110" x2="200" y2="190" stroke="#bbb" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="770" y1="110" x2="580" y2="190" stroke="#bbb" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 3: Grid & mask -->
+  <rect class="box" x="40" y="390" width="320" height="60"/>
+  <text class="label" x="60" y="425">Create EPSG:2056 grid (30 m)</text>
+
+  <rect class="box" x="420" y="390" width="320" height="60"/>
+  <text class="label" x="440" y="425">Rasterize catchment mask</text>
+
+  <line x1="200" y1="330" x2="200" y2="390" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="580" y1="330" x2="580" y2="390" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 4: Combine -->
+  <rect class="box" x="40" y="510" width="320" height="60"/>
+  <text class="label" x="60" y="545">LC→CN mapping</text>
+
+  <rect class="box" x="420" y="510" width="320" height="60"/>
+  <text class="label" x="440" y="545">HYSOGs→HSG adjustments</text>
+
+  <rect class="box" x="800" y="510" width="320" height="60"/>
+  <text class="label" x="820" y="545">QGIS-style lookup or fallback</text>
+
+  <line x1="200" y1="450" x2="200" y2="510" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="580" y1="450" x2="580" y2="510" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="360" y1="540" x2="800" y2="540" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="740" y1="540" x2="800" y2="540" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 5: Mask + write -->
+  <rect class="box" x="40" y="630" width="320" height="60"/>
+  <text class="label" x="60" y="665">Apply catchment mask</text>
+
+  <rect class="box" x="420" y="630" width="320" height="60"/>
+  <text class="label" x="440" y="665">Write curvenumbers.tif</text>
+
+  <line x1="960" y1="540" x2="200" y2="630" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="360" y1="660" x2="420" y2="660" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+</svg>
+
