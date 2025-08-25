@@ -70,7 +70,7 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                 project.IDF_Parameters.rp_high, 
                 koella_obj.Annuality.number, 
                 koella_obj.Vo20, 
-                project.channel_length, 
+                project.channel_length/1000, 
                 project.catchment_area, 
                 koella_obj.glacier_area, 
                 koella_obj.id
