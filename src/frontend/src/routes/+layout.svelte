@@ -6,7 +6,7 @@
 
 	import { SvelteToast } from '@zerodevx/svelte-toast';
 
-	import { Footer, Menu } from '$lib/index';
+	import { Footer, Menu, LoadingOverlay } from '$lib/index';
 
 	import { loadScript } from '$lib/page/loadscript';
 	import { onMount } from 'svelte';
@@ -33,6 +33,7 @@
 		{@render children()}
 		<Footer />
 	</div>
+	<LoadingOverlay />
 	<SvelteToast />
 	<!-- ============================================================== -->
 	<!-- End Page content -->
