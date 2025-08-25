@@ -52,6 +52,9 @@ def modifizierte_fliesszeit(self,
     else:
         raise ValueError("Return period x must be 2.3, 20 or 100.")
 
+    # Always Vo20 is used in HAKESCH
+    Vox = Vo20
+    
     # 2. Flow time according to Kirpich
     J = delta_H / L
     TFl = 0.0195 * (L ** 0.77) * (J ** -0.385)
@@ -148,6 +151,7 @@ def koella(self,
     max_iter=1000            # Max. iterations
 ):
     intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
+
     # Effective contributing area in km²
     FLeff = 0.12 * (Lg ** 1.07)  
 
@@ -190,7 +194,7 @@ def koella(self,
     elif x == 20:
         kF = 1.0
 
-    TFl_h = FLeff ** 0.2 * kF
+    TFl_h = (FLeff * kF) ** 0.2 
     TFl = TFl_h * 60  # min
     kGang = 1 # Initial value for hydrograph correction factor
 
@@ -231,33 +235,6 @@ def koella(self,
 
     QGle = 0.5 * glacier_area
 
-    # Correction according to recurrence interval
-    
-    def get_kF_values(Vo20):
-        # Table mapping Vo20 to kF2.33 and kF100
-        table = {
-            20: (0.9, 1.1),
-            25: (0.8, 1.15),
-            30: (0.75, 1.2),
-            35: (0.7, 1.25),
-            40: (0.65, 1.3),
-            45: (0.6, 1.3)
-        }
-        # Find closest Vo20 in table if not exact
-        keys = sorted(table.keys())
-        closest = min(keys, key=lambda k: abs(k - Vo20))
-        return table[closest]
-
-    kF2_33, kF100 = get_kF_values(Vo20)
-
-    # Compute HQ depending on recurrence interval period
-    if x == 2.3:
-        kF = kF2_33
-    elif x == 100:
-        kF = kF100 
-    elif x == 20:
-        kF = 1.0
-        
     precipitation_correction = 0.1 * Vox 
     i_corrected = max(i_final - precipitation_correction,0)
 
