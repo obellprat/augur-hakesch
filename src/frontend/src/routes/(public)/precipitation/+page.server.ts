@@ -7,4 +7,4 @@ export const load: PageServerLoad = async ({ url }) => {
 	return {
 		initialLocation: lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null
 	};
-}; 
+};

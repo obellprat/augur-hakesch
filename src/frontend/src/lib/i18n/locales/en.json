@@ -1,154 +1,154 @@
 {
-  "page": {
-    "dashboard": {
-      "title": "Dashboard",
-      "nav": "Dashboard",
-      "welcome": "Welcome to AUGUR",
-      "welcome_text": "Welcome to AUGR",
-      "precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios",
-      "precipitationtool": "Precipitation Tool",
-      "precipitation": "Precipitation",
-      "dischargedesc": "Calculation of hydrological runoff modelling, such as modified flow time method, Koella or Clark-WSL."
-    },
-    "discharge": {
-      "title": "Discharge",
-      "nav": "Discharge",
-      "projects": "Projects",
-      "geodata": "Geodata",
-      "calculate": "Hydrologie",
-      "overviewText": "Overview",
-      "overview": {
-        "deleteProject": "Delete project",
-        "description": "Description",
-        "discharge-projekt": "Discharge - Project",
-        "pourpoint": "Poutpoint",
-        "projectTitle": "Project title",
-        "shoulddeleteproject": "Do you want to delete the project {title}?",
-        "changePoutPoint": "Select by clicking on the map",
-        "easting": "Easting",
-        "northing": "Northing",
-        "calculateGeodata": "Recalculate geodata"
-      },
-      "project": "Project",
-      "create": {
-        "createproject": "Create project"
-      },
-      "calculation": {
-        "idf": {
-          "precipLowerPeriod1h": "Precipitation [mm] for lower return period, 1 hour duration",
-          "precipLowerPeriod24h": "Precipitation [mm] for lower return period, 24 hour duration",
-          "returnPeriod": "Lower return period",
-          "precipUpperPeriod1h": "Precipitation [mm] for upper return period, 1 hour duration",
-          "precipUpperPeriod24h": "Precipitation [mm] for upper return period, 24 hour duration",
-          "upperReturnPeriod": "Upper return period"
-        },
-        "szenario": "Scenario",
-        "modFZV": {
-          "wettingVolume": "Wetting volume for 20-year event [mm]",
-          "peakFlow": "Peak flow coefficient [-]"
-        },
-        "calculate": "Calculate hydrology",
-        "deleteCalculation": "Delete calculation",
-        "deleteCalculationQuestion": "Should we delete the calculation?",
-        "successfullsave": "Successfully saved!",
-        "returnPeriod": "Return period",
-        "koella": {
-          "glacierArea": "Glacier area"
-        },
-        "results": "Results",
-        "hq": "HQ",
-        "addcalculation": "Add hydrologic calculation",
-        "calcrunning": "Calculataion is running...",
-        "calcsuccess": "Successfully calculated!",
-        "calculationTitle": "- Calculation | AUGUR",
-        "clarkwsl": "Clark WSL",
-        "generalInput": "General",
-        "inputsForPrecipitationIntensity": "Information on the calculation of precipitation intensity",
-        "modFliesszeit": "Modified flow time method",
-        "koells": "Koella",
-        "typeOfCalculation": "Which process should be added to the project?"
-      }
-    },
-    "precipitation": {
-      "title": "Precipitation",
-      "nav": "Precipitation"
-    },
-    "nav": {
-      "tools": "Tools",
-      "about": "About",
-      "aboutAugur": "About AUGUR",
-      "science": "Science",
-      "donate": "Donate",
-      "helpSupportUs": "Help support us. Please donate!",
-      "donateNow": "Donate now",
-      "welcome": "Welcome !",
-      "my-account": "My Account",
-      "settings": "Settings",
-      "support": "Support",
-      "sign-out": "Sign Out",
-      "login": "Login",
-      "signup": "Signup",
-      "english": "English",
-      "german": "German",
-      "contact": "Contact Us",
-      "version": "Version",
-      "backend": "Backend",
-      "frontend": "Frontend"
-    },
-    "about": {
-      "title": "About AUGUR",
-      "intro": {
-        "heading": "What is AUGUR?",
-        "p1": "AUGUR helps estimate precipitation and river discharge for catchments worldwide.",
-        "p2": "It brings science-based methods into an easy web app for planners, educators and curious users."
-      },
-      "idea": {
-        "heading": "The idea",
-        "p1": "Start with a location and a few inputs. AUGUR combines climate information with hydrologic methods to deliver quick, comparable results.",
-        "p2": "Explore scenarios and methods side by side to understand sensitivity and uncertainty."
-      },
-      "technology": {
-        "heading": "How it works (simple)",
-        "p1": "Behind the scenes, AUGUR has a modern web UI and a robust API. Calculations run in the background so longer tasks don’t block the page.",
-        "list": {
-          "svelte": "SvelteKit interface for maps, charts and projects.",
-          "fastapi": "FastAPI provides the API and authentication (Keycloak).",
-          "prisma": "Prisma handles database access for projects and results.",
-          "celery": "Celery runs hydrologic models as background jobs.",
-          "redis": "Redis coordinates tasks and short‑lived results.",
-          "docker": "Docker Compose runs the stack locally and in the cloud."
-        }
-      },
-      "getting_started": {
-        "heading": "Get started",
-        "p1": "Try the Precipitation tool or create a Discharge project. Adjust inputs and rerun to compare results.",
-        "open_precip": "Open Precipitation",
-        "open_discharge": "Open Discharge"
-      },
-      "credits": {
-        "heading": "Credits & data",
-        "p1": "AUGUR implements methods such as the modified flow time method, Kölla and Clark‑WSL, and uses climatological datasets from official sources. Results are indicative and do not replace professional studies."
-      }
-    },
-    "login": {
-      "title": "Sign in to AUGUR",
-      "why_heading": "Why do I need an account?",
-      "why_p1": "Signing in lets you save projects, revisit results and keep your data private.",
-      "why_p2": "It also helps us run longer hydrologic calculations reliably in the background.",
-      "free_heading": "Free and easy",
-      "free_p1": "Registration is free. You can delete your projects at any time.",
-      "btn_login": "Sign in",
-      "btn_register": "Create a free account",
-      "privacy_note": "We only use your information to provide this service."
-    },
-    "general": {
-      "close": "Close",
-      "cancel": "Cancel",
-      "delete": "Delete",
-      "save": "Save",
-      "calculate": "Calculate",
-      "add": "Add",
-      "start": "Start"
-    }
-  }
+	"page": {
+		"dashboard": {
+			"title": "Dashboard",
+			"nav": "Dashboard",
+			"welcome": "Welcome to AUGUR",
+			"welcome_text": "Welcome to AUGR",
+			"precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios",
+			"precipitationtool": "Precipitation Tool",
+			"precipitation": "Precipitation",
+			"dischargedesc": "Calculation of hydrological runoff modelling, such as modified flow time method, Koella or Clark-WSL."
+		},
+		"discharge": {
+			"title": "Discharge",
+			"nav": "Discharge",
+			"projects": "Projects",
+			"geodata": "Geodata",
+			"calculate": "Hydrologie",
+			"overviewText": "Overview",
+			"overview": {
+				"deleteProject": "Delete project",
+				"description": "Description",
+				"discharge-projekt": "Discharge - Project",
+				"pourpoint": "Poutpoint",
+				"projectTitle": "Project title",
+				"shoulddeleteproject": "Do you want to delete the project {title}?",
+				"changePoutPoint": "Select by clicking on the map",
+				"easting": "Easting",
+				"northing": "Northing",
+				"calculateGeodata": "Recalculate geodata"
+			},
+			"project": "Project",
+			"create": {
+				"createproject": "Create project"
+			},
+			"calculation": {
+				"idf": {
+					"precipLowerPeriod1h": "Precipitation [mm] for lower return period, 1 hour duration",
+					"precipLowerPeriod24h": "Precipitation [mm] for lower return period, 24 hour duration",
+					"returnPeriod": "Lower return period",
+					"precipUpperPeriod1h": "Precipitation [mm] for upper return period, 1 hour duration",
+					"precipUpperPeriod24h": "Precipitation [mm] for upper return period, 24 hour duration",
+					"upperReturnPeriod": "Upper return period"
+				},
+				"szenario": "Scenario",
+				"modFZV": {
+					"wettingVolume": "Wetting volume for 20-year event [mm]",
+					"peakFlow": "Peak flow coefficient [-]"
+				},
+				"calculate": "Calculate hydrology",
+				"deleteCalculation": "Delete calculation",
+				"deleteCalculationQuestion": "Should we delete the calculation?",
+				"successfullsave": "Successfully saved!",
+				"returnPeriod": "Return period",
+				"koella": {
+					"glacierArea": "Glacier area"
+				},
+				"results": "Results",
+				"hq": "HQ",
+				"addcalculation": "Add hydrologic calculation",
+				"calcrunning": "Calculataion is running...",
+				"calcsuccess": "Successfully calculated!",
+				"calculationTitle": "- Calculation | AUGUR",
+				"clarkwsl": "Clark WSL",
+				"generalInput": "General",
+				"inputsForPrecipitationIntensity": "Information on the calculation of precipitation intensity",
+				"modFliesszeit": "Modified flow time method",
+				"koells": "Koella",
+				"typeOfCalculation": "Which process should be added to the project?"
+			}
+		},
+		"precipitation": {
+			"title": "Precipitation",
+			"nav": "Precipitation"
+		},
+		"nav": {
+			"tools": "Tools",
+			"about": "About",
+			"aboutAugur": "About AUGUR",
+			"science": "Science",
+			"donate": "Donate",
+			"helpSupportUs": "Help support us. Please donate!",
+			"donateNow": "Donate now",
+			"welcome": "Welcome !",
+			"my-account": "My Account",
+			"settings": "Settings",
+			"support": "Support",
+			"sign-out": "Sign Out",
+			"login": "Login",
+			"signup": "Signup",
+			"english": "English",
+			"german": "German",
+			"contact": "Contact Us",
+			"version": "Version",
+			"backend": "Backend",
+			"frontend": "Frontend"
+		},
+		"about": {
+			"title": "About AUGUR",
+			"intro": {
+				"heading": "What is AUGUR?",
+				"p1": "AUGUR helps estimate precipitation and river discharge for catchments worldwide.",
+				"p2": "It brings science-based methods into an easy web app for planners, educators and curious users."
+			},
+			"idea": {
+				"heading": "The idea",
+				"p1": "Start with a location and a few inputs. AUGUR combines climate information with hydrologic methods to deliver quick, comparable results.",
+				"p2": "Explore scenarios and methods side by side to understand sensitivity and uncertainty."
+			},
+			"technology": {
+				"heading": "How it works (simple)",
+				"p1": "Behind the scenes, AUGUR has a modern web UI and a robust API. Calculations run in the background so longer tasks don’t block the page.",
+				"list": {
+					"svelte": "SvelteKit interface for maps, charts and projects.",
+					"fastapi": "FastAPI provides the API and authentication (Keycloak).",
+					"prisma": "Prisma handles database access for projects and results.",
+					"celery": "Celery runs hydrologic models as background jobs.",
+					"redis": "Redis coordinates tasks and short‑lived results.",
+					"docker": "Docker Compose runs the stack locally and in the cloud."
+				}
+			},
+			"getting_started": {
+				"heading": "Get started",
+				"p1": "Try the Precipitation tool or create a Discharge project. Adjust inputs and rerun to compare results.",
+				"open_precip": "Open Precipitation",
+				"open_discharge": "Open Discharge"
+			},
+			"credits": {
+				"heading": "Credits & data",
+				"p1": "AUGUR implements methods such as the modified flow time method, Kölla and Clark‑WSL, and uses climatological datasets from official sources. Results are indicative and do not replace professional studies."
+			}
+		},
+		"login": {
+			"title": "Sign in to AUGUR",
+			"why_heading": "Why do I need an account?",
+			"why_p1": "Signing in lets you save projects, revisit results and keep your data private.",
+			"why_p2": "It also helps us run longer hydrologic calculations reliably in the background.",
+			"free_heading": "Free and easy",
+			"free_p1": "Registration is free. You can delete your projects at any time.",
+			"btn_login": "Sign in",
+			"btn_register": "Create a free account",
+			"privacy_note": "We only use your information to provide this service."
+		},
+		"general": {
+			"close": "Close",
+			"cancel": "Cancel",
+			"delete": "Delete",
+			"save": "Save",
+			"calculate": "Calculate",
+			"add": "Add",
+			"start": "Start"
+		}
+	}
 }

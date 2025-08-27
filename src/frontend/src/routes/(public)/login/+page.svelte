@@ -29,28 +29,28 @@
 	<div class="container-fluid">
 		<div class="row">
 			<div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h1 class="card-title">{$_('page.login.title')}</h1>
+				<div class="card">
+					<div class="card-body">
+						<h1 class="card-title">{$_('page.login.title')}</h1>
 
-                        <h4 class="mt-3">{$_('page.login.why_heading')}</h4>
-                        <p class="card-text">{$_('page.login.why_p1')}</p>
-                        <p class="card-text">{$_('page.login.why_p2')}</p>
+						<h4 class="mt-3">{$_('page.login.why_heading')}</h4>
+						<p class="card-text">{$_('page.login.why_p1')}</p>
+						<p class="card-text">{$_('page.login.why_p2')}</p>
 
-                        <h4 class="mt-4">{$_('page.login.free_heading')}</h4>
-                        <p class="card-text">{$_('page.login.free_p1')}</p>
-                        <p class="text-muted small">{$_('page.login.privacy_note')}</p>
+						<h4 class="mt-4">{$_('page.login.free_heading')}</h4>
+						<p class="card-text">{$_('page.login.free_p1')}</p>
+						<p class="text-muted small">{$_('page.login.privacy_note')}</p>
 
-                        <div class="d-flex gap-2 mt-3">
-                            <button class="btn btn-primary" id="loginBtn" type="button" onclick={login}>
-                                {$_('page.login.btn_login')}
-                            </button>
-                            <button class="btn btn-outline-primary" type="button" onclick={register}>
-                                {$_('page.login.btn_register')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+						<div class="d-flex gap-2 mt-3">
+							<button class="btn btn-primary" id="loginBtn" type="button" onclick={login}>
+								{$_('page.login.btn_login')}
+							</button>
+							<button class="btn btn-outline-primary" type="button" onclick={register}>
+								{$_('page.login.btn_register')}
+							</button>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>

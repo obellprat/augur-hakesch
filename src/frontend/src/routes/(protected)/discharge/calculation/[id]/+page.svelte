@@ -106,6 +106,7 @@
 	currentProject.id = data.project.id;
 	let zones = data.zones;
 
+	let isGeneralSaving = $state(false);
 	let isMFZSaving = $state(false);
 	let isKoellaSaving = $state(false);
 	let isClarkWSLSaving = $state(false);
@@ -351,21 +352,25 @@
 						}
 					});
 					invalidateAll();
-					
+
 					return false;
-				}
-				else if (taskStatus === 'FAILURE') {
+				} else if (taskStatus === 'FAILURE') {
 					toast.pop();
-					toast.push('<h3 style="padding:5;">'+$_('page.discharge.calculation.calcerror') + '</h3>' + res.task_result, {
-						theme: {
-							'--toastColor': 'white',
-							'--toastBackground': 'darkred'
-						},
-						initial: 0
-					});
+					toast.push(
+						'<h3 style="padding:5;">' +
+							$_('page.discharge.calculation.calcerror') +
+							'</h3>' +
+							res.task_result,
+						{
+							theme: {
+								'--toastColor': 'white',
+								'--toastBackground': 'darkred'
+							},
+							initial: 0
+						}
+					);
 					invalidateAll();
 
-					
 					return false;
 				}
 				setTimeout(function () {
@@ -417,19 +422,23 @@
 					});
 					invalidateAll();
 					return;
-				}
-				else if (res.status === 'FAILURE') {
+				} else if (res.status === 'FAILURE') {
 					toast.pop();
-					toast.push('<h3 style="padding:5;">'+$_('page.discharge.calculation.calcerror') + '</h3>' + res.task_result, {
-						theme: {
-							'--toastColor': 'white',
-							'--toastBackground': 'darkred'
-						},
-						initial: 0
-					});
+					toast.push(
+						'<h3 style="padding:5;">' +
+							$_('page.discharge.calculation.calcerror') +
+							'</h3>' +
+							res.task_result,
+						{
+							theme: {
+								'--toastColor': 'white',
+								'--toastBackground': 'darkred'
+							},
+							initial: 0
+						}
+					);
 					invalidateAll();
 
-					
 					return false;
 				}
 
@@ -555,9 +564,11 @@
 										method="post"
 										action="?/updatefnp"
 										use:enhance={() => {
+											isGeneralSaving = true;
 											return async ({ update }) => {
 												await update();
 												currentProject.title = data.project.title;
+												isGeneralSaving = false;
 											};
 										}}
 									>
@@ -653,7 +664,16 @@
 												</select>
 											</div>
 										</div>
-										<button type="submit" class="btn btn-primary">{$_('page.general.save')}</button>
+										<button type="submit" class="btn btn-primary" disabled={isGeneralSaving}>
+											{#if isGeneralSaving}
+												<span
+													class="spinner-border spinner-border-sm me-2"
+													role="status"
+													aria-hidden="true"
+												></span>
+											{/if}
+											{$_('page.general.save')}
+										</button>
 									</form>
 								</div>
 							</div>
@@ -751,7 +771,8 @@
 																			)}</label
 																		>
 																		<input
-																			type="number" step="any"
+																			type="number"
+																			step="any"
 																			class="form-control"
 																			id="Vo20"
 																			name="Vo20"
@@ -777,7 +798,17 @@
 																		<button
 																			type="submit"
 																			class="btn btn-primary"
-																			disabled={isMFZSaving}>{$_('page.general.save')}</button
+																			disabled={isMFZSaving}
+																		>
+																			{#if isMFZSaving}
+																				<span
+																					class="spinner-border spinner-border-sm me-2"
+																					role="status"
+																					aria-hidden="true"
+																				></span>
+																			{/if}
+																			{$_('page.general.save')}
+																		</button>
 																		>
 																		<button
 																			type="button"
@@ -950,7 +981,8 @@
 																			)}</label
 																		>
 																		<input
-																			type="number"  step="any"
+																			type="number"
+																			step="any"
 																			class="form-control"
 																			id="Vo20"
 																			name="Vo20"
@@ -978,7 +1010,17 @@
 																		<button
 																			type="submit"
 																			class="btn btn-primary"
-																			disabled={isKoellaSaving}>{$_('page.general.save')}</button
+																			disabled={isKoellaSaving}
+																		>
+																			{#if isKoellaSaving}
+																				<span
+																					class="spinner-border spinner-border-sm me-2"
+																					role="status"
+																					aria-hidden="true"
+																				></span>
+																			{/if}
+																			{$_('page.general.save')}
+																		</button>
 																		>
 																		<button
 																			type="button"
@@ -1154,7 +1196,8 @@
 																					>
 																					<div class="" style="max-width:130px;">
 																						<input
-																							type="number"  step="any"
+																							type="number"
+																							step="any"
 																							class="form-control text-end"
 																							style="-webkit-appearance: none; -moz-appearance: textfield;"
 																							id="zone_{i}"
@@ -1173,7 +1216,17 @@
 																		<button
 																			type="submit"
 																			class="btn btn-primary"
-																			disabled={isClarkWSLSaving}>{$_('page.general.save')}</button
+																			disabled={isClarkWSLSaving}
+																		>
+																			{#if isClarkWSLSaving}
+																				<span
+																					class="spinner-border spinner-border-sm me-2"
+																					role="status"
+																					aria-hidden="true"
+																				></span>
+																			{/if}
+																			{$_('page.general.save')}
+																		</button>
 																		>
 																		<button
 																			type="button"

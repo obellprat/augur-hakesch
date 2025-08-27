@@ -40,8 +40,12 @@
 					<h4 class="mt-4">{$_('page.about.getting_started.heading')}</h4>
 					<p class="card-text">{$_('page.about.getting_started.p1')}</p>
 					<div class="d-flex gap-2">
-						<a class="btn btn-primary" href="{base}/precipitation">{$_('page.about.getting_started.open_precip')}</a>
-						<a class="btn btn-outline-primary" href="{base}/discharge">{$_('page.about.getting_started.open_discharge')}</a>
+						<a class="btn btn-primary" href="{base}/precipitation"
+							>{$_('page.about.getting_started.open_precip')}</a
+						>
+						<a class="btn btn-outline-primary" href="{base}/discharge"
+							>{$_('page.about.getting_started.open_discharge')}</a
+						>
 					</div>
 
 					<h4 class="mt-4">{$_('page.about.credits.heading')}</h4>

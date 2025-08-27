@@ -1,4 +1,4 @@
-import { getProjectById, getAllZones} from '$lib/server/project';
+import { getProjectById, getAllZones } from '$lib/server/project';
 import { error } from '@sveltejs/kit';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
@@ -23,7 +23,8 @@ export const load = async ({ params }) => {
 	}
 
 	return {
-		project, zones
+		project,
+		zones
 	};
 };
 
@@ -228,19 +229,20 @@ export const actions = {
 
 	updateclarkwsl: async ({ request }) => {
 		const formData = Object.fromEntries(await request.formData());
-		const { id, clarkwsl_id, x, zone_0, zone_1, zone_2, zone_3, zone_4, zone_5, zone_6, zone_7 } = formData as unknown as {
-			id: string | undefined;
-			clarkwsl_id: number | undefined;
-			x: number | undefined;
-			zone_0: number | undefined;
-			zone_1: number | undefined;
-			zone_2: number | undefined;
-			zone_3: number | undefined;
-			zone_4: number | undefined;
-			zone_5: number | undefined;
-			zone_6: number | undefined;
-			zone_7: number | undefined;
-		};
+		const { id, clarkwsl_id, x, zone_0, zone_1, zone_2, zone_3, zone_4, zone_5, zone_6, zone_7 } =
+			formData as unknown as {
+				id: string | undefined;
+				clarkwsl_id: number | undefined;
+				x: number | undefined;
+				zone_0: number | undefined;
+				zone_1: number | undefined;
+				zone_2: number | undefined;
+				zone_3: number | undefined;
+				zone_4: number | undefined;
+				zone_5: number | undefined;
+				zone_6: number | undefined;
+				zone_7: number | undefined;
+			};
 
 		if (!id) {
 			return fail(400, { message: 'Missing required fields' });
@@ -259,7 +261,7 @@ export const actions = {
 					connect: {
 						id: annuality.id
 					}
-				},
+				}
 			},
 			create: {
 				Annuality: {
@@ -288,7 +290,7 @@ export const actions = {
 		const fractions = zones.map((zone: ZoneParameter, index: number) => ({
 			ZoneParameterTyp: zone.typ,
 			pct: Number(formData[`zone_${index}`]) || 0,
-			clarkwsl_id: newclarkwsl.id,
+			clarkwsl_id: newclarkwsl.id
 		}));
 
 		await prisma.Fractions.createMany({

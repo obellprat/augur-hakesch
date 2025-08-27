@@ -105,7 +105,7 @@
 	<div class="h-100">
 		<div class="card-header py-2 px-3 border-bottom">
 			<div class="d-flex align-items-center justify-content-between py-1">
-				<div class="d-flex align-items-center gap-2">	
+				<div class="d-flex align-items-center gap-2">
 					<h3 class="my-0 lh-base">{$_('page.discharge.create.createproject')}</h3>
 				</div>
 			</div>
