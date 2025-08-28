@@ -257,7 +257,7 @@ def nam(self,
             # Load time_values.tif for time_values routing method
             time_values_data = None
             if routing_method == "time_values":
-                time_values_file = f"data/{user_id}/{project_id}/time_values.tif"
+                time_values_file = os.path.join(base, str(user_id), str(project_id), 'time_values.tif')
                 if os.path.exists(time_values_file):
                     print(f"Loading time values raster from: {time_values_file}")
                     with rasterio.open(time_values_file) as src:
@@ -502,13 +502,13 @@ def nam(self,
         center_col = int(np.mean(valid_indices[1]))
         print(f"Storm center at catchment centroid: ({center_row}, {center_col})")
     # Large stratiform storm
-    storm_radius_km = 3.0
+    storm_radius_km = 4.0
 
     # Create storm distribution with physically meaningful radius for Swiss storms
     # Get grid resolution in meters (EPSG:2056 coordinates)
     cell_size_m = abs(cn_transform.a)  # meters per pixel in x direction
     if cell_size_m <= 0:
-        cell_size_m = 30.0  # fallback to typical 30m resolution
+        cell_size_m = 5.0  # fallback to typical 30m resolution
     
     # Define storm radius in kilometers based on typical Swiss storm characteristics
     # Can be overridden by setting storm_radius_km variable
@@ -532,7 +532,7 @@ def nam(self,
     storm_distribution = P_total_storm * np.exp(-distances / storm_radius_pixels)
     
     # Option 2: Gaussian distribution (alternative, more gradual decay)
-    # storm_distribution = P_total_storm * np.exp(-(distances / storm_radius_pixels)**2)
+    #storm_distribution = P_total_storm * np.exp(-(distances / storm_radius_pixels)**2)
     
     # Option 3: Linear decay (simpler, more uniform)
     #storm_distribution = P_total_storm * np.maximum(0, 1 - distances / storm_radius_pixels)
