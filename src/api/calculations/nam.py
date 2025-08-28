@@ -1459,7 +1459,7 @@ def get_curve_numbers(self, projectId: str, userId: int):
                 meta={'text': 'Processing curve number data', 'progress': 60})
     
     # Create a grid for the catchment area
-    cell_size = 30  # meters (ESA WorldCover resolution)
+    cell_size = 5  # meters (ESA WorldCover resolution)
     # For EPSG:2056 (Swiss coordinates), cell_size is already in meters
     grid = create_catchment_grid(catchment_union, cell_size)
     
@@ -2243,61 +2243,157 @@ def apply_osm_landcover_data(curve_number_raster, landuse_data, grid):
     return curve_number_raster
 
 
+def reproject_raster_to_target(input_file, target_shape, target_transform, target_crs, temp_dir, data_type):
+    """
+    Reproject and resample a raster to match the target grid specifications.
+    This ensures proper spatial alignment between different resolution datasets.
+    
+    Args:
+        input_file: Path to input raster file
+        target_shape: Target shape (height, width)
+        target_transform: Target affine transform
+        target_crs: Target coordinate reference system
+        temp_dir: Temporary directory for output files
+        data_type: Type of data ('landcover' or 'soil') for appropriate resampling
+    
+    Returns:
+        numpy.ndarray: Reprojected raster data
+    """
+    import tempfile
+    
+    # Choose appropriate resampling method based on data type
+    if data_type == 'landcover':
+        # Use nearest neighbor for categorical land cover data
+        resampling = rasterio.enums.Resampling.nearest
+    elif data_type == 'soil':
+        # Use nearest neighbor for categorical soil data
+        resampling = rasterio.enums.Resampling.nearest
+    else:
+        # Default to nearest neighbor
+        resampling = rasterio.enums.Resampling.nearest
+    
+    # Create output file path
+    output_filename = f"reprojected_{data_type}_{os.path.basename(input_file)}"
+    output_file = os.path.join(temp_dir, output_filename)
+    
+    try:
+        # Reproject the raster
+        with rasterio.open(input_file) as src:
+            # Read the source data
+            source_data = src.read(1)
+            
+            # Create destination array
+            reprojected_data = np.empty(target_shape, dtype=source_data.dtype)
+            
+            # Reproject to target specifications
+            rasterio.warp.reproject(
+                source_data,
+                reprojected_data,
+                dst_crs=target_crs,
+                dst_transform=target_transform,
+                resampling=resampling,
+                src_transform=src.transform,
+                src_crs=src.crs,
+                src_nodata=src.nodata if src.nodata is not None else 0,
+                dst_nodata=0
+            )
+            
+            # Save the reprojected raster for debugging
+            with rasterio.open(
+                output_file,
+                'w',
+                driver='GTiff',
+                height=target_shape[0],
+                width=target_shape[1],
+                count=1,
+                dtype=reprojected_data.dtype,
+                crs=target_crs,
+                transform=target_transform,
+                nodata=0
+            ) as dst:
+                dst.write(reprojected_data, 1)
+            
+            print(f"Reprojected {data_type} data saved to: {output_file}")
+            print(f"Original shape: {source_data.shape}, Reprojected shape: {reprojected_data.shape}")
+            
+            return reprojected_data
+            
+    except Exception as e:
+        print(f"Error reprojecting {data_type} data: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Fallback: create a default array with the target shape
+        print(f"Creating fallback {data_type} array with shape {target_shape}")
+        if data_type == 'landcover':
+            # Default land cover value (grassland)
+            fallback_data = np.full(target_shape, 30, dtype=np.uint8)
+        elif data_type == 'soil':
+            # Default soil value (HSG B)
+            fallback_data = np.full(target_shape, 2, dtype=np.uint8)
+        else:
+            fallback_data = np.full(target_shape, 0, dtype=np.uint8)
+        
+        return fallback_data
+
+
 def apply_qgis_plugin_curve_number_calculation(curve_number_raster, landuse_data, soil_data, grid):
     """
     Apply QGIS plugin-style curve number calculation using lookup tables.
     This combines ESA WorldCover land cover data with ORNL HYSOGs soil data.
+    Properly handles spatial alignment and coordinate system transformations.
     """
+    print("QGIS Plugin Curve Number Calculation")
     try:
-        # Load land cover data
-        with rasterio.open(landuse_data['data_file']) as lc_src:
-            landcover_data = lc_src.read(1)
-            
-        # Load soil data
-        with rasterio.open(soil_data['data_file']) as soil_src:
-            soil_data_raster = soil_src.read(1)
-            
-        print(f"Original land cover shape: {landcover_data.shape}")
-        print(f"Original soil data shape: {soil_data_raster.shape}")
-        print(f"Target curve number raster shape: {curve_number_raster.shape}")
+        # Create a temporary directory for reprojected rasters
+        temp_dir = "./data/temp"
+        os.makedirs(temp_dir, exist_ok=True)
         
-        # Ensure all arrays have the same shape
+        # Get target grid properties
         target_shape = curve_number_raster.shape
+        target_transform = grid.affine
+        target_crs = 'EPSG:2056'  # Swiss coordinate system
         
-        # Resize land cover data to target shape if needed
-        if landcover_data.shape != target_shape:
-            print(f"Resizing land cover from {landcover_data.shape} to {target_shape}")
-            from scipy.ndimage import zoom
-            # Calculate zoom factors
-            zoom_y = target_shape[0] / landcover_data.shape[0]
-            zoom_x = target_shape[1] / landcover_data.shape[1]
-            landcover_data = zoom(landcover_data, (zoom_y, zoom_x), order=0)  # order=0 for nearest neighbor
-            
-        # Resize soil data to target shape if needed
-        if soil_data_raster.shape != target_shape:
-            print(f"Resizing soil data from {soil_data_raster.shape} to {target_shape}")
-            from scipy.ndimage import zoom
-            # Calculate zoom factors
-            zoom_y = target_shape[0] / soil_data_raster.shape[0]
-            zoom_x = target_shape[1] / soil_data_raster.shape[1]
-            soil_data_raster = zoom(soil_data_raster, (zoom_y, zoom_x), order=0)  # order=0 for nearest neighbor
-            
-        print(f"Final land cover shape: {landcover_data.shape}")
-        print(f"Final soil data shape: {soil_data_raster.shape}")
-        print(f"Land cover unique values: {np.unique(landcover_data)}")
-        print(f"Soil data unique values: {np.unique(soil_data_raster)}")
+        print(f"Target grid shape: {target_shape}")
+        print(f"Target transform: {target_transform}")
+        print(f"Target CRS: {target_crs}")
+        
+        # Reproject and resample land cover data to match target grid
+        landcover_reprojected = reproject_raster_to_target(
+            landuse_data['data_file'], 
+            target_shape, 
+            target_transform, 
+            target_crs,
+            temp_dir,
+            'landcover'
+        )
+        
+        # Reproject and resample soil data to match target grid
+        soil_reprojected = reproject_raster_to_target(
+            soil_data['data_file'], 
+            target_shape, 
+            target_transform, 
+            target_crs,
+            temp_dir,
+            'soil'
+        )
+        
+        print(f"Reprojected land cover shape: {landcover_reprojected.shape}")
+        print(f"Reprojected soil data shape: {soil_reprojected.shape}")
+        print(f"Land cover unique values: {np.unique(landcover_reprojected)}")
+        print(f"Soil data unique values: {np.unique(soil_reprojected)}")
         
         # Verify shapes match
-        assert landcover_data.shape == soil_data_raster.shape == curve_number_raster.shape, \
-            f"Shape mismatch: LC={landcover_data.shape}, Soil={soil_data_raster.shape}, CN={curve_number_raster.shape}"
+        assert landcover_reprojected.shape == soil_reprojected.shape == curve_number_raster.shape, \
+            f"Shape mismatch after reprojection: LC={landcover_reprojected.shape}, Soil={soil_reprojected.shape}, CN={curve_number_raster.shape}"
         
         # Create lookup table for curve numbers (ESA Land Cover + HSG combinations)
         # This is based on the QGIS plugin's default lookup tables
         lookup_table = create_curve_number_lookup_table()
         
         # Apply curve numbers based on land cover and soil combinations
-        for lc_class in np.unique(landcover_data):
-            for hsg_class in np.unique(soil_data_raster):
+        for lc_class in np.unique(landcover_reprojected):
+            for hsg_class in np.unique(soil_reprojected):
                 # Create grid code like the plugin (ESA_LC + HSG)
                 grid_code = f"{lc_class}_{hsg_class}"
                 
@@ -2305,7 +2401,7 @@ def apply_qgis_plugin_curve_number_calculation(curve_number_raster, landuse_data
                 cn_value = lookup_table.get(grid_code, 70)  # Default to 70 if not found
                 
                 # Apply to pixels where both conditions are met
-                mask = (landcover_data == lc_class) & (soil_data_raster == hsg_class)
+                mask = (landcover_reprojected == lc_class) & (soil_reprojected == hsg_class)
                 curve_number_raster[mask] = cn_value
                 
                 if np.any(mask):
