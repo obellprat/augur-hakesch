@@ -1,3 +1,20 @@
+## 0.3.0-alpha.0 (2025-09-10)
+
+### Feat
+
+- **frontend**: shows a spinner when loading data from database
+
+### Fix
+
+- **frontend**: Calculations cannot be performed if the geodata has not yet been calculated. The user will be informed of this. Fix #41
+- **frontend**: The data for the calculations is saved before the calculations are performed
+- **api**: change cumulative flow length in project-wide calculation
+- **api**: send the Cumulative channel length in km and not in m
+- **Additional-changes-to-Fliesszeitverfahren-and-Kölla**: Calculation corrections
+- **discharge.py**: calculation corrections for koella and clark-wsl
+- **frontend**: after saving calculation-data it was not possible to add other calculations. And fixes the decimal places bug
+- **api,frontend**: Enable to download isozone, catchment and branches as tif and geojson
+
 ## 0.3.0-dev.5 (2025-08-10)
 
 ### Fix
