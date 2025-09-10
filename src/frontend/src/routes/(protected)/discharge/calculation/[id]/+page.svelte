@@ -110,6 +110,7 @@
 	let isMFZSaving = $state(false);
 	let isKoellaSaving = $state(false);
 	let isClarkWSLSaving = $state(false);
+	let couldCalculate = $state(false);
 
 	let returnPeriod = $state([
 		{
@@ -453,12 +454,58 @@
 		mod_verfahren = data.project.Mod_Fliesszeit;
 		koella = data.project.Koella;
 		clark_wsl = data.project.ClarkWSL;
+
+		if (data.project.isozones_taskid === '' || data.project.isozones_running) {
+			globalThis.$('#missinggeodata-modal').modal('show');
+		}
+		else {
+			couldCalculate = true;
+		}
 	});
 </script>
 
 <svelte:head>
 	<title>{$pageTitle} - {$_('page.discharge.calculation.calculationTitle')} | AUGUR</title>
 </svelte:head>
+
+<!-- Missing geodata dialog -->
+ <div
+	id="missinggeodata-modal"
+	class="modal fade"
+	tabindex="-1"
+	role="dialog"
+	aria-labelledby="standard-modalLabel"
+	aria-hidden="true"
+>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="standard-modalLabel">
+					{$_('page.discharge.calculation.missinggeodataTitle')}
+				</h4>
+				<button
+					type="button"
+					class="btn-close"
+					data-bs-dismiss="modal"
+					aria-label={$_('page.general.close')}
+				></button>
+			</div>
+			<div class="modal-body">
+				<h5>{$_('page.discharge.calculation.missingGeodata')}</h5>
+			</div>
+			<div class="modal-footer">
+				<button
+					type="button"
+					class="btn btn-light"
+					data-bs-dismiss="modal"
+					onclick={addCalculation}>{$_('page.general.ok')}</button
+				>
+			</div>
+		</div>
+		<!-- /.modal-content -->
+	</div>
+	<!-- /.modal-dialog -->
+</div>
 
 <div class="flex-grow-1 card">
 	<div class="h-100">
@@ -819,8 +866,7 @@
 																		<button
 																			type="submit" id="calcMFZButton"
 																			class="btn btn-primary"
-																			disabled={isMFZSaving}
-																			
+																			disabled={isMFZSaving || !couldCalculate}
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
@@ -1034,7 +1080,7 @@
 																		<button
 																			type="submit" id="calcKoellaButton"
 																			class="btn btn-primary"
-																			disabled={isKoellaSaving}
+																			disabled={isKoellaSaving || !couldCalculate}
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
@@ -1243,7 +1289,7 @@
 																		<button
 																			type="submit" id="calcClarkWSLButton"
 																			class="btn btn-primary"
-																			disabled={isClarkWSLSaving}
+																			disabled={isClarkWSLSaving || !couldCalculate}
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
