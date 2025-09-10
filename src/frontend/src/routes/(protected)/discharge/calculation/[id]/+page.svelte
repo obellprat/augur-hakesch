@@ -727,20 +727,27 @@
 															<form
 																method="post"
 																action="?/updatemfzv"
-																use:enhance={() => {
+																use:enhance={({ formElement, formData, action, cancel, submitter }) => {
 																	isMFZSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
 																		data.project = result.data!;
 																		mod_verfahren = data.project.Mod_Fliesszeit;
 																		isMFZSaving = false;
-																		toast.push($_('page.discharge.calculation.successfullsave'), {
-																			theme: {
-																				'--toastColor': 'mintcream',
-																				'--toastBackground': 'rgba(72,187,120,0.9)',
-																				'--toastBarBackground': '#2F855A'
-																			}
-																		});
+
+																		if (submitter?.id=="calcMFZButton"){
+																			calculateModFliess(mod_fz.project_id, mod_fz.id);
+																		}
+																		else {
+
+																			toast.push($_('page.discharge.calculation.successfullsave'), {
+																				theme: {
+																					'--toastColor': 'mintcream',
+																					'--toastBackground': 'rgba(72,187,120,0.9)',
+																					'--toastBarBackground': '#2F855A'
+																				}
+																			});
+																		}
 																	};
 																}}
 															>
@@ -809,13 +816,11 @@
 																			{/if}
 																			{$_('page.general.save')}
 																		</button>
-																		>
 																		<button
-																			type="button"
+																			type="submit" id="calcMFZButton"
 																			class="btn btn-primary"
 																			disabled={isMFZSaving}
-																			onclick={() =>
-																				calculateModFliess(mod_fz.project_id, mod_fz.id)}
+																			
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
@@ -937,20 +942,25 @@
 															<form
 																method="post"
 																action="?/updatekoella"
-																use:enhance={() => {
+																use:enhance={({ formElement, formData, action, cancel, submitter }) => {
 																	isKoellaSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
 																		data.project = result.data;
 																		koella = data.project.Koella;
 																		isKoellaSaving = false;
-																		toast.push($_('page.discharge.calculation.successfullsave'), {
-																			theme: {
-																				'--toastColor': 'mintcream',
-																				'--toastBackground': 'rgba(72,187,120,0.9)',
-																				'--toastBarBackground': '#2F855A'
-																			}
-																		});
+																		if (submitter?.id=="calcKoellaButton"){
+																			calculateKoella(k.project_id, k.id);
+																		}
+																		else {
+																			toast.push($_('page.discharge.calculation.successfullsave'), {
+																				theme: {
+																					'--toastColor': 'mintcream',
+																					'--toastBackground': 'rgba(72,187,120,0.9)',
+																					'--toastBarBackground': '#2F855A'
+																				}
+																			});
+																		}
 																	};
 																}}
 															>
@@ -1021,12 +1031,10 @@
 																			{/if}
 																			{$_('page.general.save')}
 																		</button>
-																		>
 																		<button
-																			type="button"
+																			type="submit" id="calcKoellaButton"
 																			class="btn btn-primary"
 																			disabled={isKoellaSaving}
-																			onclick={() => calculateKoella(k.project_id, k.id)}
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
@@ -1148,20 +1156,25 @@
 															<form
 																method="post"
 																action="?/updateclarkwsl"
-																use:enhance={() => {
+																use:enhance={({ formElement, formData, action, cancel, submitter}) => {
 																	isClarkWSLSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
 																		data.project = result.data;
 																		clark_wsl = data.project.ClarkWSL;
 																		isClarkWSLSaving = false;
-																		toast.push($_('page.discharge.calculation.successfullsave'), {
+																		if (submitter?.id=="calcClarkWSLButton"){
+																			calculateClarkWSL(k.project_id, k.id);
+																		}
+																		else {
+																			toast.push($_('page.discharge.calculation.successfullsave'), {
 																			theme: {
 																				'--toastColor': 'mintcream',
 																				'--toastBackground': 'rgba(72,187,120,0.9)',
-																				'--toastBarBackground': '#2F855A'
+																			'--toastBarBackground': '#2F855A'
 																			}
 																		});
+																		}
 																	};
 																}}
 															>
@@ -1227,12 +1240,10 @@
 																			{/if}
 																			{$_('page.general.save')}
 																		</button>
-																		>
 																		<button
-																			type="button"
+																			type="submit" id="calcClarkWSLButton"
 																			class="btn btn-primary"
 																			disabled={isClarkWSLSaving}
-																			onclick={() => calculateClarkWSL(k.project_id, k.id)}
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
