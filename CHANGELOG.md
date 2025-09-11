@@ -1,3 +1,15 @@
+## 0.3.0-alpha.1 (2025-09-11)
+
+### Feat
+
+- **api**: Use the Bodeneignungskarte in Switzerland to generate the curve numbers
+
+### Fix
+
+- **api**: Use a_crit 1000 and not 10000 for generating isozones
+- **api,frontend**: Better error description, when the calculation is not working
+- **api**: Use the correct cumulative length for the calculation and not the maximum length
+
 ## 0.3.0-alpha.0 (2025-09-10)
 
 ### Feat
