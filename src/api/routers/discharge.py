@@ -7,7 +7,8 @@ from celery import group
 import pandas as pd
 
 from calculations.discharge import construct_idf_curve, modifizierte_fliesszeit, prepare_discharge_hydroparameters, koella, clark_wsl_modified
-from calculations.nam import nam, get_curve_numbers, extract_dem
+from calculations.nam import nam, extract_dem
+from calculations.curvenumbers import get_curve_numbers
 
 router = APIRouter(prefix="/discharge",
     tags=["discharge"],)
@@ -221,11 +222,6 @@ def clark_wsl_modified(self,
     pixel_area_m2=25           # Cell area [m²] (e.g. 5x5 m)
 ):
 """
-
-
-
-
-
 @router.get("/clark-wsl")
 def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)):
     try:
