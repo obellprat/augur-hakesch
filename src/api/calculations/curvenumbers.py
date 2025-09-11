@@ -2,25 +2,40 @@
 Curve Number Calculation Module
 
 This module contains functions for calculating curve numbers using the QGIS approach
-with local ESA WorldCover and local HYSOGs data sources.
+with local ESA WorldCover and either local HYSOGs or BEK (Bodeneignungskarte) data sources.
+
+The module supports two soil data sources:
+- HYSOGs: Global Hydrologic Soil Groups (HYSOGs250m) raster data
+- BEK: Swiss soil suitability map (Bodeneignungskarte) shapefile data
+
+When using BEK data, the module automatically falls back to HYSOGs for areas
+where BEK data is not available or insufficient.
 """
 
 import os
 import json
 import numpy as np
+import pandas as pd
+import geopandas as gpd
 import rasterio
 import rasterio.windows
+from rasterio.features import rasterize
 from shapely.geometry import shape
 from shapely import ops
 from prisma import Prisma
 from calculations.calculations import app
 
 @app.task(name="get_curve_numbers", bind=True)
-def get_curve_numbers(self, projectId: str, userId: int):
+def get_curve_numbers(self, projectId: str, userId: int, soil_data_source: str = "bek"):
     """
     Get curve numbers for a catchment geojson and save as raster.
-    Simplified version using only local ESA WorldCover and local HYSOGs data.
+    Uses local ESA WorldCover and either local HYSOGs or BEK (Bodeneignungskarte) data.
     Based on QGIS Curve Number Generator plugin approach.
+    
+    Args:
+        projectId: Project ID
+        userId: User ID  
+        soil_data_source: "hysogs" for HYSOGs250m data or "bek" for BEK shapefile data
     """
     self.update_state(state='PROGRESS',
                 meta={'text': 'Loading project data', 'progress': 5})
@@ -84,8 +99,15 @@ def get_curve_numbers(self, projectId: str, userId: int):
     self.update_state(state='PROGRESS',
                 meta={'text': 'Loading soil data', 'progress': 40})
     
-    # Load local HYSOGs soil data (no temp files)
-    soil_data = load_local_hysogs_soil_data(bbox_wgs84)
+    # Load soil data based on source parameter
+    if soil_data_source == "bek":
+        soil_data = load_bek_soil_data(bbox_wgs84)
+        # If BEK data is empty or insufficient, fallback to HYSOGs
+        if soil_data['bek_data'] is None or soil_data['bek_data'].empty:
+            print("BEK data not available or empty, falling back to HYSOGs")
+            soil_data = load_local_hysogs_soil_data(bbox_wgs84)
+    else:  # default to hysogs
+        soil_data = load_local_hysogs_soil_data(bbox_wgs84)
     
     self.update_state(state='PROGRESS',
                 meta={'text': 'Processing curve number data', 'progress': 60})
@@ -292,10 +314,174 @@ def load_local_hysogs_soil_data(bbox):
     }
 
 
+def load_bek_soil_data(bbox):
+    """
+    Load soil data from BEK (Bodeneignungskarte) shapefile.
+    The BEK shapefile is expected at `./data/bek.shp` with fields:
+    - WASSERDURC: Wasserdurchlässigkeit code (2..6)
+    - VERNASS: Vernässung code (1..4) 
+    - GRUNDIGKEI: Gründigkeit code (2..6)
+    """
+    # Path to BEK shapefile
+    bek_path = "./data/Bodeneignungskarte_LV95.shp"
+    
+    if not os.path.exists(bek_path):
+        raise FileNotFoundError(f"BEK shapefile not found at {bek_path}")
+    
+    # Read BEK shapefile
+    bek = gpd.read_file(bek_path)
+    
+    if bek.crs is None:
+        raise ValueError("BEK shapefile has no CRS")
+    
+    # Convert bbox from WGS84 to BEK CRS if needed
+    from pyproj import Transformer
+    transformer = Transformer.from_crs("EPSG:4326", str(bek.crs), always_xy=True)
+    
+    # Convert bbox corners from WGS84 to BEK CRS
+    minx, miny = transformer.transform(bbox[0], bbox[1])
+    maxx, maxy = transformer.transform(bbox[2], bbox[3])
+    
+    # Create bounding box geometry for filtering
+    from shapely.geometry import box
+    bbox_geom = box(minx, miny, maxx, maxy)
+    
+    # Filter BEK features that intersect with the bbox
+    bek_filtered = bek[bek.geometry.intersects(bbox_geom)].copy()
+    
+    if bek_filtered.empty:
+        print("Warning: No BEK features found in the specified bounding box")
+        # Return empty data structure
+        return {
+            'source': 'BEK',
+            'data': None,
+            'transform': None,
+            'crs': bek.crs,
+            'bek_data': bek_filtered,
+            'bbox': bbox,
+            'description': 'BEK (Bodeneignungskarte) soil data - no features in bbox'
+        }
+    
+    # Validate required fields
+    required_fields = ['WASSERDURC', 'VERNASS', 'GRUNDIGKEI']
+    missing_fields = [f for f in required_fields if f not in bek_filtered.columns]
+    if missing_fields:
+        raise ValueError(f"BEK shapefile missing required fields: {missing_fields}")
+    
+    # Convert fields to numeric, handling any non-numeric values
+    for field in required_fields:
+        bek_filtered[field] = pd.to_numeric(bek_filtered[field], errors='coerce').astype('Int64')
+    
+    # Calculate HSG for each polygon
+    bek_filtered['HSG_undrained'] = bek_filtered.apply(
+        lambda row: calculate_hsg_undrained(
+            row['WASSERDURC'], row['VERNASS'], row['GRUNDIGKEI']
+        ), axis=1
+    )
+    
+    bek_filtered['HSG_drained'] = bek_filtered.apply(
+        lambda row: calculate_hsg_drained(
+            row['WASSERDURC'], row['VERNASS'], row['GRUNDIGKEI']
+        ), axis=1
+    )
+    
+    print(f"Successfully loaded BEK data: {len(bek_filtered)} features")
+    print(f"HSG undrained distribution: {bek_filtered['HSG_undrained'].value_counts().to_dict()}")
+    print(f"HSG drained distribution: {bek_filtered['HSG_drained'].value_counts().to_dict()}")
+    
+    return {
+        'source': 'BEK',
+        'data': None,  # Will be rasterized later
+        'transform': None,  # Will be set during rasterization
+        'crs': bek.crs,
+        'bek_data': bek_filtered,
+        'bbox': bbox,
+        'description': 'BEK (Bodeneignungskarte) soil data loaded from shapefile'
+    }
+
+
+def calculate_hsg_undrained(wd, ver, gr):
+    """
+    Calculate HSG for undrained conditions from BEK codes.
+    Based on the NEH (Niederschlag-Evapotranspiration-Hydrologie) rules.
+    """
+    # Normalize codes (handle None/NaN values)
+    wd = None if pd.isna(wd) or wd <= 0 else int(wd)
+    ver = None if pd.isna(ver) or ver <= 0 else int(ver)
+    gr = None if pd.isna(gr) or gr <= 0 else int(gr)
+    
+    # Baseline HSG from Wasserdurchlässigkeit
+    baseline_hsg = {6: "A", 5: "B", 4: "C", 3: "D", 2: "D"}.get(wd)
+    
+    if baseline_hsg is None:
+        return None
+    
+    hsg = baseline_hsg
+    
+    # Apply Vernässung adjustments (undrained)
+    if ver in (3, 4):
+        hsg = "D"  # High waterlogging -> D
+    elif ver == 2:
+        hsg = degrade_hsg(hsg, 1)  # Moderate waterlogging -> degrade by 1 class
+    
+    # Apply Gründigkeit adjustments
+    if gr == 2:
+        hsg = degrade_hsg(hsg, 2)  # Shallow soil -> degrade by 2 classes
+    elif gr == 3:
+        hsg = degrade_hsg(hsg, 1)  # Moderately shallow -> degrade by 1 class
+    
+    return hsg
+
+
+def calculate_hsg_drained(wd, ver, gr):
+    """
+    Calculate HSG for drained conditions from BEK codes.
+    Similar to undrained but ignores Vernässung (waterlogging).
+    """
+    # Normalize codes (handle None/NaN values)
+    wd = None if pd.isna(wd) or wd <= 0 else int(wd)
+    ver = None if pd.isna(ver) or ver <= 0 else int(ver)
+    gr = None if pd.isna(gr) or gr <= 0 else int(gr)
+    
+    # Baseline HSG from Wasserdurchlässigkeit
+    baseline_hsg = {6: "A", 5: "B", 4: "C", 3: "D", 2: "D"}.get(wd)
+    
+    if baseline_hsg is None:
+        return None
+    
+    hsg = baseline_hsg
+    
+    # Ignore Vernässung for drained conditions
+    # Apply only Gründigkeit adjustments
+    if gr == 2:
+        hsg = degrade_hsg(hsg, 2)  # Shallow soil -> degrade by 2 classes
+    elif gr == 3:
+        hsg = degrade_hsg(hsg, 1)  # Moderately shallow -> degrade by 1 class
+    
+    return hsg
+
+
+def degrade_hsg(hsg, steps):
+    """
+    Degrade HSG by the specified number of steps.
+    A -> B -> C -> D (D stays D)
+    """
+    if hsg is None:
+        return None
+    
+    hsg_order = ["A", "B", "C", "D"]
+    try:
+        current_index = hsg_order.index(hsg)
+        new_index = min(len(hsg_order) - 1, current_index + max(0, steps))
+        return hsg_order[new_index]
+    except ValueError:
+        return None
+
+
 def generate_curve_numbers_qgis_only(landuse_data, soil_data, grid, catchment_geom):
     """
     Generate curve numbers using QGIS approach only.
-    Simplified version that combines local ESA WorldCover and local HYSOGs data.
+    Combines local ESA WorldCover with either HYSOGs or BEK soil data.
     """
     # Create catchment mask
     catchment_mask = grid.rasterize([(catchment_geom, 1)], fill=0)
@@ -304,14 +490,195 @@ def generate_curve_numbers_qgis_only(landuse_data, soil_data, grid, catchment_ge
     curve_number_raster = np.full(grid.shape, 70, dtype=np.float32)  # Default CN
     
     # Use QGIS plugin approach: combine land cover and soil data using lookup tables
-    curve_number_raster = apply_qgis_plugin_curve_number_calculation_simplified(
-        curve_number_raster, landuse_data, soil_data, grid
-    )
+    if soil_data['source'] == 'BEK':
+        curve_number_raster = apply_bek_curve_number_calculation(
+            curve_number_raster, landuse_data, soil_data, grid
+        )
+    else:  # HYSOGs
+        curve_number_raster = apply_qgis_plugin_curve_number_calculation_simplified(
+            curve_number_raster, landuse_data, soil_data, grid
+        )
     
     # Apply catchment mask
     curve_number_raster = np.where(catchment_mask == 1, curve_number_raster, 0)
     
     return curve_number_raster
+
+
+def apply_bek_curve_number_calculation(curve_number_raster, landuse_data, soil_data, grid):
+    """
+    Apply BEK-based curve number calculation.
+    Rasterizes BEK polygons with HSG values and combines with land cover data.
+    """
+    print("BEK Curve Number Calculation")
+    try:
+        # Get target grid properties
+        target_shape = curve_number_raster.shape
+        target_transform = grid.affine
+        target_crs = 'EPSG:2056'  # Swiss coordinate system
+        
+        print(f"Target grid shape: {target_shape}")
+        print(f"Target transform: {target_transform}")
+        print(f"Target CRS: {target_crs}")
+        
+        # Reproject and resample land cover data to match target grid (in memory)
+        landcover_reprojected = reproject_raster_data_to_target(
+            landuse_data['data'], 
+            landuse_data['transform'],
+            landuse_data['crs'],
+            target_shape, 
+            target_transform, 
+            target_crs
+        )
+        
+        print(f"Reprojected land cover shape: {landcover_reprojected.shape}")
+        print(f"Land cover unique values: {np.unique(landcover_reprojected)}")
+        
+        # Rasterize BEK HSG data to target grid
+        bek_data = soil_data['bek_data']
+        
+        # Convert BEK CRS to target CRS if needed
+        if str(bek_data.crs) != target_crs:
+            bek_data = bek_data.to_crs(target_crs)
+        
+        # Rasterize undrained HSG (default mode)
+        hsg_undrained_raster = rasterize_bek_hsg(
+            bek_data, 'HSG_undrained', target_shape, target_transform
+        )
+        
+        print(f"BEK HSG undrained unique values: {np.unique(hsg_undrained_raster)}")
+        
+        # Check if we need HYSOGs fallback for areas without BEK data
+        unknown_mask = (hsg_undrained_raster == 0)
+        if np.any(unknown_mask):
+            print(f"Found {np.sum(unknown_mask)} pixels without BEK HSG data, applying HYSOGs fallback")
+            hsg_undrained_raster = apply_hysogs_fallback(
+                hsg_undrained_raster, unknown_mask, target_shape, target_transform
+            )
+        
+        # Verify shapes match
+        assert landcover_reprojected.shape == hsg_undrained_raster.shape == curve_number_raster.shape, \
+            f"Shape mismatch: LC={landcover_reprojected.shape}, HSG={hsg_undrained_raster.shape}, CN={curve_number_raster.shape}"
+        
+        # Create lookup table for curve numbers (ESA Land Cover + HSG combinations)
+        lookup_table = create_curve_number_lookup_table()
+        
+        # Apply curve numbers based on land cover and HSG combinations
+        for lc_class in np.unique(landcover_reprojected):
+            for hsg_code in np.unique(hsg_undrained_raster):
+                if hsg_code == 0:  # Skip unknown HSG
+                    continue
+                
+                # Convert HSG code to letter
+                hsg_letter = {1: "A", 2: "B", 3: "C", 4: "D"}.get(hsg_code)
+                if hsg_letter is None:
+                    continue
+                
+                # Create grid code like the plugin (ESA_LC + HSG)
+                grid_code = f"{lc_class}_{hsg_code}"
+                
+                # Get curve number from lookup table
+                cn_value = lookup_table.get(grid_code, 70)  # Default to 70 if not found
+                
+                # Apply to pixels where both conditions are met
+                mask = (landcover_reprojected == lc_class) & (hsg_undrained_raster == hsg_code)
+                curve_number_raster[mask] = cn_value
+                
+                if np.any(mask):
+                    print(f"Applied CN {cn_value} for {grid_code} ({lc_class} + HSG {hsg_letter}) to {np.sum(mask)} pixels")
+        
+        print(f"Final curve number range: {np.min(curve_number_raster)} - {np.max(curve_number_raster)}")
+        
+    except Exception as e:
+        print(f"Error in BEK curve number calculation: {e}")
+        import traceback
+        traceback.print_exc()
+        # Fallback to default curve number
+        curve_number_raster.fill(70)
+    
+    return curve_number_raster
+
+
+def rasterize_bek_hsg(bek_data, hsg_field, target_shape, target_transform):
+    """
+    Rasterize BEK polygons with HSG values to target grid.
+    """
+    # Create shapes for rasterization
+    shapes = []
+    for _, row in bek_data.iterrows():
+        hsg = row[hsg_field]
+        if hsg in ("A", "B", "C", "D") and row.geometry is not None and not row.geometry.is_empty:
+            # Convert HSG letter to code
+            hsg_code = {"A": 1, "B": 2, "C": 3, "D": 4}[hsg]
+            shapes.append((row.geometry, hsg_code))
+    
+    if not shapes:
+        print("Warning: No valid HSG polygons found for rasterization")
+        return np.zeros(target_shape, dtype=np.uint8)
+    
+    # Rasterize
+    hsg_raster = rasterize(
+        shapes=shapes,
+        out_shape=target_shape,
+        transform=target_transform,
+        fill=0,  # Unknown HSG = 0
+        dtype=np.uint8,
+        all_touched=True
+    )
+    
+    return hsg_raster
+
+
+def apply_hysogs_fallback(hsg_raster, unknown_mask, target_shape, target_transform):
+    """
+    Apply HYSOGs fallback for areas where BEK data is not available.
+    """
+    try:
+        # Load HYSOGs data for the same area
+        from pyproj import Transformer
+        
+        # Get bounds of the target grid
+        from rasterio.transform import array_bounds
+        minx, miny, maxx, maxy = array_bounds(target_shape[0], target_shape[1], target_transform)
+        
+        # Convert to WGS84 for HYSOGs loading
+        transformer = Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
+        min_lon, min_lat = transformer.transform(minx, miny)
+        max_lon, max_lat = transformer.transform(maxx, maxy)
+        bbox_wgs84 = [min_lon, min_lat, max_lon, max_lat]
+        
+        # Load HYSOGs data
+        hysogs_data = load_local_hysogs_soil_data(bbox_wgs84)
+        
+        # Reproject HYSOGs to target grid
+        hysogs_reprojected = reproject_raster_data_to_target(
+            hysogs_data['data'],
+            hysogs_data['transform'],
+            hysogs_data['crs'],
+            target_shape,
+            target_transform,
+            'EPSG:2056'
+        )
+        
+        # Convert HYSOGs codes to HSG codes
+        hysogs_hsg_raster = np.zeros_like(hysogs_reprojected, dtype=np.uint8)
+        for hysogs_code, hsg_letter in hysogs_data['hysogs_to_hsg'].items():
+            if hsg_letter in ['A', 'B', 'C', 'D']:
+                hsg_code = {'A': 1, 'B': 2, 'C': 3, 'D': 4}[hsg_letter]
+                mask = (hysogs_reprojected == hysogs_code)
+                hysogs_hsg_raster[mask] = hsg_code
+        
+        # Apply HYSOGs fallback only where BEK data is unknown
+        hsg_raster[unknown_mask] = hysogs_hsg_raster[unknown_mask]
+        
+        print(f"Applied HYSOGs fallback to {np.sum(unknown_mask)} pixels")
+        print(f"Final HSG distribution: {dict(zip(*np.unique(hsg_raster, return_counts=True)))}")
+        
+    except Exception as e:
+        print(f"Error applying HYSOGs fallback: {e}")
+        # Keep original raster if fallback fails
+    
+    return hsg_raster
 
 
 def reproject_raster_data_to_target(data, source_transform, source_crs, target_shape, target_transform, target_crs):
