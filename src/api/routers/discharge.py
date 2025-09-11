@@ -77,7 +77,7 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                 project.IDF_Parameters.rp_high, 
                 koella_obj.Annuality.number, 
                 koella_obj.Vo20, 
-                project.channel_length/1000, 
+                project.cummulative_channel_length/1000, 
                 project.catchment_area, 
                 koella_obj.glacier_area, 
                 koella_obj.id
@@ -200,7 +200,7 @@ def get_koella(ProjectId:str, KoellaId: int, user: User = Depends(get_user)):
         )
 
         koella_obj = next((x for x in project.Koella if x.id == KoellaId), None)
-        task = koella.delay(project.IDF_Parameters.P_low_1h, project.IDF_Parameters.P_high_1h, project.IDF_Parameters.P_low_24h, project.IDF_Parameters.P_high_24h, project.IDF_Parameters.rp_low, project.IDF_Parameters.rp_high, koella_obj.Annuality.number, koella_obj.Vo20, project.channel_length/1000, project.catchment_area, koella_obj.glacier_area, koella_obj.id)
+        task = koella.delay(project.IDF_Parameters.P_low_1h, project.IDF_Parameters.P_high_1h, project.IDF_Parameters.P_low_24h, project.IDF_Parameters.P_high_24h, project.IDF_Parameters.rp_low, project.IDF_Parameters.rp_high, koella_obj.Annuality.number, koella_obj.Vo20, project.cummulative_channel_length/1000, project.catchment_area, koella_obj.glacier_area, koella_obj.id)
         return JSONResponse({"task_id": task.id}) 
     except:
         # Handle missing user scenario
@@ -309,7 +309,6 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
                 'Point': True
             }
         )
-        print("hmm")
         nam_obj = next((x for x in project.NAM if x.id == NAMId), None)
         
         if nam_obj is None:
