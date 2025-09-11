@@ -10,11 +10,19 @@ router = APIRouter(prefix="/task",
 @router.get("/{task_id}")
 def get_status(task_id):
     task_result = AsyncResult(task_id)
-    result = {
-        "task_id": task_id,
-        "task_status": task_result.status,
-        "task_result": json.dumps(task_result.result)
-    }
+    print(task_result.result)
+    try:
+        result = {
+            "task_id": task_id,
+                "task_status": task_result.status,
+                "task_result": json.dumps(task_result.result)
+            }
+    except:
+        result = {
+            "task_id": task_id,
+            "task_status": task_result.status,
+            "task_result": str(task_result.result)
+        }
     return JSONResponse(result)
 
 @router.get("/group/{task_id}")
