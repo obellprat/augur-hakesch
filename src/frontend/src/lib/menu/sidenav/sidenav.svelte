@@ -5,8 +5,6 @@
 	import { page } from '$app/state';
 
 	let props = $props();
-
-
 </script>
 
 <!-- Sidenav Menu Start -->
@@ -43,7 +41,13 @@
 
 			<Navlink title={$_('page.precipitation.nav')} href="precipitation" icon="ti ti-cloud-rain" />
 
-			<Navlink title={$_('page.discharge.nav')} href="discharge" icon="ti ti-chart-histogram" projectcount={page.data.projects?.length} currentproject={page.data.project}/>
+			<Navlink
+				title={$_('page.discharge.nav')}
+				href="discharge"
+				icon="ti ti-chart-histogram"
+				projectcount={page.data.projects?.length}
+				currentproject={page.data.project}
+			/>
 
 			<!--<Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />-->
 
@@ -63,13 +67,13 @@
 
 		<div class="clearfix"></div>
 		<div class="help-box mt-1">
-				<h5 class="fw-semibold fs-16 text-center pb-2">{$_('page.nav.version')}</h5>
-				<p class="text-muted">{$_('page.nav.frontend')}: {page.data.version}
-					<br>
-					{$_('page.nav.backend')}: {page.data.apiversion}
-				</p>
+			<h5 class="fw-semibold fs-16 text-center pb-2">{$_('page.nav.version')}</h5>
+			<p class="text-muted">
+				{$_('page.nav.frontend')}: {page.data.version}
+				<br />
+				{$_('page.nav.backend')}: {page.data.apiversion}
+			</p>
 		</div>
-
 	</div>
 </div>
 <!-- Sidenav Menu End -->

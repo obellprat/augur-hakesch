@@ -80,30 +80,39 @@
 			.then((res) => {
 				// write out the state
 				const actTime = new Date();
-				//let html = `${actTime.toUTCString()} ${res.task_status} `;
-				let html = ``;
-				if (res.task_status != 'SUCCESS' && res.task_status != 'PENDING' && res.task_status != 'FAILURE') {
-					html = `${JSON.stringify(res.task_result.text.replace('"', ''))}`;
+				try {
+					let obj = JSON.parse(res.task_result);
+					//let html = `${actTime.toUTCString()} ${res.task_status} `;
+					let html = ``;
+					if (
+						res.task_status != 'SUCCESS' &&
+						res.task_status != 'PENDING' &&
+						res.task_status != 'FAILURE'
+					) {
+						html = `${JSON.stringify(obj.text)}`;
 
-					globalThis
-						.$('.progress-bar')
-						.css('width', res.task_result.progress + '%')
-						.attr('aria-valuenow', res.task_result.progress);
-				} else if (res.task_status == 'PENDING') {
-					html = 'Der Prozess wird intialisiert. Bitte warten...';
+						globalThis
+							.$('.progress-bar')
+							.css('width', obj.progress + '%')
+							.attr('aria-valuenow', obj.progress);
+					} else if (res.task_status == 'PENDING') {
+						html = 'Der Prozess wird intialisiert. Bitte warten...';
+					} else if (res.task_status == 'FAILURE') {
+						html =
+							'Die Geodaten konnten nicht berechnet werden. Bitte versuchen Sie es später erneut.<br> ' +
+							'Fehler: ' +
+							obj.text;
+					} else if (res.task_status == 'SUCCESS') {
+						html = 'Die Geodaten wurden erfolgrech berechnet.';
+
+						invalidateAll();
+						addIsozones();
+						globalThis.$('#generate-modal').modal('hide');
+					}
+					document.getElementById('progresstext')!.innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
+				} catch (e) {
+					console.log(e);
 				}
-				else if (res.task_status == 'FAILURE') {
-					html = 'Die Geodaten konnten nicht berechnet werden. Bitte versuchen Sie es später erneut.<br> ' +
-						'Fehler: ' + res.task_result.text.replace('"', '');
-				} else if (res.task_status == 'SUCCESS') {
-					html = 'Die Geodaten wurden erfolgrech berechnet.';
-
-					invalidateAll();
-					addIsozones();
-					globalThis.$('#generate-modal').modal('hide');
-				}
-				document.getElementById('progresstext')!.innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
-
 				const taskStatus = res.task_status;
 				if (taskStatus === 'SUCCESS') {
 				}
@@ -112,7 +121,7 @@
 				}
 
 				setTimeout(function () {
-					getStatus(res.task_id);
+					getStatus(taskID);
 				}, 1000);
 			})
 			.catch((err) => console.log(err));
@@ -225,6 +234,50 @@
 		map.addLayer(isozone);
 	}
 
+	async function downloadFile(url: string, filename: string) {
+		try {
+			const response = await fetch(url, {
+				headers: {
+					Authorization: 'Bearer ' + data.session.access_token
+				}
+			});
+			if (!response.ok) {
+				throw new Error('Download failed');
+			}
+			const blob = await response.blob();
+			const link = document.createElement('a');
+			link.href = URL.createObjectURL(blob);
+			link.download = filename;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(link.href);
+		} catch (e) {
+			console.error(e);
+		}
+	}
+
+	function downloadIsozones() {
+		return downloadFile(
+			`${env.PUBLIC_HAKESCH_API_PATH}/file/isozones/${data.project.id}`,
+			`isozones_${data.project.id}.tif`
+		);
+	}
+
+	function downloadCatchment() {
+		return downloadFile(
+			`${env.PUBLIC_HAKESCH_API_PATH}/file/catchment/${data.project.id}`,
+			`catchment_${data.project.id}.geojson`
+		);
+	}
+
+	function downloadBranches() {
+		return downloadFile(
+			`${env.PUBLIC_HAKESCH_API_PATH}/file/branches/${data.project.id}`,
+			`branches_${data.project.id}.geojson`
+		);
+	}
+
 	onMount(async () => {
 		const stroke = new Stroke({ color: 'black', width: 2 });
 		const fill = new Fill({ color: 'blue' });
@@ -289,11 +342,12 @@
 
 		addMarker([easting, northing]);
 		//addCatchment();
+
 		$effect(() => {
+			addIsozones();
 			addCatchment();
 			addBranches();
 		});
-		addIsozones();
 
 		map.on('singleclick', function (e) {
 			northing = Math.round(e.coordinate[1]);
@@ -598,43 +652,67 @@
 							<div class="card-body">
 								<h3 class="card-title">Geodaten</h3>
 								{#if data.project.isozones_taskid === ''}
-						<p>Geodaten noch nicht berechnen. Neu berechnen?</p>
-					{:else if data.project.isozones_running}
-						<p>Daten werden aktuell neu berechnet. Bitte warten</p>
-					{:else}
-							<div class="table-responsive-sm">
-								<table class="table table-striped mb-0">
-									<thead>
-										<tr>
-											<th>Einzugsgebietsgrösse [km<sup>2</sup>]</th>
-											<th>Max Fliesslänge [m]</th>
-											<th>Kumulativ Fliesslänge [m]</th>
-											<th>Höhendifferenz (delta_h) [m]</th>
-											<th>Isozonen</th>
-										</tr>
-									</thead>
-									<tbody>
-										<tr>
-											<td>
-												{data.project.catchment_area} km<sup>2</sup>
-											</td>
-											<td>{data.project.channel_length} m</td>
-											<td>{Math.round(data.project.cummulative_channel_length)} m</td>
-											<td>{Math.round(data.project.delta_h)} m</td>
-											<td class="text-muted">
-												<a href="javascript: void(0);" class="link-reset fs-20 p-1">
-													Herunterladen</a
-												>
-											</td>
-										</tr>
-									</tbody>
-								</table>
+									<p>Geodaten noch nicht berechnen. Neu berechnen?</p>
+								{:else if data.project.isozones_running}
+									<p>Daten werden aktuell neu berechnet. Bitte warten</p>
+								{:else}
+									<div class="table-responsive-sm">
+										<table class="table table-striped mb-0">
+											<thead>
+												<tr>
+													<th>Einzugsgebietsgrösse [km<sup>2</sup>]</th>
+													<th>Max Fliesslänge [m]</th>
+													<th>Kumulativ Fliesslänge [m]</th>
+													<th>Höhendifferenz (delta_h) [m]</th>
+													<th>Isozonen</th>
+													<th>Einzugsgebiet</th>
+													<th>Gerinne</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr>
+													<td>
+														{data.project.catchment_area} km<sup>2</sup>
+													</td>
+													<td>{data.project.channel_length} m</td>
+													<td>{Math.round(data.project.cummulative_channel_length)} m</td>
+													<td>{Math.round(data.project.delta_h)} m</td>
+													<td class="text-muted">
+														<a
+															href="javascript: void(0);"
+															class="link-reset fs-20 p-1"
+															onclick={downloadIsozones}
+														>
+															Herunterladen</a
+														>
+													</td>
+													<td class="text-muted">
+														<a
+															href="javascript: void(0);"
+															class="link-reset fs-20 p-1"
+															onclick={downloadCatchment}
+														>
+															Herunterladen</a
+														>
+													</td>
+													<td class="text-muted">
+														<a
+															href="javascript: void(0);"
+															class="link-reset fs-20 p-1"
+															onclick={downloadBranches}
+														>
+															Herunterladen</a
+														>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								{/if}
 							</div>
-					{/if}
-						</div> <!-- end card-body-->
+							<!-- end card-body-->
+						</div>
 					</div>
-				</div>
-					
 				</div>
 				<!-- end row-->
 			</div>

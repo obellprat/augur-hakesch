@@ -8,7 +8,7 @@ export default defineConfig({
 		sveltekit(),
 		cjsInterop({
 			// List of CJS dependencies that require interop
-			dependencies: ['cupertino-pane'],
+			dependencies: [],
 			apply: 'serve'
 		}),
 		viteStaticCopy({

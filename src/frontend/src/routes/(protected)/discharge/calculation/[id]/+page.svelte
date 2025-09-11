@@ -41,8 +41,6 @@
 				chart.render();
 			});
 		return {
-			// { destroy: parameter.ref?.destroy } causes error.
-			// height 속성 파싱 중 알 수 없는 NaN 값이 발생했습니다.
 			destroy: () => {
 				parameter.ref?.destroy();
 			}
@@ -108,9 +106,11 @@
 	currentProject.id = data.project.id;
 	let zones = data.zones;
 
+	let isGeneralSaving = $state(false);
 	let isMFZSaving = $state(false);
 	let isKoellaSaving = $state(false);
 	let isClarkWSLSaving = $state(false);
+	let couldCalculate = $state(false);
 
 	let returnPeriod = $state([
 		{
@@ -353,21 +353,25 @@
 						}
 					});
 					invalidateAll();
-					
+
 					return false;
-				}
-				else if (taskStatus === 'FAILURE') {
+				} else if (taskStatus === 'FAILURE') {
 					toast.pop();
-					toast.push('<h3 style="padding:5;">'+$_('page.discharge.calculation.calcerror') + '</h3>' + res.task_result, {
-						theme: {
-							'--toastColor': 'white',
-							'--toastBackground': 'darkred'
-						},
-						initial: 0
-					});
+					toast.push(
+						'<h3 style="padding:5;">' +
+							$_('page.discharge.calculation.calcerror') +
+							'</h3>' +
+							res.task_result,
+						{
+							theme: {
+								'--toastColor': 'white',
+								'--toastBackground': 'darkred'
+							},
+							initial: 0
+						}
+					);
 					invalidateAll();
 
-					
 					return false;
 				}
 				setTimeout(function () {
@@ -419,19 +423,23 @@
 					});
 					invalidateAll();
 					return;
-				}
-				else if (res.status === 'FAILURE') {
+				} else if (res.status === 'FAILURE') {
 					toast.pop();
-					toast.push('<h3 style="padding:5;">'+$_('page.discharge.calculation.calcerror') + '</h3>' + res.task_result, {
-						theme: {
-							'--toastColor': 'white',
-							'--toastBackground': 'darkred'
-						},
-						initial: 0
-					});
+					toast.push(
+						'<h3 style="padding:5;">' +
+							$_('page.discharge.calculation.calcerror') +
+							'</h3>' +
+							res.task_result,
+						{
+							theme: {
+								'--toastColor': 'white',
+								'--toastBackground': 'darkred'
+							},
+							initial: 0
+						}
+					);
 					invalidateAll();
 
-					
 					return false;
 				}
 
@@ -446,12 +454,58 @@
 		mod_verfahren = data.project.Mod_Fliesszeit;
 		koella = data.project.Koella;
 		clark_wsl = data.project.ClarkWSL;
+
+		if (data.project.isozones_taskid === '' || data.project.isozones_running) {
+			globalThis.$('#missinggeodata-modal').modal('show');
+		}
+		else {
+			couldCalculate = true;
+		}
 	});
 </script>
 
 <svelte:head>
 	<title>{$pageTitle} - {$_('page.discharge.calculation.calculationTitle')} | AUGUR</title>
 </svelte:head>
+
+<!-- Missing geodata dialog -->
+ <div
+	id="missinggeodata-modal"
+	class="modal fade"
+	tabindex="-1"
+	role="dialog"
+	aria-labelledby="standard-modalLabel"
+	aria-hidden="true"
+>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="standard-modalLabel">
+					{$_('page.discharge.calculation.missinggeodataTitle')}
+				</h4>
+				<button
+					type="button"
+					class="btn-close"
+					data-bs-dismiss="modal"
+					aria-label={$_('page.general.close')}
+				></button>
+			</div>
+			<div class="modal-body">
+				<h5>{$_('page.discharge.calculation.missingGeodata')}</h5>
+			</div>
+			<div class="modal-footer">
+				<button
+					type="button"
+					class="btn btn-light"
+					data-bs-dismiss="modal"
+					onclick={addCalculation}>{$_('page.general.ok')}</button
+				>
+			</div>
+		</div>
+		<!-- /.modal-content -->
+	</div>
+	<!-- /.modal-dialog -->
+</div>
 
 <div class="flex-grow-1 card">
 	<div class="h-100">
@@ -557,9 +611,11 @@
 										method="post"
 										action="?/updatefnp"
 										use:enhance={() => {
+											isGeneralSaving = true;
 											return async ({ update }) => {
 												await update();
 												currentProject.title = data.project.title;
+												isGeneralSaving = false;
 											};
 										}}
 									>
@@ -655,7 +711,16 @@
 												</select>
 											</div>
 										</div>
-										<button type="submit" class="btn btn-primary">{$_('page.general.save')}</button>
+										<button type="submit" class="btn btn-primary" disabled={isGeneralSaving}>
+											{#if isGeneralSaving}
+												<span
+													class="spinner-border spinner-border-sm me-2"
+													role="status"
+													aria-hidden="true"
+												></span>
+											{/if}
+											{$_('page.general.save')}
+										</button>
 									</form>
 								</div>
 							</div>
@@ -709,19 +774,27 @@
 															<form
 																method="post"
 																action="?/updatemfzv"
-																use:enhance={() => {
+																use:enhance={({ formElement, formData, action, cancel, submitter }) => {
 																	isMFZSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result;
+																		data.project = result.data!;
+																		mod_verfahren = data.project.Mod_Fliesszeit;
 																		isMFZSaving = false;
-																		toast.push($_('page.discharge.calculation.successfullsave'), {
-																			theme: {
-																				'--toastColor': 'mintcream',
-																				'--toastBackground': 'rgba(72,187,120,0.9)',
-																				'--toastBarBackground': '#2F855A'
-																			}
-																		});
+
+																		if (submitter?.id=="calcMFZButton"){
+																			calculateModFliess(mod_fz.project_id, mod_fz.id);
+																		}
+																		else {
+
+																			toast.push($_('page.discharge.calculation.successfullsave'), {
+																				theme: {
+																					'--toastColor': 'mintcream',
+																					'--toastBackground': 'rgba(72,187,120,0.9)',
+																					'--toastBarBackground': '#2F855A'
+																				}
+																			});
+																		}
 																	};
 																}}
 															>
@@ -753,6 +826,7 @@
 																		>
 																		<input
 																			type="number"
+																			step="any"
 																			class="form-control"
 																			id="Vo20"
 																			name="Vo20"
@@ -765,7 +839,7 @@
 																		>
 																		<input
 																			type="number"
-																			step="0.01"
+																			step="any"
 																			class="form-control"
 																			id="psi"
 																			name="psi"
@@ -778,14 +852,21 @@
 																		<button
 																			type="submit"
 																			class="btn btn-primary"
-																			disabled={isMFZSaving}>{$_('page.general.save')}</button
-																		>
-																		<button
-																			type="button"
-																			class="btn btn-primary"
 																			disabled={isMFZSaving}
-																			onclick={() =>
-																				calculateModFliess(mod_fz.project_id, mod_fz.id)}
+																		>
+																			{#if isMFZSaving}
+																				<span
+																					class="spinner-border spinner-border-sm me-2"
+																					role="status"
+																					aria-hidden="true"
+																				></span>
+																			{/if}
+																			{$_('page.general.save')}
+																		</button>
+																		<button
+																			type="submit" id="calcMFZButton"
+																			class="btn btn-primary"
+																			disabled={isMFZSaving || !couldCalculate}
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
@@ -907,19 +988,25 @@
 															<form
 																method="post"
 																action="?/updatekoella"
-																use:enhance={() => {
+																use:enhance={({ formElement, formData, action, cancel, submitter }) => {
 																	isKoellaSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result;
+																		data.project = result.data;
+																		koella = data.project.Koella;
 																		isKoellaSaving = false;
-																		toast.push($_('page.discharge.calculation.successfullsave'), {
-																			theme: {
-																				'--toastColor': 'mintcream',
-																				'--toastBackground': 'rgba(72,187,120,0.9)',
-																				'--toastBarBackground': '#2F855A'
-																			}
-																		});
+																		if (submitter?.id=="calcKoellaButton"){
+																			calculateKoella(k.project_id, k.id);
+																		}
+																		else {
+																			toast.push($_('page.discharge.calculation.successfullsave'), {
+																				theme: {
+																					'--toastColor': 'mintcream',
+																					'--toastBackground': 'rgba(72,187,120,0.9)',
+																					'--toastBarBackground': '#2F855A'
+																				}
+																			});
+																		}
 																	};
 																}}
 															>
@@ -951,6 +1038,7 @@
 																		>
 																		<input
 																			type="number"
+																			step="any"
 																			class="form-control"
 																			id="Vo20"
 																			name="Vo20"
@@ -978,13 +1066,21 @@
 																		<button
 																			type="submit"
 																			class="btn btn-primary"
-																			disabled={isKoellaSaving}>{$_('page.general.save')}</button
-																		>
-																		<button
-																			type="button"
-																			class="btn btn-primary"
 																			disabled={isKoellaSaving}
-																			onclick={() => calculateKoella(k.project_id, k.id)}
+																		>
+																			{#if isKoellaSaving}
+																				<span
+																					class="spinner-border spinner-border-sm me-2"
+																					role="status"
+																					aria-hidden="true"
+																				></span>
+																			{/if}
+																			{$_('page.general.save')}
+																		</button>
+																		<button
+																			type="submit" id="calcKoellaButton"
+																			class="btn btn-primary"
+																			disabled={isKoellaSaving || !couldCalculate}
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
@@ -1106,19 +1202,25 @@
 															<form
 																method="post"
 																action="?/updateclarkwsl"
-																use:enhance={() => {
+																use:enhance={({ formElement, formData, action, cancel, submitter}) => {
 																	isClarkWSLSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result;
+																		data.project = result.data;
+																		clark_wsl = data.project.ClarkWSL;
 																		isClarkWSLSaving = false;
-																		toast.push($_('page.discharge.calculation.successfullsave'), {
+																		if (submitter?.id=="calcClarkWSLButton"){
+																			calculateClarkWSL(k.project_id, k.id);
+																		}
+																		else {
+																			toast.push($_('page.discharge.calculation.successfullsave'), {
 																			theme: {
 																				'--toastColor': 'mintcream',
 																				'--toastBackground': 'rgba(72,187,120,0.9)',
-																				'--toastBarBackground': '#2F855A'
+																			'--toastBarBackground': '#2F855A'
 																			}
 																		});
+																		}
 																	};
 																}}
 															>
@@ -1154,6 +1256,7 @@
 																					<div class="" style="max-width:130px;">
 																						<input
 																							type="number"
+																							step="any"
 																							class="form-control text-end"
 																							style="-webkit-appearance: none; -moz-appearance: textfield;"
 																							id="zone_{i}"
@@ -1172,13 +1275,21 @@
 																		<button
 																			type="submit"
 																			class="btn btn-primary"
-																			disabled={isClarkWSLSaving}>{$_('page.general.save')}</button
-																		>
-																		<button
-																			type="button"
-																			class="btn btn-primary"
 																			disabled={isClarkWSLSaving}
-																			onclick={() => calculateClarkWSL(k.project_id, k.id)}
+																		>
+																			{#if isClarkWSLSaving}
+																				<span
+																					class="spinner-border spinner-border-sm me-2"
+																					role="status"
+																					aria-hidden="true"
+																				></span>
+																			{/if}
+																			{$_('page.general.save')}
+																		</button>
+																		<button
+																			type="submit" id="calcClarkWSLButton"
+																			class="btn btn-primary"
+																			disabled={isClarkWSLSaving || !couldCalculate}
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>

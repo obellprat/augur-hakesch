@@ -16,7 +16,13 @@
 
 <li class={['side-nav-item', { active }]}>
 	{#if href == 'discharge' && projectcount > 0}
-		<a data-bs-toggle="collapse" href="#dischargeSubmenu" aria-expanded="true" aria-controls="dischargeSubmenu" class="side-nav-link">
+		<a
+			data-bs-toggle="collapse"
+			href="#dischargeSubmenu"
+			aria-expanded="true"
+			aria-controls="dischargeSubmenu"
+			class="side-nav-link"
+		>
 			<span class="menu-icon"><i class={icon}></i></span>
 			<span class="menu-text"> {title} </span>
 			<span class="menu-arrow"></span>
@@ -24,14 +30,20 @@
 		<div class="collapse show" id="dischargeSubmenu" style="">
 			<ul class="sub-menu">
 				<li class="side-nav-item">
-					<a href="{url}" class="side-nav-link">
+					<a href={url} class="side-nav-link">
 						<span class="menu-text">Projekte</span>
 						<span class="badge bg-danger rounded-pill">{projectcount}</span>
 					</a>
 				</li>
-				{#if currentproject!=null}
+				{#if currentproject != null}
 					<li class="side-nav-item">
-						<a data-bs-toggle="collapse" href="#sidebarProject" aria-expanded="true" aria-controls="sidebarProject" class="side-nav-link">
+						<a
+							data-bs-toggle="collapse"
+							href="#sidebarProject"
+							aria-expanded="true"
+							aria-controls="sidebarProject"
+							class="side-nav-link"
+						>
 							<span class="menu-text"> {currentproject.title} </span>
 							<span class="menu-arrow"></span>
 						</a>

@@ -160,7 +160,9 @@
 						aria-haspopup="false"
 						aria-expanded="false"
 					>
-						{$locale?.toLocaleLowerCase() === 'de-de' || $locale?.toLocaleLowerCase() === 'de' ? 'DE' : 'EN'}
+						{$locale?.toLocaleLowerCase() === 'de-de' || $locale?.toLocaleLowerCase() === 'de'
+							? 'DE'
+							: 'EN'}
 					</span>
 
 					<div class="dropdown-menu dropdown-menu-end">

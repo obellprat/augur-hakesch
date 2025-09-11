@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from celery.result import AsyncResult
-
+import json
 from celery.result import GroupResult
 
 router = APIRouter(prefix="/task",
@@ -13,7 +13,7 @@ def get_status(task_id):
     result = {
         "task_id": task_id,
         "task_status": task_result.status,
-        "task_result": str(task_result.result)
+        "task_result": json.dumps(task_result.result)
     }
     return JSONResponse(result)
 
@@ -24,7 +24,7 @@ def get_group_status(task_id):
         {
             "task_id": res.id,
             "task_status": res.status,
-            "task_result": str(res.result)
+            "task_result": json.dumps(res.result)
         }
         for res in group_result.results
     ]

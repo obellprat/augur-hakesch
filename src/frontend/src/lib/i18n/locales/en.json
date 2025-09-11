@@ -66,7 +66,9 @@
         "inputsForPrecipitationIntensity": "Information on the calculation of precipitation intensity",
         "modFliesszeit": "Modified flow time method",
         "koells": "Koella",
-        "typeOfCalculation": "Which process should be added to the project?"
+        "typeOfCalculation": "Which process should be added to the project?",
+        "missinggeodataTitle": "Missing geodata",
+        "missingGeodata": "The geodata has not yet been calculated. Please calculate the data in the project overview so that the hydrological calculations can be performed."
       }
     },
     "precipitation": {
@@ -97,7 +99,49 @@
     },
     "about": {
       "title": "About AUGUR",
-      "text": "AUGUR is cool"
+      "intro": {
+        "heading": "What is AUGUR?",
+        "p1": "AUGUR helps estimate precipitation and river discharge for catchments worldwide.",
+        "p2": "It brings science-based methods into an easy web app for planners, educators and curious users."
+      },
+      "idea": {
+        "heading": "The idea",
+        "p1": "Start with a location and a few inputs. AUGUR combines climate information with hydrologic methods to deliver quick, comparable results.",
+        "p2": "Explore scenarios and methods side by side to understand sensitivity and uncertainty."
+      },
+      "technology": {
+        "heading": "How it works (simple)",
+        "p1": "Behind the scenes, AUGUR has a modern web UI and a robust API. Calculations run in the background so longer tasks don’t block the page.",
+        "list": {
+          "svelte": "SvelteKit interface for maps, charts and projects.",
+          "fastapi": "FastAPI provides the API and authentication (Keycloak).",
+          "prisma": "Prisma handles database access for projects and results.",
+          "celery": "Celery runs hydrologic models as background jobs.",
+          "redis": "Redis coordinates tasks and short‑lived results.",
+          "docker": "Docker Compose runs the stack locally and in the cloud."
+        }
+      },
+      "getting_started": {
+        "heading": "Get started",
+        "p1": "Try the Precipitation tool or create a Discharge project. Adjust inputs and rerun to compare results.",
+        "open_precip": "Open Precipitation",
+        "open_discharge": "Open Discharge"
+      },
+      "credits": {
+        "heading": "Credits & data",
+        "p1": "AUGUR implements methods such as the modified flow time method, Kölla and Clark‑WSL, and uses climatological datasets from official sources. Results are indicative and do not replace professional studies."
+      }
+    },
+    "login": {
+      "title": "Sign in to AUGUR",
+      "why_heading": "Why do I need an account?",
+      "why_p1": "Signing in lets you save projects, revisit results and keep your data private.",
+      "why_p2": "It also helps us run longer hydrologic calculations reliably in the background.",
+      "free_heading": "Free and easy",
+      "free_p1": "Registration is free. You can delete your projects at any time.",
+      "btn_login": "Sign in",
+      "btn_register": "Create a free account",
+      "privacy_note": "We only use your information to provide this service."
     },
     "general": {
       "close": "Close",
@@ -106,7 +150,8 @@
       "save": "Save",
       "calculate": "Calculate",
       "add": "Add",
-      "start": "Start"
+      "start": "Start",
+      "ok": "OK"
     }
   }
 }

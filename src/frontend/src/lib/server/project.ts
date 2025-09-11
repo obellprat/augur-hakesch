@@ -40,7 +40,7 @@ const getProjectById = async (id: string) => {
 				include: {
 					Annuality: true,
 					ClarkWSL_Result: true,
-					Fractions: true,
+					Fractions: true
 				}
 			}
 		}
@@ -69,8 +69,7 @@ const getAllProjects = async (userId: number) => {
 };
 
 const getAllZones = async () => {
-	return await prisma.ZoneParameter.findMany({
-	});
+	return await prisma.ZoneParameter.findMany({});
 };
 
 const deleteProject = async (projectId: string, userId: number) => {
@@ -82,4 +81,11 @@ const deleteProject = async (projectId: string, userId: number) => {
 	});
 };
 
-export { createNewProject, getProjectById, updateProject, getAllProjects, deleteProject, getAllZones };
+export {
+	createNewProject,
+	getProjectById,
+	updateProject,
+	getAllProjects,
+	deleteProject,
+	getAllZones
+};

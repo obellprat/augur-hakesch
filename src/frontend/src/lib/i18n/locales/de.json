@@ -68,7 +68,9 @@
         "returnPeriod": "Wiederkehrperiode",
         "szenario": "Szenario",
         "clarkwslname": "Clark-WSL",
-        "calcerror": "Fehler"
+        "calcerror": "Fehler",
+        "missinggeodataTitle": "Geodaten noch nicht berechnet",
+        "missingGeodata": "Die Geodaten wurden noch nicht berechnet. Bitte auf der Projektübersicht die Daten berechnen, damit die hydrologischen Berechnungen durchgeführt werden können."
       }
     },
     "precipitation": {
@@ -99,7 +101,49 @@
     },
     "about": {
       "title": "Informationen zu AUGUR",
-      "text": "AUGUR ist toll"
+      "intro": {
+        "heading": "Was ist AUGUR?",
+        "p1": "AUGUR hilft, Niederschlag und Abfluss für Einzugsgebiete weltweit abzuschätzen.",
+        "p2": "Es bringt wissenschaftlich fundierte Verfahren in eine leicht verständliche Web‑App – für Planerinnen, Lehrpersonen und Interessierte."
+      },
+      "idea": {
+        "heading": "Die Idee",
+        "p1": "Ausgehend von einem Ort und wenigen Eingaben kombiniert AUGUR Klimainformationen mit hydrologischen Verfahren und liefert schnell vergleichbare Resultate.",
+        "p2": "Szenarien und Methoden lassen sich nebeneinander betrachten – so werden Sensitivität und Unsicherheiten sichtbar."
+      },
+      "technology": {
+        "heading": "So funktioniert es (einfach erklärt)",
+        "p1": "Im Hintergrund arbeitet eine moderne Oberfläche mit einer robusten API. Berechnungen laufen im Hintergrund, damit längere Aufgaben die Seite nicht blockieren.",
+        "list": {
+          "svelte": "SvelteKit‑Oberfläche für Karten, Diagramme und Projekte.",
+          "fastapi": "FastAPI stellt die API und die Authentifizierung (Keycloak) bereit.",
+          "prisma": "Prisma verbindet die Datenbank für Projekte und Resultate.",
+          "celery": "Celery führt hydrologische Modelle als Hintergrundjobs aus.",
+          "redis": "Redis koordiniert Aufgaben und kurzlebige Ergebnisse.",
+          "docker": "Docker Compose verbindet alle Dienste lokal und in der Cloud."
+        }
+      },
+      "getting_started": {
+        "heading": "Loslegen",
+        "p1": "Testen Sie das Niederschlagstool oder erstellen Sie ein Abfluss‑Projekt. Passen Sie Eingaben an und starten Sie neu, um Resultate zu vergleichen.",
+        "open_precip": "Niederschlag öffnen",
+        "open_discharge": "Abfluss öffnen"
+      },
+      "credits": {
+        "heading": "Herkunft & Daten",
+        "p1": "AUGUR implementiert Verfahren wie das modifizierte Fliesszeitverfahren, Kölla und Clark‑WSL und nutzt klimatologische Datensätze offizieller Stellen. Resultate sind indikativ und ersetzen keine fachliche Studie."
+      }
+    },
+    "login": {
+      "title": "Bei AUGUR anmelden",
+      "why_heading": "Warum muss ich mich anmelden?",
+      "why_p1": "Mit der Anmeldung können Sie Projekte speichern, Ergebnisse wiederfinden und Ihre Daten geschützt verwalten.",
+      "why_p2": "Zudem erlaubt es uns, längere hydrologische Berechnungen zuverlässig im Hintergrund auszuführen.",
+      "free_heading": "Kostenlos und unkompliziert",
+      "free_p1": "Die Registrierung ist kostenlos. Sie können Ihre Projekte jederzeit löschen.",
+      "btn_login": "Anmelden",
+      "btn_register": "Kostenloses Konto erstellen",
+      "privacy_note": "Wir verwenden Ihre Angaben nur zur Bereitstellung dieses Dienstes."
     },
     "general": {
       "close": "Schliessen",
@@ -108,7 +152,8 @@
       "delete": "Löschen",
       "add": "Hinzufügen",
       "calculate": "Berechnen",
-      "start": "Start"
+      "start": "Start",
+      "ok": "OK"
     }
   }
 }
