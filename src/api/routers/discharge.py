@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from helpers.prisma import prisma
 from helpers.user import get_user
@@ -7,6 +7,7 @@ from celery import group
 import pandas as pd
 
 from calculations.discharge import construct_idf_curve, modifizierte_fliesszeit, prepare_discharge_hydroparameters, koella, clark_wsl_modified
+from calculations.nam import nam, get_curve_numbers, extract_dem
 
 router = APIRouter(prefix="/discharge",
     tags=["discharge"],)
@@ -36,6 +37,11 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                     'include' :  {
                         'Annuality' : True,
                         'Fractions' : True
+                    }
+                },
+                'NAM' : {
+                    'include' :  {
+                        'Annuality' : True
                     }
                 }
             }
@@ -109,6 +115,29 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                 intensity_fn=None,
                 dt=clark_wsl_obj.dt,
                 pixel_area_m2=clark_wsl_obj.pixel_area_m2
+            ))
+
+        for nam_obj in project.NAM:
+            doDoTasks.append(nam.s(
+                P_low_1h=project.IDF_Parameters.P_low_1h,
+                P_high_1h=project.IDF_Parameters.P_high_1h,
+                P_low_24h=project.IDF_Parameters.P_low_24h,
+                P_high_24h=project.IDF_Parameters.P_high_24h,
+                rp_low=project.IDF_Parameters.rp_low,
+                rp_high=project.IDF_Parameters.rp_high,
+                x=nam_obj.Annuality.number,
+                curve_number=70.0,  # Default fallback value
+                catchment_area=project.catchment_area,
+                channel_length=project.channel_length,
+                delta_h=project.delta_h,
+                nam_id=nam_obj.id,
+                project_id=project.id,
+                user_id=user.id,
+                water_balance_mode=nam_obj.water_balance_mode,
+                precipitation_factor=nam_obj.precipitation_factor,
+                storm_center_mode=nam_obj.storm_center_mode,
+                routing_method=nam_obj.routing_method,
+                readiness_to_drain=nam_obj.readiness_to_drain
             ))
 
         if len(doDoTasks) > 0:
@@ -260,6 +289,104 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
             detail="Unable to retrieve project",
         )
 
+@router.get("/nam")
+def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
+    
+    print(f"NAM request - ProjectId: {ProjectId}, NAMId: {NAMId}")
+    
+    try:
+        project = prisma.project.find_unique(
+            where={
+                'userId': user.id,
+                'id': ProjectId
+            },
+            include={
+                'NAM': {
+                    'include': {
+                        'Annuality': True,
+                        'WaterBalanceMode': True,
+                        'StormCenterMode': True,
+                        'RoutingMethod': True
+                    }
+                },
+                'IDF_Parameters': True,
+                'Point': True
+            }
+        )
+        print("hmm")
+        nam_obj = next((x for x in project.NAM if x.id == NAMId), None)
+        
+        if nam_obj is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"NAM with ID {NAMId} not found in project {ProjectId}"
+            )
+
+        # Get discharge point coordinates from project if available
+        discharge_point = None
+        discharge_point_crs = "EPSG:4326"
+        if hasattr(project, 'Point') and project.Point:
+            # Convert from EPSG:2056 (Swiss coordinates) to geographic coordinates for routing
+            try:
+                import pyproj
+                transformer = pyproj.Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
+                lon, lat = transformer.transform(project.Point.easting, project.Point.northing)
+                discharge_point = (lon, lat)
+            except Exception as e:
+                print(f"Warning: Could not convert discharge point coordinates: {e}")
+                discharge_point = None
+        
+        task = nam.delay(
+            P_low_1h=project.IDF_Parameters.P_low_1h,
+            P_high_1h=project.IDF_Parameters.P_high_1h,
+            P_low_24h=project.IDF_Parameters.P_low_24h,
+            P_high_24h=project.IDF_Parameters.P_high_24h,
+            rp_low=project.IDF_Parameters.rp_low,
+            rp_high=project.IDF_Parameters.rp_high,
+            x=nam_obj.Annuality.number,
+            curve_number=70.0,  # Default fallback value
+            catchment_area=project.catchment_area,
+            channel_length=project.channel_length,
+            delta_h=project.delta_h,
+            nam_id=nam_obj.id,
+            project_id=project.id,
+            user_id=user.id,
+            water_balance_mode=nam_obj.water_balance_mode,
+            precipitation_factor=nam_obj.precipitation_factor,
+            storm_center_mode=nam_obj.storm_center_mode,
+            routing_method=nam_obj.routing_method,
+            readiness_to_drain=nam_obj.readiness_to_drain,
+            discharge_point=discharge_point,
+            discharge_point_crs=discharge_point_crs
+        )
+        return JSONResponse({"task_id": task.id})
+    except Exception as e:
+        # Handle missing user scenario
+        raise HTTPException(
+            err = type(e).__name__,
+            message = e.message,
+            status_code=404,
+            detail="Unable to retrieve project: " + err + " " + message,
+        )
+
+@router.get("/get_curve_numbers")
+def get_curve_numbers_endpoint(ProjectId:str, user: User = Depends(get_user)):
+    try:
+        project = prisma.project.find_unique_or_raise(
+            where={
+                'userId': user.id,
+                'id': ProjectId
+            }
+        )
+        
+        task = get_curve_numbers.delay(project.id, user.id)
+        return JSONResponse({"task_id": task.id})
+    except:
+        raise HTTPException(
+            status_code=404,
+            detail="Unable to retrieve project",
+        )
+
 @router.get("/prepare_discharge_hydroparameters")
 async def get_prepare_discharge_hydroparametersisozones(ProjectId:str, user: User = Depends(get_user)):
     try:
@@ -286,6 +413,24 @@ async def get_prepare_discharge_hydroparametersisozones(ProjectId:str, user: Use
         return JSONResponse({"task_id": task.id})
     except:
         # Handle missing user scenario
+        raise HTTPException(
+            status_code=404,
+            detail="Unable to retrieve project",
+        )
+
+@router.get("/extract_dem")
+def get_extract_dem(ProjectId:str, user: User = Depends(get_user)):
+    try:
+        project = prisma.project.find_unique_or_raise(
+            where={
+                'userId': user.id,
+                'id': ProjectId
+            }
+        )
+        
+        task = extract_dem.delay(project.id, user.id)
+        return JSONResponse({"task_id": task.id})
+    except:
         raise HTTPException(
             status_code=404,
             detail="Unable to retrieve project",

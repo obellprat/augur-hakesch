@@ -1,0 +1,23 @@
+﻿project_title;project_userid;point_northing;point_easting;idf_parameters_P_low_1h;idf_parameters_P_high_1h;idf_parameters_P_low_24h;idf_parameters_P_high_24h;idf_parameters_rp_low;idf_parameters_rp_high;Mod_Fliesszeit_x;Mod_Fliesszeit_Vo20;Mod_Fliesszeit_psi;Koella_x;Koella_Vo20;Koella_glacier_area;NAM_x;NAM_precipitation_factor;NAM_water_balance_mode;NAM_storm_center_mode;NAM_routing_method;NAM_readiness_to_drain
+Bäreriedbach / Schöneggbach;1;1208064;2600657;40;50;80;94;20;100;3;35.63575;0.14749;3;35.63575;0;3;0.7;cumulative;centroid;time_values;0
+Dorfbach Jegenstorf;1;1211034;2604633;40;50;80;94;20;100;3;37.1915;0.120885;3;37.1915;0;3;0.7;cumulative;centroid;time_values;0
+Hettiswilbach;1;1209603;2608241;40;50;80;94;20;100;3;38.33725;0.112775;3;38.33725;0;3;0.7;cumulative;centroid;time_values;0
+Bruuchbach in Fraubrunnen;1;1215197;2606478;40;50;80;94;20;100;3;36.59425;0.12867;3;36.59425;0;3;0.7;cumulative;centroid;time_values;0
+Mutzgraben;1;1221135;2619733;35.7;46.6;4;5.1;20;100;3;38.1575;0.1392;3;38.1575;0;3;0.7;cumulative;centroid;time_values;0
+Steinbach;1;1196503;2631665;54;75.4;100.7;117.6;20;100;3;34.4245;0.221015;3;34.4245;0;3;0.7;cumulative;centroid;time_values;0
+Chrümpelgrabebach;1;1196724;2630628;54;75.4;100.7;117.6;20;100;3;35.837;0.189665;3;35.837;0;3;0.7;cumulative;centroid;time_values;0
+Hüenerbach;1;1197957;2627838;54;75.4;100.7;117.6;20;100;3;35.009;0.206905;3;35.009;0;3;0.7;cumulative;centroid;time_values;0
+Obere Frittebach;1;1199369;2625482;54;75.4;100.7;117.6;20;100;3;34.655;0.214175;3;34.655;0;3;0.7;cumulative;centroid;time_values;0
+Dürrbach;1;1193640;2619430;48;64;104;130;20;100;3;37.3035;0.15742;3;37.3035;0;3;0.7;cumulative;centroid;time_values;0
+Schwändigrabe;1;1194410;2618484;48;64;104;130;20;100;3;37.965;0.14265;3;37.965;0;3;0.7;cumulative;centroid;time_values;0
+Hünigerbach;1;1231110;2634982;48;64;104;130;20;100;3;38.48725;0.1299175;3;38.48725;0;3;0.7;cumulative;centroid;time_values;0
+Wileringbächli;1;1194199.7;2589501.8;38.2;48.3;87.6;104.8;20;100;3;40.857;0.09819;3;40.857;0;3;0.7;cumulative;centroid;time_values;0
+Brüggelbächli;1;1193998;2589340.8;38.2;48.3;87.6;104.8;20;100;3;39.3275;0.11405;3;39.3275;0;3;0.7;cumulative;centroid;time_values;0
+Muttergebiet: Neuenegg, Brüggelbächli / Wileringbächli;1;1193914.2;2589347.2;38.2;48.3;87.6;104.8;20;100;3;40.446;0.10301;3;40.446;0;3;0.7;cumulative;centroid;time_values;0
+Bächu;1;1197043;2609693;43.1;55.9;84.7;103.8;20;100;3;38.73875;0.124375;3;38.73875;0;3;0.7;cumulative;centroid;time_values;0
+Vechigenbach;1;1199412.8;2608479.2;43.1;55.9;84.7;103.8;20;100;3;38.975;0.12816;3;38.975;0;3;0.7;cumulative;centroid;time_values;0
+Lindentalbach;1;1202491;2608677;43.1;55.9;84.7;103.8;20;100;3;37.3908;0.1577785;3;37.3908;0;3;0.7;cumulative;centroid;time_values;0
+Geissbach;1;1191088;2628126;55;72;74;90;20;100;3;35.252;0.20268;3;35.252;0;3;0.7;cumulative;centroid;time_values;0
+Aeschougrabe;1;1195373;2624603;55;72;74;90;20;100;3;35.54671;0.1955347;3;35.54671;0;3;0.7;cumulative;centroid;time_values;0
+Steinebach;1;1195120;2620831;55;72;74;90;20;100;3;37.51576;0.1566252;3;37.51576;0;3;0.7;cumulative;centroid;time_values;0
+Nidermattgrabe;1;1197810;2622697;55;72;74;90;20;100;3;35.00723;0.2073021;3;35.00723;0;3;0.7;cumulative;centroid;time_values;0

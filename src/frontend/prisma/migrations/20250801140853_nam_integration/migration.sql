@@ -1,0 +1,44 @@
+-- CreateTable
+CREATE TABLE "NAM" (
+    "id" SERIAL NOT NULL,
+    "x" INTEGER NOT NULL,
+    "curve_number" DOUBLE PRECISION NOT NULL,
+    "catchment_area" DOUBLE PRECISION NOT NULL,
+    "channel_length" DOUBLE PRECISION NOT NULL,
+    "delta_h" DOUBLE PRECISION NOT NULL,
+    "TB_start" INTEGER NOT NULL DEFAULT 30,
+    "istep" INTEGER NOT NULL DEFAULT 5,
+    "tol" INTEGER NOT NULL DEFAULT 5,
+    "max_iter" INTEGER NOT NULL DEFAULT 1000,
+    "project_id" TEXT NOT NULL,
+    "nam_result_id" INTEGER,
+
+    CONSTRAINT "NAM_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "NAM_Result" (
+    "id" SERIAL NOT NULL,
+    "HQ" DOUBLE PRECISION NOT NULL,
+    "Tc" DOUBLE PRECISION NOT NULL,
+    "TB" DOUBLE PRECISION NOT NULL,
+    "TFl" DOUBLE PRECISION NOT NULL,
+    "i" DOUBLE PRECISION NOT NULL,
+    "S" DOUBLE PRECISION NOT NULL,
+    "Ia" DOUBLE PRECISION NOT NULL,
+    "Pe" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "NAM_Result_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "NAM_nam_result_id_key" ON "NAM"("nam_result_id");
+
+-- AddForeignKey
+ALTER TABLE "NAM" ADD CONSTRAINT "NAM_x_fkey" FOREIGN KEY ("x") REFERENCES "Annualities"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "NAM" ADD CONSTRAINT "NAM_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "Project"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "NAM" ADD CONSTRAINT "NAM_nam_result_id_fkey" FOREIGN KEY ("nam_result_id") REFERENCES "NAM_Result"("id") ON DELETE CASCADE ON UPDATE CASCADE;

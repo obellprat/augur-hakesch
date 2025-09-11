@@ -39,6 +39,7 @@ model Project {
   Mod_Fliesszeit Mod_Fliesszeit[]
   Koella Koella[]
   ClarkWSL ClarkWSL[]
+  NAM NAM[]
 }
 
 model Point {
@@ -155,6 +156,38 @@ model ClarkWSL_Result {
   ClarkWSL  ClarkWSL?
 }
 
+model NAM {
+  id                       Int                    @id @default(autoincrement())
+  x                        Int
+  Annuality                Annualities            @relation(fields: [x], references: [id])
+  precipitation_factor     Float                  @default(1.0)
+  water_balance_mode       String                 @default("simple")
+  WaterBalanceMode         WaterBalanceMode       @relation(fields: [water_balance_mode], references: [mode])
+  storm_center_mode        String                 @default("centroid")
+  StormCenterMode          StormCenterMode        @relation(fields: [storm_center_mode], references: [mode])
+  routing_method           String                 @default("time_values")
+  RoutingMethod            RoutingMethod          @relation(fields: [routing_method], references: [method])
+  readiness_to_drain       Int                    @default(0)
+  project_id               String
+  Project                  Project                @relation(fields: [project_id], references: [id])
+  nam_result_id            Int?                   @unique
+  NAM_Result               NAM_Result? @relation(fields: [nam_result_id], references: [id], onDelete: Cascade)
+}
+
+model NAM_Result {
+  id                     Int             @id @default(autoincrement())
+  HQ                     Float
+  Tc                     Float
+  TB                     Float
+  TFl                    Float
+  i                      Float
+  S                      Float
+  Ia                     Float
+  Pe                     Float
+  effective_curve_number Float?
+  NAM                    NAM?
+}
+
 model Annualities {
   id             Int              @id @default(autoincrement())
   description    String
@@ -162,6 +195,7 @@ model Annualities {
   Mod_Fliesszeit Mod_Fliesszeit[]
   Koella Koella[]
   ClarkWSL ClarkWSL[]
+  NAM NAM[]
 }
 
 model Precipitation {
@@ -169,4 +203,22 @@ model Precipitation {
   latitude        Float
   longitude       Float
   data            String
+}
+
+model WaterBalanceMode {
+  mode            String   @id
+  description     String
+  NAM             NAM[]
+}
+
+model StormCenterMode {
+  mode            String   @id
+  description     String
+  NAM             NAM[]
+}
+
+model RoutingMethod {
+  method          String   @id
+  description     String
+  NAM             NAM[]
 }
