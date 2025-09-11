@@ -1383,8 +1383,8 @@ def extract_dem(self, projectId: str, userId: int):
 def get_curve_numbers(self, projectId: str, userId: int):
     """
     Get curve numbers for a catchment geojson and save as raster.
+    Simplified version using only local ESA WorldCover and local HYSOGs data.
     Based on QGIS Curve Number Generator plugin approach.
-    Uses multiple data sources: land use, soil data, and hydrologic soil groups.
     """
     self.update_state(state='PROGRESS',
                 meta={'text': 'Loading project data', 'progress': 5})
@@ -1424,9 +1424,9 @@ def get_curve_numbers(self, projectId: str, userId: int):
             maxx + buffer_distance, maxy + buffer_distance)
     
     self.update_state(state='PROGRESS',
-                meta={'text': 'Downloading land use data', 'progress': 20})
+                meta={'text': 'Loading local data', 'progress': 20})
     
-    # Convert bbox from EPSG:2056 to EPSG:4326 (WGS84) for API calls
+    # Convert bbox from EPSG:2056 to EPSG:4326 (WGS84) for data access
     from pyproj import Transformer
     
     # Create transformer from EPSG:2056 to WGS84
@@ -1442,15 +1442,14 @@ def get_curve_numbers(self, projectId: str, userId: int):
     print(f"EPSG:2056 bbox: {bbox}")
     print(f"WGS84 bbox: {bbox_wgs84}")
     
-    # Download land use data (ESA WorldCover)
-    landuse_data = download_esa_worldcover(bbox_wgs84)
+    # Load local ESA WorldCover data (no temp files)
+    landuse_data = load_local_esa_worldcover(bbox_wgs84)
     
     self.update_state(state='PROGRESS',
-                meta={'text': 'Downloading soil data', 'progress': 40})
+                meta={'text': 'Loading soil data', 'progress': 40})
     
-    # Get local soil data
+    # Load local HYSOGs soil data (no temp files)
     soil_data = load_local_hysogs_soil_data(bbox_wgs84)
-
     
     self.update_state(state='PROGRESS',
                 meta={'text': 'Processing curve number data', 'progress': 60})
@@ -1460,8 +1459,8 @@ def get_curve_numbers(self, projectId: str, userId: int):
     # For EPSG:2056 (Swiss coordinates), cell_size is already in meters
     grid = create_catchment_grid(catchment_union, cell_size)
     
-    # Generate curve numbers using the comprehensive approach
-    curve_number_raster = generate_curve_numbers_comprehensive(
+    # Generate curve numbers using QGIS approach only
+    curve_number_raster = generate_curve_numbers_qgis_only(
         landuse_data, soil_data, grid, catchment_union
     )
     
@@ -1484,21 +1483,17 @@ def get_curve_numbers(self, projectId: str, userId: int):
     return {"status": "success", "file": output_file}
 
 
-def download_esa_worldcover(bbox):
+def load_local_esa_worldcover(bbox):
     """
-    Download land cover data from local ESA WorldCover 2021 VRT file.
+    Load land cover data from local ESA WorldCover 2021 VRT file.
+    Simplified version that doesn't create temporary files.
     Uses the esa_worldcover_2021.vrt file in ./data.
     Based on the QGIS Curve Number Generator plugin approach.
     """
-    import tempfile
     import os
     
     # Local ESA WorldCover 2021 VRT file
     vrt_file_path = "./data/esa_worldcover_2021.vrt"
-    
-    # Create temp directory if it doesn't exist
-    temp_dir = "./data/temp"
-    os.makedirs(temp_dir, exist_ok=True)
     
     try:
         # Check if VRT file exists
@@ -1532,26 +1527,6 @@ def download_esa_worldcover(bbox):
             # Get the transform for the window
             window_transform = rasterio.windows.transform(window, src.transform)
             
-            # Save the extracted data to temp directory
-            
-            temp_filename = f"esa_worldcover_bbox_{bbox[0]:.3f}_{bbox[1]:.3f}_{bbox[2]:.3f}_{bbox[3]:.3f}.tif"
-            temp_file_path = os.path.join(temp_dir, temp_filename)
-            
-            with rasterio.open(
-                temp_file_path,
-                'w',
-                driver='GTiff',
-                height=data.shape[0],
-                width=data.shape[1],
-                count=1,
-                dtype=data.dtype,
-                crs=src.crs,
-                transform=window_transform
-            ) as dst:
-                dst.write(data, 1)
-            
-            print(f"Saved ESA WorldCover data to: {temp_file_path}")
-            
             # ESA WorldCover 2021 classification values (raw values, not curve numbers)
             # Curve numbers will be calculated using lookup tables
             worldcover_classes = {
@@ -1568,13 +1543,15 @@ def download_esa_worldcover(bbox):
                 100: "Moss and lichen"
             }
             
-            print(f"Successfully extracted ESA WorldCover 2021 data for bbox: {bbox}")
+            print(f"Successfully loaded ESA WorldCover 2021 data for bbox: {bbox}")
             print(f"Data shape: {data.shape}")
             print(f"Unique values: {np.unique(data)}")
             
             return {
                 'source': 'ESA_WorldCover_2021_Local',
-                'data_file': temp_file_path,
+                'data': data,
+                'transform': window_transform,
+                'crs': src.crs,
                 'classification': worldcover_classes,
                 'bbox': bbox,
                 'vrt_file': vrt_file_path,
@@ -1589,15 +1566,11 @@ def download_esa_worldcover(bbox):
 def load_local_hysogs_soil_data(bbox):
     """
     Load soil data from local Global Hydrologic Soil Groups (HYSOGs250m) GeoTIFF.
-    The local dataset is expected at `src/api/data/HYSOGs250m.tif` in EPSG:4326.
-    Returns the same structure as the online downloader.
+    Simplified version that doesn't create temporary files.
+    The local dataset is expected at `./data/HYSOGs250m.tif` in EPSG:4326.
     """
     # Path to local HYSOGs250m GeoTIFF
     local_tif_path = "./data/HYSOGs250m.tif"
-    
-    # Create temp directory if it doesn't exist
-    temp_dir = "./data/temp"
-    os.makedirs(temp_dir, exist_ok=True)
     
     if not os.path.exists(local_tif_path):
         raise FileNotFoundError(f"Local HYSOGs250m GeoTIFF not found at {local_tif_path}")
@@ -1637,24 +1610,6 @@ def load_local_hysogs_soil_data(bbox):
         data = src.read(1, window=window)
         window_transform = rasterio.windows.transform(window, src.transform)
         
-        # Save the extracted data to temp directory
-        
-        temp_filename = f"hysogs250m_local_bbox_{bbox[0]:.3f}_{bbox[1]:.3f}_{bbox[2]:.3f}_{bbox[3]:.3f}.tif"
-        temp_file_path = os.path.join(temp_dir, temp_filename)
-        
-        with rasterio.open(
-            temp_file_path,
-            'w',
-            driver='GTiff',
-            height=data.shape[0],
-            width=data.shape[1],
-            count=1,
-            dtype=data.dtype,
-            crs=src.crs,
-            transform=window_transform
-        ) as dst:
-            dst.write(data, 1)
-        
     # HYSOGs250m classification values and their HSG equivalents
     hysogs_to_hsg = {
         1: 'A',
@@ -1690,7 +1645,9 @@ def load_local_hysogs_soil_data(bbox):
     
     return {
         'source': 'ORNL_HYSOGs250m',  # Keep same source label for downstream logic
-        'data_file': temp_file_path,
+        'data': data,
+        'transform': window_transform,
+        'crs': src.crs,
         'hysogs_to_hsg': hysogs_to_hsg,
         'hsg_adjustments': hsg_adjustments,
         'bbox': bbox,
@@ -1698,10 +1655,10 @@ def load_local_hysogs_soil_data(bbox):
         'description': 'Global Hydrologic Soil Groups (HYSOGs250m) loaded from local GeoTIFF'
     }
 
-def generate_curve_numbers_comprehensive(landuse_data, soil_data, grid, catchment_geom):
+def generate_curve_numbers_qgis_only(landuse_data, soil_data, grid, catchment_geom):
     """
-    Generate curve numbers using comprehensive approach based on QGIS plugin.
-    Combines land use and soil data to create accurate curve number raster.
+    Generate curve numbers using QGIS approach only.
+    Simplified version that combines local ESA WorldCover and local HYSOGs data.
     """
     # Create catchment mask
     catchment_mask = grid.rasterize([(catchment_geom, 1)], fill=0)
@@ -1709,232 +1666,63 @@ def generate_curve_numbers_comprehensive(landuse_data, soil_data, grid, catchmen
     # Initialize curve number raster
     curve_number_raster = np.full(grid.shape, 70, dtype=np.float32)  # Default CN
     
-    # Check if we have both ESA WorldCover and ORNL HYSOGs data for proper curve number calculation
-    if (landuse_data['source'] == 'ESA_WorldCover_2021_Local' and 
-        soil_data['source'] == 'ORNL_HYSOGs250m'):
-        # Use the QGIS plugin approach: combine land cover and soil data using lookup tables
-        curve_number_raster = apply_qgis_plugin_curve_number_calculation(
-            curve_number_raster, landuse_data, soil_data, grid
-        )
-    else:
-        # Fallback to the old approach
-        # Apply land use based curve numbers
-        if landuse_data['source'] == 'ESA_WorldCover_2021_Local':
-            # Use local ESA WorldCover 2021 VRT data
-            curve_number_raster = apply_real_landcover_data(curve_number_raster, landuse_data, grid)
-        elif 'data_file' in landuse_data:
-            # Use real downloaded land cover data
-            curve_number_raster = apply_real_landcover_data(curve_number_raster, landuse_data, grid)
-        
-        # Apply soil-based adjustments
-        if soil_data['source'] == 'ORNL_HYSOGs250m':
-            # Apply ORNL HYSOGs250m soil data
-            curve_number_raster = apply_ornl_hysogs_adjustments(curve_number_raster, soil_data, grid)
-        elif soil_data['source'] == 'Fallback_Soil_Data':
-            # Apply fallback soil adjustments
-            curve_number_raster = apply_fallback_soil_adjustments(curve_number_raster, soil_data, grid)
-        elif soil_data['source'] == 'SSURGO':
-            # Apply HSG-based adjustments
-            curve_number_raster = apply_hsg_adjustments(curve_number_raster, soil_data)
-        else:
-            # Apply global soil adjustments
-            curve_number_raster = apply_global_soil_adjustments(curve_number_raster, soil_data)
+    # Use QGIS plugin approach: combine land cover and soil data using lookup tables
+    curve_number_raster = apply_qgis_plugin_curve_number_calculation_simplified(
+        curve_number_raster, landuse_data, soil_data, grid
+    )
     
     # Apply catchment mask
     curve_number_raster = np.where(catchment_mask == 1, curve_number_raster, 0)
     
     return curve_number_raster
 
-
-def apply_real_landcover_data(curve_number_raster, landuse_data, grid):
+def reproject_raster_data_to_target(data, source_transform, source_crs, target_shape, target_transform, target_crs):
     """
-    Apply real downloaded land cover data to curve number raster.
-    """
-    try:
-        
-        # Handle raster-based data sources
-        if 'data_file' in landuse_data:
-            # Read the downloaded raster file
-            with rasterio.open(landuse_data['data_file']) as src:
-                # Read the data
-                landcover_data = src.read(1)
-                
-                # Resample to match our grid if necessary
-                if landcover_data.shape != grid.shape:
-                    # Resample using rasterio
-                    from rasterio.warp import reproject, Resampling
-                    resampled_data = np.empty(grid.shape, dtype=landcover_data.dtype)
-                    reproject(
-                        landcover_data,
-                        resampled_data,
-                        src_transform=src.transform,
-                        src_crs=src.crs,
-                        dst_transform=grid.affine,
-                        dst_crs=grid.crs.srs,
-                        resampling=Resampling.nearest
-                    )
-                    landcover_data = resampled_data
-                
-                # Apply land cover classification
-                for class_id, cn_value in landuse_data['classification'].items():
-                    curve_number_raster[landcover_data == class_id] = cn_value
-                
-                # Handle Copernicus mapping if available
-                if 'copernicus_mapping' in landuse_data:
-                    for copernicus_id, esa_id in landuse_data['copernicus_mapping'].items():
-                        if esa_id in landuse_data['classification']:
-                            cn_value = landuse_data['classification'][esa_id]
-                            curve_number_raster[landcover_data == copernicus_id] = cn_value
-            
-                # Clean up temporary file (optional - keep for inspection)
-                # if os.path.exists(landuse_data['data_file']):
-                #     os.unlink(landuse_data['data_file'])
-                print(f"Keeping land cover data file for inspection: {landuse_data['data_file']}")
-        
-        # Handle simplified data sources
-        elif 'dominant_cover' in landuse_data:
-            return apply_simplified_landcover(curve_number_raster, landuse_data)
-            
-    except Exception as e:
-        print(f"Error processing real land cover data: {e}")
-        print(f"Available keys in landuse_data: {list(landuse_data.keys())}")
-        # Fallback to simplified pattern
-        landuse_pattern = create_simplified_landuse_pattern(grid.shape)
-        
-        # Check if classification exists, otherwise use default curve numbers
-        if 'classification' in landuse_data:
-            for class_id, cn_value in landuse_data['classification'].items():
-                curve_number_raster[landuse_pattern == class_id] = cn_value
-        elif 'curve_numbers' in landuse_data:
-            for class_id, cn_value in landuse_data['curve_numbers'].items():
-                curve_number_raster[landuse_pattern == class_id] = cn_value
-        else:
-            # Default curve numbers if no classification available
-            default_curve_numbers = {
-                10: 55,   # Tree cover
-                20: 65,   # Shrubland
-                30: 61,   # Grassland
-                40: 72,   # Cropland
-                50: 98,   # Built-up
-                60: 77,   # Bare
-                70: 100,  # Snow/ice
-                80: 100,  # Water
-                90: 58,   # Wetland
-                95: 60,   # Mangroves
-                100: 100  # Moss
-            }
-            for class_id, cn_value in default_curve_numbers.items():
-                curve_number_raster[landuse_pattern == class_id] = cn_value
-    
-    return curve_number_raster
-
-
-def reproject_raster_to_target(input_file, target_shape, target_transform, target_crs, temp_dir, data_type):
-    """
-    Reproject and resample a raster to match the target grid specifications.
-    This ensures proper spatial alignment between different resolution datasets.
+    Reproject and resample raster data to match the target grid specifications.
+    Simplified version that works directly with data arrays without temp files.
     
     Args:
-        input_file: Path to input raster file
+        data: Input raster data array
+        source_transform: Source affine transform
+        source_crs: Source coordinate reference system
         target_shape: Target shape (height, width)
         target_transform: Target affine transform
         target_crs: Target coordinate reference system
-        temp_dir: Temporary directory for output files
-        data_type: Type of data ('landcover' or 'soil') for appropriate resampling
     
     Returns:
         numpy.ndarray: Reprojected raster data
     """
-    import tempfile
+    from rasterio.warp import reproject, Resampling
+    from rasterio.crs import CRS
     
-    # Choose appropriate resampling method based on data type
-    if data_type == 'landcover':
-        # Use nearest neighbor for categorical land cover data
-        resampling = rasterio.enums.Resampling.nearest
-    elif data_type == 'soil':
-        # Use nearest neighbor for categorical soil data
-        resampling = rasterio.enums.Resampling.nearest
-    else:
-        # Default to nearest neighbor
-        resampling = rasterio.enums.Resampling.nearest
+    # Create target array
+    target_data = np.empty(target_shape, dtype=data.dtype)
     
-    # Create output file path
-    output_filename = f"reprojected_{data_type}_{os.path.basename(input_file)}"
-    output_file = os.path.join(temp_dir, output_filename)
+    # Use nearest neighbor resampling for categorical data
+    resampling = Resampling.nearest
     
-    try:
-        # Reproject the raster
-        with rasterio.open(input_file) as src:
-            # Read the source data
-            source_data = src.read(1)
-            
-            # Create destination array
-            reprojected_data = np.empty(target_shape, dtype=source_data.dtype)
-            
-            # Reproject to target specifications
-            rasterio.warp.reproject(
-                source_data,
-                reprojected_data,
-                dst_crs=target_crs,
-                dst_transform=target_transform,
-                resampling=resampling,
-                src_transform=src.transform,
-                src_crs=src.crs,
-                src_nodata=src.nodata if src.nodata is not None else 0,
-                dst_nodata=0
-            )
-            
-            # Save the reprojected raster for debugging
-            with rasterio.open(
-                output_file,
-                'w',
-                driver='GTiff',
-                height=target_shape[0],
-                width=target_shape[1],
-                count=1,
-                dtype=reprojected_data.dtype,
-                crs=target_crs,
-                transform=target_transform,
-                nodata=0
-            ) as dst:
-                dst.write(reprojected_data, 1)
-            
-            print(f"Reprojected {data_type} data saved to: {output_file}")
-            print(f"Original shape: {source_data.shape}, Reprojected shape: {reprojected_data.shape}")
-            
-            return reprojected_data
-            
-    except Exception as e:
-        print(f"Error reprojecting {data_type} data: {e}")
-        import traceback
-        traceback.print_exc()
-        
-        # Fallback: create a default array with the target shape
-        print(f"Creating fallback {data_type} array with shape {target_shape}")
-        if data_type == 'landcover':
-            # Default land cover value (grassland)
-            fallback_data = np.full(target_shape, 30, dtype=np.uint8)
-        elif data_type == 'soil':
-            # Default soil value (HSG B)
-            fallback_data = np.full(target_shape, 2, dtype=np.uint8)
-        else:
-            fallback_data = np.full(target_shape, 0, dtype=np.uint8)
-        
-        return fallback_data
+    # Reproject the data
+    reproject(
+        source=data,
+        destination=target_data,
+        src_transform=source_transform,
+        src_crs=source_crs,
+        dst_transform=target_transform,
+        dst_crs=target_crs,
+        resampling=resampling
+    )
+    
+    return target_data
 
 
-def apply_qgis_plugin_curve_number_calculation(curve_number_raster, landuse_data, soil_data, grid):
+def apply_qgis_plugin_curve_number_calculation_simplified(curve_number_raster, landuse_data, soil_data, grid):
     """
     Apply QGIS plugin-style curve number calculation using lookup tables.
+    Simplified version that works directly with data arrays without temp files.
     This combines ESA WorldCover land cover data with ORNL HYSOGs soil data.
-    Properly handles spatial alignment and coordinate system transformations.
     """
-    print("QGIS Plugin Curve Number Calculation")
+    print("QGIS Plugin Curve Number Calculation (Simplified)")
     try:
-        # Create a temporary directory for reprojected rasters
-        temp_dir = "./data/temp"
-        os.makedirs(temp_dir, exist_ok=True)
-        
         # Get target grid properties
         target_shape = curve_number_raster.shape
         target_transform = grid.affine
@@ -1944,24 +1732,24 @@ def apply_qgis_plugin_curve_number_calculation(curve_number_raster, landuse_data
         print(f"Target transform: {target_transform}")
         print(f"Target CRS: {target_crs}")
         
-        # Reproject and resample land cover data to match target grid
-        landcover_reprojected = reproject_raster_to_target(
-            landuse_data['data_file'], 
+        # Reproject and resample land cover data to match target grid (in memory)
+        landcover_reprojected = reproject_raster_data_to_target(
+            landuse_data['data'], 
+            landuse_data['transform'],
+            landuse_data['crs'],
             target_shape, 
             target_transform, 
-            target_crs,
-            temp_dir,
-            'landcover'
+            target_crs
         )
         
-        # Reproject and resample soil data to match target grid
-        soil_reprojected = reproject_raster_to_target(
-            soil_data['data_file'], 
+        # Reproject and resample soil data to match target grid (in memory)
+        soil_reprojected = reproject_raster_data_to_target(
+            soil_data['data'], 
+            soil_data['transform'],
+            soil_data['crs'],
             target_shape, 
             target_transform, 
-            target_crs,
-            temp_dir,
-            'soil'
+            target_crs
         )
         
         print(f"Reprojected land cover shape: {landcover_reprojected.shape}")
@@ -2082,170 +1870,6 @@ def create_curve_number_lookup_table():
     
     return lookup_table
 
-
-def apply_simplified_landcover(curve_number_raster, landuse_data):
-    """
-    Apply simplified location-based land cover data.
-    """
-    # Get the dominant land cover type
-    dominant_cover = landuse_data['dominant_cover']
-    
-    # Check if classification exists, otherwise use default curve numbers
-    if 'classification' in landuse_data:
-        cn_value = landuse_data['classification'].get(dominant_cover, 70)
-    elif 'curve_numbers' in landuse_data:
-        cn_value = landuse_data['curve_numbers'].get(dominant_cover, 70)
-    else:
-        # Default curve numbers if no classification available
-        default_curve_numbers = {
-            10: 55,   # Tree cover
-            20: 65,   # Shrubland
-            30: 61,   # Grassland
-            40: 72,   # Cropland
-            50: 98,   # Built-up
-            60: 77,   # Bare
-            70: 100,  # Snow/ice
-            80: 100,  # Water
-            90: 58,   # Wetland
-            95: 60,   # Mangroves
-            100: 100  # Moss
-        }
-        cn_value = default_curve_numbers.get(dominant_cover, 70)
-    
-    # Apply dominant land cover to the entire area
-    # In a more sophisticated approach, you could create patterns
-    curve_number_raster.fill(cn_value)
-    
-    return curve_number_raster
-
-
-
-def apply_ornl_hysogs_adjustments(curve_number_raster, soil_data, grid):
-    """
-    Apply ORNL HYSOGs250m soil data adjustments.
-    """
-    try:
-        # Read the downloaded HYSOGs250m raster file
-        with rasterio.open(soil_data['data_file']) as src:
-            # Read the data
-            hysogs_data = src.read(1)
-            
-            print(f"HYSOGs data shape: {hysogs_data.shape}")
-            print(f"Grid shape: {grid.shape}")
-            print(f"Source CRS: {src.crs}")
-            print(f"Source transform: {src.transform}")
-            
-            # Check if we need to resample
-            if hysogs_data.shape != grid.shape:
-                print("Resampling HYSOGs data to match grid...")
-                
-                # Handle missing CRS - assume WGS84 if not defined
-                src_crs = src.crs
-                if src_crs is None:
-                    print("Warning: Source CRS is None, assuming EPSG:4326 (WGS84)")
-                    src_crs = rasterio.crs.CRS.from_epsg(4326)
-                
-                # Resample using rasterio
-                from rasterio.warp import reproject, Resampling
-                resampled_data = np.empty(grid.shape, dtype=hysogs_data.dtype)
-                
-                try:
-                    reproject(
-                        hysogs_data,
-                        resampled_data,
-                        src_transform=src.transform,
-                        src_crs=src_crs,
-                        dst_transform=grid.affine,
-                        dst_crs=grid.crs.srs,
-                        resampling=Resampling.nearest
-                    )
-                    hysogs_data = resampled_data
-                    print("Resampling completed successfully")
-                except Exception as reproject_error:
-                    print(f"Resampling failed: {reproject_error}")
-                    print("Using original data shape")
-            
-            # Get the mapping and adjustments
-            hysogs_to_hsg = soil_data['hysogs_to_hsg']
-            hsg_adjustments = soil_data['hsg_adjustments']
-            
-            print(f"HYSOGs to HSG mapping: {hysogs_to_hsg}")
-            print(f"HSG adjustments: {hsg_adjustments}")
-            
-            # Apply HYSOGs to HSG mapping and then to curve number adjustments
-            applied_adjustments = 0
-            for hysogs_value, hsg_type in hysogs_to_hsg.items():
-                if hsg_type in hsg_adjustments:
-                    mask = hysogs_data == hysogs_value
-                    if np.any(mask):
-                        curve_number_raster[mask] *= hsg_adjustments[hsg_type]
-                        applied_adjustments += np.sum(mask)
-                        print(f"Applied {hsg_type} adjustment to {np.sum(mask)} pixels (HYSOGs value: {hysogs_value})")
-            
-            print(f"Applied ORNL HYSOGs250m soil adjustments to {applied_adjustments} total pixels")
-            print(f"HYSOGs values found: {np.unique(hysogs_data)}")
-            
-        # Clean up temporary file (optional - keep for inspection)
-        # if os.path.exists(soil_data['data_file']):
-        #     os.unlink(soil_data['data_file'])
-        print(f"Keeping soil data file for inspection: {soil_data['data_file']}")
-            
-    except Exception as e:
-        print(f"Error processing ORNL HYSOGs250m data: {e}")
-        print(f"Error type: {type(e).__name__}")
-        import traceback
-        traceback.print_exc()
-        # Fallback to uniform adjustment
-        curve_number_raster *= 1.0
-    
-    # Ensure curve numbers are within valid range
-    curve_number_raster = np.clip(curve_number_raster, 30, 100)
-    
-    return curve_number_raster
-
-
-def apply_hsg_adjustments(curve_number_raster, soil_data):
-    """
-    Apply HSG-based adjustments to curve numbers.
-    """
-    # Get HSG distribution from soil data
-    if 'hsg_distribution' in soil_data:
-        hsg_distribution = soil_data['hsg_distribution']
-        
-        # Apply HSG-based adjustments
-        hsg_adjustments = {
-            'A': 0.9,   # Reduce curve numbers for high infiltration
-            'B': 1.0,   # No adjustment for moderate infiltration
-            'C': 1.1,   # Increase curve numbers for slow infiltration
-            'D': 1.2,   # Increase curve numbers for very slow infiltration
-        }
-        
-        # Apply weighted average adjustment based on HSG distribution
-        total_adjustment = 0
-        for hsg_type, proportion in hsg_distribution.items():
-            if hsg_type in hsg_adjustments:
-                total_adjustment += proportion * hsg_adjustments[hsg_type]
-        
-        curve_number_raster *= total_adjustment
-        print(f"Applied HSG-based adjustment factor: {total_adjustment:.3f}")
-    
-    return curve_number_raster
-
-
-def apply_global_soil_adjustments(curve_number_raster, soil_data):
-    """
-    Apply global soil adjustments to curve numbers.
-    """
-    # Apply a simple global adjustment based on soil data source
-    if soil_data['source'] == 'Fallback_Soil_Data':
-        # Apply a moderate adjustment for fallback data
-        curve_number_raster *= 1.05
-        print("Applied global soil adjustment factor: 1.05")
-    else:
-        # No adjustment for other soil data sources
-        curve_number_raster *= 1.0
-        print("Applied global soil adjustment factor: 1.0")
-    
 
 
 def create_catchment_grid(catchment_geom, cell_size):
