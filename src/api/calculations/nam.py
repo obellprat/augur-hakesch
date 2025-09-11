@@ -1448,12 +1448,9 @@ def get_curve_numbers(self, projectId: str, userId: int):
     self.update_state(state='PROGRESS',
                 meta={'text': 'Downloading soil data', 'progress': 40})
     
-    # Download soil data (try local HYSOGs250m GeoTIFF first, then fallback to online)
-    try:
-        soil_data = load_local_hysogs_soil_data(bbox_wgs84)
-    except Exception as e:
-        print(f"Local HYSOGs250m read failed, falling back to online: {e}")
-        soil_data = download_soil_data(bbox_wgs84)
+    # Get local soil data
+    soil_data = load_local_hysogs_soil_data(bbox_wgs84)
+
     
     self.update_state(state='PROGRESS',
                 meta={'text': 'Processing curve number data', 'progress': 60})
@@ -1536,6 +1533,7 @@ def download_esa_worldcover(bbox):
             window_transform = rasterio.windows.transform(window, src.transform)
             
             # Save the extracted data to temp directory
+            
             temp_filename = f"esa_worldcover_bbox_{bbox[0]:.3f}_{bbox[1]:.3f}_{bbox[2]:.3f}_{bbox[3]:.3f}.tif"
             temp_file_path = os.path.join(temp_dir, temp_filename)
             
@@ -1586,77 +1584,6 @@ def download_esa_worldcover(bbox):
             
     except Exception as e:
         print(f"Error reading ESA WorldCover 2021 VRT file: {e}")
-        # Fallback to simplified land cover data based on location
-        center_lon = (bbox[0] + bbox[2]) / 2
-        center_lat = (bbox[1] + bbox[3]) / 2
-        return create_fallback_landcover_data(bbox, center_lat, center_lon)
-
-
-def create_fallback_landcover_data(bbox, center_lat, center_lon):
-    """
-    Create fallback land cover data when ESA WorldCover is unavailable.
-    """
-    # ESA WorldCover classification values and their curve numbers
-    worldcover_curve_numbers = {
-        10: 55,   # Tree cover (forest)
-        20: 65,   # Shrubland
-        30: 61,   # Grassland
-        40: 72,   # Cropland
-        50: 98,   # Built-up
-        60: 77,   # Bare / sparse vegetation
-        70: 100,  # Snow and ice
-        80: 100,  # Permanent water bodies
-        90: 58,   # Herbaceous wetland
-        95: 60,   # Mangroves
-        100: 100  # Moss and lichen
-    }
-    
-    # Determine land cover distribution based on location
-    if center_lat > 60:  # High latitude
-        landcover_distribution = {
-            10: 0.40,  # Forest (40%)
-            20: 0.20,  # Shrubland (20%)
-            30: 0.15,  # Grassland (15%)
-            40: 0.05,  # Agricultural (5%)
-            50: 0.02,  # Built-up (2%)
-            60: 0.05,  # Bare (5%)
-            70: 0.10,  # Snow/ice (10%)
-            80: 0.03   # Water (3%)
-        }
-    elif center_lat > 30:  # Temperate
-        landcover_distribution = {
-            10: 0.25,  # Forest (25%)
-            20: 0.15,  # Shrubland (15%)
-            30: 0.30,  # Grassland (30%)
-            40: 0.20,  # Agricultural (20%)
-            50: 0.05,  # Built-up (5%)
-            60: 0.03,  # Bare (3%)
-            70: 0.01,  # Snow/ice (1%)
-            80: 0.01   # Water (1%)
-        }
-    else:  # Tropical/subtropical
-        landcover_distribution = {
-            10: 0.45,  # Forest (45%)
-            20: 0.20,  # Shrubland (20%)
-            30: 0.15,  # Grassland (15%)
-            40: 0.10,  # Agricultural (10%)
-            50: 0.03,  # Built-up (3%)
-            60: 0.05,  # Bare (5%)
-            70: 0.01,  # Snow/ice (1%)
-            80: 0.01   # Water (1%)
-        }
-    
-    return {
-        'source': 'Fallback_Landcover_Data',
-        'landcover_distribution': landcover_distribution,
-        'classification': list(worldcover_curve_numbers.keys()),
-        'curve_numbers': worldcover_curve_numbers,
-        'bbox': bbox,
-        'center_lat': center_lat,
-        'center_lon': center_lon,
-        'resolution': 1000,  # meters (estimated)
-        'description': 'Fallback land cover data based on location'
-    }
 
 
 def load_local_hysogs_soil_data(bbox):
@@ -1711,6 +1638,7 @@ def load_local_hysogs_soil_data(bbox):
         window_transform = rasterio.windows.transform(window, src.transform)
         
         # Save the extracted data to temp directory
+        
         temp_filename = f"hysogs250m_local_bbox_{bbox[0]:.3f}_{bbox[1]:.3f}_{bbox[2]:.3f}_{bbox[3]:.3f}.tif"
         temp_file_path = os.path.join(temp_dir, temp_filename)
         
@@ -1726,7 +1654,7 @@ def load_local_hysogs_soil_data(bbox):
             transform=window_transform
         ) as dst:
             dst.write(data, 1)
-    
+        
     # HYSOGs250m classification values and their HSG equivalents
     hysogs_to_hsg = {
         1: 'A',
@@ -1770,195 +1698,6 @@ def load_local_hysogs_soil_data(bbox):
         'description': 'Global Hydrologic Soil Groups (HYSOGs250m) loaded from local GeoTIFF'
     }
 
-def download_soil_data(bbox):
-    """
-    Download soil data from Global Hydrologic Soil Groups (HYSOGs250m) for Curve Number-Based Runoff Modeling.
-    Uses ORNL WebMap WCS service: https://webmap.ornl.gov/ogcbroker/wcs
-    Based on the QGIS Curve Number Generator plugin approach.
-    """
-    import tempfile
-    from urllib.parse import urlencode
-    
-    # ORNL WebMap WCS service for Global Hydrologic Soil Groups
-    ornl_wcs_url = "https://webmap.ornl.gov/ogcbroker/wcs"
-    
-    # Create temp directory if it doesn't exist
-    temp_dir = "./data/temp"
-    os.makedirs(temp_dir, exist_ok=True)
-    
-    try:
-        # Add buffer cells like the QGIS plugin (2 cells on each side)
-        soils_pixel_size = 0.00208333  # ~250m in degrees
-        extent_ornl = (
-            bbox[0] - 2 * soils_pixel_size,
-            bbox[1] - 2 * soils_pixel_size,
-            bbox[2] + 2 * soils_pixel_size,
-            bbox[3] + 2 * soils_pixel_size,
-        )
-        
-        # Calculate bbox dimensions like the plugin
-        bbox_width = int((extent_ornl[2] - extent_ornl[0]) / soils_pixel_size)
-        bbox_height = int((extent_ornl[3] - extent_ornl[1]) / soils_pixel_size)
-        
-        # WCS GetCoverage request for HYSOGs250m (matching plugin format)
-        params = {
-            'originator': 'SDAT',
-            'service': 'WCS',
-            'version': '1.0.0',
-            'request': 'GetCoverage',
-            'coverage': '1566_1',  # Global Hydrologic Soil Groups 250m
-            'bbox': f"{extent_ornl[0]},{extent_ornl[1]},{extent_ornl[2]},{extent_ornl[3]}",
-            'crs': 'EPSG:4326',
-            'format': 'image/tiff',
-            'width': bbox_width,
-            'height': bbox_height
-        }
-        
-        print(f"Requesting HYSOGs250m from ORNL WebMap: {ornl_wcs_url}")
-        print(f"Parameters: {params}")
-        
-        response = requests.get(ornl_wcs_url, params=params, timeout=120)
-        print(f"Response status: {response.status_code}")
-        print(f"Response URL: {response.url}")
-        
-        if response.status_code == 200:
-            # Save the raster data to temp directory
-            temp_filename = f"hysogs250m_bbox_{bbox[0]:.3f}_{bbox[1]:.3f}_{bbox[2]:.3f}_{bbox[3]:.3f}.tif"
-            temp_file_path = os.path.join(temp_dir, temp_filename)
-            
-            with open(temp_file_path, 'wb') as f:
-                f.write(response.content)
-            
-            print(f"Saved HYSOGs250m data to: {temp_file_path}")
-            
-            # Verify the downloaded raster has proper CRS
-            try:
-                with rasterio.open(temp_file_path) as test_src:
-                    if test_src.crs is None:
-                        print("Warning: Downloaded raster has no CRS, attempting to fix...")
-                        # Create a new file with proper CRS
-                        fixed_filename = f"hysogs250m_fixed_bbox_{bbox[0]:.3f}_{bbox[1]:.3f}_{bbox[2]:.3f}_{bbox[3]:.3f}.tif"
-                        fixed_file_path = os.path.join(temp_dir, fixed_filename)
-                        with rasterio.open(
-                            fixed_file_path,
-                            'w',
-                            driver='GTiff',
-                            height=test_src.height,
-                            width=test_src.width,
-                            count=test_src.count,
-                            dtype=test_src.dtypes[0],
-                            crs=rasterio.crs.CRS.from_epsg(4326),  # Assume WGS84
-                            transform=test_src.transform
-                        ) as dst:
-                            dst.write(test_src.read())
-                        
-                        # Replace the original file
-                        os.unlink(temp_file_path)
-                        temp_file_path = fixed_file_path
-                        print(f"Fixed raster CRS to EPSG:4326: {fixed_file_path}")
-                    else:
-                        print(f"Raster CRS: {test_src.crs}")
-            except Exception as crs_error:
-                print(f"Warning: Could not verify/fix raster CRS: {crs_error}")
-            
-            # HYSOGs250m classification values and their HSG equivalents
-            # Based on the ORNL HYSOGs250m documentation
-            hysogs_to_hsg = {
-                1: 'A',   # High infiltration (low runoff potential)
-                2: 'B',   # Moderate infiltration
-                3: 'C',   # Slow infiltration
-                4: 'D',   # Very slow infiltration (high runoff potential)
-                5: 'A/D', # Dual classification (A or D)
-                6: 'B/D', # Dual classification (B or D)
-                7: 'C/D', # Dual classification (C or D)
-                8: 'A/B', # Dual classification (A or B)
-                9: 'B/C', # Dual classification (B or C)
-                10: 'A/C', # Dual classification (A or C)
-                11: 'D',   # Water bodies
-                12: 'D',   # Glaciers
-                13: 'D',   # No data
-                14: 'D',   # No data
-                15: 'D'    # No data
-            }
-            
-            # HSG to curve number adjustments
-            hsg_adjustments = {
-                'A': 0.9,   # Reduce curve numbers for high infiltration
-                'B': 1.0,   # No adjustment for moderate infiltration
-                'C': 1.1,   # Increase curve numbers for slow infiltration
-                'D': 1.2,   # Increase curve numbers for very slow infiltration
-                'A/D': 1.05, # Average of A and D
-                'B/D': 1.1,  # Average of B and D
-                'C/D': 1.15, # Average of C and D
-                'A/B': 0.95, # Average of A and B
-                'B/C': 1.05, # Average of B and C
-                'A/C': 1.0   # Average of A and C
-            }
-            
-            return {
-                'source': 'ORNL_HYSOGs250m',
-                'data_file': temp_file_path,
-                'hysogs_to_hsg': hysogs_to_hsg,
-                'hsg_adjustments': hsg_adjustments,
-                'bbox': bbox,
-                'url': ornl_wcs_url,
-                'resolution': 250,  # meters
-                'description': 'Global Hydrologic Soil Groups (HYSOGs250m) for Curve Number-Based Runoff Modeling'
-            }
-        else:
-            print(f"ORNL WCS request failed with status {response.status_code}")
-            print(f"Response content: {response.text[:500]}...")
-            raise Exception(f"ORNL WCS returned status {response.status_code}")
-            
-    except Exception as e:
-        print(f"Error downloading HYSOGs250m data: {e}")
-        # Fallback to simplified soil data based on location
-        center_lon = (bbox[0] + bbox[2]) / 2
-        center_lat = (bbox[1] + bbox[3]) / 2
-        return create_fallback_soil_data(bbox, center_lat, center_lon)
-
-
-def create_fallback_soil_data(bbox, center_lat, center_lon):
-    """
-    Create fallback soil data when ORNL HYSOGs250m is unavailable.
-    """
-    # Create realistic soil distribution based on location
-    if center_lat > 60:  # High latitude - more clay soils
-        soil_distribution = {
-            'A': 0.10,  # 10% HSG A
-            'B': 0.25,  # 25% HSG B
-            'C': 0.35,  # 35% HSG C
-            'D': 0.30   # 30% HSG D
-        }
-    elif center_lat > 30:  # Temperate - mixed soils
-        soil_distribution = {
-            'A': 0.20,  # 20% HSG A
-            'B': 0.35,  # 35% HSG B
-            'C': 0.30,  # 30% HSG C
-            'D': 0.15   # 15% HSG D
-        }
-    else:  # Tropical - more sandy soils
-        soil_distribution = {
-            'A': 0.35,  # 35% HSG A
-            'B': 0.30,  # 30% HSG B
-            'C': 0.25,  # 25% HSG C
-            'D': 0.10   # 10% HSG D
-        }
-    
-    return {
-        'source': 'Fallback_Soil_Data',
-        'soil_distribution': soil_distribution,
-        'bbox': bbox,
-        'center_lat': center_lat,
-        'center_lon': center_lon,
-        'resolution': 1000,  # meters (estimated)
-        'description': 'Fallback soil data based on location'
-    }
-
-
-
-
-
 def generate_curve_numbers_comprehensive(landuse_data, soil_data, grid, catchment_geom):
     """
     Generate curve numbers using comprehensive approach based on QGIS plugin.
@@ -1983,23 +1722,9 @@ def generate_curve_numbers_comprehensive(landuse_data, soil_data, grid, catchmen
         if landuse_data['source'] == 'ESA_WorldCover_2021_Local':
             # Use local ESA WorldCover 2021 VRT data
             curve_number_raster = apply_real_landcover_data(curve_number_raster, landuse_data, grid)
-        elif landuse_data['source'] == 'ESA_WorldCover':
-            # Use real ESA WorldCover data
-            curve_number_raster = apply_real_landcover_data(curve_number_raster, landuse_data, grid)
-        elif landuse_data['source'] == 'Fallback_Landcover_Data':
-            # Use fallback land cover data
-            curve_number_raster = apply_fallback_landcover_data(curve_number_raster, landuse_data, grid)
-        elif landuse_data['source'] == 'Simplified_Location_Based':
-            # Use simplified location-based land cover
-            curve_number_raster = apply_simplified_landcover(curve_number_raster, landuse_data)
         elif 'data_file' in landuse_data:
             # Use real downloaded land cover data
             curve_number_raster = apply_real_landcover_data(curve_number_raster, landuse_data, grid)
-        else:
-            # Fallback to simplified pattern
-            landuse_pattern = create_simplified_landuse_pattern(grid.shape)
-            for class_id, cn_value in landuse_data['classification'].items():
-                curve_number_raster[landuse_pattern == class_id] = cn_value
         
         # Apply soil-based adjustments
         if soil_data['source'] == 'ORNL_HYSOGs250m':
@@ -2021,90 +1746,11 @@ def generate_curve_numbers_comprehensive(landuse_data, soil_data, grid, catchmen
     return curve_number_raster
 
 
-def apply_fallback_landcover_data(curve_number_raster, landuse_data, grid):
-    """
-    Apply fallback land cover data when ESA WorldCover is unavailable.
-    """
-    # Get the land cover distribution from fallback data
-    landcover_distribution = landuse_data['landcover_distribution']
-    curve_numbers = landuse_data['curve_numbers']
-    
-    # Create a realistic spatial pattern based on the distribution
-    y_size, x_size = grid.shape
-    total_pixels = x_size * y_size
-    
-    # Create a more realistic pattern with spatial clustering
-    # This simulates how real land cover data would look
-    curve_number_raster = create_realistic_spatial_pattern(
-        curve_number_raster, 
-        landcover_distribution, 
-        curve_numbers, 
-        total_pixels
-    )
-    
-    print(f"Applied fallback land cover data for {landuse_data['source']}")
-    
-    return curve_number_raster
-
-
-def create_realistic_spatial_pattern(curve_number_raster, landcover_distribution, classification, total_pixels):
-    """
-    Create a realistic spatial pattern for land cover distribution.
-    This simulates the spatial clustering and patterns found in real land cover data.
-    """
-    y_size, x_size = curve_number_raster.shape
-    
-    # Create a base pattern with some spatial variation
-    # Use a combination of random and structured patterns
-    
-    # 1. Create clusters for different land cover types
-    landcover_types = list(landcover_distribution.keys())
-    landcover_proportions = list(landcover_distribution.values())
-    
-    # 2. Generate a realistic pattern using cellular automata approach
-    # This creates more realistic land cover patterns with clustering
-    
-    # Start with random distribution
-    pattern = np.random.choice(landcover_types, size=(y_size, x_size), p=landcover_proportions)
-    
-    # Apply some spatial smoothing to create more realistic clusters
-    # This simulates the spatial autocorrelation found in real land cover data
-    
-    # Create clusters by applying a simple smoothing filter
-    from scipy.ndimage import uniform_filter
-    pattern_smooth = uniform_filter(pattern.astype(float), size=3)
-    
-    # Convert back to discrete land cover types
-    pattern_discrete = np.round(pattern_smooth).astype(int)
-    
-    # Ensure we have valid land cover types
-    pattern_discrete = np.clip(pattern_discrete, min(landcover_types), max(landcover_types))
-    
-    # 3. Apply curve numbers based on the pattern
-    for landcover_type in landcover_types:
-        if landcover_type in classification:
-            mask = pattern_discrete == landcover_type
-            curve_number_raster[mask] = classification[landcover_type]
-    
-    # 4. Add some additional spatial variation to make it more realistic
-    # Add some noise to simulate the heterogeneity within land cover classes
-    noise = np.random.normal(0, 2, curve_number_raster.shape)  # Small variation
-    curve_number_raster += noise
-    
-    # Ensure curve numbers are within valid range (30-100)
-    curve_number_raster = np.clip(curve_number_raster, 30, 100)
-    
-    return curve_number_raster
-
-
 def apply_real_landcover_data(curve_number_raster, landuse_data, grid):
     """
     Apply real downloaded land cover data to curve number raster.
     """
     try:
-        # Handle OpenStreetMap data (vector-based)
-        if landuse_data['source'] == 'OpenStreetMap':
-            return apply_osm_landcover_data(curve_number_raster, landuse_data, grid)
         
         # Handle raster-based data sources
         if 'data_file' in landuse_data:
@@ -2179,66 +1825,6 @@ def apply_real_landcover_data(curve_number_raster, landuse_data, grid):
             }
             for class_id, cn_value in default_curve_numbers.items():
                 curve_number_raster[landuse_pattern == class_id] = cn_value
-    
-    return curve_number_raster
-
-
-def apply_osm_landcover_data(curve_number_raster, landuse_data, grid):
-    """
-    Apply OpenStreetMap-based land cover data to curve number raster.
-    """
-    # Get the dominant land cover type from OSM data
-    dominant_cover = landuse_data['dominant_cover']
-    
-    # Check if classification exists, otherwise use default curve numbers
-    if 'classification' in landuse_data:
-        classification = landuse_data['classification']
-    elif 'curve_numbers' in landuse_data:
-        classification = landuse_data['curve_numbers']
-    else:
-        # Default curve numbers if no classification available
-        classification = {
-            10: 55,   # Tree cover
-            20: 65,   # Shrubland
-            30: 61,   # Grassland
-            40: 72,   # Cropland
-            50: 98,   # Built-up
-            60: 77,   # Bare
-            70: 100,  # Snow/ice
-            80: 100,  # Water
-            90: 58,   # Wetland
-            95: 60,   # Mangroves
-            100: 100  # Moss
-        }
-    
-    cn_value = classification.get(dominant_cover, 70)
-    
-    # Apply dominant land cover to the entire area
-    # In a more sophisticated approach, you could create patterns based on landcover_counts
-    curve_number_raster.fill(cn_value)
-    
-    # Optionally, create a more detailed pattern based on landcover_counts
-    if 'landcover_counts' in landuse_data and landuse_data['landcover_counts']:
-        # Create a simple pattern based on the proportions
-        total_features = sum(landuse_data['landcover_counts'].values())
-        
-        # Create a grid pattern based on proportions
-        y_size, x_size = grid.shape
-        current_pos = 0
-        
-        for esa_class, count in landuse_data['landcover_counts'].items():
-            proportion = count / total_features
-            pixels_for_class = int(proportion * x_size * y_size)
-            
-            cn_value = classification.get(esa_class, 70)
-            
-            # Fill pixels for this class
-            for i in range(pixels_for_class):
-                if current_pos < x_size * y_size:
-                    y = current_pos // x_size
-                    x = current_pos % x_size
-                    curve_number_raster[y, x] = cn_value
-                    current_pos += 1
     
     return curve_number_raster
 
@@ -2533,18 +2119,6 @@ def apply_simplified_landcover(curve_number_raster, landuse_data):
     return curve_number_raster
 
 
-def create_simplified_landuse_pattern(shape):
-    """
-    Create a simplified land use pattern for demonstration.
-    In production, this would be replaced with actual ESA WorldCover data.
-    """
-    # Create a realistic land use pattern
-    pattern = np.random.choice([10, 20, 30, 40, 50, 60, 80, 90], size=shape, p=[0.3, 0.1, 0.2, 0.15, 0.05, 0.05, 0.1, 0.05])
-    return pattern
-
-
-
-
 
 def apply_ornl_hysogs_adjustments(curve_number_raster, soil_data, grid):
     """
@@ -2630,50 +2204,6 @@ def apply_ornl_hysogs_adjustments(curve_number_raster, soil_data, grid):
     return curve_number_raster
 
 
-def apply_fallback_soil_adjustments(curve_number_raster, soil_data, grid):
-    """
-    Apply fallback soil adjustments when ORNL HYSOGs250m is unavailable.
-    """
-    # Get soil distribution from fallback data
-    soil_distribution = soil_data['soil_distribution']
-    
-    # Create realistic spatial pattern for soil types
-    y_size, x_size = grid.shape
-    
-    # Create soil type pattern with spatial clustering
-    soil_types = list(soil_distribution.keys())
-    soil_proportions = list(soil_distribution.values())
-    
-    # Generate soil pattern with spatial variation
-    soil_pattern = np.random.choice(soil_types, size=(y_size, x_size), p=soil_proportions)
-    
-    # Apply spatial smoothing to create realistic clusters
-    from scipy.ndimage import uniform_filter
-    soil_smooth = uniform_filter(soil_pattern.astype(float), size=5)
-    soil_discrete = np.round(soil_smooth).astype(int)
-    
-    # Map soil types to adjustment factors
-    soil_adjustments = {
-        'A': 0.9,   # Reduce curve numbers for high infiltration
-        'B': 1.0,   # No adjustment for moderate infiltration
-        'C': 1.1,   # Increase curve numbers for slow infiltration
-        'D': 1.2,   # Increase curve numbers for very slow infiltration
-    }
-    
-    # Apply soil-based adjustments
-    for soil_type in soil_types:
-        if soil_type in soil_adjustments:
-            mask = soil_discrete == ord(soil_type) - ord('A') + 1  # Convert A=1, B=2, etc.
-            curve_number_raster[mask] *= soil_adjustments[soil_type]
-    
-    print(f"Applied fallback soil adjustments for {soil_data['source']}")
-    
-    # Ensure curve numbers are within valid range
-    curve_number_raster = np.clip(curve_number_raster, 30, 100)
-    
-    return curve_number_raster
-
-
 def apply_hsg_adjustments(curve_number_raster, soil_data):
     """
     Apply HSG-based adjustments to curve numbers.
@@ -2716,7 +2246,6 @@ def apply_global_soil_adjustments(curve_number_raster, soil_data):
         curve_number_raster *= 1.0
         print("Applied global soil adjustment factor: 1.0")
     
-    return curve_number_raster
 
 
 def create_catchment_grid(catchment_geom, cell_size):
