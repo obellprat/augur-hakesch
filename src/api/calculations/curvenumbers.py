@@ -26,7 +26,7 @@ from prisma import Prisma
 from calculations.calculations import app
 
 @app.task(name="get_curve_numbers", bind=True)
-def get_curve_numbers(self, projectId: str, userId: int, soil_data_source: str = "bek"):
+def get_curve_numbers(self, projectId: str, userId: int, soil_data_source: str = "bek", own_soil: bool = True  ):
     """
     Get curve numbers for a catchment geojson and save as raster.
     Uses local ESA WorldCover and either local HYSOGs or BEK (Bodeneignungskarte) data.
@@ -99,15 +99,32 @@ def get_curve_numbers(self, projectId: str, userId: int, soil_data_source: str =
     self.update_state(state='PROGRESS',
                 meta={'text': 'Loading soil data', 'progress': 40})
     
-    # Load soil data based on source parameter
-    if soil_data_source == "bek":
-        soil_data = load_bek_soil_data(bbox_wgs84)
-        # If BEK data is empty or insufficient, fallback to HYSOGs
-        if soil_data['bek_data'] is None or soil_data['bek_data'].empty:
-            print("BEK data not available or empty, falling back to HYSOGs")
+    # Check if project has own_soil flag set
+    if own_soil:
+        # Load user-provided soil data from project directory
+        project_dir = f"data/{userId}/{projectId}"
+        try:
+            soil_data = load_own_soil_data(bbox_wgs84, project_dir)
+            # If own soil data is empty or insufficient, fallback to HYSOGs
+            if soil_data['soil_data'] is None or soil_data['soil_data'].empty:
+                print("Own soil data not available or empty, falling back to HYSOGs")
+                soil_data = load_local_hysogs_soil_data(bbox_wgs84)
+        except FileNotFoundError:
+            print(f"Own soil file not found in {project_dir}, falling back to HYSOGs")
             soil_data = load_local_hysogs_soil_data(bbox_wgs84)
-    else:  # default to hysogs
-        soil_data = load_local_hysogs_soil_data(bbox_wgs84)
+        except Exception as e:
+            print(f"Error loading own soil data: {e}, falling back to HYSOGs")
+            soil_data = load_local_hysogs_soil_data(bbox_wgs84)
+    else:
+        # Load soil data based on source parameter
+        if soil_data_source == "bek":
+            soil_data = load_bek_soil_data(bbox_wgs84)
+            # If BEK data is empty or insufficient, fallback to HYSOGs
+            if soil_data['bek_data'] is None or soil_data['bek_data'].empty:
+                print("BEK data not available or empty, falling back to HYSOGs")
+                soil_data = load_local_hysogs_soil_data(bbox_wgs84)
+        else:  # default to hysogs
+            soil_data = load_local_hysogs_soil_data(bbox_wgs84)
     
     self.update_state(state='PROGRESS',
                 meta={'text': 'Processing curve number data', 'progress': 60})
@@ -314,6 +331,91 @@ def load_local_hysogs_soil_data(bbox):
     }
 
 
+def load_own_soil_data(bbox, project_dir):
+    """
+    Load soil data from user-provided soil.shp file in project directory.
+    The soil shapefile is expected at `{project_dir}/soil.shp` with field:
+    - hsg: Hydrologic Soil Group (A, B, C, D)
+    """
+    # Path to user-provided soil shapefile
+    soil_path = os.path.join(project_dir, "soil.shp")
+    
+    if not os.path.exists(soil_path):
+        raise FileNotFoundError(f"User soil shapefile not found at {soil_path}")
+    
+    # Read soil shapefile
+    soil = gpd.read_file(soil_path)
+    
+    if soil.crs is None:
+        raise ValueError("User soil shapefile has no CRS")
+    
+    # Convert bbox from WGS84 to soil CRS if needed
+    from pyproj import Transformer
+    transformer = Transformer.from_crs("EPSG:4326", str(soil.crs), always_xy=True)
+    
+    # Convert bbox corners from WGS84 to soil CRS
+    minx, miny = transformer.transform(bbox[0], bbox[1])
+    maxx, maxy = transformer.transform(bbox[2], bbox[3])
+    
+    # Create bounding box geometry for filtering
+    from shapely.geometry import box
+    bbox_geom = box(minx, miny, maxx, maxy)
+    
+    # Filter soil features that intersect with the bbox
+    soil_filtered = soil[soil.geometry.intersects(bbox_geom)].copy()
+    
+    if soil_filtered.empty:
+        print("Warning: No soil features found in the specified bounding box")
+        # Return empty data structure
+        return {
+            'source': 'OWN_SOIL',
+            'data': None,
+            'transform': None,
+            'crs': soil.crs,
+            'soil_data': soil_filtered,
+            'bbox': bbox,
+            'description': 'User-provided soil data - no features in bbox'
+        }
+    
+    # Validate required field
+    if 'hsg' not in soil_filtered.columns:
+        raise ValueError("User soil shapefile missing required field: hsg")
+    
+    # Validate HSG values
+    valid_hsg_values = {'A', 'B', 'C', 'D'}
+    soil_filtered['hsg'] = soil_filtered['hsg'].astype(str).str.upper()
+    invalid_hsg = soil_filtered[~soil_filtered['hsg'].isin(valid_hsg_values)]
+    if not invalid_hsg.empty:
+        print(f"Warning: Found invalid HSG values: {invalid_hsg['hsg'].unique()}")
+        # Filter out invalid HSG values
+        soil_filtered = soil_filtered[soil_filtered['hsg'].isin(valid_hsg_values)]
+    
+    if soil_filtered.empty:
+        print("Warning: No valid HSG features found after filtering")
+        return {
+            'source': 'OWN_SOIL',
+            'data': None,
+            'transform': None,
+            'crs': soil.crs,
+            'soil_data': soil_filtered,
+            'bbox': bbox,
+            'description': 'User-provided soil data - no valid HSG features'
+        }
+    
+    print(f"Successfully loaded user soil data: {len(soil_filtered)} features")
+    print(f"HSG distribution: {soil_filtered['hsg'].value_counts().to_dict()}")
+    
+    return {
+        'source': 'OWN_SOIL',
+        'data': None,  # Will be rasterized later
+        'transform': None,  # Will be set during rasterization
+        'crs': soil.crs,
+        'soil_data': soil_filtered,
+        'bbox': bbox,
+        'description': 'User-provided soil data loaded from shapefile'
+    }
+
+
 def load_bek_soil_data(bbox):
     """
     Load soil data from BEK (Bodeneignungskarte) shapefile.
@@ -490,7 +592,11 @@ def generate_curve_numbers_qgis_only(landuse_data, soil_data, grid, catchment_ge
     curve_number_raster = np.full(grid.shape, 70, dtype=np.float32)  # Default CN
     
     # Use QGIS plugin approach: combine land cover and soil data using lookup tables
-    if soil_data['source'] == 'BEK':
+    if soil_data['source'] == 'OWN_SOIL':
+        curve_number_raster = apply_own_soil_curve_number_calculation(
+            curve_number_raster, landuse_data, soil_data, grid
+        )
+    elif soil_data['source'] == 'BEK':
         curve_number_raster = apply_bek_curve_number_calculation(
             curve_number_raster, landuse_data, soil_data, grid
         )
@@ -501,6 +607,100 @@ def generate_curve_numbers_qgis_only(landuse_data, soil_data, grid, catchment_ge
     
     # Apply catchment mask
     curve_number_raster = np.where(catchment_mask == 1, curve_number_raster, 0)
+    
+    return curve_number_raster
+
+
+def apply_own_soil_curve_number_calculation(curve_number_raster, landuse_data, soil_data, grid):
+    """
+    Apply user-provided soil-based curve number calculation.
+    Rasterizes user soil polygons with HSG values and combines with land cover data.
+    """
+    print("Own Soil Curve Number Calculation")
+    try:
+        # Get target grid properties
+        target_shape = curve_number_raster.shape
+        target_transform = grid.affine
+        target_crs = 'EPSG:2056'  # Swiss coordinate system
+        
+        print(f"Target grid shape: {target_shape}")
+        print(f"Target transform: {target_transform}")
+        print(f"Target CRS: {target_crs}")
+        
+        # Reproject and resample land cover data to match target grid (in memory)
+        landcover_reprojected = reproject_raster_data_to_target(
+            landuse_data['data'], 
+            landuse_data['transform'],
+            landuse_data['crs'],
+            target_shape, 
+            target_transform, 
+            target_crs
+        )
+        
+        print(f"Reprojected land cover shape: {landcover_reprojected.shape}")
+        print(f"Land cover unique values: {np.unique(landcover_reprojected)}")
+        
+        # Rasterize own soil HSG data to target grid
+        soil_data_gdf = soil_data['soil_data']
+        
+        # Convert soil CRS to target CRS if needed
+        if str(soil_data_gdf.crs) != target_crs:
+            soil_data_gdf = soil_data_gdf.to_crs(target_crs)
+        
+        # Rasterize HSG values
+        hsg_raster = rasterize_own_soil_hsg(
+            soil_data_gdf, target_shape, target_transform
+        )
+        
+        print(f"Own soil HSG unique values: {np.unique(hsg_raster)}")
+        
+        # Check if we need HYSOGs fallback for areas without own soil data
+        unknown_mask = (hsg_raster == 0)
+        if np.any(unknown_mask):
+            print(f"Found {np.sum(unknown_mask)} pixels without own soil HSG data, applying HYSOGs fallback")
+            hsg_raster = apply_hysogs_fallback(
+                hsg_raster, unknown_mask, target_shape, target_transform
+            )
+        
+        # Verify shapes match
+        assert landcover_reprojected.shape == hsg_raster.shape == curve_number_raster.shape, \
+            f"Shape mismatch: LC={landcover_reprojected.shape}, HSG={hsg_raster.shape}, CN={curve_number_raster.shape}"
+        
+        # Create lookup table for curve numbers (ESA Land Cover + HSG combinations)
+        lookup_table = create_curve_number_lookup_table()
+        
+        # Apply curve numbers based on land cover and HSG combinations
+        for lc_class in np.unique(landcover_reprojected):
+            for hsg_code in np.unique(hsg_raster):
+                if hsg_code == 0:  # Skip unknown HSG
+                    continue
+                
+                # Convert HSG code to letter
+                hsg_letter = {1: "A", 2: "B", 3: "C", 4: "D"}.get(hsg_code)
+                if hsg_letter is None:
+                    continue
+                
+                # Create grid code like the plugin (ESA_LC + HSG)
+                grid_code = f"{lc_class}_{hsg_code}"
+                
+                # Get curve number from lookup table
+                cn_value = lookup_table.get(grid_code, 70)  # Default to 70 if not found
+                
+                # Apply to pixels where both conditions are met
+                mask = (landcover_reprojected == lc_class) & (hsg_raster == hsg_code)
+                curve_number_raster[mask] = cn_value
+                
+                if np.any(mask):
+                    print(f"Applied CN {cn_value} for {grid_code} ({lc_class} + HSG {hsg_letter}) to {np.sum(mask)} pixels")
+        
+        print(f"Final curve number range: {np.min(curve_number_raster)} - {np.max(curve_number_raster)}")
+        
+    except Exception as e:
+        print(f"Error in own soil curve number calculation: {e}")
+        import traceback
+        traceback.print_exc()
+        # Fallback to default curve number
+        curve_number_raster.fill(70)
     
     return curve_number_raster
 
@@ -597,6 +797,36 @@ def apply_bek_curve_number_calculation(curve_number_raster, landuse_data, soil_d
         curve_number_raster.fill(70)
     
     return curve_number_raster
+
+
+def rasterize_own_soil_hsg(soil_data, target_shape, target_transform):
+    """
+    Rasterize user-provided soil polygons with HSG values to target grid.
+    """
+    # Create shapes for rasterization
+    shapes = []
+    for _, row in soil_data.iterrows():
+        hsg = row['hsg']
+        if hsg in ("A", "B", "C", "D") and row.geometry is not None and not row.geometry.is_empty:
+            # Convert HSG letter to code
+            hsg_code = {"A": 1, "B": 2, "C": 3, "D": 4}[hsg]
+            shapes.append((row.geometry, hsg_code))
+    
+    if not shapes:
+        print("Warning: No valid HSG polygons found for rasterization")
+        return np.zeros(target_shape, dtype=np.uint8)
+    
+    # Rasterize
+    hsg_raster = rasterize(
+        shapes=shapes,
+        out_shape=target_shape,
+        transform=target_transform,
+        fill=0,  # Unknown HSG = 0
+        dtype=np.uint8,
+        all_touched=True
+    )
+    
+    return hsg_raster
 
 
 def rasterize_bek_hsg(bek_data, hsg_field, target_shape, target_transform):
