@@ -1,6 +1,8 @@
+import traceback
 import numpy as np
 import os
 from datetime import datetime
+from calculations.curvenumbers import get_curve_numbers
 from prisma import Prisma
 from calculations.calculations import app
 import json
@@ -10,6 +12,8 @@ import requests
 import rasterio
 from rasterio.features import rasterize
 import pyproj
+
+from prisma import Prisma
 
 from calculations.discharge import construct_idf_curve
 
@@ -159,6 +163,21 @@ def nam(self,
     # 1. Load curve number raster and isozones raster
     if project_id and user_id:
         try:
+
+            # Regenerate curve number raster and dem raster
+            #get_curve_numbers(project_id, user_id)
+            #extract_dem(project_id, user_id)
+            #extract_dem_function = extract_dem.__wrapped__
+        
+            # Create kwargs dict to avoid argument conflicts
+            #kwargs = {
+            #    'projectId': project_id,
+            #    'userId': user_id
+            #}
+            
+            # Call the function without self parameter
+            #result = extract_dem_function(**kwargs)
+
             # Resolve potential base directories for data
             base_dirs = []
             env_dir = os.getenv("DATA_DIR")
@@ -1158,34 +1177,51 @@ def nam(self,
     S = np.nanmean(S_cells[valid_mask])  # Average S for reporting
     Ia = np.nanmean(Ia_cells[valid_mask])  # Average Ia for reporting
     Pe_final = HQ * dt * 60 / (np.sum(valid_mask) * pixel_area_m2 / 1000)  # Average Pe for reporting
-    
     # 7. Update database
-    #prisma = Prisma()
-    #prisma.connect()
-    
-    # Calculate average curve number for reporting
-    effective_curve_number = np.nanmean(cn_data[valid_mask]) if cn_data is not None else curve_number
-    """
-    updatedResults = prisma.nam.update(
-        where={
-            'id': nam_id
-        },
-        data={
-            'NAM_Result': {
-                'upsert': {
-                    'update': {
-                        'HQ': HQ,
-                    },
-                    'create': {
-                        'HQ': HQ
+    try:
+        prisma = Prisma()
+        prisma.connect()
+        
+        # Calculate average curve number for reporting
+        effective_curve_number = np.nanmean(cn_data[valid_mask]) if cn_data is not None else curve_number
+
+        updatedResults = prisma.nam.update(
+            where={
+                'id': nam_id
+            },
+            data={
+                'NAM_Result': {
+                    'upsert': {
+                        'update': {
+                            'HQ': float(HQ),
+                            'Tc': Tc,
+                            'TB': TB,
+                            'TFl': TFl,
+                            'i': float(i_final),
+                            'S': float(S),
+                            'Ia': float(Ia),
+                            'Pe': float(Pe_final),
+                        },
+                        'create': {
+                            'HQ': float(HQ),
+                            'Tc': Tc,
+                            'TB': TB,
+                            'TFl': TFl,
+                            'i': float(i_final),
+                            'S': float(S),
+                            'Ia': float(Ia),
+                            'Pe': float(Pe_final),
+                        }
                     }
                 }
             }
-        }
-    )
-    
-    prisma.disconnect(5)
-    """
+        )
+    except Exception as e:
+        print(f"Error updating NAM results: {e}")
+        print(traceback.format_exc())
+    finally:
+        prisma.disconnect(5)
+
     return {
         "HQ": float(HQ),
         "Tc": float(Tc),
@@ -1249,7 +1285,7 @@ def extract_dem(self, projectId: str, userId: int):
     
     # Parse catchment geojson
     catchment_geojson = json.loads(project.catchment_geojson)
-    
+
     self.update_state(state='PROGRESS',
                 meta={'text': 'Processing catchment geometry', 'progress': 10})
     
@@ -1361,7 +1397,7 @@ def extract_dem(self, projectId: str, userId: int):
             print(f"  - Mean elevation: {mean_elev:.1f} m")
             print(f"  - File size: {os.path.getsize(output_file) / 1024:.1f} KB")
             
-            prisma.disconnect()
+            prisma.disconnect(5)
             
             return {
                 "dem_file": output_file,
@@ -1375,5 +1411,5 @@ def extract_dem(self, projectId: str, userId: int):
             
     except Exception as e:
         print(f"Error extracting DEM: {e}")
-        prisma.disconnect()
+        prisma.disconnect(5)
         raise e
