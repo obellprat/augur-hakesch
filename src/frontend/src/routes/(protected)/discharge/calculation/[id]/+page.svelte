@@ -111,6 +111,7 @@
 	let isKoellaSaving = $state(false);
 	let isClarkWSLSaving = $state(false);
 	let isNAMSaving = $state(false);
+	let isUploading = $state(false);
 	let couldCalculate = $state(false);
 
 	let returnPeriod = $state([
@@ -381,6 +382,68 @@
 			.then((data) => {
 				getStatus(data.task_id);
 			});
+	}
+
+	async function uploadZipFile(project_id: Number, file: File) {
+		if (!file) return;
+		
+		isUploading = true;
+		const formData = new FormData();
+		formData.append('file', file);
+		
+		try {
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH + `/file/upload-zip/${project_id}`,
+				{
+					method: 'POST',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
+					},
+					body: formData
+				}
+			);
+			
+			if (response.ok) {
+				toast.push($_('page.discharge.calculation.zipUploadSuccess'), {
+					theme: {
+						'--toastColor': 'mintcream',
+						'--toastBackground': 'rgba(72,187,120,0.9)',
+						'--toastBarBackground': '#2F855A'
+					}
+				});
+			} else {
+				const errorData = await response.json();
+				toast.push(
+					'<h3 style="padding:5;">' +
+						$_('page.discharge.calculation.zipUploadError') +
+						'</h3>' +
+						errorData.detail,
+					{
+						theme: {
+							'--toastColor': 'white',
+							'--toastBackground': 'darkred'
+						},
+						initial: 0
+					}
+				);
+			}
+		} catch (error) {
+			toast.push(
+				'<h3 style="padding:5;">' +
+					$_('page.discharge.calculation.zipUploadError') +
+					'</h3>' +
+					(error instanceof Error ? error.message : String(error)),
+				{
+					theme: {
+						'--toastColor': 'white',
+						'--toastBackground': 'darkred'
+					},
+					initial: 0
+				}
+			);
+		} finally {
+			isUploading = false;
+		}
 	}
 	function getStatus(taskID: String) {
 		fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
@@ -1579,6 +1642,30 @@
 																			<option value="travel_time">{$_('page.discharge.calculation.namParams.traveltime')}</option>
 																			<option value="isozone">{$_('page.discharge.calculation.namParams.traveltime')}</option>
 																		</select>
+																	</div>
+																</div>
+																<div class="row g-2 py-2 align-items-end">
+																	<div class="mb-3 col-md-12">
+																		<label for="zip_upload" class="form-label">
+																			{$_('page.discharge.calculation.namParams.uploadZipFile')}
+																		</label>
+																		<input
+																			type="file"
+																			class="form-control"
+																			id="zip_upload"
+																			accept=".zip"
+																			onchange={(e) => {
+																				const target = e.target as HTMLInputElement;
+																				const file = target.files?.[0];
+																				if (file) {
+																					uploadZipFile(n.project_id, file);
+																				}
+																			}}
+																			disabled={isUploading}
+																		/>
+																		<div class="form-text">
+																			{$_('page.discharge.calculation.namParams.uploadZipFileHelp')}
+																		</div>
 																	</div>
 																</div>
 																<div class="d-flex align-items-center justify-content-between py-1">
