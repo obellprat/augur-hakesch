@@ -42,6 +42,15 @@ const getProjectById = async (id: string) => {
 					ClarkWSL_Result: true,
 					Fractions: true
 				}
+			},
+			NAM: {
+				orderBy: {
+					id: 'asc'
+				},
+				include: {
+					Annuality: true,
+					NAM_Result: true,
+				}
 			}
 		}
 	});

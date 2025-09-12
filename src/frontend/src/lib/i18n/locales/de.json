@@ -45,6 +45,20 @@
           "glacierArea": "Gletscherfläche"
         },
         "clarkwsl": "Clark-WSL",
+        "nam": "NAM",
+        "namParams": {
+          "precipitationFactor": "Niederschlagsfaktor [-]",
+          "readinessToDrain": "Abflussbereitschaft [mm]",
+          "waterBalanceMode": "Wasserbilanzmodus",
+          "stormCenterMode": "Sturmzentrummodus",
+          "routingMethod": "Routing-Methode",
+          "simple": "Einfach",
+          "advanced": "Erweitert",
+          "centroid": "Zentroid",
+          "random": "Zufällig",
+          "timeValues": "Zeitwerte",
+          "kinematicWave": "Kinematische Welle"
+        },
         "generalInput": "Allgemeine Angaben",
         "inputsForPrecipitationIntensity": "Angaben zur Berechnung der Niederschlags-Intensität",
         "successfullsave": "Erfolgreich gespeichert!",
