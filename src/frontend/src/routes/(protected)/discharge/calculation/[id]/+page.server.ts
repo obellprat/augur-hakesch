@@ -324,6 +324,96 @@ export const actions = {
 		return project;
 	},
 
+	updatenam: async ({ request }) => {
+		const formData = Object.fromEntries(await request.formData());
+		const { id, nam_id, x, precipitation_factor, readiness_to_drain, water_balance_mode, storm_center_mode, routing_method } = formData as unknown as {
+			id: string | undefined;
+			nam_id: number | undefined;
+			x: number | undefined;
+			precipitation_factor: number | undefined;
+			readiness_to_drain: number | undefined;
+			water_balance_mode: string | undefined;
+			storm_center_mode: string | undefined;
+			routing_method: string | undefined;
+		};
+
+		if (!id) {
+			return fail(400, { message: 'Missing required fields' });
+		}
+		// First, find the Annuality record by number to get its id
+		const annuality = await prisma.Annualities.findUnique({
+			where: {
+				number: Number(x) || 0
+			}
+		});
+
+		if (!annuality) {
+			return fail(400, { message: 'Invalid return period' });
+		}
+
+		// Validate that the mode values exist in their respective tables
+		const validWaterBalanceMode = water_balance_mode || "simple";
+		const validStormCenterMode = storm_center_mode || "centroid";
+		const validRoutingMethod = routing_method || "time_values";
+
+		// Check if the mode values exist in their respective tables
+		const [waterBalanceModeExists, stormCenterModeExists, routingMethodExists] = await Promise.all([
+			prisma.WaterBalanceMode.findUnique({ where: { mode: validWaterBalanceMode } }),
+			prisma.StormCenterMode.findUnique({ where: { mode: validStormCenterMode } }),
+			prisma.RoutingMethod.findUnique({ where: { method: validRoutingMethod } })
+		]);
+
+		if (!waterBalanceModeExists) {
+			return fail(400, { message: 'Invalid water balance mode' });
+		}
+		if (!stormCenterModeExists) {
+			return fail(400, { message: 'Invalid storm center mode' });
+		}
+		if (!routingMethodExists) {
+			return fail(400, { message: 'Invalid routing method' });
+		}
+
+		const newnam = await prisma.NAM.upsert({
+			where: {
+				id: Number(nam_id) || 0
+			},
+			update: {
+				x: annuality.id,
+				precipitation_factor: Number(precipitation_factor) || 1.0,
+				readiness_to_drain: Number(readiness_to_drain) || 0,
+				water_balance_mode: validWaterBalanceMode,
+				storm_center_mode: validStormCenterMode,
+				routing_method: validRoutingMethod
+			},
+			create: {
+				x: annuality.id,
+				precipitation_factor: Number(precipitation_factor) || 1.0,
+				readiness_to_drain: Number(readiness_to_drain) || 0,
+				water_balance_mode: validWaterBalanceMode,
+				storm_center_mode: validStormCenterMode,
+				routing_method: validRoutingMethod,
+				project_id: id
+			}
+		});
+		const project = await prisma.project.findUnique({
+			where: { id: id! },
+			include: {
+				Point: true,
+				IDF_Parameters: true,
+				NAM: {
+					orderBy: {
+						id: 'asc'
+					},
+					include: {
+						Annuality: true,
+						NAM_Result: true
+					}
+				}
+			}
+		});
+		return project;
+	},
+
 	delete: async ({ request }) => {
 		const formData = Object.fromEntries(await request.formData());
 		const { id } = formData as unknown as {
@@ -363,6 +453,19 @@ export const actions = {
 		});
 
 		await prisma.ClarkWSL.delete({
+			where: {
+				id: Number(id)
+			}
+		});
+	},
+
+	deleteNAM: async ({ request }) => {
+		const formData = Object.fromEntries(await request.formData());
+		const { id } = formData as unknown as {
+			id: number | undefined;
+		};
+
+		await prisma.NAM.delete({
 			where: {
 				id: Number(id)
 			}

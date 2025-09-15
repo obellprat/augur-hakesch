@@ -45,6 +45,27 @@
           "glacierArea": "Gletscherfläche"
         },
         "clarkwsl": "Clark-WSL",
+        "nam": "NAM",
+        "namParams": {
+          "precipitationFactor": "Niederschlagsfaktor [-]",
+          "readinessToDrain": "Abflussbereitschaft [mm]",
+          "waterBalanceMode": "Wasserbilanzmodus",
+          "stormCenterMode": "Sturmzentrummodus",
+          "routingMethod": "Routing-Methode",
+          "simple": "Einfach",
+          "advanced": "Erweitert",
+          "centroid": "Zentroid",
+          "random": "Zufällig",
+          "timeValues": "Zeitwerte",
+          "kinematicWave": "Kinematische Welle",
+          "dischargePoint": "Abflusspunkt",
+          "traveltime": "Pixelbasierte Zeitberechnung",
+          "useOwnSoilData": "Eigene Bodendaten verwenden",
+          "useOwnSoilDataHelp": "Es kann ein eigenes Shapefile mit den Bodentypen (A, B, C und D) erstellt und hier als ZIP-File hochgeladen werden.",
+          "uploadZipFile": "ZIP-File (Shapefiles) hochladen",
+          "uploadZipFileHelp": "Es kann ein eigenes Shapefile mit den Bodentypen (A, B, C und D) erstellt und hier als ZIP-File hochgeladen werden.",
+          "soilFileExists": "Es existiert eine eigene Bodenklassierung"
+        },
         "generalInput": "Allgemeine Angaben",
         "inputsForPrecipitationIntensity": "Angaben zur Berechnung der Niederschlags-Intensität",
         "successfullsave": "Erfolgreich gespeichert!",
@@ -70,7 +91,9 @@
         "clarkwslname": "Clark-WSL",
         "calcerror": "Fehler",
         "missinggeodataTitle": "Geodaten noch nicht berechnet",
-        "missingGeodata": "Die Geodaten wurden noch nicht berechnet. Bitte auf der Projektübersicht die Daten berechnen, damit die hydrologischen Berechnungen durchgeführt werden können."
+        "missingGeodata": "Die Geodaten wurden noch nicht berechnet. Bitte auf der Projektübersicht die Daten berechnen, damit die hydrologischen Berechnungen durchgeführt werden können.",
+        "zipUploadSuccess": "Hochladen erfolgreich",
+        "zipUploadError": "Fehler beim Hochladen"
       }
     },
     "precipitation": {

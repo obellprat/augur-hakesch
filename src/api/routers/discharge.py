@@ -286,10 +286,7 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
         )
 
 @router.get("/nam")
-def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
-    
-    print(f"NAM request - ProjectId: {ProjectId}, NAMId: {NAMId}")
-    
+def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):    
     try:
         project = prisma.project.find_unique(
             where={
@@ -317,6 +314,8 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
                 detail=f"NAM with ID {NAMId} not found in project {ProjectId}"
             )
 
+        doDoTasks = []
+
         # Get discharge point coordinates from project if available
         discharge_point = None
         discharge_point_crs = "EPSG:4326"
@@ -330,7 +329,9 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
             except Exception as e:
                 print(f"Warning: Could not convert discharge point coordinates: {e}")
                 discharge_point = None
-        
+        task = extract_dem.apply(args=[project.id, user.id])
+        task = get_curve_numbers.apply(args=[project.id, user.id, "bek", nam_obj.use_own_soil_data])
+
         task = nam.delay(
             P_low_1h=project.IDF_Parameters.P_low_1h,
             P_high_1h=project.IDF_Parameters.P_high_1h,
@@ -355,6 +356,7 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
             discharge_point_crs=discharge_point_crs
         )
         return JSONResponse({"task_id": task.id})
+
     except Exception as e:
         # Handle missing user scenario
         raise HTTPException(
@@ -365,7 +367,7 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
         )
 
 @router.get("/get_curve_numbers")
-def get_curve_numbers_endpoint(ProjectId:str, user: User = Depends(get_user)):
+def get_curve_numbers_endpoint(ProjectId:str, user: User = Depends(get_user), soil_data_source: str = "bek", own_soil: bool = True):
     try:
         project = prisma.project.find_unique_or_raise(
             where={
