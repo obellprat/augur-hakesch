@@ -1,3 +1,11 @@
+## 0.3.0-beta.0 (2025-09-15)
+
+### Feat
+
+- **api,frontend**: User can upload his own soil type shapefile
+- **api**: Possibility to add custom soil shapefile to calculate cn
+- **frontend**: NAM integration into the frontend
+
 ## 0.3.0-alpha.1 (2025-09-11)
 
 ### Feat
