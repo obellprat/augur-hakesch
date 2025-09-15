@@ -330,7 +330,7 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
                 print(f"Warning: Could not convert discharge point coordinates: {e}")
                 discharge_point = None
         task = extract_dem.apply(args=[project.id, user.id])
-        task = get_curve_numbers.apply(args=[project.id, user.id])
+        task = get_curve_numbers.apply(args=[project.id, user.id, "bek", nam_obj.use_own_soil_data])
 
         task = nam.delay(
             P_low_1h=project.IDF_Parameters.P_low_1h,
@@ -367,7 +367,7 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
         )
 
 @router.get("/get_curve_numbers")
-def get_curve_numbers_endpoint(ProjectId:str, user: User = Depends(get_user)):
+def get_curve_numbers_endpoint(ProjectId:str, user: User = Depends(get_user), soil_data_source: str = "bek", own_soil: bool = True):
     try:
         project = prisma.project.find_unique_or_raise(
             where={

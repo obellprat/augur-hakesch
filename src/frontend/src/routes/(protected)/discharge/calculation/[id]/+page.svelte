@@ -113,6 +113,9 @@
 	let isNAMSaving = $state(false);
 	let isUploading = $state(false);
 	let couldCalculate = $state(false);
+	let soilFileExists = $state(false);
+	let useOwnSoilData = $state(false);
+	let isCheckingSoilFile = $state(false);
 
 	let returnPeriod = $state([
 		{
@@ -384,6 +387,33 @@
 			});
 	}
 
+	async function checkSoilFileExists(project_id: Number) {
+		isCheckingSoilFile = true;
+		try {
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH + `/file/check-soil-shp/${project_id}`,
+				{
+					method: 'GET',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
+					}
+				}
+			);
+			
+			if (response.ok) {
+				const result = await response.json();
+				soilFileExists = result.exists;
+			} else {
+				soilFileExists = false;
+			}
+		} catch (error) {
+			console.error('Error checking soil file:', error);
+			soilFileExists = false;
+		} finally {
+			isCheckingSoilFile = false;
+		}
+	}
+
 	async function uploadZipFile(project_id: Number, file: File) {
 		if (!file) return;
 		
@@ -411,6 +441,8 @@
 						'--toastBarBackground': '#2F855A'
 					}
 				});
+				// Recheck if soil file exists after upload
+				await checkSoilFileExists(project_id);
 			} else {
 				const errorData = await response.json();
 				toast.push(
@@ -572,6 +604,9 @@
 		koella = data.project.Koella;
 		clark_wsl = data.project.ClarkWSL;
 		nam = data.project.NAM;
+
+		// Check if soil shape-file exists
+		await checkSoilFileExists(data.project.id);
 
 		if (data.project.isozones_taskid === '' || data.project.isozones_running) {
 			globalThis.$('#missinggeodata-modal').modal('show');
@@ -1646,26 +1681,52 @@
 																</div>
 																<div class="row g-2 py-2 align-items-end">
 																	<div class="mb-3 col-md-12">
-																		<label for="zip_upload" class="form-label">
-																			{$_('page.discharge.calculation.namParams.uploadZipFile')}
-																		</label>
-																		<input
-																			type="file"
-																			class="form-control"
-																			id="zip_upload"
-																			accept=".zip"
-																			onchange={(e) => {
-																				const target = e.target as HTMLInputElement;
-																				const file = target.files?.[0];
-																				if (file) {
-																					uploadZipFile(n.project_id, file);
-																				}
-																			}}
-																			disabled={isUploading}
-																		/>
-																		<div class="form-text">
-																			{$_('page.discharge.calculation.namParams.uploadZipFileHelp')}
-																		</div>
+																		{#if soilFileExists}
+																			<div class="mb-3">
+																				<div class="form-check">
+																					<input
+																						class="form-check-input"
+																						type="checkbox"
+																						id="use_own_soil_data"
+																						bind:checked={useOwnSoilData}
+																					/>
+																					<label class="form-check-label" for="use_own_soil_data">
+																						{$_('page.discharge.calculation.namParams.useOwnSoilData')}
+																					</label>
+																				</div>
+																				<div class="form-text">
+																					{$_('page.discharge.calculation.namParams.useOwnSoilDataHelp')}
+																				</div>
+																			</div>
+																		{/if}
+																		
+																		{#if !soilFileExists || useOwnSoilData}
+																			<label for="zip_upload" class="form-label">
+																				{$_('page.discharge.calculation.namParams.uploadZipFile')}
+																			</label>
+																			<input
+																				type="file"
+																				class="form-control"
+																				id="zip_upload"
+																				accept=".zip"
+																				onchange={(e) => {
+																					const target = e.target as HTMLInputElement;
+																					const file = target.files?.[0];
+																					if (file) {
+																						uploadZipFile(n.project_id, file);
+																					}
+																				}}
+																				disabled={isUploading || isCheckingSoilFile}
+																			/>
+																			<div class="form-text">
+																				{$_('page.discharge.calculation.namParams.uploadZipFileHelp')}
+																			</div>
+																		{:else}
+																			<div class="alert alert-info">
+																				<i class="ti ti-info-circle me-2"></i>
+																				{$_('page.discharge.calculation.namParams.soilFileExists')}
+																			</div>
+																		{/if}
 																	</div>
 																</div>
 																<div class="d-flex align-items-center justify-content-between py-1">
