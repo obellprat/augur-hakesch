@@ -99,7 +99,7 @@
 		options: chartOneOptions
 	};
 
-	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	let { data, form }: { data: PageServerData & { session: any }; form: ActionData } = $props();
 	$pageTitle = $_('page.discharge.overview.discharge-projekt') + ' ' + data.project.title;
 
 	currentProject.title = data.project.title;
@@ -148,10 +148,10 @@
 	]);
 
 	let calulcationType = $state(0);
-	let mod_verfahren = $derived(data.project.Mod_Fliesszeit);
-	let koella = $derived(data.project.Koella);
-	let clark_wsl = $derived(data.project.ClarkWSL);
-	let nam = $derived(data.project.NAM);
+	let mod_verfahren = $state(data.project.Mod_Fliesszeit);
+	let koella = $state(data.project.Koella);
+	let clark_wsl = $state(data.project.ClarkWSL);
+	let nam = $state(data.project.NAM);
 	//k.Koella_Result?.HQ.toFixed(2)
 
 	function showResults() {
@@ -264,6 +264,14 @@
 	}
 	$effect(() => {
 		showResults();
+	});
+
+	// Update local state when data changes
+	$effect(() => {
+		mod_verfahren = data.project.Mod_Fliesszeit;
+		koella = data.project.Koella;
+		clark_wsl = data.project.ClarkWSL;
+		nam = data.project.NAM;
 	});
 
 	function addCalculation() {
@@ -600,16 +608,11 @@
 	}
 
 	onMount(async () => {
-		mod_verfahren = data.project.Mod_Fliesszeit;
-		koella = data.project.Koella;
-		clark_wsl = data.project.ClarkWSL;
-		nam = data.project.NAM;
-
 		// Check if soil shape-file exists
 		await checkSoilFileExists(data.project.id);
 
 		if (data.project.isozones_taskid === '' || data.project.isozones_running) {
-			globalThis.$('#missinggeodata-modal').modal('show');
+			(globalThis as any).$('#missinggeodata-modal').modal('show');
 		}
 		else {
 			couldCalculate = true;
@@ -932,15 +935,15 @@
 																	isMFZSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result.data!;
-																		mod_verfahren = data.project.Mod_Fliesszeit;
+																		if (result.type === 'success' && result.data) {
+																			data.project = result.data;
+																		}
 																		isMFZSaving = false;
 
 																		if (submitter?.id=="calcMFZButton"){
 																			calculateModFliess(mod_fz.project_id, mod_fz.id);
 																		}
 																		else {
-
 																			toast.push($_('page.discharge.calculation.successfullsave'), {
 																				theme: {
 																					'--toastColor': 'mintcream',
@@ -1146,8 +1149,9 @@
 																	isKoellaSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result.data;
-																		koella = data.project.Koella;
+																		if (result.type === 'success' && result.data) {
+																			data.project = result.data;
+																		}
 																		isKoellaSaving = false;
 																		if (submitter?.id=="calcKoellaButton"){
 																			calculateKoella(k.project_id, k.id);
@@ -1360,20 +1364,21 @@
 																	isClarkWSLSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result.data;
-																		clark_wsl = data.project.ClarkWSL;
+																		if (result.type === 'success' && result.data) {
+																			data.project = result.data;
+																		}
 																		isClarkWSLSaving = false;
 																		if (submitter?.id=="calcClarkWSLButton"){
 																			calculateClarkWSL(k.project_id, k.id);
 																		}
 																		else {
 																			toast.push($_('page.discharge.calculation.successfullsave'), {
-																			theme: {
-																				'--toastColor': 'mintcream',
-																				'--toastBackground': 'rgba(72,187,120,0.9)',
-																			'--toastBarBackground': '#2F855A'
-																			}
-																		});
+																				theme: {
+																					'--toastColor': 'mintcream',
+																					'--toastBackground': 'rgba(72,187,120,0.9)',
+																					'--toastBarBackground': '#2F855A'
+																				}
+																			});
 																		}
 																	};
 																}}
@@ -1569,20 +1574,21 @@
 																	isNAMSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result.data;
-																		nam = data.project.NAM;
+																		if (result.type === 'success' && result.data) {
+																			data.project = result.data;
+																		}
 																		isNAMSaving = false;
 																		if (submitter?.id=="calcNAMButton"){
 																			calculateNAM(n.project_id, n.id);
 																		}
 																		else {
 																			toast.push($_('page.discharge.calculation.successfullsave'), {
-																			theme: {
-																				'--toastColor': 'mintcream',
-																				'--toastBackground': 'rgba(72,187,120,0.9)',
-																			'--toastBarBackground': '#2F855A'
-																			}
-																		});
+																				theme: {
+																					'--toastColor': 'mintcream',
+																					'--toastBackground': 'rgba(72,187,120,0.9)',
+																					'--toastBarBackground': '#2F855A'
+																				}
+																			});
 																		}
 																	};
 																}}
