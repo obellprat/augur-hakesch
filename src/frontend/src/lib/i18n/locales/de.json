@@ -61,7 +61,7 @@
           "dischargePoint": "Abflusspunkt",
           "traveltime": "Pixelbasierte Zeitberechnung",
           "useOwnSoilData": "Eigene Bodendaten verwenden",
-          "useOwnSoilDataHelp": "Es kann ein eigenes Shapefile mit den Bodentypen (A, B, C und D) erstellt und hier als ZIP-File hochgeladen werden.",
+          "useOwnSoilDataHelp": "Es wurde ein eigenes Shapefile mit den Bodentypen (A, B, C und D) hochgeladen.",
           "uploadZipFile": "ZIP-File (Shapefiles) hochladen",
           "uploadZipFileHelp": "Es kann ein eigenes Shapefile mit den Bodentypen (A, B, C und D) erstellt und hier als ZIP-File hochgeladen werden.",
           "soilFileExists": "Es existiert eine eigene Bodenklassierung"

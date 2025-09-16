@@ -44,7 +44,22 @@
 
 {#if show}
 	<div class="loading-overlay" role="status" aria-live="polite" aria-label="Loading">
-		<div class="spinner" />
+		<div class="loading-container">
+			<svg width="50" height="50" viewBox="0 0 24 24">
+				<path
+				fill="currentColor"
+				d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8A8 8 0 0 1 12 20Z"
+				opacity=".5"/><path fill="currentColor" d="M20 12h2A10 10 0 0 0 12 2V4A8 8 0 0 1 20 12Z"
+				><animateTransform
+					attributeName="transform"
+					dur="1s"
+					from="0 12 12"
+					repeatCount="indefinite"
+					to="360 12 12"
+					type="rotate"
+				/></path>
+			</svg>
+		</div>
 	</div>
 {/if}
 
@@ -60,26 +75,4 @@
 		z-index: 2000; /* above app chrome */
 	}
 
-	.spinner {
-		width: 42px;
-		height: 42px;
-		border-radius: 50%;
-		border: 3px solid rgba(255, 255, 255, 0.25);
-		border-top-color: #fff;
-		animation: spin 0.9s linear infinite;
-		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04) inset;
-	}
-
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.spinner {
-			animation: none;
-			border-top-color: rgba(255, 255, 255, 0.85);
-		}
-	}
 </style>

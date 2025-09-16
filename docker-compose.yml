@@ -1,6 +1,6 @@
 services:
   api:
-    image: stumpisuter/augur-hakesch-api:latest
+    image: stumpisuter/augur-hakesch-api:dev
     build: ./src/api
     ports:
       - 8000:8000
@@ -45,7 +45,7 @@ services:
       - traefik-public
 
   worker:
-    image: stumpisuter/augur-hakesch-worker:latest
+    image: stumpisuter/augur-hakesch-api:dev
     build: ./src/api
     command: celery -A calculations.calculations.app worker --loglevel=info --logfile=./logs/celery.log
     volumes:
