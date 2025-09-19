@@ -93,7 +93,12 @@
         "zipUploadSuccess": "Upload successful",
         "zipUploadError": "Error while uploading",
         "calcerror": "Error",
-        "clarkwslname": "Clark-WSL"
+        "clarkwslname": "Clark-WSL",
+        "hadesValues": "HADES Values",
+        "hadesValuesLoading": "Loading HADES values...",
+        "hadesValuesSuccess": "HADES values loaded successfully",
+        "hadesValuesError": "Error loading HADES values",
+        "hadesValuesNoCoordinates": "No discharge point coordinates found"
       }
     },
     "precipitation": {

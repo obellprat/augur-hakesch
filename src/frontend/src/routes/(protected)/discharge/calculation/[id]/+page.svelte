@@ -116,6 +116,7 @@
 	let soilFileExists = $state(false);
 	let useOwnSoilData = $state(false);
 	let isCheckingSoilFile = $state(false);
+	let isFetchingHades = $state(false);
 
 	let returnPeriod = $state([
 		{
@@ -607,6 +608,112 @@
 			.catch((err) => console.log(err));
 	}
 
+	// Coordinate conversion from EPSG:2056 (Swiss CH1903+ / LV95) to WGS84 lat/lon
+	function convertEPSG2056ToWGS84(easting: number, northing: number): { lat: number; lon: number } {
+		// Swiss CH1903+ / LV95 to WGS84 conversion
+		// This is a simplified approximation for Swiss coordinates
+		// For exact transformation, consider using a proper projection library like proj4js
+		
+		// Convert from LV95 to LV03 (CH1903) first
+		const y = (easting - 2600000) / 1000000;
+		const x = (northing - 1200000) / 1000000;
+		
+		// Convert from LV03 to WGS84 using approximate formulas
+		// These formulas are from the Swiss Federal Office of Topography (swisstopo)
+		const lat_aux = 16.9023892 + 3.238272 * x - 0.270978 * Math.pow(x, 2) - 0.002528 * Math.pow(x, 3) - 0.0447 * Math.pow(y, 2) - 0.0140 * Math.pow(y, 3);
+		const lon_aux = 2.6779094 + 4.728982 * y + 0.791484 * y * x + 0.1306 * y * Math.pow(x, 2) - 0.0436 * Math.pow(y, 3);
+		
+		// Convert to decimal degrees
+		const lat = 46.952405556 + (lat_aux * 100 / 36) / 3600; 
+		const lon = 7.439583333 + (lon_aux * 100 / 36) / 3600;
+		
+		return { lat, lon };
+	}
+
+	async function fetchHadesValues() {
+		if (!data.project.Point) {
+			toast.push($_('page.discharge.calculation.hadesValuesNoCoordinates'), {
+				theme: {
+					'--toastColor': 'white',
+					'--toastBackground': 'darkred'
+				},
+				initial: 0
+			});
+			return;
+		}
+
+		isFetchingHades = true;
+		
+		try {
+			// Convert coordinates from EPSG:2056 to lat/lon
+			const { lat, lon } = convertEPSG2056ToWGS84(data.project.Point.easting, data.project.Point.northing);
+			
+			// Fetch precipitation data from the API
+			const response = await fetch(
+				`${env.PUBLIC_HAKESCH_API_PATH}/netcdf/precipitation?lon=${lon}&lat=${lat}`,
+				{
+					method: 'GET',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
+					}
+				}
+			);
+			
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			
+			const precipitationData = await response.json();
+			
+			// Extract the 50% probability values (median) for the IDF parameters
+			const data10y60m = precipitationData.data['10_years_60_minutes'];
+			const data10y24h = precipitationData.data['10_years_24h'];
+			const data100y60m = precipitationData.data['100_years_60_minutes'];
+			const data100y24h = precipitationData.data['100_years_24h'];
+			
+			// Fill in the form values
+			const pLow1h = Math.round(data10y60m.probability_levels['50%']*100)/100;
+			const pHigh1h = Math.round(data100y60m.probability_levels['50%']*100)/100;
+			const pLow24h = Math.round(data10y24h.probability_levels['50%']*100)/100;
+			const pHigh24h = Math.round(data100y24h.probability_levels['50%']*100)/100	;
+			
+			// Update the form inputs
+			const pLow1hInput = document.getElementById('P_low_1h') as HTMLInputElement;
+			const pHigh1hInput = document.getElementById('P_high_1h') as HTMLInputElement;
+			const pLow24hInput = document.getElementById('P_low_24h') as HTMLInputElement;
+			const pHigh24hInput = document.getElementById('P_high_24h') as HTMLInputElement;
+			
+			if (pLow1hInput && pLow1h !== null) pLow1hInput.value = (Math.round(pLow1h*100)/100).toString();
+			if (pHigh1hInput && pHigh1h !== null) pHigh1hInput.value = pHigh1h.toString();
+			if (pLow24hInput && pLow24h !== null) pLow24hInput.value = pLow24h.toString();
+			if (pHigh24hInput && pHigh24h !== null) pHigh24hInput.value = pHigh24h.toString();
+			
+			toast.push($_('page.discharge.calculation.hadesValuesSuccess'), {
+				theme: {
+					'--toastColor': 'mintcream',
+					'--toastBackground': 'rgba(72,187,120,0.9)',
+					'--toastBarBackground': '#2F855A'
+				}
+			});
+			
+		} catch (error) {
+			console.error('Error fetching HADES values:', error);
+			toast.push(
+				'<h3 style="padding:5;">' + $_('page.discharge.calculation.hadesValuesError') + '</h3>' +
+				(error instanceof Error ? error.message : String(error)),
+				{
+					theme: {
+						'--toastColor': 'white',
+						'--toastBackground': 'darkred'
+					},
+					initial: 0
+				}
+			);
+		} finally {
+			isFetchingHades = false;
+		}
+	}
+
 	onMount(async () => {
 		// Check if soil shape-file exists
 		await checkSoilFileExists(data.project.id);
@@ -868,16 +975,33 @@
 												</select>
 											</div>
 										</div>
-										<button type="submit" class="btn btn-primary" disabled={isGeneralSaving}>
-											{#if isGeneralSaving}
-												<span
-													class="spinner-border spinner-border-sm me-2"
-													role="status"
-													aria-hidden="true"
-												></span>
-											{/if}
-											{$_('page.general.save')}
-										</button>
+										<div class="d-flex align-items-center gap-2">
+											<button 
+												type="button" 
+												class="btn btn-secondary" 
+												onclick={fetchHadesValues}
+												disabled={isFetchingHades}
+											>
+												{#if isFetchingHades}
+													<span
+														class="spinner-border spinner-border-sm me-2"
+														role="status"
+														aria-hidden="true"
+													></span>
+												{/if}
+												{$_('page.discharge.calculation.hadesValues')}
+											</button>
+											<button type="submit" class="btn btn-primary" disabled={isGeneralSaving}>
+												{#if isGeneralSaving}
+													<span
+														class="spinner-border spinner-border-sm me-2"
+														role="status"
+														aria-hidden="true"
+													></span>
+												{/if}
+												{$_('page.general.save')}
+											</button>
+										</div>
 									</form>
 								</div>
 							</div>

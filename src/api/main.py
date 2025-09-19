@@ -10,7 +10,7 @@ from helpers.user import map_user
 import logging
 import uvicorn
 
-from routers import file, task, project, discharge, version
+from routers import file, task, project, discharge, version, netcdf
 
 from version import __version__
 
@@ -47,6 +47,7 @@ excluded_routes = [
     "/api/openapi.json",
     "/data",
     "/version",
+    "/netcdf",
 ]
 # Add middleware with basic config
 setup_keycloak_middleware(
@@ -76,5 +77,6 @@ app.include_router(task.router)
 app.include_router(version.router)
 app.include_router(project.router)
 app.include_router(discharge.router)
+app.include_router(netcdf.router)
 
 
