@@ -79,7 +79,7 @@
 							aria-expanded="false"
 						>
 							<img
-								src="{base}/assets/images/users/avatar-1.jpg"
+								src="{base}/assets/images/users/avatar-2.jpg"
 								width="32"
 								class="rounded-circle me-lg-2 d-flex"
 								alt="user-image"
