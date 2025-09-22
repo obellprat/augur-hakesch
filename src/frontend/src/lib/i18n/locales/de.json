@@ -1,12 +1,12 @@
 {
   "page": {
     "dashboard": {
-      "title": "Dashboard",
+      "title": " ",
       "nav": "Dashboard",
-      "welcome": "Willkommen bei AUGUR",
-      "welcome_text": "Herzlich willkommen bei AUGR",
-      "precipitation_card": "Erhalten sie die Niederschalgswerte weltweit unter einbezug der Klimaszenarien",
-      "dischargedesc": "Berechnen von hydrologischen Abflussmodellierungen, wie modifiziertes Fliesszeitverfahren, Kölla oder Clark-WSL.",
+      "welcome": "Willkommen zu AUGUR",
+      "welcome_text": "Globale Niederschlags- und Abflussabschätzungen für wirkungsvolle lokale Anpassung an den Klimawandel",
+      "precipitation_card": "Erhalten sie die extreme Niederschalgswerte weltweit unter einbezug der IPCC Klimaszenarien",
+      "dischargedesc": "Berechnen sie den lokalen hydrologischen Abfluss für einen gewählten Ablfussort",
       "precipitation": "Niederschlag",
       "precipitationtool": "Niederschlagstool"
     },
@@ -123,20 +123,22 @@
       "backend": "Backend"
     },
     "about": {
-      "title": "Informationen zu AUGUR",
+      "title": " ",
       "intro": {
         "heading": "Was ist AUGUR?",
-        "p1": "AUGUR hilft, Niederschlag und Abfluss für Einzugsgebiete weltweit abzuschätzen.",
-        "p2": "Es bringt wissenschaftlich fundierte Verfahren in eine leicht verständliche Web‑App – für Planerinnen, Lehrpersonen und Interessierte."
+        "p1": "AUGUR hilft, Niederschlag und Abfluss für Einzugsgebiete weltweit abzuschätzen und den Klimawandel zu berücksichtigen.",
+        "p2": "Damit wird es möglich, lokale Hochwasserabschätzungen und Anpassungen an den Klimawandel zu planen – auch wenn nur wenige Daten vorliegen."
       },
       "idea": {
         "heading": "Die Idee",
-        "p1": "Ausgehend von einem Ort und wenigen Eingaben kombiniert AUGUR Klimainformationen mit hydrologischen Verfahren und liefert schnell vergleichbare Resultate.",
+        "p1": "AUGUR kombiniert Klimainformationen mit hydrologischen Verfahren und liefert schnell vergleichbare Resultate.",
         "p2": "Szenarien und Methoden lassen sich nebeneinander betrachten – so werden Sensitivität und Unsicherheiten sichtbar."
       },
       "technology": {
         "heading": "So funktioniert es (einfach erklärt)",
-        "p1": "Im Hintergrund arbeitet eine moderne Oberfläche mit einer robusten API. Berechnungen laufen im Hintergrund, damit längere Aufgaben die Seite nicht blockieren.",
+        "p1": "AUGUR macht etablierte wissenschaftliche Methoden in einer einfach zu bedienenden Web-Applikation zugänglich.",
+        "p2": "Beobachtungsdaten und Modelle werden kombiniert für die Abschätzung von Niederschläge und Abflüsse.",
+        "p3": "Im Hintergrund arbeitet eine robuste API damit die Berechnungen simulaten durchgeführt werden können.",
         "list": {
           "svelte": "SvelteKit‑Oberfläche für Karten, Diagramme und Projekte.",
           "fastapi": "FastAPI stellt die API und die Authentifizierung (Keycloak) bereit.",
@@ -153,8 +155,9 @@
         "open_discharge": "Abfluss öffnen"
       },
       "credits": {
-        "heading": "Herkunft & Daten",
-        "p1": "AUGUR implementiert Verfahren wie das modifizierte Fliesszeitverfahren, Kölla und Clark‑WSL und nutzt klimatologische Datensätze offizieller Stellen. Resultate sind indikativ und ersetzen keine fachliche Studie."
+        "heading": "Credits",
+        "p1": "AUGUR ist Open Source und wurde durch die Untersütztung vom 'Innovation Meets Practice Accelartor' 2022 der Humanitären Hilfe der DEZA lanciert für eine globale Anwendung.",
+        "p2": "Durch eine  Förderung des Kantons Bern wurde AUGUR mit den Methoden von HAKESCH und einem Niederschlag Abfluss-Model (NAM) weiterentwickelt in Zusammenarbeit mit Hunziker, Zarn und Partner (HZP) und Scherrer Hydrologie." 
       }
     },
     "login": {
