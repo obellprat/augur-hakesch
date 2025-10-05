@@ -5,6 +5,20 @@
 	import { base } from '$app/paths';
 
 	$pageTitle = $_('page.about.title');
+
+    let isDark = false;
+
+    // Detect dark mode by checking the data-bs-theme attribute on <html>
+    onMount(() => {
+        const checkTheme = () => {
+            isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        };
+        checkTheme();
+        // Listen for theme changes if your app supports switching at runtime
+        const observer = new MutationObserver(checkTheme);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+        return () => observer.disconnect();
+    });	
 </script>
 
 <svelte:head>
@@ -26,7 +40,7 @@
 
 					<div class="my-4 p-0 d-flex justify-content-start" style="margin: 0;">
 						<img
-							src="{base}/assets/images/AUGUR-process-Ilustration.png"
+							src="{base}/assets/images/AUGUR-process-Ilustration{isDark ? '-dark' : ''}.png"
 							alt="AUGUR process illustration"
 							class="img-fluid"
 							style="max-width: 60%; height: auto; display: block; margin: 0 auto; border: none; padding: 0;"
@@ -39,7 +53,7 @@
 					<p class="card-text">{$_('page.about.technology.p3')}</p>
 					<div class="my-4 p-0" style="margin: 0;">
 						<img
-							src="{base}/assets/images/AUGUR-concept.png"
+							src="{base}/assets/images/AUGUR-concept{isDark ? '-dark' : ''}.png"
 							alt="AUGUR process illustration"
 							class="img-fluid"
 							style="max-width: 60%; height: auto; display: block; margin: 0 auto; border: none; padding: 0;"
@@ -61,7 +75,9 @@
 					<p class="card-text">{$_('page.about.credits.p1')}</p>
 					<p class="card-text">{$_('page.about.credits.p2')}</p>
 					<div class="my-4 p-0" style="margin: 0;">
-						<div class="d-flex justify-content-center align-items-center gap-4">
+						<div 
+							class="d-flex justify-content-center align-items-center gap-4"
+						    style="background: {isDark ? 'rgba(255,255,255,0.85)' : 'none'}; border-radius: 0.5rem; padding: 0.5rem;">
 							<img
 								src="{base}/assets/images/logo-deza.png"
 								alt="DEZA logo"
