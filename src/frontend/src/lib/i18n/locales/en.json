@@ -95,7 +95,7 @@
         "globalNote": "This approach is suitable for regions outside of Switzerland or when using international hydrological standards.",
         "comingSoon": "Coming Soon",
         "globalImplementation": "Global discharge calculation methods are currently under development.",
-        "calcerror": "Calculation Error"
+        "calcerror": "Calculation Error",
         "missinggeodataTitle": "Missing geodata",
         "missingGeodata": "The geodata has not yet been calculated. Please calculate the data in the project overview so that the hydrological calculations can be performed.",
         "zipUploadSuccess": "Upload successful",
