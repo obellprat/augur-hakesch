@@ -41,8 +41,6 @@
 				chart.render();
 			});
 		return {
-			// { destroy: parameter.ref?.destroy } causes error.
-			// height 속성 파싱 중 알 수 없는 NaN 값이 발생했습니다.
 			destroy: () => {
 				parameter.ref?.destroy();
 			}
@@ -101,16 +99,23 @@
 		options: chartOneOptions
 	};
 
-	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	let { data, form }: { data: PageServerData & { session: any }; form: ActionData } = $props();
 	$pageTitle = $_('page.discharge.overview.discharge-projekt') + ' ' + data.project.title;
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
 	let zones = data.zones;
 
+	let isGeneralSaving = $state(false);
 	let isMFZSaving = $state(false);
 	let isKoellaSaving = $state(false);
 	let isClarkWSLSaving = $state(false);
+	let isNAMSaving = $state(false);
+	let isUploading = $state(false);
+	let couldCalculate = $state(false);
+	let soilFileExists = $state(false);
+	let useOwnSoilData = $state(false);
+	let isCheckingSoilFile = $state(false);
 
 	let returnPeriod = $state([
 		{
@@ -143,9 +148,10 @@
 	]);
 
 	let calulcationType = $state(0);
-	let mod_verfahren = $derived(data.project.Mod_Fliesszeit);
-	let koella = $derived(data.project.Koella);
-	let clark_wsl = $derived(data.project.ClarkWSL);
+	let mod_verfahren = $state(data.project.Mod_Fliesszeit);
+	let koella = $state(data.project.Koella);
+	let clark_wsl = $state(data.project.ClarkWSL);
+	let nam = $state(data.project.NAM);
 	//k.Koella_Result?.HQ.toFixed(2)
 
 	function showResults() {
@@ -230,11 +236,42 @@
 				? Number(clark_wsl.find((c) => c.Annuality?.number == 100).ClarkWSL_Result.Q.toFixed(2))
 				: null
 		);
-		chartOneOptions.series = [mod_fliesszeit_data, koella_data, clark_wsl_data];
+		let nam_data: { name: string; color: string; data: (number | null)[] } = {
+			name: 'NAM',
+			color: '#ef1313',
+			data: []
+		};
+		nam_data.data.push(
+			nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 2.3)
+				?.NAM_Result?.HQ
+				? Number(nam.find((n) => n.Annuality?.number == 2.3).NAM_Result.HQ.toFixed(2))
+				: null
+		);
+		nam_data.data.push(
+			nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 20)
+				?.NAM_Result?.HQ
+				? Number(nam.find((n) => n.Annuality?.number == 20).NAM_Result.HQ.toFixed(2))
+				: null
+		);
+		nam_data.data.push(
+			nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 100)
+				?.NAM_Result?.HQ
+				? Number(nam.find((n) => n.Annuality?.number == 100).NAM_Result.HQ.toFixed(2))
+				: null
+		);
+		chartOneOptions.series = [mod_fliesszeit_data, koella_data, clark_wsl_data, nam_data];
 		chart.ref?.updateSeries(chartOneOptions.series);
 	}
 	$effect(() => {
 		showResults();
+	});
+
+	// Update local state when data changes
+	$effect(() => {
+		mod_verfahren = data.project.Mod_Fliesszeit;
+		koella = data.project.Koella;
+		clark_wsl = data.project.ClarkWSL;
+		nam = data.project.NAM;
 	});
 
 	function addCalculation() {
@@ -259,6 +296,13 @@
 				project_id: data.project.id
 			};
 			clark_wsl.push(newclark_wsl);
+		} else if (calulcationType == 4) {
+			// add NAM
+			const newnam = {
+				id: 0,
+				project_id: data.project.id
+			};
+			nam.push(newnam);
 		}
 	}
 
@@ -328,6 +372,119 @@
 				getStatus(data.task_id);
 			});
 	}
+	function calculateNAM(project_id: Number, nam_id: Number) {
+		toast.push($_('page.discharge.calculation.calcrunning'), {
+			initial: 0
+		});
+		fetch(
+			env.PUBLIC_HAKESCH_API_PATH +
+				'/discharge/nam?ProjectId=' +
+				project_id +
+				'&NAMId=' +
+				nam_id,
+			{
+				method: 'GET',
+				headers: {
+					Authorization: 'Bearer ' + data.session.access_token
+				}
+			}
+		)
+			.then((response) => response.json())
+			.then((data) => {
+				getStatus(data.task_id);
+			});
+	}
+
+	async function checkSoilFileExists(project_id: Number) {
+		isCheckingSoilFile = true;
+		try {
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH + `/file/check-soil-shp/${project_id}`,
+				{
+					method: 'GET',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
+					}
+				}
+			);
+			
+			if (response.ok) {
+				const result = await response.json();
+				soilFileExists = result.exists;
+			} else {
+				soilFileExists = false;
+			}
+		} catch (error) {
+			console.error('Error checking soil file:', error);
+			soilFileExists = false;
+		} finally {
+			isCheckingSoilFile = false;
+		}
+	}
+
+	async function uploadZipFile(project_id: Number, file: File) {
+		if (!file) return;
+		
+		isUploading = true;
+		const formData = new FormData();
+		formData.append('file', file);
+		
+		try {
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH + `/file/upload-zip/${project_id}`,
+				{
+					method: 'POST',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
+					},
+					body: formData
+				}
+			);
+			
+			if (response.ok) {
+				toast.push($_('page.discharge.calculation.zipUploadSuccess'), {
+					theme: {
+						'--toastColor': 'mintcream',
+						'--toastBackground': 'rgba(72,187,120,0.9)',
+						'--toastBarBackground': '#2F855A'
+					}
+				});
+				// Recheck if soil file exists after upload
+				await checkSoilFileExists(project_id);
+			} else {
+				const errorData = await response.json();
+				toast.push(
+					'<h3 style="padding:5;">' +
+						$_('page.discharge.calculation.zipUploadError') +
+						'</h3>' +
+						errorData.detail,
+					{
+						theme: {
+							'--toastColor': 'white',
+							'--toastBackground': 'darkred'
+						},
+						initial: 0
+					}
+				);
+			}
+		} catch (error) {
+			toast.push(
+				'<h3 style="padding:5;">' +
+					$_('page.discharge.calculation.zipUploadError') +
+					'</h3>' +
+					(error instanceof Error ? error.message : String(error)),
+				{
+					theme: {
+						'--toastColor': 'white',
+						'--toastBackground': 'darkred'
+					},
+					initial: 0
+				}
+			);
+		} finally {
+			isUploading = false;
+		}
+	}
 	function getStatus(taskID: String) {
 		fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
 			method: 'GET',
@@ -353,21 +510,25 @@
 						}
 					});
 					invalidateAll();
-					
+
 					return false;
-				}
-				else if (taskStatus === 'FAILURE') {
+				} else if (taskStatus === 'FAILURE') {
 					toast.pop();
-					toast.push('<h3 style="padding:5;">'+$_('page.discharge.calculation.calcerror') + '</h3>' + res.task_result, {
-						theme: {
-							'--toastColor': 'white',
-							'--toastBackground': 'darkred'
-						},
-						initial: 0
-					});
+					toast.push(
+						'<h3 style="padding:5;">' +
+							$_('page.discharge.calculation.calcerror') +
+							'</h3>' +
+							res.task_result,
+						{
+							theme: {
+								'--toastColor': 'white',
+								'--toastBackground': 'darkred'
+							},
+							initial: 0
+						}
+					);
 					invalidateAll();
 
-					
 					return false;
 				}
 				setTimeout(function () {
@@ -419,19 +580,23 @@
 					});
 					invalidateAll();
 					return;
-				}
-				else if (res.status === 'FAILURE') {
+				} else if (res.status === 'FAILURE') {
 					toast.pop();
-					toast.push('<h3 style="padding:5;">'+$_('page.discharge.calculation.calcerror') + '</h3>' + res.task_result, {
-						theme: {
-							'--toastColor': 'white',
-							'--toastBackground': 'darkred'
-						},
-						initial: 0
-					});
+					toast.push(
+						'<h3 style="padding:5;">' +
+							$_('page.discharge.calculation.calcerror') +
+							'</h3>' +
+							res.task_result,
+						{
+							theme: {
+								'--toastColor': 'white',
+								'--toastBackground': 'darkred'
+							},
+							initial: 0
+						}
+					);
 					invalidateAll();
 
-					
 					return false;
 				}
 
@@ -443,15 +608,60 @@
 	}
 
 	onMount(async () => {
-		mod_verfahren = data.project.Mod_Fliesszeit;
-		koella = data.project.Koella;
-		clark_wsl = data.project.ClarkWSL;
+		// Check if soil shape-file exists
+		await checkSoilFileExists(data.project.id);
+
+		if (data.project.isozones_taskid === '' || data.project.isozones_running) {
+			(globalThis as any).$('#missinggeodata-modal').modal('show');
+		}
+		else {
+			couldCalculate = true;
+		}
 	});
 </script>
 
 <svelte:head>
 	<title>{$pageTitle} - {$_('page.discharge.calculation.calculationTitle')} | AUGUR</title>
 </svelte:head>
+
+<!-- Missing geodata dialog -->
+ <div
+	id="missinggeodata-modal"
+	class="modal fade"
+	tabindex="-1"
+	role="dialog"
+	aria-labelledby="standard-modalLabel"
+	aria-hidden="true"
+>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="standard-modalLabel">
+					{$_('page.discharge.calculation.missinggeodataTitle')}
+				</h4>
+				<button
+					type="button"
+					class="btn-close"
+					data-bs-dismiss="modal"
+					aria-label={$_('page.general.close')}
+				></button>
+			</div>
+			<div class="modal-body">
+				<h5>{$_('page.discharge.calculation.missingGeodata')}</h5>
+			</div>
+			<div class="modal-footer">
+				<button
+					type="button"
+					class="btn btn-light"
+					data-bs-dismiss="modal"
+					onclick={addCalculation}>{$_('page.general.ok')}</button
+				>
+			</div>
+		</div>
+		<!-- /.modal-content -->
+	</div>
+	<!-- /.modal-dialog -->
+</div>
 
 <div class="flex-grow-1 card">
 	<div class="h-100">
@@ -511,6 +721,7 @@
 										<option value="1">{$_('page.discharge.calculation.modFliesszeit')}</option>
 										<option value="2">{$_('page.discharge.calculation.koells')}</option>
 										<option value="3">{$_('page.discharge.calculation.clarkwsl')}</option>
+										<option value="4">{$_('page.discharge.calculation.nam')}</option>
 									</select>
 								</div>
 								<div class="modal-footer">
@@ -598,9 +809,11 @@
 										method="post"
 										action="?/updatefnp"
 										use:enhance={() => {
+											isGeneralSaving = true;
 											return async ({ update }) => {
 												await update();
 												currentProject.title = data.project.title;
+												isGeneralSaving = false;
 											};
 										}}
 									>
@@ -696,7 +909,16 @@
 												</select>
 											</div>
 										</div>
-										<button type="submit" class="btn btn-primary">{$_('page.general.save')}</button>
+										<button type="submit" class="btn btn-primary" disabled={isGeneralSaving}>
+											{#if isGeneralSaving}
+												<span
+													class="spinner-border spinner-border-sm me-2"
+													role="status"
+													aria-hidden="true"
+												></span>
+											{/if}
+											{$_('page.general.save')}
+										</button>
 									</form>
 								</div>
 							</div>
@@ -750,19 +972,27 @@
 															<form
 																method="post"
 																action="?/updatemfzv"
-																use:enhance={() => {
+																use:enhance={({ formElement, formData, action, cancel, submitter }) => {
 																	isMFZSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result;
+																		if (result.type === 'success' && result.data) {
+																			data.project = result.data;
+																		}
 																		isMFZSaving = false;
-																		toast.push($_('page.discharge.calculation.successfullsave'), {
-																			theme: {
-																				'--toastColor': 'mintcream',
-																				'--toastBackground': 'rgba(72,187,120,0.9)',
-																				'--toastBarBackground': '#2F855A'
-																			}
-																		});
+
+																		if (submitter?.id=="calcMFZButton"){
+																			calculateModFliess(mod_fz.project_id, mod_fz.id);
+																		}
+																		else {
+																			toast.push($_('page.discharge.calculation.successfullsave'), {
+																				theme: {
+																					'--toastColor': 'mintcream',
+																					'--toastBackground': 'rgba(72,187,120,0.9)',
+																					'--toastBarBackground': '#2F855A'
+																				}
+																			});
+																		}
 																	};
 																}}
 															>
@@ -794,6 +1024,7 @@
 																		>
 																		<input
 																			type="number"
+																			step="any"
 																			class="form-control"
 																			id="Vo20"
 																			name="Vo20"
@@ -806,7 +1037,7 @@
 																		>
 																		<input
 																			type="number"
-																			step="0.01"
+																			step="any"
 																			class="form-control"
 																			id="psi"
 																			name="psi"
@@ -819,14 +1050,21 @@
 																		<button
 																			type="submit"
 																			class="btn btn-primary"
-																			disabled={isMFZSaving}>{$_('page.general.save')}</button
-																		>
-																		<button
-																			type="button"
-																			class="btn btn-primary"
 																			disabled={isMFZSaving}
-																			onclick={() =>
-																				calculateModFliess(mod_fz.project_id, mod_fz.id)}
+																		>
+																			{#if isMFZSaving}
+																				<span
+																					class="spinner-border spinner-border-sm me-2"
+																					role="status"
+																					aria-hidden="true"
+																				></span>
+																			{/if}
+																			{$_('page.general.save')}
+																		</button>
+																		<button
+																			type="submit" id="calcMFZButton"
+																			class="btn btn-primary"
+																			disabled={isMFZSaving || !couldCalculate}
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
@@ -948,19 +1186,26 @@
 															<form
 																method="post"
 																action="?/updatekoella"
-																use:enhance={() => {
+																use:enhance={({ formElement, formData, action, cancel, submitter }) => {
 																	isKoellaSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result;
+																		if (result.type === 'success' && result.data) {
+																			data.project = result.data;
+																		}
 																		isKoellaSaving = false;
-																		toast.push($_('page.discharge.calculation.successfullsave'), {
-																			theme: {
-																				'--toastColor': 'mintcream',
-																				'--toastBackground': 'rgba(72,187,120,0.9)',
-																				'--toastBarBackground': '#2F855A'
-																			}
-																		});
+																		if (submitter?.id=="calcKoellaButton"){
+																			calculateKoella(k.project_id, k.id);
+																		}
+																		else {
+																			toast.push($_('page.discharge.calculation.successfullsave'), {
+																				theme: {
+																					'--toastColor': 'mintcream',
+																					'--toastBackground': 'rgba(72,187,120,0.9)',
+																					'--toastBarBackground': '#2F855A'
+																				}
+																			});
+																		}
 																	};
 																}}
 															>
@@ -992,6 +1237,7 @@
 																		>
 																		<input
 																			type="number"
+																			step="any"
 																			class="form-control"
 																			id="Vo20"
 																			name="Vo20"
@@ -1019,13 +1265,21 @@
 																		<button
 																			type="submit"
 																			class="btn btn-primary"
-																			disabled={isKoellaSaving}>{$_('page.general.save')}</button
-																		>
-																		<button
-																			type="button"
-																			class="btn btn-primary"
 																			disabled={isKoellaSaving}
-																			onclick={() => calculateKoella(k.project_id, k.id)}
+																		>
+																			{#if isKoellaSaving}
+																				<span
+																					class="spinner-border spinner-border-sm me-2"
+																					role="status"
+																					aria-hidden="true"
+																				></span>
+																			{/if}
+																			{$_('page.general.save')}
+																		</button>
+																		<button
+																			type="submit" id="calcKoellaButton"
+																			class="btn btn-primary"
+																			disabled={isKoellaSaving || !couldCalculate}
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
@@ -1147,19 +1401,26 @@
 															<form
 																method="post"
 																action="?/updateclarkwsl"
-																use:enhance={() => {
+																use:enhance={({ formElement, formData, action, cancel, submitter}) => {
 																	isClarkWSLSaving = true;
 																	return async ({ result, update }) => {
 																		await update({ reset: false });
-																		data.project = result;
+																		if (result.type === 'success' && result.data) {
+																			data.project = result.data;
+																		}
 																		isClarkWSLSaving = false;
-																		toast.push($_('page.discharge.calculation.successfullsave'), {
-																			theme: {
-																				'--toastColor': 'mintcream',
-																				'--toastBackground': 'rgba(72,187,120,0.9)',
-																				'--toastBarBackground': '#2F855A'
-																			}
-																		});
+																		if (submitter?.id=="calcClarkWSLButton"){
+																			calculateClarkWSL(k.project_id, k.id);
+																		}
+																		else {
+																			toast.push($_('page.discharge.calculation.successfullsave'), {
+																				theme: {
+																					'--toastColor': 'mintcream',
+																					'--toastBackground': 'rgba(72,187,120,0.9)',
+																					'--toastBarBackground': '#2F855A'
+																				}
+																			});
+																		}
 																	};
 																}}
 															>
@@ -1195,6 +1456,7 @@
 																					<div class="" style="max-width:130px;">
 																						<input
 																							type="number"
+																							step="any"
 																							class="form-control text-end"
 																							style="-webkit-appearance: none; -moz-appearance: textfield;"
 																							id="zone_{i}"
@@ -1213,13 +1475,21 @@
 																		<button
 																			type="submit"
 																			class="btn btn-primary"
-																			disabled={isClarkWSLSaving}>{$_('page.general.save')}</button
-																		>
-																		<button
-																			type="button"
-																			class="btn btn-primary"
 																			disabled={isClarkWSLSaving}
-																			onclick={() => calculateClarkWSL(k.project_id, k.id)}
+																		>
+																			{#if isClarkWSLSaving}
+																				<span
+																					class="spinner-border spinner-border-sm me-2"
+																					role="status"
+																					aria-hidden="true"
+																				></span>
+																			{/if}
+																			{$_('page.general.save')}
+																		</button>
+																		<button
+																			type="submit" id="calcClarkWSLButton"
+																			class="btn btn-primary"
+																			disabled={isClarkWSLSaving || !couldCalculate}
 																			>{$_('page.general.calculate')}</button
 																		>
 																	</div>
@@ -1272,6 +1542,312 @@
 																			>
 																			<form method="POST" action="?/deleteClarkWSL">
 																				<input type="hidden" name="id" value={k.id} />
+																				<button type="submit" class="btn btn-warning"
+																					>{$_('page.general.delete')}</button
+																				>
+																			</form>
+																		</div>
+																	</div>
+																	<!-- /.modal-content -->
+																</div>
+																<!-- /.modal-dialog -->
+															</div>
+															<!-- /.modal -->
+														</div>
+													</div>
+												</div>
+											{/each}
+										</div>
+									</div>
+								</div>
+							</div>
+						{/if}
+						{#if nam.length > 0}
+							<div class="accordion-item">
+								<h2 class="accordion-header" id="panelsStayOpen-headingNAM">
+									<button
+										class="accordion-button collapsed"
+										type="button"
+										data-bs-toggle="collapse"
+										data-bs-target="#panelsStayOpen-collapseNAM"
+										aria-expanded="false"
+										aria-controls="panelsStayOpen-collapseNAM"
+									>
+										{$_('page.discharge.calculation.nam')}
+									</button>
+								</h2>
+								<div
+									id="panelsStayOpen-collapseNAM"
+									class="accordion-collapse collapse"
+									aria-labelledby="panelsStayOpen-headingNAM"
+									style=""
+								>
+									<div class="accordion-body">
+										<div class="accordion" id="accordionPanelsNAM">
+											{#each nam as n}
+												<div class="accordion-item">
+													<h1 class="accordion-header" id="panelsStayOpen-NAM{n.id}">
+														<button
+															class="accordion-button collapsed"
+															type="button"
+															data-bs-toggle="collapse"
+															data-bs-target="#panelsStayOpen-collapseNAM{n.id}"
+															aria-expanded="true"
+															aria-controls="panelsStayOpen-collapseNAM{n.id}"
+														>
+															{$_('page.discharge.calculation.szenario')}
+															{#if n.Annuality}
+																({n.Annuality.description})
+															{/if}
+														</button>
+													</h1>
+													<div
+														id="panelsStayOpen-collapseNAM{n.id}"
+														class="collapse"
+														aria-labelledby="panelsStayOpen-NAM{n.id}"
+														style=""
+													>
+														<div class="accordion-body">
+															<form
+																method="post"
+																action="?/updatenam"
+																use:enhance={({ formElement, formData, action, cancel, submitter}) => {
+																	isNAMSaving = true;
+																	return async ({ result, update }) => {
+																		await update({ reset: false });
+																		if (result.type === 'success' && result.data) {
+																			data.project = result.data;
+																		}
+																		isNAMSaving = false;
+																		if (submitter?.id=="calcNAMButton"){
+																			calculateNAM(n.project_id, n.id);
+																		}
+																		else {
+																			toast.push($_('page.discharge.calculation.successfullsave'), {
+																				theme: {
+																					'--toastColor': 'mintcream',
+																					'--toastBackground': 'rgba(72,187,120,0.9)',
+																					'--toastBarBackground': '#2F855A'
+																				}
+																			});
+																		}
+																	};
+																}}
+															>
+																<input type="hidden" name="id" value={n.project_id} />
+																<input type="hidden" name="nam_id" value={n.id} />
+																<div class="row g-2 py-2 align-items-end">
+																	<div class="mb-3 col-md-4">
+																		<label for="x" class="form-label"
+																			>{$_('page.discharge.calculation.returnPeriod')}</label
+																		>
+																		<select
+																			id="x"
+																			name="x"
+																			class="form-select"
+																			value={n.Annuality?.number}
+																		>
+																			{#each returnPeriod as rp}
+																				<option value={rp.id}>
+																					{rp.text}
+																				</option>
+																			{/each}
+																		</select>
+																	</div>
+																	<div class="mb-3 col-md-4">
+																		<label for="precipitation_factor" class="form-label"
+																			>{$_('page.discharge.calculation.namParams.precipitationFactor')}</label
+																		>
+																		<input
+																			type="number"
+																			step="any"
+																			class="form-control"
+																			id="precipitation_factor"
+																			name="precipitation_factor"
+																			value={Number(n.precipitation_factor)}
+																		/>
+																	</div>
+																	<div class="mb-3 col-md-4">
+																		<label for="readiness_to_drain" class="form-label"
+																			>{$_('page.discharge.calculation.namParams.readinessToDrain')}</label
+																		>
+																		<input
+																			type="number"
+																			step="1"
+																			class="form-control"
+																			id="readiness_to_drain"
+																			name="readiness_to_drain"
+																			value={Number(n.readiness_to_drain)}
+																		/>
+																	</div>
+																</div>
+																<div class="row g-2 py-2 align-items-end">
+																	<div class="mb-3 col-md-4">
+																		<label for="water_balance_mode" class="form-label"
+																			>{$_('page.discharge.calculation.namParams.waterBalanceMode')}</label
+																		>
+																		<select
+																			id="water_balance_mode"
+																			name="water_balance_mode"
+																			class="form-select"
+																			value={n.water_balance_mode}
+																		>
+																			<option value="simple">{$_('page.discharge.calculation.namParams.simple')}</option>
+																			<option value="cumulative">{$_('page.discharge.calculation.namParams.advanced')}</option>
+																		</select>
+																	</div>
+																	<div class="mb-3 col-md-4">
+																		<label for="storm_center_mode" class="form-label"
+																			>{$_('page.discharge.calculation.namParams.stormCenterMode')}</label
+																		>
+																		<select
+																			id="storm_center_mode"
+																			name="storm_center_mode"
+																			class="form-select"
+																			value={n.storm_center_mode}
+																		>
+																			<option value="centroid">{$_('page.discharge.calculation.namParams.centroid')}</option>
+																			<option value="discharge_point">{$_('page.discharge.calculation.namParams.dischargePoint')}</option>
+																		</select>
+																	</div>
+																	<div class="mb-3 col-md-4">
+																		<label for="routing_method" class="form-label"
+																			>{$_('page.discharge.calculation.namParams.routingMethod')}</label
+																		>
+																		<select
+																			id="routing_method"
+																			name="routing_method"
+																			class="form-select"
+																			value={n.routing_method}
+																		>
+																			<option value="time_values">{$_('page.discharge.calculation.namParams.timeValues')}</option>
+																			<option value="travel_time">{$_('page.discharge.calculation.namParams.traveltime')}</option>
+																			<option value="isozone">{$_('page.discharge.calculation.namParams.traveltime')}</option>
+																		</select>
+																	</div>
+																</div>
+																<div class="row g-2 py-2 align-items-end">
+																	<div class="mb-3 col-md-12">
+																		{#if soilFileExists}
+																			<div class="mb-3">
+																				<div class="form-check">
+																					<input
+																						class="form-check-input"
+																						type="checkbox"
+																						id="use_own_soil_data"
+																						bind:checked={useOwnSoilData}
+																					/>
+																					<label class="form-check-label" for="use_own_soil_data">
+																						{$_('page.discharge.calculation.namParams.useOwnSoilData')}
+																					</label>
+																				</div>
+																				<div class="form-text">
+																					{$_('page.discharge.calculation.namParams.useOwnSoilDataHelp')}
+																				</div>
+																			</div>
+																		{/if}
+																		
+																		{#if !soilFileExists || useOwnSoilData}
+																			<label for="zip_upload" class="form-label">
+																				{$_('page.discharge.calculation.namParams.uploadZipFile')}
+																			</label>
+																			<input
+																				type="file"
+																				class="form-control"
+																				id="zip_upload"
+																				accept=".zip"
+																				onchange={(e) => {
+																					const target = e.target as HTMLInputElement;
+																					const file = target.files?.[0];
+																					if (file) {
+																						uploadZipFile(n.project_id, file);
+																					}
+																				}}
+																				disabled={isUploading || isCheckingSoilFile}
+																			/>
+																			<div class="form-text">
+																				{$_('page.discharge.calculation.namParams.uploadZipFileHelp')}
+																			</div>
+																		{:else}
+																			<div class="alert alert-info">
+																				<i class="ti ti-info-circle me-2"></i>
+																				{$_('page.discharge.calculation.namParams.soilFileExists')}
+																			</div>
+																		{/if}
+																	</div>
+																</div>
+																<div class="d-flex align-items-center justify-content-between py-1">
+																	<div class="d-flex align-items-center gap-2">
+																		<button
+																			type="submit"
+																			class="btn btn-primary"
+																			disabled={isNAMSaving}
+																		>
+																			{#if isNAMSaving}
+																				<span
+																					class="spinner-border spinner-border-sm me-2"
+																					role="status"
+																					aria-hidden="true"
+																				></span>
+																			{/if}
+																			{$_('page.general.save')}
+																		</button>
+																		<button
+																			type="submit" id="calcNAMButton"
+																			class="btn btn-primary"
+																			disabled={isNAMSaving || !couldCalculate}
+																			>{$_('page.general.calculate')}</button
+																		>
+																	</div>
+																	<div class="d-flex align-items-center gap-2">
+																		<span
+																			class="btn btn-sm btn-icon btn-ghost-danger d-xl-flex"
+																			data-bs-placement="top"
+																			title={$_('page.general.delete')}
+																			aria-label="delete"
+																			data-bs-toggle="modal"
+																			data-bs-target="#delete-nam-modal{n.id}"
+																		>
+																			<i class="ti ti-trash fs-20"></i>
+																		</span>
+																	</div>
+																</div>
+															</form>
+															<!-- Delete Calculation Modal -->
+															<div
+																id="delete-nam-modal{n.id}"
+																class="modal fade"
+																tabindex="-1"
+																role="dialog"
+																aria-labelledby="warning-header-modalLabel"
+																aria-hidden="true"
+															>
+																<div class="modal-dialog">
+																	<div class="modal-content">
+																		<div class="modal-header text-bg-warning border-0">
+																			<h4 class="modal-title" id="warning-header-modalLabel">
+																				{$_('page.discharge.calculation.deleteCalculation')}
+																			</h4>
+																			<button
+																				type="button"
+																				class="btn-close btn-close-white"
+																				data-bs-dismiss="modal"
+																				aria-label="Close"
+																			></button>
+																		</div>
+																		<div class="modal-body">
+																			<p>
+																				{$_('page.discharge.calculation.deleteCalculationQuestion')}
+																			</p>
+																		</div>
+																		<div class="modal-footer">
+																			<button
+																				type="button"
+																				class="btn btn-light"
+																				data-bs-dismiss="modal">{$_('page.general.cancel')}</button
+																			>
+																			<form method="POST" action="?/deleteNAM">
+																				<input type="hidden" name="id" value={n.id} />
 																				<button type="submit" class="btn btn-warning"
 																					>{$_('page.general.delete')}</button
 																				>
@@ -1385,6 +1961,30 @@
 															{/if}
 														</td>
 														<td>{k.ClarkWSL_Result?.Q.toFixed(2)}</td>
+													</tr>
+												{/each}
+											</tbody>
+										</table>
+									{/if}
+									{#if nam.length > 0}
+										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.nam')}</h4>
+
+										<table class="table mb-0">
+											<thead>
+												<tr>
+													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
+												</tr>
+											</thead>
+											<tbody>
+												{#each nam as n}
+													<tr>
+														<td>
+															{#if n.Annuality}
+																{n.Annuality.description}
+															{/if}
+														</td>
+														<td>{n.NAM_Result?.HQ.toFixed(2)}</td>
 													</tr>
 												{/each}
 											</tbody>

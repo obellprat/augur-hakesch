@@ -21,6 +21,7 @@ LOG.info("API is starting up")
 LOG.info(uvicorn.Config.asgi_version)
 
 app = FastAPI(
+    title="AUGUR API",
     version=__version__,
 )
 
@@ -43,6 +44,7 @@ keycloak_config = KeycloakConfiguration(
 excluded_routes = [
     "/docs",
     "/openapi.json",
+    "/api/openapi.json",
     "/data",
     "/version",
 ]

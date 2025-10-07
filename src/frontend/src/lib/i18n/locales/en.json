@@ -4,7 +4,7 @@
       "title": "Dashboard",
       "nav": "Dashboard",
       "welcome": "Welcome to AUGUR",
-      "welcome_text": "Welcome to AUGR",
+      "welcome_text": "Global precipitation and runoff estimates for effective local adaptation to climate change.",
       "precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios",
       "precipitationtool": "Precipitation Tool",
       "precipitation": "Precipitation",
@@ -63,6 +63,27 @@
         "calculationTitle": "- Calculation | AUGUR",
         "clarkwsl": "Clark WSL",
         "clarkwslname": "Clark WSL",
+        "nam": "NAM",
+        "namParams": {
+          "precipitationFactor": "Precipitation factor [-]",
+          "readinessToDrain": "Readiness to drain [mm]",
+          "waterBalanceMode": "Water balance mode",
+          "stormCenterMode": "Storm center mode",
+          "routingMethod": "Routing method",
+          "simple": "Simple",
+          "advanced": "Advanced",
+          "centroid": "Centroid",
+          "random": "Random",
+          "timeValues": "Time values",
+          "kinematicWave": "Kinematic wave",
+          "dischargePoint": "Discharge point",
+          "traveltime": "Pixel-based time calculation",
+          "useOwnSoilData": "Use own soil data",
+          "useOwnSoilDataHelp": "A separate shapefile with the soil types (A, B, C and D) was uploaded.",
+          "uploadZipFile": "Upload ZIP file (shapefiles)",
+          "uploadZipFileHelp": "You can create your own shapefile with the soil types (A, B, C and D) and upload it here as a ZIP file.",
+          "soilFileExists": "There is a separate soil classification system."
+        },
         "generalInput": "General",
         "inputsForPrecipitationIntensity": "Information on the calculation of precipitation intensity",
         "modFliesszeit": "Modified flow time method",
@@ -75,6 +96,12 @@
         "comingSoon": "Coming Soon",
         "globalImplementation": "Global discharge calculation methods are currently under development.",
         "calcerror": "Calculation Error"
+        "missinggeodataTitle": "Missing geodata",
+        "missingGeodata": "The geodata has not yet been calculated. Please calculate the data in the project overview so that the hydrological calculations can be performed.",
+        "zipUploadSuccess": "Upload successful",
+        "zipUploadError": "Error while uploading",
+        "calcerror": "Error",
+        "clarkwslname": "Clark-WSL"
       }
     },
     "precipitation": {
@@ -105,7 +132,52 @@
     },
     "about": {
       "title": "About AUGUR",
-      "text": "AUGUR is cool"
+      "intro": {
+        "heading": "What is AUGUR?",
+        "p1": "AUGUR helps estimate precipitation and river discharge for catchments worldwide to account for climate change.",
+        "p2": "This makes it possible to plan local flood assessments and adaptations to climate change – even when only limited data is available."
+      },
+      "idea": {
+        "heading": "The idea",
+        "p1": "AUGUR combines climate information with hydrological methods and quickly delivers comparable results.",
+        "p2": "Scenarios and methods can be viewed side by side – making sensitivities and uncertainties visible."
+      },
+      "technology": {
+        "heading": "How it works (simple)",
+        "p1": "AUGUR makes established scientific methods accessible in an easy-to-use web application.",
+        "p2": "Observational data and models are combined to estimate precipitation and runoff.",
+        "p3": "In the background, a robust API ensures that calculations can be performed simultaneously.",
+        "list": {
+          "svelte": "SvelteKit interface for maps, charts and projects.",
+          "fastapi": "FastAPI provides the API and authentication (Keycloak).",
+          "prisma": "Prisma handles database access for projects and results.",
+          "celery": "Celery runs hydrologic models as background jobs.",
+          "redis": "Redis coordinates tasks and short‑lived results.",
+          "docker": "Docker Compose runs the stack locally and in the cloud."
+        }
+      },
+      "getting_started": {
+        "heading": "Get started",
+        "p1": "Try the Precipitation tool or create a Discharge project. Adjust inputs and rerun to compare results.",
+        "open_precip": "Open Precipitation",
+        "open_discharge": "Open Discharge"
+      },
+      "credits": {
+        "heading": "Credits & data",
+        "p1": "AUGUR is open source and was launched for global use with the support of the 'Innovation Meets Practice Accelerator' 2022 of the Humanitarian Aid of the Swiss Agency for Development and Cooperation (SDC).",
+        "p2": "With funding from the Canton of Bern, AUGUR was further developed with the methods of HAKESCH and a rainfall-runoff model (NAM) in collaboration with Hunziker, Zarn und Partner (HZP) and Scherrer Hydrologie."
+      }
+    },
+    "login": {
+      "title": "Sign in to AUGUR",
+      "why_heading": "Why do I need an account?",
+      "why_p1": "Signing in lets you save projects, revisit results and keep your data private.",
+      "why_p2": "It also helps us run longer hydrologic calculations reliably in the background.",
+      "free_heading": "Free and easy",
+      "free_p1": "Registration is free. You can delete your projects at any time.",
+      "btn_login": "Sign in",
+      "btn_register": "Create a free account",
+      "privacy_note": "We only use your information to provide this service."
     },
     "general": {
       "close": "Close",
@@ -114,7 +186,8 @@
       "save": "Save",
       "calculate": "Calculate",
       "add": "Add",
-      "start": "Start"
+      "start": "Start",
+      "ok": "OK"
     }
   }
 }

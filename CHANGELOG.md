@@ -1,3 +1,40 @@
+## 0.3.0-beta.0 (2025-09-15)
+
+### Feat
+
+- **api,frontend**: User can upload his own soil type shapefile
+- **api**: Possibility to add custom soil shapefile to calculate cn
+- **frontend**: NAM integration into the frontend
+
+## 0.3.0-alpha.1 (2025-09-11)
+
+### Feat
+
+- **api**: Use the Bodeneignungskarte in Switzerland to generate the curve numbers
+
+### Fix
+
+- **api**: Use a_crit 1000 and not 10000 for generating isozones
+- **api,frontend**: Better error description, when the calculation is not working
+- **api**: Use the correct cumulative length for the calculation and not the maximum length
+
+## 0.3.0-alpha.0 (2025-09-10)
+
+### Feat
+
+- **frontend**: shows a spinner when loading data from database
+
+### Fix
+
+- **frontend**: Calculations cannot be performed if the geodata has not yet been calculated. The user will be informed of this. Fix #41
+- **frontend**: The data for the calculations is saved before the calculations are performed
+- **api**: change cumulative flow length in project-wide calculation
+- **api**: send the Cumulative channel length in km and not in m
+- **Additional-changes-to-Fliesszeitverfahren-and-Kölla**: Calculation corrections
+- **discharge.py**: calculation corrections for koella and clark-wsl
+- **frontend**: after saving calculation-data it was not possible to add other calculations. And fixes the decimal places bug
+- **api,frontend**: Enable to download isozone, catchment and branches as tif and geojson
+
 ## 0.3.0-dev.5 (2025-08-10)
 
 ### Fix

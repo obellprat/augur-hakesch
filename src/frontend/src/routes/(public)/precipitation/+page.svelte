@@ -46,7 +46,7 @@
 	let tilesPeriod = 20;
 	let climateChangePeriod = '2030';
 	let showUncertainty = false;
-	
+
 	// Bottom sheet state
 	let isBottomSheetOpen = false;
 	let isDragging = false;
@@ -67,19 +67,26 @@
 		const L = (await import('leaflet')).default;
 
 		// Configure base tile layer
-		let baseLayer = L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png', {
-			attribution: 'Map tiles by <a href="http://augur.world">AUGUR</a> and &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://www.stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/about/" target="_blank">OpenStreetMap contributors</a>',
-			subdomains: 'abcd',
-			minZoom: 0,
-			maxZoom: 20,
-			opacity: 0.5,
-		});
+		let baseLayer = L.tileLayer(
+			'https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png',
+			{
+				attribution:
+					'Map tiles by <a href="http://augur.world">AUGUR</a> and &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://www.stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/about/" target="_blank">OpenStreetMap contributors</a>',
+				subdomains: 'abcd',
+				minZoom: 0,
+				maxZoom: 20,
+				opacity: 0.5
+			}
+		);
 
 		// Configure AUGUR precipitation layer
-		let augurLayer = L.tileLayer(`https://augur.world/tilesaugur/tiles${tilesPeriod}/{z}/{x}/{y}.png`, {
-			detectRetina: true,
-			opacity: 1,
-		});
+		let augurLayer = L.tileLayer(
+			`https://augur.world/tilesaugur/tiles${tilesPeriod}/{z}/{x}/{y}.png`,
+			{
+				detectRetina: true,
+				opacity: 1
+			}
+		);
 
 		// Create map
 		map = L.map(mapContainer, {
@@ -90,19 +97,19 @@
 			zoomControl: false,
 			maxBounds: [
 				[-50, -Infinity],
-				[50, Infinity],
+				[50, Infinity]
 			],
-			layers: [augurLayer, baseLayer],
+			layers: [augurLayer, baseLayer]
 		});
 
 		// Initialize bottom sheet
 		sheetHeight = bottomSheet.offsetHeight;
-		
+
 		// Add touch event listeners for bottom sheet
 		sheetHandle.addEventListener('touchstart', handleTouchStart);
 		sheetHandle.addEventListener('touchmove', handleTouchMove);
 		sheetHandle.addEventListener('touchend', handleTouchEnd);
-		
+
 		// Add mouse event listeners for desktop
 		sheetHandle.addEventListener('mousedown', handleMouseStart);
 
@@ -176,7 +183,7 @@
 		e.preventDefault();
 		currentY = e.touches[0].clientY;
 		const deltaY = currentY - startY;
-		
+
 		if (deltaY > 0) {
 			// Dragging down - close the sheet
 			const progress = Math.min(deltaY / 100, 1);
@@ -187,7 +194,7 @@
 	function handleTouchEnd(e: TouchEvent) {
 		if (!isDragging) return;
 		isDragging = false;
-		
+
 		const deltaY = currentY - startY;
 		if (deltaY > 50) {
 			// Close the sheet
@@ -203,33 +210,33 @@
 		isDragging = true;
 		startY = e.clientY;
 		currentY = startY;
-		
+
 		const handleMouseMove = (e: MouseEvent) => {
 			if (!isDragging) return;
 			currentY = e.clientY;
 			const deltaY = currentY - startY;
-			
+
 			if (deltaY > 0) {
 				const progress = Math.min(deltaY / 100, 1);
 				bottomSheet.style.transform = `translateY(${progress * 100}%)`;
 			}
 		};
-		
+
 		const handleMouseUp = () => {
 			if (!isDragging) return;
 			isDragging = false;
-			
+
 			const deltaY = currentY - startY;
 			if (deltaY > 50) {
 				isBottomSheetOpen = false;
 			} else {
 				bottomSheet.style.transform = 'translateY(0)';
 			}
-			
+
 			document.removeEventListener('mousemove', handleMouseMove);
 			document.removeEventListener('mouseup', handleMouseUp);
 		};
-		
+
 		document.addEventListener('mousemove', handleMouseMove);
 		document.addEventListener('mouseup', handleMouseUp);
 	}
@@ -258,10 +265,13 @@
 
 			// Add new AUGUR layer with updated period
 			const L = (await import('leaflet')).default;
-			const newAugurLayer = L.tileLayer(`https://augur.world/tilesaugur/tiles${tilesPeriod}/{z}/{x}/{y}.png`, {
-				detectRetina: true,
-				opacity: 1,
-			});
+			const newAugurLayer = L.tileLayer(
+				`https://augur.world/tilesaugur/tiles${tilesPeriod}/{z}/{x}/{y}.png`,
+				{
+					detectRetina: true,
+					opacity: 1
+				}
+			);
 			map.addLayer(newAugurLayer);
 		}
 	}
@@ -270,11 +280,11 @@
 		if (!precipitationData) return;
 
 		const periods = Object.keys(precipitationData.period[climateChangePeriod].years);
-		const presentValues = periods.map((period: string) => 
-			precipitationData.period[climateChangePeriod].years[period].present
+		const presentValues = periods.map(
+			(period: string) => precipitationData.period[climateChangePeriod].years[period].present
 		);
-		const climateChangeValues = periods.map((period: string) => 
-			precipitationData.period[climateChangePeriod].years[period].climate_change
+		const climateChangeValues = periods.map(
+			(period: string) => precipitationData.period[climateChangePeriod].years[period].climate_change
 		);
 
 		const chartOptions: ApexOptions = {
@@ -323,7 +333,7 @@
 			},
 			tooltip: {
 				y: {
-					formatter: function(val: number) {
+					formatter: function (val: number) {
 						return val + ' mm/day';
 					}
 				}
@@ -378,12 +388,12 @@
 				`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`
 			);
 			const results = await response.json();
-			
+
 			if (results.length > 0) {
 				const location = results[0];
 				const lat = parseFloat(location.lat);
 				const lng = parseFloat(location.lon);
-				
+
 				map.setView([lat, lng], 6);
 				selectedLocation = { lat, lng };
 				await fetchPrecipitationData(lat, lng);
@@ -405,7 +415,7 @@
 		if (!selectedLocation) return;
 
 		const url = `${window.location.origin}/precipitation?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}`;
-		
+
 		if (navigator.share) {
 			navigator.share({
 				title: 'AUGUR Precipitation Data',
@@ -432,99 +442,104 @@
 </svelte:head>
 
 <div class="precipitation-page">
-						<!-- Top Search Bar with Location Button and Period Selector -->
-						<div class="top-search-container">
-							<div class="search-card">
-								<input type="text" placeholder="Find a place..." bind:this={searchInput} />
-								<svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
-									<path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-								</svg>
-								<button type="button" class="location-btn" id="getLocation">
-									<svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-										<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-									</svg>
-								</button>
-								<div class="period-selector">
-									<label class="control-card">
-										<span>Return Period</span>
-										<select bind:this={periodSelect}>
-											<option value="10">10</option>
-											<option value="20" selected>20</option>
-											<option value="30">30</option>
-											<option value="50">50</option>
-											<option value="100">100</option>
-										</select>
-									</label>
-								</div>
-							</div>
-						</div>
+	<!-- Top Search Bar with Location Button and Period Selector -->
+	<div class="top-search-container">
+		<div class="search-card">
+			<input type="text" placeholder="Find a place..." bind:this={searchInput} />
+			<svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+				<path
+					d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+				/>
+			</svg>
+			<button type="button" class="location-btn" id="getLocation">
+				<svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+					<path
+						d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+					/>
+				</svg>
+			</button>
+			<div class="period-selector">
+				<label class="control-card">
+					<span>Return Period</span>
+					<select bind:this={periodSelect}>
+						<option value="10">10</option>
+						<option value="20" selected>20</option>
+						<option value="30">30</option>
+						<option value="50">50</option>
+						<option value="100">100</option>
+					</select>
+				</label>
+			</div>
+		</div>
+	</div>
 
-						<!-- Map Container -->
-						<div class="map-container" bind:this={mapContainer}>
-						</div>
+	<!-- Map Container -->
+	<div class="map-container" bind:this={mapContainer}></div>
 
-						<!-- Bottom Sheet -->
-						<div class="bottom-sheet" class:open={isBottomSheetOpen} bind:this={bottomSheet}>
-							<div class="sheet-handle" bind:this={sheetHandle}></div>
-							<div class="sheet-content">
-								<!-- Topic Section -->
-								<div class="topic-section">
-									<h3>Precipitation</h3>
-									<p class="description">Expected daily maximum precipitation.</p>
-								</div>
+	<!-- Bottom Sheet -->
+	<div class="bottom-sheet" class:open={isBottomSheetOpen} bind:this={bottomSheet}>
+		<div class="sheet-handle" bind:this={sheetHandle}></div>
+		<div class="sheet-content">
+			<!-- Topic Section -->
+			<div class="topic-section">
+				<h3>Precipitation</h3>
+				<p class="description">Expected daily maximum precipitation.</p>
+			</div>
 
-								<!-- Graph Section -->
-								<div class="graph-section">
-									{#if precipitationChart}
-										<div use:renderChart={precipitationChart}></div>
-									{/if}
-									{#if isLoading}
-										<div class="loading-spinner">
-											<div class="spinner"></div>
-										</div>
-									{/if}
-								</div>
+			<!-- Graph Section -->
+			<div class="graph-section">
+				{#if precipitationChart}
+					<div use:renderChart={precipitationChart}></div>
+				{/if}
+				{#if isLoading}
+					<div class="loading-spinner">
+						<div class="spinner"></div>
+					</div>
+				{/if}
+			</div>
 
-								<!-- Settings Section -->
-								<div class="settings-section">
-									<div class="setting-item">
-										<label>
-											<span>Climate Change Period</span>
-											<select bind:this={climatePeriodSelect}>
-												<option value="2030">2030</option>
-												<option value="2050">2050</option>
-												<option value="2090">2090</option>
-											</select>
-										</label>
-									</div>
+			<!-- Settings Section -->
+			<div class="settings-section">
+				<div class="setting-item">
+					<label>
+						<span>Climate Change Period</span>
+						<select bind:this={climatePeriodSelect}>
+							<option value="2030">2030</option>
+							<option value="2050">2050</option>
+							<option value="2090">2090</option>
+						</select>
+					</label>
+				</div>
 
-									<div class="setting-item">
-										<label>
-											<input type="checkbox" bind:this={uncertaintyCheckbox} />
-											<span>Show Uncertainty Range</span>
-										</label>
-									</div>
-								</div>
+				<div class="setting-item">
+					<label>
+						<input type="checkbox" bind:this={uncertaintyCheckbox} />
+						<span>Show Uncertainty Range</span>
+					</label>
+				</div>
+			</div>
 
-								<!-- Actions Section -->
-								<div class="actions-section">
-									<button type="button" class="action-button" on:click={downloadData}>
-										<svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-											<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-										</svg>
-										<span>Download</span>
-									</button>
+			<!-- Actions Section -->
+			<div class="actions-section">
+				<button type="button" class="action-button" on:click={downloadData}>
+					<svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+					</svg>
+					<span>Download</span>
+				</button>
 
-									<button type="button" class="action-button share-button" on:click={shareLocation}>
-										<svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-											<path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
-										</svg>
-										<span>Share</span>
-										<div class="tooltip">Copied!</div>
-									</button>
-								</div>
-							</div>
-						</div>
+				<button type="button" class="action-button share-button" on:click={shareLocation}>
+					<svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+						<path
+							d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"
+						/>
+					</svg>
+					<span>Share</span>
+					<div class="tooltip">Copied!</div>
+				</button>
+			</div>
+		</div>
+	</div>
 </div>
 
 <style lang="scss">
@@ -533,7 +548,9 @@
 		width: 100%;
 		padding-left: 24px;
 		padding-right: 24px;
-		height: calc(100vh - 65px - 80px - 40px); /* Subtract topbar (65px), footer (~80px), and extra 40px */
+		height: calc(
+			100vh - 65px - 80px - 40px
+		); /* Subtract topbar (65px), footer (~80px), and extra 40px */
 		overflow: hidden;
 	}
 
@@ -659,7 +676,7 @@
 			.icon {
 				width: 20px;
 				height: 20px;
-				color: #3B82F6;
+				color: #3b82f6;
 			}
 		}
 
@@ -763,8 +780,6 @@
 		overflow-y: auto;
 	}
 
-
-
 	.topic-section {
 		margin-bottom: 20px;
 
@@ -805,8 +820,12 @@
 	}
 
 	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
 	}
 
 	.settings-section {
@@ -839,7 +858,7 @@
 					}
 				}
 
-				input[type="checkbox"] {
+				input[type='checkbox'] {
 					margin-right: 8px;
 				}
 			}
@@ -968,7 +987,9 @@
 		.precipitation-page {
 			padding-left: 12px;
 			padding-right: 12px;
-			height: calc(100vh - 65px - 60px - 40px); /* Topbar (65px) + smaller footer (60px) + extra 40px */
+			height: calc(
+				100vh - 65px - 60px - 40px
+			); /* Topbar (65px) + smaller footer (60px) + extra 40px */
 		}
 
 		.map-controls {
@@ -1043,7 +1064,9 @@
 		.precipitation-page {
 			padding-left: 4px;
 			padding-right: 4px;
-			height: calc(100vh - 65px - 50px - 40px); /* Topbar (65px) + even smaller footer (50px) + extra 40px */
+			height: calc(
+				100vh - 65px - 50px - 40px
+			); /* Topbar (65px) + even smaller footer (50px) + extra 40px */
 		}
 
 		.map-controls {
@@ -1091,4 +1114,3 @@
 		}
 	}
 </style>
-    

@@ -4,6 +4,7 @@ import gc
 from rio_cogeo.cogeo import cog_translate
 from rio_cogeo.profiles import cog_profiles
 from rasterio.io import MemoryFile
+import rasterio
 from pysheds.view import Raster,View
 from scipy.ndimage import gaussian_filter
 import geopandas as gpd
@@ -16,7 +17,6 @@ import fiona
 import json
 from fiona.crs import CRS
 from shapely.geometry import shape
-
 
 
 from calculations.calculations import app
@@ -87,6 +87,9 @@ def modifizierte_fliesszeit(self,
     else:
         raise ValueError("Return period x must be 2.3, 20 or 100.")
 
+    # Always Vo20 is used in HAKESCH
+    Vox = Vo20
+    
     # 2. Flow time according to Kirpich
     J = delta_H / L
     TFl = 0.0195 * (L ** 0.77) * (J ** -0.385)
@@ -183,8 +186,9 @@ def koella(self,
     max_iter=1000            # Max. iterations
 ):
     intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
+
     # Effective contributing area in km²
-    FLeff = 0.12 * (Lg ** 0.17)  
+    FLeff = 0.12 * (Lg ** 1.07)  
 
     if x == 2.3:
         Vox = 0.5 * Vo20
@@ -198,7 +202,34 @@ def koella(self,
     else:
         raise ValueError("Invalid recurrence interval (x)")
 
-    TFl_h = FLeff ** 0.2
+    # Correction according to recurrence interval
+    
+    def get_kF_values(Vo20):
+        # Table mapping Vo20 to kF2.33 and kF100
+        table = {
+            20: (0.9, 1.1),
+            25: (0.8, 1.15),
+            30: (0.75, 1.2),
+            35: (0.7, 1.25),
+            40: (0.65, 1.3),
+            45: (0.6, 1.3)
+        }
+        # Find closest Vo20 in table if not exact
+        keys = sorted(table.keys())
+        closest = min(keys, key=lambda k: abs(k - Vo20))
+        return table[closest]
+
+    kF2_33, kF100 = get_kF_values(Vo20)
+
+    # Compute HQ depending on recurrence interval period
+    if x == 2.3:
+        kF = kF2_33
+    elif x == 100:
+        kF = kF100 
+    elif x == 20:
+        kF = 1.0
+
+    TFl_h = (FLeff * kF) ** 0.2 
     TFl = TFl_h * 60  # min
     kGang = 1 # Initial value for hydrograph correction factor
 
@@ -225,7 +256,7 @@ def koella(self,
         else:
             kGang = 1.2
     elif Tc <= 180:
-        TRx = Tc / 60  # Rain duration in hours (stimmt das?)
+        TRx = Tc / 60  # Rain duration in hours 
         if E > 1:
             kGang = 1 + (3 - TRx) / 2 * (10 - E) / 9 * 0.2
         else:
@@ -234,43 +265,21 @@ def koella(self,
     i_final = intensity_fn(rp_years = x, duration_minutes = Tc) 
     if snow_melt:
         i_final += rs
-    i_corrected = max(i_final - f, 0)
+
+    #i_corrected = max(i_final - f, 0)
 
     QGle = 0.5 * glacier_area
 
-    # Correction according to recurrence interval
-    
-    def get_kF_values(Vo20):
-        # Table mapping Vo20 to kF2.33 and kF100
-        table = {
-            20: (0.9, 1.1),
-            25: (0.8, 1.15),
-            30: (0.75, 1.2),
-            35: (0.7, 1.25),
-            40: (0.65, 1.3),
-            45: (0.6, 1.3)
-        }
-        # Find closest Vo20 in table if not exact
-        keys = sorted(table.keys())
-        closest = min(keys, key=lambda k: abs(k - Vo20))
-        return table[closest]
+    precipitation_correction = 0.1 * Vox 
+    i_corrected = max(i_final - precipitation_correction,0)
 
-    kF2_33, kF100 = get_kF_values(Vo20)
+    # 1/3.6 factor for conversion from mm/h to m³/s
+    i_corrected_units = i_corrected / 3.6 
+    HQ = FLeff * kF * i_corrected_units * kGang + QGle
 
-    # Compute HQ depending on recurrence  intervalperiod
-    if x == 2.3:
-        kF = kF2_33
-    elif x == 100:
-        kF = kF100
-    elif x == 20:
-        kF = 1.0
-
-    HQ = FLeff * kF * (i_corrected - 0.1 * Vox) * kGang + QGle
     prisma = Prisma()
     prisma.connect()
-
-    
-    
+   
     updatedResults = prisma.koella.update(
         where = {
             'id' : koella_id
@@ -355,10 +364,8 @@ def clark_wsl_modified(self,
             continue
 
         zone_area = np.sum(zone_mask) * pixel_area_m2  # m²
-
-        for item in fractions:
-            pct = item["pct"]
-            typ = item["typ"]
+                
+        for typ, pct in fractions.items():
             if pd.isna(pct) or pct == 0:
                 continue
             frac = pct / 100
@@ -418,6 +425,7 @@ def clark_wsl_modified(self,
 
             Q_step = P_step * area / 1000 / 60 / dt # [m³/s]
             WSV_weighted_sum += WSV60min * area
+            WSV_corr_weighted_sum = WSVcorr * area
             W_iso[0][z] += Q_step
 
     # Clark W(t) by time step
@@ -429,6 +437,8 @@ def clark_wsl_modified(self,
 
     # Linear reservoir
     WSV_mean = WSV_weighted_sum / total_area
+    WSV_corr_mean = WSV_corr_weighted_sum / total_area
+
     K = 2.25 * WSV_mean - 18.5  # in minutes
     K_sec = K * 60 
 
@@ -535,7 +545,7 @@ def construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_h
 # idf_fn = construct_idf_curve(25, 50, 60, 120, 2.33, 100)
 
 @app.task(name="prepare_discharge_hydroparameters", bind=True)
-def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 10000, v_gerinne = 1.5):
+def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 1000, v_gerinne = 1.5):
     # Definitions
     cell_size = 5
 
@@ -675,6 +685,13 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     dist = dist * cell_size
     dist[dist == np.inf] = -1000000
     dist[dist <= 0] = -1000000
+    
+    # Save raw time values before discretization
+    raw_time_values = dist.copy()
+    raw_time_values[raw_time_values == -1000000] = np.nan
+    raw_time_values = (raw_time_values)/(v_gerinne * 60 * 100)
+    
+    # Discretize into time classes for isozones
     dist = np.floor(((dist)/(v_gerinne * 60 * 100)) / 10) + 1  # strecke / geschwindigkeit * 60(-> für m/min) * 100 (hindernislayer) / 10 (-> 10 Minuten klassen) +1 da wir bei Klasse 1 starten
 
     dist[dist<=0] = None
@@ -736,6 +753,36 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
                 use_cog_driver=True,
                 in_memory=False
             )
+
+    # Save raw time values as TIF
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Writing time values file', 'progress' : 91})
+    
+    # Create raw time values raster
+    raw_time_raster = Raster(raw_time_values, viewfinder=grid2.viewfinder)
+    
+    # Define the output filename for raw time values
+    raw_time_filename = f"data/{userId}/{projectId}/time_values.tif"
+    
+    # Profile for raw time values (float data type)
+    raw_time_profile = default_profile.copy()
+    raw_time_profile_updates = {
+        'crs' : raw_time_raster.crs.srs,
+        'transform' : raw_time_raster.affine,
+        'dtype' : 'float32',
+        'nodata' : np.nan,
+        'height' : height,
+        'width' : width
+    }
+    raw_time_profile.update(raw_time_profile_updates)
+    
+    with MemoryFile() as memfile:
+        with memfile.open(**raw_time_profile) as mem:
+            mem.write(np.asarray(raw_time_raster), 1)
+            
+            # Save as regular GeoTIFF (not COG for raw values)
+            with rasterio.open(raw_time_filename, 'w', **raw_time_profile) as dst:
+                dst.write(np.asarray(raw_time_raster), 1)
 
     self.update_state(state='PROGRESS',
                 meta={'text': 'Polygonize catchment', 'progress' : 92})
