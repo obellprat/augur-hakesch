@@ -12,7 +12,7 @@ ENV PYTHONUNBUFFERED 1
 RUN pip install --upgrade pip
 RUN apt-get update && \
 apt-get upgrade -y && \
-apt-get install -y git
+apt-get install -y git build-essential
 COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 
