@@ -4,7 +4,7 @@
       "title": "Dashboard",
       "nav": "Dashboard",
       "welcome": "Welcome to AUGUR",
-      "welcome_text": "Welcome to AUGR",
+      "welcome_text": "Global precipitation and runoff estimates for effective local adaptation to climate change.",
       "precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios",
       "precipitationtool": "Precipitation Tool",
       "precipitation": "Precipitation",
@@ -126,17 +126,19 @@
       "title": "About AUGUR",
       "intro": {
         "heading": "What is AUGUR?",
-        "p1": "AUGUR helps estimate precipitation and river discharge for catchments worldwide.",
-        "p2": "It brings science-based methods into an easy web app for planners, educators and curious users."
+        "p1": "AUGUR helps estimate precipitation and river discharge for catchments worldwide to account for climate change.",
+        "p2": "This makes it possible to plan local flood assessments and adaptations to climate change – even when only limited data is available."
       },
       "idea": {
         "heading": "The idea",
-        "p1": "Start with a location and a few inputs. AUGUR combines climate information with hydrologic methods to deliver quick, comparable results.",
-        "p2": "Explore scenarios and methods side by side to understand sensitivity and uncertainty."
+        "p1": "AUGUR combines climate information with hydrological methods and quickly delivers comparable results.",
+        "p2": "Scenarios and methods can be viewed side by side – making sensitivities and uncertainties visible."
       },
       "technology": {
         "heading": "How it works (simple)",
-        "p1": "Behind the scenes, AUGUR has a modern web UI and a robust API. Calculations run in the background so longer tasks don’t block the page.",
+        "p1": "AUGUR makes established scientific methods accessible in an easy-to-use web application.",
+        "p2": "Observational data and models are combined to estimate precipitation and runoff.",
+        "p3": "In the background, a robust API ensures that calculations can be performed simultaneously.",
         "list": {
           "svelte": "SvelteKit interface for maps, charts and projects.",
           "fastapi": "FastAPI provides the API and authentication (Keycloak).",
@@ -154,7 +156,8 @@
       },
       "credits": {
         "heading": "Credits & data",
-        "p1": "AUGUR implements methods such as the modified flow time method, Kölla and Clark‑WSL, and uses climatological datasets from official sources. Results are indicative and do not replace professional studies."
+        "p1": "AUGUR is open source and was launched for global use with the support of the 'Innovation Meets Practice Accelerator' 2022 of the Humanitarian Aid of the Swiss Agency for Development and Cooperation (SDC).",
+        "p2": "With funding from the Canton of Bern, AUGUR was further developed with the methods of HAKESCH and a rainfall-runoff model (NAM) in collaboration with Hunziker, Zarn und Partner (HZP) and Scherrer Hydrologie."
       }
     },
     "login": {

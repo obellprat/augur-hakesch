@@ -19,6 +19,12 @@
 </script>
 
 <svelte:head>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+	<style>
+		html, body, :root {
+			font-family: 'Inter', sans-serif !important;
+		}
+	</style>
 	<script src="{base}/assets/vendor/jquery/jquery.min.js"></script>
 	<script src="{base}/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 </svelte:head>
