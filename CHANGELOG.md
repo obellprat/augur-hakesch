@@ -1,3 +1,20 @@
+## 0.3.1-dev.1 (2025-10-21)
+
+### Feat
+
+- **darkmode-images**: Add functionality to show different images in dark mode as well as the logos
+
+### Fix
+
+- **frontend**: same height for all card-img-top
+- **frontend**: fixes bugs in adding new calculations after saving
+
+### Refactor
+
+- **frontend**: Set and hide standard NAM parameters
+- **frontend**: hide donation box
+- **api,frontend**: small changes in spinner, translation and docker
+
 ## 0.3.0-beta.0 (2025-09-15)
 
 ### Feat
