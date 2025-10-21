@@ -340,7 +340,7 @@ export const actions = {
 		if (!id) {
 			return fail(400, { message: 'Missing required fields' });
 		}
-		// First, find the Annuality record by number to get its id
+		
 		const annuality = await prisma.Annualities.findUnique({
 			where: {
 				number: Number(x) || 0
@@ -352,7 +352,7 @@ export const actions = {
 		}
 
 		// Validate that the mode values exist in their respective tables
-		const validWaterBalanceMode = water_balance_mode || "simple";
+		const validWaterBalanceMode = water_balance_mode || "cumulative";
 		const validStormCenterMode = storm_center_mode || "centroid";
 		const validRoutingMethod = routing_method || "time_values";
 
@@ -378,25 +378,69 @@ export const actions = {
 				id: Number(nam_id) || 0
 			},
 			update: {
-				x: annuality.id,
-				precipitation_factor: Number(precipitation_factor) || 1.0,
+				Annuality: {
+					connect: {
+						id: annuality.id
+					}
+				},
+				precipitation_factor: Number(precipitation_factor) || 0,
 				readiness_to_drain: Number(readiness_to_drain) || 0,
-				water_balance_mode: validWaterBalanceMode,
-				storm_center_mode: validStormCenterMode,
-				routing_method: validRoutingMethod
+				WaterBalanceMode: {
+					connect: {
+						mode: validWaterBalanceMode
+					}
+				},
+				StormCenterMode: {
+					connect: {
+						mode: validStormCenterMode
+					}
+				},
+				RoutingMethod: {
+					connect: {
+						method: validRoutingMethod
+					}
+				}
 			},
 			create: {
-				x: annuality.id,
-				precipitation_factor: Number(precipitation_factor) || 1.0,
+				Annuality: {
+					connect: {
+						number: Number(x) || 0
+					}
+				},
+				precipitation_factor: Number(precipitation_factor) || 0,
 				readiness_to_drain: Number(readiness_to_drain) || 0,
-				water_balance_mode: validWaterBalanceMode,
-				storm_center_mode: validStormCenterMode,
-				routing_method: validRoutingMethod,
-				project_id: id
+				WaterBalanceMode: {
+					connect: {
+						mode: validWaterBalanceMode
+					}
+				},
+				StormCenterMode: {
+					connect: {
+						mode: validStormCenterMode
+					}
+				},
+				RoutingMethod: {
+					connect: {
+						method: validRoutingMethod
+					}
+				},
+				Project: {
+					connect: {
+						id: id
+					}
+				}
 			}
 		});
-		const project = await prisma.project.findUnique({
+		
+		const project = await prisma.project.update({
 			where: { id: id! },
+			data: {
+				NAM: {
+					connect: {
+						id: newnam.id
+					}
+				}
+			},
 			include: {
 				Point: true,
 				IDF_Parameters: true,

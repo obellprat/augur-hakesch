@@ -300,7 +300,12 @@
 			// add NAM
 			const newnam = {
 				id: 0,
-				project_id: data.project.id
+				project_id: data.project.id,
+				precipitation_factor: 0.7,
+				readiness_to_drain: 1,
+				water_balance_mode: 'cumulative',
+				storm_center_mode: 'centroid',
+				routing_method: 'time_values'
 			};
 			nam.push(newnam);
 		}
@@ -1613,7 +1618,7 @@
 																			{/each}
 																		</select>
 																	</div>
-																	<div class="mb-3 col-md-4">
+																	<div class="mb-3 col-md-4" style="display:none;">
 																		<label for="precipitation_factor" class="form-label"
 																			>{$_('page.discharge.calculation.namParams.precipitationFactor')}</label
 																		>
@@ -1626,7 +1631,7 @@
 																			value={Number(n.precipitation_factor)}
 																		/>
 																	</div>
-																	<div class="mb-3 col-md-4">
+																	<div class="mb-3 col-md-4" style="display:none;">
 																		<label for="readiness_to_drain" class="form-label"
 																			>{$_('page.discharge.calculation.namParams.readinessToDrain')}</label
 																		>
@@ -1640,7 +1645,7 @@
 																		/>
 																	</div>
 																</div>
-																<div class="row g-2 py-2 align-items-end">
+																<div class="row g-2 py-2 align-items-end" style="display:none;">
 																	<div class="mb-3 col-md-4">
 																		<label for="water_balance_mode" class="form-label"
 																			>{$_('page.discharge.calculation.namParams.waterBalanceMode')}</label
@@ -1655,7 +1660,7 @@
 																			<option value="cumulative">{$_('page.discharge.calculation.namParams.advanced')}</option>
 																		</select>
 																	</div>
-																	<div class="mb-3 col-md-4">
+																	<div class="mb-3 col-md-4" style="display:none;">
 																		<label for="storm_center_mode" class="form-label"
 																			>{$_('page.discharge.calculation.namParams.stormCenterMode')}</label
 																		>
@@ -1669,7 +1674,7 @@
 																			<option value="discharge_point">{$_('page.discharge.calculation.namParams.dischargePoint')}</option>
 																		</select>
 																	</div>
-																	<div class="mb-3 col-md-4">
+																	<div class="mb-3 col-md-4" style="display:none;">
 																		<label for="routing_method" class="form-label"
 																			>{$_('page.discharge.calculation.namParams.routingMethod')}</label
 																		>
