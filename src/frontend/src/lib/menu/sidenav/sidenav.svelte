@@ -59,11 +59,13 @@
 		</ul>
 
 		<!-- dDonate Box -->
+		<!--
 		<div class="help-box text-center">
 			<h5 class="fw-semibold fs-16">{$_('page.nav.donate')}</h5>
 			<p class="mb-3 text-muted">{$_('page.nav.helpSupportUs')}</p>
 			<a href="javascript: void(0);" class="btn btn-danger btn-sm">{$_('page.nav.donateNow')}</a>
 		</div>
+		-->
 
 		<div class="clearfix"></div>
 		<div class="help-box mt-1">
