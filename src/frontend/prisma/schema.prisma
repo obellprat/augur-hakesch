@@ -77,7 +77,7 @@ model Mod_Fliesszeit {
   tol                      Int                    @default(5)
   max_iter                 Int                    @default(1000)
   project_id               String
-  Project                  Project                @relation(fields: [project_id], references: [id])
+  Project                  Project                @relation(fields: [project_id], references: [id], onDelete: Cascade)
   mod_fliesszeit_result_id Int?                   @unique
   Mod_Fliesszeit_Result    Mod_Fliesszeit_Result? @relation(fields: [mod_fliesszeit_result_id], references: [id], onDelete: Cascade)
 }
@@ -104,7 +104,7 @@ model Koella {
   istep                    Int                    @default(5)
   max_iter                 Int                    @default(1000)
   project_id               String
-  Project                  Project                @relation(fields: [project_id], references: [id])
+  Project                  Project                @relation(fields: [project_id], references: [id], onDelete: Cascade)
   koella_result_id         Int?                   @unique
   Koella_Result            Koella_Result? @relation(fields: [koella_result_id], references: [id], onDelete: Cascade)
 }
@@ -130,7 +130,7 @@ model ClarkWSL {
   pixel_area_m2            Int                    @default(25)
   Fractions                Fractions[]
   project_id               String
-  Project                  Project                @relation(fields: [project_id], references: [id])
+  Project                  Project                @relation(fields: [project_id], references: [id], onDelete: Cascade)
   clarkwsl_result_id       Int?                   @unique
   ClarkWSL_Result          ClarkWSL_Result? @relation(fields: [clarkwsl_result_id], references: [id], onDelete: Cascade)
 }
@@ -141,7 +141,7 @@ model Fractions {
   ZoneParameter            ZoneParameter @relation(fields: [ZoneParameterTyp], references: [typ])
   pct                      Float
   clarkwsl_id              Int 
-  ClarkWSL                 ClarkWSL @relation(fields: [clarkwsl_id], references: [id])
+  ClarkWSL                 ClarkWSL @relation(fields: [clarkwsl_id], references: [id], onDelete: Cascade)
 }
 
 model ZoneParameter {
@@ -166,8 +166,8 @@ model NAM {
   id                       Int                    @id @default(autoincrement())
   x                        Int
   Annuality                Annualities            @relation(fields: [x], references: [id])
-  precipitation_factor     Float                  @default(1.0)
-  water_balance_mode       String                 @default("simple")
+  precipitation_factor     Float                  @default(0.7)
+  water_balance_mode       String                 @default("cumulative")
   WaterBalanceMode         WaterBalanceMode       @relation(fields: [water_balance_mode], references: [mode])
   storm_center_mode        String                 @default("centroid")
   StormCenterMode          StormCenterMode        @relation(fields: [storm_center_mode], references: [mode])
@@ -176,7 +176,7 @@ model NAM {
   readiness_to_drain       Int                    @default(0)
   use_own_soil_data        Boolean                @default(false)
   project_id               String
-  Project                  Project                @relation(fields: [project_id], references: [id])
+  Project                  Project                @relation(fields: [project_id], references: [id], onDelete: Cascade)
   nam_result_id            Int?                   @unique
   NAM_Result               NAM_Result? @relation(fields: [nam_result_id], references: [id], onDelete: Cascade)
 }

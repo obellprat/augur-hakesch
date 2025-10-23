@@ -329,9 +329,24 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
             except Exception as e:
                 print(f"Warning: Could not convert discharge point coordinates: {e}")
                 discharge_point = None
-        task = extract_dem.apply(args=[project.id, user.id])
-        task = get_curve_numbers.apply(args=[project.id, user.id, "bek", nam_obj.use_own_soil_data])
+        
+        # Execute extract_dem and check for success
+        dem_result = extract_dem.apply(args=[project.id, user.id])
+        if dem_result.failed():
+            raise HTTPException(
+                status_code=500,
+                detail=f"DEM extraction failed: {dem_result.result}"
+            )
+        
+        # Execute get_curve_numbers and check for success
+        curve_numbers_result = get_curve_numbers.apply(args=[project.id, user.id, "bek", nam_obj.use_own_soil_data])
+        if curve_numbers_result.failed():
+            raise HTTPException(
+                status_code=500,
+                detail=f"Curve numbers calculation failed: {curve_numbers_result.result}"
+            )
 
+        # Only proceed with NAM calculation if both prerequisites succeeded
         task = nam.delay(
             P_low_1h=project.IDF_Parameters.P_low_1h,
             P_high_1h=project.IDF_Parameters.P_high_1h,
@@ -359,11 +374,11 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
 
     except Exception as e:
         # Handle missing user scenario
+        err = type(e).__name__
+        message = str(e)
         raise HTTPException(
-            err = type(e).__name__,
-            message = e.message,
             status_code=404,
-            detail="Unable to retrieve project: " + err + " " + message,
+            detail=f"Unable to retrieve project: {err} - {message}",
         )
 
 @router.get("/get_curve_numbers")
