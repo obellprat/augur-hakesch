@@ -1,3 +1,13 @@
+## 0.4.0-dev.1 (2025-10-23)
+
+### Feat
+
+- **frontend**: Combine annualities and init hydrological processes
+
+### Fix
+
+- **frontend**: welcome text change
+
 ## 0.3.1-dev.1 (2025-10-21)
 
 ### Feat
