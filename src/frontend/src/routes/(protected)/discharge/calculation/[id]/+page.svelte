@@ -99,6 +99,308 @@
 		options: chartOneOptions
 	};
 
+	// Function to create multi-annuality discharge chart options
+	function getMultiAnnualityDischargeChartOptions(namResults: any[], scenarioIndex: number): Chart {
+		if (!namResults || namResults.length === 0) {
+			return {
+				options: {
+					series: [],
+					chart: { type: 'line', height: 200 },
+					xaxis: { categories: [] },
+					yaxis: { title: { text: $_('page.discharge.calculation.chart.dischargeUnit') } }
+				}
+			};
+		}
+
+		try {
+			const series = [];
+			const colors = ['#1376ef', '#4a90e2', '#7bb3f0']; // Different shades of blue
+			let dischargeDataArray = [];
+			let globalStartIndex = Infinity;
+			let globalEndIndex = 0;
+			
+			// First pass: collect all data and find the actual data range
+			for (let i = 0; i < namResults.length; i++) {
+				const nam = namResults[i];
+				if (nam.NAM_Result?.HQ_time) {
+					const dischargeData = JSON.parse(nam.NAM_Result.HQ_time);
+					dischargeDataArray.push(dischargeData);
+					
+					// Find the actual data range for this series
+					let startIndex = 0;
+					let endIndex = dischargeData.length;
+					
+					// Find first non-zero value
+					for (let j = 0; j < dischargeData.length; j++) {
+						if (dischargeData[j] > 0) {
+							startIndex = Math.max(0, j - 1);
+							break;
+						}
+					}
+					
+					// Find last non-zero value
+					for (let j = dischargeData.length - 1; j >= 0; j--) {
+						if (dischargeData[j] > 0) {
+							endIndex = Math.min(dischargeData.length, j + 2);
+							break;
+						}
+					}
+					
+					// Update global range
+					globalStartIndex = Math.min(globalStartIndex, startIndex);
+					globalEndIndex = Math.max(globalEndIndex, endIndex);
+				}
+			}
+			
+			// Create time scale only for the actual data range
+			const dataLength = globalEndIndex - globalStartIndex;
+			const timeSteps = Array.from({length: dataLength}, (_, index) => (globalStartIndex + index) * 10);
+			
+			// Process each annuality
+			for (let i = 0; i < namResults.length; i++) {
+				const nam = namResults[i];
+				if (nam.NAM_Result?.HQ_time) {
+					const dischargeData = dischargeDataArray[i];
+					
+					// Extract only the relevant data range
+					const filteredData = dischargeData.slice(globalStartIndex, globalEndIndex);
+					
+					series.push({
+						name: nam.Annuality?.description || `Annuality ${i + 1}`,
+						data: filteredData,
+						color: colors[i % colors.length]
+					});
+				}
+			}
+			
+			// Calculate overall data range for better scaling
+			const allSeriesData = series.flatMap((s: any) => s.data);
+			const maxDischarge = Math.max(...allSeriesData);
+			const minDischarge = Math.min(...allSeriesData);
+			
+			return {
+				options: {
+					series: series,
+					chart: {
+						type: 'line',
+						height: 200,
+						toolbar: {
+							show: false
+						},
+						zoom: {
+							enabled: true,
+							type: 'x',
+							autoScaleYaxis: true
+						}
+					},
+					stroke: {
+						curve: 'smooth',
+						width: 2
+					},
+					xaxis: {
+						categories: timeSteps,
+						title: {
+							text: $_('page.discharge.calculation.chart.timeUnit')
+						},
+						labels: {
+							formatter: function(value: string) {
+								return parseInt(value).toString();
+							}
+						}
+					},
+					yaxis: {
+						title: {
+							text: $_('page.discharge.calculation.chart.dischargeUnit')
+						},
+						min: Math.max(0, minDischarge * 0.9),
+						max: maxDischarge * 1.1,
+						labels: {
+							formatter: function (val: number) {
+								return val.toFixed(2);
+							}
+						}
+					},
+					tooltip: {
+						y: {
+							formatter: function (val: number) {
+								return val.toFixed(2) + ' ' + $_('page.discharge.calculation.chart.dischargeTooltip');
+							}
+						},
+						x: {
+							formatter: function (val: number, opts: any) {
+								// Get the actual time value from the categories array
+								const timeValue = timeSteps[opts.dataPointIndex];
+								return timeValue + ' min';
+							}
+						}
+					},
+					
+					grid: {
+						show: true,
+						borderColor: '#e0e0e0'
+					},
+					dataLabels: {
+						enabled: false
+					},
+					legend: {
+						show: true,
+						position: 'top',
+						horizontalAlign: 'right'
+					}
+				}
+			};
+		} catch (error) {
+			console.error('Error parsing multi-annuality HQ_time data:', error);
+			return {
+				options: {
+					series: [],
+					chart: { type: 'line', height: 200 },
+					xaxis: { categories: [] },
+					yaxis: { title: { text: $_('page.discharge.calculation.chart.dischargeUnit') } }
+				}
+			};
+		}
+	}
+
+	// Function to create discharge timesteps chart options
+	function getDischargeChartOptions(hqTimeData: string | null, title: string): Chart {
+		if (!hqTimeData) {
+			return {
+				options: {
+					series: [],
+					chart: { type: 'line', height: 200 },
+					xaxis: { categories: [] },
+					yaxis: { title: { text: $_('page.discharge.calculation.chart.dischargeUnit') } }
+				}
+			};
+		}
+
+		try {
+			const dischargeData = JSON.parse(hqTimeData);
+			console.log('HQ_time data received:', {
+				length: dischargeData.length,
+				sample: dischargeData.slice(0, 10),
+				max: Math.max(...dischargeData),
+				min: Math.min(...dischargeData),
+				nonZeroCount: dischargeData.filter((x: number) => x > 0).length
+			});
+			
+			// Filter out leading and trailing zeros to focus on the actual discharge period
+			let startIndex = 0;
+			let endIndex = dischargeData.length;
+			
+			// Find first non-zero value
+			for (let i = 0; i < dischargeData.length; i++) {
+				if (dischargeData[i] > 0) {
+					startIndex = Math.max(0, i - 1); // Include one point before
+					break;
+				}
+			}
+			
+			// Find last non-zero value
+			for (let i = dischargeData.length - 1; i >= 0; i--) {
+				if (dischargeData[i] > 0) {
+					endIndex = Math.min(dischargeData.length, i + 2); // Include one point after
+					break;
+				}
+			}
+			
+			// Extract the relevant data range
+			const filteredData = dischargeData.slice(startIndex, endIndex);
+			const timeSteps = filteredData.map((_: any, index: number) => (startIndex + index) * 10); // 10-minute timesteps
+			
+			// Calculate data range for better scaling
+			const maxDischarge = Math.max(...filteredData);
+			const minDischarge = Math.min(...filteredData);
+			
+			return {
+				options: {
+					series: [{
+						name: $_('page.discharge.calculation.chart.discharge'),
+						data: filteredData,
+						color: '#1376ef'
+					}],
+					chart: {
+						type: 'line',
+						height: 200,
+						toolbar: {
+							show: false
+						},
+						zoom: {
+							enabled: true,
+							type: 'x',
+							autoScaleYaxis: true
+						}
+					},
+					stroke: {
+						curve: 'smooth',
+						width: 2
+					},
+					xaxis: {
+						categories: timeSteps,
+						title: {
+							text: $_('page.discharge.calculation.chart.timeUnit')
+						},
+						labels: {
+							formatter: function(value: string) {
+								return parseInt(value).toString();
+							}
+						}
+					},
+					yaxis: {
+						title: {
+							text: $_('page.discharge.calculation.chart.dischargeUnit')
+						},
+						min: Math.max(0, minDischarge * 0.9), // Start from 0 or slightly below min
+						max: maxDischarge * 1.1, // Slightly above max for better visualization
+						labels: {
+							formatter: function (val: number) {
+								return val.toFixed(2);
+							}
+						}
+					},
+					tooltip: {
+						y: {
+							formatter: function (val: number) {
+								return val.toFixed(2) + ' ' + $_('page.discharge.calculation.chart.dischargeTooltip');
+							}
+						},
+						x: {
+							formatter: function (val: number) {
+								return val + ' min';
+							}
+						}
+					},
+					title: {
+						text: title,
+						align: 'left',
+						style: {
+							fontSize: '14px',
+							fontWeight: 'bold'
+						}
+					},
+					grid: {
+						show: true,
+						borderColor: '#e0e0e0'
+					},
+					dataLabels: {
+						enabled: false
+					}
+				}
+			};
+		} catch (error) {
+			console.error('Error parsing HQ_time data:', error);
+			return {
+				options: {
+					series: [],
+					chart: { type: 'line', height: 200 },
+					xaxis: { categories: [] },
+					yaxis: { title: { text: $_('page.discharge.calculation.chart.dischargeUnit') } }
+				}
+			};
+		}
+	}
+
 	let { data, form }: { data: PageServerData & { session: any }; form: ActionData } = $props();
 	$pageTitle = $_('page.discharge.overview.discharge-projekt') + ' ' + data.project.title;
 
@@ -1835,7 +2137,29 @@
 							>
 								<div class="accordion-body">
 									<div use:renderChart={chart}></div>
-
+									
+									<!-- NAM Discharge Timesteps Graph -->
+									{#if nam.some((n: any) => n.NAM_Result?.HQ_time)}
+										<div class="mt-4">
+											<h5 class="text-muted">{$_('page.discharge.calculation.chart.dischargeTimeSeries')}</h5>
+											<div class="card">
+												<div class="card-body">
+													{#each nam_scenarios as scenario, scenarioIndex}
+														{#if scenario.some((n: any) => n.NAM_Result?.HQ_time)}
+															<div class="mb-0">
+																
+																<div 
+																	class="discharge-chart" 
+																	style=""
+																	use:renderChart={getMultiAnnualityDischargeChartOptions(scenario, scenarioIndex)}
+																></div>
+															</div>
+														{/if}
+													{/each}
+												</div>
+											</div>
+										</div>
+									{/if}
 									{#if mod_verfahren.length > 0}
 										<h4 class="text-muted">{$_('page.discharge.calculation.modFliesszeit')}</h4>
 

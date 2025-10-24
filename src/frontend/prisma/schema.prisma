@@ -191,6 +191,7 @@ model NAM_Result {
   S                      Float
   Ia                     Float
   Pe                     Float
+  HQ_time                String?         
   effective_curve_number Float?
   NAM                    NAM?
 }

@@ -1090,12 +1090,10 @@ def nam(self,
     # Discharge = volume / time = m³ / (dt * 60 s)
     discharge_timesteps = []
     for i, runoff_volume in enumerate(runoff_timesteps):
+        discharge = runoff_volume / (dt * 60)  # [m³/s]
+        discharge_timesteps.append(discharge)
         if runoff_volume > 0:
-            discharge = runoff_volume / (dt * 60)  # [m³/s]
-            discharge_timesteps.append(discharge)
             print(f"Timestep {i}: runoff_volume={runoff_volume:.3f} m³, Q={discharge:.3f} m³/s")
-        else:
-            discharge_timesteps.append(0.0)
     
     # 4. Find maximum discharge (HQ)
     HQ = max(discharge_timesteps)
@@ -1103,6 +1101,21 @@ def nam(self,
     
     print(f"Maximum discharge: {HQ:.3f} m³/s at timestep {max_timestep}")
     print(f"Discharge time series: {[f'{q:.3f}' for q in discharge_timesteps]}")
+    
+    # Debug: Verify discharge_timesteps data and JSON serialization
+    print(f"Debug - discharge_timesteps length: {len(discharge_timesteps)}")
+    print(f"Debug - discharge_timesteps type: {type(discharge_timesteps)}")
+    print(f"Debug - discharge_timesteps sample: {discharge_timesteps[:5] if len(discharge_timesteps) >= 5 else discharge_timesteps}")
+    
+    # Test JSON serialization
+    try:
+        # Convert numpy float32 values to regular Python floats for JSON serialization
+        discharge_timesteps_serializable = [float(x) for x in discharge_timesteps]
+        json_test = json.dumps(discharge_timesteps_serializable)
+        print(f"Debug - JSON serialization successful, length: {len(json_test)}")
+        print(f"Debug - JSON sample: {json_test[:100]}...")
+    except Exception as e:
+        print(f"Debug - JSON serialization failed: {e}")
     
     # Print water balance summary
     total_initial_water = np.sum(storm_distribution[valid_mask])
@@ -1185,6 +1198,23 @@ def nam(self,
         # Calculate average curve number for reporting
         effective_curve_number = np.nanmean(cn_data[valid_mask]) if cn_data is not None else curve_number
 
+        # Debug: Prepare HQ_time data
+        # Convert numpy float32 values to regular Python floats for JSON serialization
+        discharge_timesteps_serializable = [float(x) for x in discharge_timesteps]
+        hq_time_json = json.dumps(discharge_timesteps_serializable)
+        print(f"Debug - HQ_time JSON length: {len(hq_time_json)}")
+        print(f"Debug - HQ_time JSON sample: {hq_time_json[:200]}...")
+        
+        # Debug: Verify all data types
+        print(f"Debug - HQ type: {type(HQ)}, value: {HQ}")
+        print(f"Debug - Tc type: {type(Tc)}, value: {Tc}")
+        print(f"Debug - TB type: {type(TB)}, value: {TB}")
+        print(f"Debug - TFl type: {type(TFl)}, value: {TFl}")
+        print(f"Debug - i_final type: {type(i_final)}, value: {i_final}")
+        print(f"Debug - S type: {type(S)}, value: {S}")
+        print(f"Debug - Ia type: {type(Ia)}, value: {Ia}")
+        print(f"Debug - Pe_final type: {type(Pe_final)}, value: {Pe_final}")
+
         updatedResults = prisma.nam.update(
             where={
                 'id': nam_id
@@ -1201,6 +1231,7 @@ def nam(self,
                             'S': float(S),
                             'Ia': float(Ia),
                             'Pe': float(Pe_final),
+                            'HQ_time': hq_time_json,
                         },
                         'create': {
                             'HQ': float(HQ),
@@ -1211,17 +1242,20 @@ def nam(self,
                             'S': float(S),
                             'Ia': float(Ia),
                             'Pe': float(Pe_final),
+                            'HQ_time': hq_time_json,
                         }
                     }
                 }
             }
         )
+        
+        print(f"Debug - Database update successful: {updatedResults}")
     except Exception as e:
         print(f"Error updating NAM results: {e}")
         print(traceback.format_exc())
     finally:
         prisma.disconnect(5)
-
+    print("NAM results updated in database.")
     return {
         "HQ": float(HQ),
         "Tc": float(Tc),

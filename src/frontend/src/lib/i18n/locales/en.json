@@ -83,6 +83,13 @@
           "uploadZipFileHelp": "You can create your own shapefile with the soil types (A, B, C and D) and upload it here as a ZIP file.",
           "soilFileExists": "There is a separate soil classification system."
         },
+        "chart": {
+          "discharge": "Discharge",
+          "dischargeUnit": "Discharge [m³/s]",
+          "timeUnit": "Time [min]",
+          "dischargeTimeSeries": "Discharge Time Series",
+          "dischargeTooltip": "m³/s"
+        },
         "generalInput": "General",
         "inputsForPrecipitationIntensity": "Information on the calculation of precipitation intensity",
         "modFliesszeit": "Modified flow time method",

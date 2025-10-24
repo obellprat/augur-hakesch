@@ -15,7 +15,7 @@ ENV PYTHONUNBUFFERED 1
 RUN pip install --upgrade pip
 RUN apt-get update && \
 apt-get upgrade -y && \
-apt-get install -y git build-essential
+apt-get install -y git build-essential python3-dev libcairo2-dev libpango1.0-dev libgdal-dev
 COPY ./requirements.txt .
 RUN pip install -r requirements.txt
 
