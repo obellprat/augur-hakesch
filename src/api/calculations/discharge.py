@@ -38,10 +38,10 @@ def modifizierte_fliesszeit(self,
     psi:float,            # Peak flow coefficient [-]
     E:float,              # Catchment area [km²]
     mod_fliesszeit_id:int, # db id for updating results
-    TB_start=30,    # Initial value for TB [min]
-    istep=5,        # Step size for TB [min]
-    tol=5,          # Convergence tolerance [mm]
-    max_iter=1000
+    TB_start=10,    # Initial value for TB [min]
+    istep=1,        # Step size for TB [min]
+    tol=1,          # Convergence tolerance [mm]
+    max_iter=10000
 ):
     intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
     # 1. Wetting volume depending on x
@@ -147,10 +147,10 @@ def koella(self,
     koella_id,              # db id for updating results
     rs=4,                   # Meltwater equivalent [mm / h]
     snow_melt=False,         # Consider snowmelt [bool]
-    TB_start=30,            # Start value for TB [min]
-    tol=5,                  # Convergence tolerance [mm]
-    istep=5,                # Step size for TB [min]
-    max_iter=1000            # Max. iterations
+    TB_start=10,            # Start value for TB [min]
+    tol=1,                  # Convergence tolerance [mm]
+    istep=1,                # Step size for TB [min]
+    max_iter=10000            # Max. iterations
 ):
     intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
 
