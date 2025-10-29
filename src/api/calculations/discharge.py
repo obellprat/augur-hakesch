@@ -524,17 +524,33 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
         
     dirmap = (1, 2, 3, 4, 5, 6, 7, 8)
     self.update_state(state='PROGRESS',
-                meta={'text': 'Reading DEM', 'progress' : 5})
+                meta={'text': 'Reading DEM', 'progress' : 15})
 
     dem = grid.read_raster(dem, window=(northing - 10000, easting - 10000, northing + 10000, easting + 10000), window_crs=grid.crs)
     grid.clip_to(dem)
     small_view = grid.view(dem)
-    grid.to_raster(dem, 'data/temp/smallfdir.tif', target_view=small_view)
+    grid.to_raster(dem, 'data/temp/smalldem.tif', target_view=small_view)
 
     del grid
     gc.collect()
+
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Reading flow direction', 'progress' : 25})
+
+    d8 = 'data/d8_be.tif'
+    grid = Grid.from_raster(d8)
+
+    fdir = grid.read_raster(d8, window=(northing - 10000, easting - 10000, northing + 10000, easting + 10000), window_crs=grid.crs)
+    grid.clip_to(fdir)
+    small_view = grid.view(fdir)
+    grid.to_raster(fdir, 'data/temp/smallfdir.tif', target_view=small_view)
+
+    del grid
+    gc.collect()
+
+
     grid2 = Grid.from_raster('data/temp/smallfdir.tif')
-        
+    """    
     self.update_state(state='PROGRESS',
                 meta={'text': 'Compute flow directions: Fill pits', 'progress' : 8})
     
@@ -553,6 +569,7 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     self.update_state(state='PROGRESS',
                 meta={'text': 'Compute flow directions: Accumulation', 'progress' : 40})
     fdir = grid2.flowdir(inflated_dem, dirmap=dirmap)    
+    """
     
     acc = grid2.accumulation(fdir, dirmap=dirmap)
 

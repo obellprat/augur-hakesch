@@ -24,7 +24,7 @@ def create_celery_logger_handler(logger, propagate):
     )
 
     logger.addHandler(celery_handler)
-    logger.logLevel = "DEBUG"
+    logger.logLevel = "INFO"
     logger.propagate = propagate
 
 
