@@ -111,7 +111,10 @@ def nam(self,
     routing_method=None,  # Override routing method from database
     readiness_to_drain=None,  # Readiness to drain parameter (negative values) to add to curve numbers
     discharge_point=None,  # Discharge point coordinates: (lon, lat) or (easting, northing) or (row, col)
-    discharge_point_crs="EPSG:4326"  # CRS of discharge point: "EPSG:4326", "EPSG:2056", or "raster"
+    discharge_point_crs="EPSG:4326",  # CRS of discharge point: "EPSG:4326", "EPSG:2056", or "raster"
+    project_easting=None,
+    project_northing=None,
+    cc_degree: float = 0.0,
 ):
     """
     NAM (Nedbør-Afstrømnings-Model) calculation based on distributed curve numbers and travel times.
@@ -152,7 +155,23 @@ def nam(self,
         print(f"  Storm center mode description: {nam_obj.StormCenterMode.description}")
         print(f"  Routing method description: {nam_obj.RoutingMethod.description}")
     
-    intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
+    intensity_fn = construct_idf_curve(
+        P_low_1h,
+        P_high_1h,
+        P_low_24h,
+        P_high_24h,
+        rp_low,
+        rp_high,
+    )
+    # Compute climate change factor if coordinates provided
+    cc_factor = 0.0
+    try:
+        if project_easting is not None and project_northing is not None:
+            from calculations.discharge import _project_to_wgs84, _load_cc_factor
+            lon, lat = _project_to_wgs84(project_easting, project_northing)
+            cc_factor = _load_cc_factor(lon, lat, cc_degree)
+    except Exception:
+        cc_factor = 0.0
     
     # Initialize variables for distributed calculation
     cn_data = None
@@ -443,7 +462,7 @@ def nam(self,
     # Calculate total storm precipitation for SCS method
 
     # We need the total precipitation for the entire storm duration
-    i_total = intensity_fn(rp_years=x, duration_minutes=Tc_total)  # [mm/h]
+    i_total = intensity_fn(rp_years=x, duration_minutes=Tc_total) * (1 + cc_factor)  # [mm/h]
     P_total_storm = i_total * Tc_total / 60  # [mm] - total storm precipitation
     print(f"Total storm precipitation: {P_total_storm:.2f} mm over {Tc_total} minutes")
     
@@ -1186,7 +1205,7 @@ def nam(self,
     Tc = (max_timestep + 1) * dt  # [min]
     TB = Tc  # Simplified for distributed approach
     TFl = 0  # Not used in distributed approach
-    i_final = intensity_fn(rp_years=x, duration_minutes=Tc)  # [mm/h]
+    i_final = intensity_fn(rp_years=x, duration_minutes=Tc) * (1 + cc_factor)  # [mm/h]
     S = np.nanmean(S_cells[valid_mask])  # Average S for reporting
     Ia = np.nanmean(Ia_cells[valid_mask])  # Average Ia for reporting
     Pe_final = HQ * dt * 60 / (np.sum(valid_mask) * pixel_area_m2 / 1000)  # Average Pe for reporting

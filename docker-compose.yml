@@ -54,11 +54,6 @@ services:
     depends_on:
       - api
       - redis
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 16g
     networks:
       # Use the public network created to be shared between Traefik and
       # any other service that needs to be publicly available with HTTPS
