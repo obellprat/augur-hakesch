@@ -23,6 +23,7 @@ def get_status(task_id):
             "task_status": task_result.status,
             "task_result": str(task_result.result)
         }
+    #task_result.forget()
     return JSONResponse(result)
 
 @router.get("/group/{task_id}")
@@ -44,6 +45,8 @@ def get_group_status(task_id):
     else:
         overall_status = "SUCCESS"
         task_result = None
+
+    #group_result.forget()
 
     result = {
         "group_id": task_id,

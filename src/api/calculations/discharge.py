@@ -513,23 +513,62 @@ def construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_h
 
 @app.task(name="prepare_discharge_hydroparameters", bind=True)
 def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 1000, v_gerinne = 1.5):
+    # Send immediate progress update to indicate task has started
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Task started, initializing...', 'progress' : 5})
+    
     # Definitions
     cell_size = 5
 
     # Rertrieve and load DEM
     # ----------------------
 
-    dem = 'data/geotiffminusriver.tif'
-    grid = Grid.from_raster(dem)
-        
+    dem_file = 'data/geotiffminusriver.tif'
     dirmap = (1, 2, 3, 4, 5, 6, 7, 8)
+    
+    # Optimized: Use rasterio directly for windowed reading (faster than Grid.from_raster + read_raster)
+    # This avoids opening the full raster file before reading the window
     self.update_state(state='PROGRESS',
-                meta={'text': 'Reading DEM', 'progress' : 15})
-
-    dem = grid.read_raster(dem, window=(northing - 10000, easting - 10000, northing + 10000, easting + 10000), window_crs=grid.crs)
+                meta={'text': 'Reading DEM window', 'progress' : 10})
+    
+    # Calculate window bounds
+    window_bounds = (northing - 10000, easting - 10000, northing + 10000, easting + 10000)
+    
+    # Use rasterio directly for faster windowed reading
+    with rasterio.open(dem_file) as src:
+        # Get CRS from source
+        dem_crs = src.crs
+        # Calculate window from bounds
+        window = rasterio.windows.from_bounds(
+            window_bounds[0], window_bounds[1], window_bounds[2], window_bounds[3],
+            src.transform
+        )
+        # Read the windowed data directly
+        dem_data = src.read(1, window=window)
+        window_transform = rasterio.windows.transform(window, src.transform)
+        
+        # Save the windowed DEM to temp file for Grid operations
+        temp_dem_path = 'data/temp/smalldem.tif'
+        os.makedirs(os.path.dirname(temp_dem_path), exist_ok=True)
+        
+        profile = src.profile.copy()
+        profile.update({
+            'height': window.height,
+            'width': window.width,
+            'transform': window_transform
+        })
+        
+        with rasterio.open(temp_dem_path, 'w', **profile) as dst:
+            dst.write(dem_data, 1)
+    
+    # Now create Grid from the smaller windowed file (much faster)
+    self.update_state(state='PROGRESS',
+                meta={'text': 'Processing DEM', 'progress' : 15})
+    grid = Grid.from_raster(temp_dem_path)
+    dem = grid.read_raster(temp_dem_path)
     grid.clip_to(dem)
     small_view = grid.view(dem)
-    grid.to_raster(dem, 'data/temp/smalldem.tif', target_view=small_view)
+    grid.to_raster(dem, temp_dem_path, target_view=small_view)
 
     del grid
     gc.collect()
@@ -537,13 +576,39 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     self.update_state(state='PROGRESS',
                 meta={'text': 'Reading flow direction', 'progress' : 25})
 
-    d8 = 'data/d8_be.tif'
-    grid = Grid.from_raster(d8)
-
-    fdir = grid.read_raster(d8, window=(northing - 10000, easting - 10000, northing + 10000, easting + 10000), window_crs=grid.crs)
+    d8_file = 'data/d8_be.tif'
+    
+    # Optimized: Use rasterio directly for windowed reading (same optimization as DEM)
+    with rasterio.open(d8_file) as src:
+        # Calculate window from bounds (same as DEM)
+        window = rasterio.windows.from_bounds(
+            window_bounds[0], window_bounds[1], window_bounds[2], window_bounds[3],
+            src.transform
+        )
+        # Read the windowed data directly
+        fdir_data = src.read(1, window=window)
+        window_transform = rasterio.windows.transform(window, src.transform)
+        
+        # Save the windowed flow direction to temp file
+        temp_fdir_path = 'data/temp/smallfdir.tif'
+        os.makedirs(os.path.dirname(temp_fdir_path), exist_ok=True)
+        
+        profile = src.profile.copy()
+        profile.update({
+            'height': window.height,
+            'width': window.width,
+            'transform': window_transform
+        })
+        
+        with rasterio.open(temp_fdir_path, 'w', **profile) as dst:
+            dst.write(fdir_data, 1)
+    
+    # Create Grid from the smaller windowed file
+    grid = Grid.from_raster(temp_fdir_path)
+    fdir = grid.read_raster(temp_fdir_path)
     grid.clip_to(fdir)
     small_view = grid.view(fdir)
-    grid.to_raster(fdir, 'data/temp/smallfdir.tif', target_view=small_view)
+    grid.to_raster(fdir, temp_fdir_path, target_view=small_view)
 
     del grid
     gc.collect()
@@ -596,6 +661,8 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     branches = grid2.extract_river_network(fdir, acc > a_crit, dirmap=dirmap)
     L_cum = cumulative_length(branches)
 
+    # Reload DEM with grid2 for compatibility (grid2 has catchment-clipped view)
+    dem = grid2.read_raster(temp_dem_path)
     dem_view = grid2.view(dem)
     dem_view[dem_view < 0] = np.nan
     delta_H = float(np.nanmax(dem_view) - np.nanmin(dem_view)) 
