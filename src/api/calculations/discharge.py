@@ -532,7 +532,7 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
                 meta={'text': 'Reading DEM window', 'progress' : 10})
     
     # Calculate window bounds
-    window_bounds = (northing - 10000, easting - 10000, northing + 10000, easting + 10000)
+    window_bounds = (northing - 9000, easting - 9000, northing + 9000, easting + 9000)
     
     # Use rasterio directly for faster windowed reading
     with rasterio.open(dem_file) as src:
