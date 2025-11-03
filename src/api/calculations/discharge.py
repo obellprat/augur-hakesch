@@ -47,14 +47,6 @@ def modifizierte_fliesszeit(self,
     tol=1,          # Convergence tolerance [mm]
     max_iter=10000
 ):
-    intensity_fn = construct_idf_curve(
-        P_low_1h,
-        P_high_1h,
-        P_low_24h,
-        P_high_24h,
-        rp_low,
-        rp_high,
-    )
     # Compute climate change factor from project coordinates if available
     cc_factor = 0.0
     try:
@@ -63,6 +55,16 @@ def modifizierte_fliesszeit(self,
             cc_factor = _load_cc_factor(lon, lat, cc_degree if 'cc_degree' in locals() else 2.0)
     except Exception:
         cc_factor = 0.0
+
+    intensity_fn = construct_idf_curve(
+        P_low_1h,
+        P_high_1h,
+        P_low_24h,
+        P_high_24h,
+        rp_low,
+        rp_high,
+        cc_factor
+    )
     # 1. Wetting volume depending on x
     if x == 2.3:
         Vox = 0.5 * Vo20
@@ -102,7 +104,7 @@ def modifizierte_fliesszeit(self,
         raise RuntimeError("TB iteration did not converge.")
 
     Tc = TB + TFl
-    i_final = intensity_fn(rp_years = x, duration_minutes = Tc) * (1 + cc_factor)
+    i_final = intensity_fn(rp_years = x, duration_minutes = Tc)
     HQ = 0.278 * i_final * psi * E
 
 
@@ -175,14 +177,6 @@ def koella(self,
     istep=1,                # Step size for TB [min]
     max_iter=10000            # Max. iterations
 ):
-    intensity_fn = construct_idf_curve(
-        P_low_1h,
-        P_high_1h,
-        P_low_24h,
-        P_high_24h,
-        rp_low,
-        rp_high,
-    )
     # Compute climate change factor from project coordinates if available
     cc_factor = 0.0
     try:
@@ -192,6 +186,16 @@ def koella(self,
     except Exception:
         cc_factor = 0.0
 
+    intensity_fn = construct_idf_curve(
+        P_low_1h,
+        P_high_1h,
+        P_low_24h,
+        P_high_24h,
+        rp_low,
+        rp_high,
+        cc_factor
+    )
+    
     # Effective contributing area in km²
     FLeff = 0.12 * (Lg ** 1.07)  
 
@@ -351,14 +355,6 @@ def clark_wsl_modified(self,
     dt=10,                     # Time step [min]
     pixel_area_m2=25           # Cell area [m²] (e.g. 5x5 m)
 ):
-    intensity_fn = construct_idf_curve(
-        P_low_1h,
-        P_high_1h,
-        P_low_24h,
-        P_high_24h,
-        rp_low,
-        rp_high,
-    )
     # Compute climate change factor from project coordinates if available
     cc_factor = 0.0
     try:
@@ -367,6 +363,16 @@ def clark_wsl_modified(self,
             cc_factor = _load_cc_factor(lon, lat, cc_degree if 'cc_degree' in locals() else 2.0)
     except Exception:
         cc_factor = 0.0
+    intensity_fn = construct_idf_curve(
+        P_low_1h,
+        P_high_1h,
+        P_low_24h,
+        P_high_24h,
+        rp_low,
+        rp_high,
+        cc_factor
+    )
+    
     # read the isozone_raster
     isozone = f"data/{user_id}/{project_id}/isozones_cog.tif"
     grid = Grid.from_raster(isozone)
@@ -566,6 +572,7 @@ def construct_idf_curve(
     P_high_24h,
     rp_low,
     rp_high2,
+    cc_factor
 ):
     
     """
@@ -577,14 +584,23 @@ def construct_idf_curve(
         P_high_24h: Precipitation [mm] for upper return period, 24 hour duration
         rp_low:     Lower return period (e.g. 2.33) as string
         rp_high:    Upper return period (e.g. 100) as string
+        cc_factor:  Climate change factor
     Returns:
         idf_intensity: function(duration_minutes, return_period_years) -> intensity [mm/h]
     """
-
+    print("P_low_1h: ", P_low_1h)
+    print("P_high_1h: ", P_high_1h)
+    print("P_low_24h: ", P_low_24h)
+    print("P_high_24h: ", P_high_24h)
+    print("cc_factor: ", cc_factor)
+    print("P_low_1h * (1 + cc_factor): ", P_low_1h * (1 + cc_factor))
+    print("P_high_1h * (1 + cc_factor): ", P_high_1h * (1 + cc_factor))
+    print("P_low_24h * (1 + cc_factor): ", P_low_24h * (1 + cc_factor))
+    print("P_high_24h * (1 + cc_factor): ", P_high_24h * (1 + cc_factor))
     # Convert return periods from string to float
     log_rp = np.log10([rp_low, rp_high2])
-    P_1h = [P_low_1h, P_high_1h]
-    P_24h = [P_low_24h, P_high_24h]
+    P_1h = [P_low_1h * (1 + cc_factor), P_high_1h * (1 + cc_factor)]
+    P_24h = [P_low_24h * (1 + cc_factor), P_high_24h * (1 + cc_factor)]
 
     # Linear fit for 1h and 24h precipitation
     coeffs_1h = np.polyfit(log_rp, P_1h, 1)

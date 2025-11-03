@@ -155,14 +155,6 @@ def nam(self,
         print(f"  Storm center mode description: {nam_obj.StormCenterMode.description}")
         print(f"  Routing method description: {nam_obj.RoutingMethod.description}")
     
-    intensity_fn = construct_idf_curve(
-        P_low_1h,
-        P_high_1h,
-        P_low_24h,
-        P_high_24h,
-        rp_low,
-        rp_high,
-    )
     # Compute climate change factor if coordinates provided
     cc_factor = 0.0
     try:
@@ -172,6 +164,16 @@ def nam(self,
             cc_factor = _load_cc_factor(lon, lat, cc_degree)
     except Exception:
         cc_factor = 0.0
+
+    intensity_fn = construct_idf_curve(
+        P_low_1h,
+        P_high_1h,
+        P_low_24h,
+        P_high_24h,
+        rp_low,
+        rp_high,
+        cc_factor
+    )
     
     # Initialize variables for distributed calculation
     cn_data = None
