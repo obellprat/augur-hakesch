@@ -2314,98 +2314,178 @@
 									{#if mod_verfahren.length > 0}
 										<h4 class="text-muted">{$_('page.discharge.calculation.modFliesszeit')}</h4>
 
-										<table class="table mb-0">
-											<thead>
-												<tr>
-													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
-												</tr>
-											</thead>
-											<tbody>
-												{#each mod_verfahren as mod_fz}
+										<div class="table-responsive">
+											<table class="table table-sm mb-0">
+												<thead>
 													<tr>
-														<td>
-															{#if mod_fz.Annuality}
-																{mod_fz.Annuality.description}
-															{/if}
-														</td>
-														<td>{getResultField(mod_fz, 'Mod_Fliesszeit_Result')?.HQ ? getResultField(mod_fz, 'Mod_Fliesszeit_Result').HQ.toFixed(2) : '-'}</td>
+														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
-												{/each}
-											</tbody>
-										</table>
+												</thead>
+												<tbody>
+													{#each mod_verfahren as mod_fz}
+														<tr>
+															<td>
+																{#if mod_fz.Annuality}
+																	{mod_fz.Annuality.description}
+																{/if}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																{mod_fz.Mod_Fliesszeit_Result?.HQ ? mod_fz.Mod_Fliesszeit_Result.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																{mod_fz.Mod_Fliesszeit_Result_1_5?.HQ ? mod_fz.Mod_Fliesszeit_Result_1_5.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																{mod_fz.Mod_Fliesszeit_Result_2?.HQ ? mod_fz.Mod_Fliesszeit_Result_2.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																{mod_fz.Mod_Fliesszeit_Result_3?.HQ ? mod_fz.Mod_Fliesszeit_Result_3.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
+																{mod_fz.Mod_Fliesszeit_Result_4?.HQ ? mod_fz.Mod_Fliesszeit_Result_4.HQ.toFixed(2) : '-'}
+															</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										</div>
 									{/if}
 									{#if koella.length > 0}
 										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.koells')}</h4>
 
-										<table class="table mb-0">
-											<thead>
-												<tr>
-													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
-												</tr>
-											</thead>
-											<tbody>
-												{#each koella as k}
+										<div class="table-responsive">
+											<table class="table table-sm mb-0">
+												<thead>
 													<tr>
-														<td>
-															{#if k.Annuality}
-																{k.Annuality.description}
-															{/if}
-														</td>
-														<td>{getResultField(k, 'Koella_Result')?.HQ ? getResultField(k, 'Koella_Result').HQ.toFixed(2) : '-'}</td>
+														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
-												{/each}
-											</tbody>
-										</table>
+												</thead>
+												<tbody>
+													{#each koella as k}
+														<tr>
+															<td>
+																{#if k.Annuality}
+																	{k.Annuality.description}
+																{/if}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																{k.Koella_Result?.HQ ? k.Koella_Result.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																{k.Koella_Result_1_5?.HQ ? k.Koella_Result_1_5.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																{k.Koella_Result_2?.HQ ? k.Koella_Result_2.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																{k.Koella_Result_3?.HQ ? k.Koella_Result_3.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
+																{k.Koella_Result_4?.HQ ? k.Koella_Result_4.HQ.toFixed(2) : '-'}
+															</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										</div>
 									{/if}
 									{#if clark_wsl.length > 0}
 										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.clarkwsl')}</h4>
 
-										<table class="table mb-0">
-											<thead>
-												<tr>
-													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
-												</tr>
-											</thead>
-											<tbody>
-												{#each clark_wsl as k}
+										<div class="table-responsive">
+											<table class="table table-sm mb-0">
+												<thead>
 													<tr>
-														<td>
-															{#if k.Annuality}
-																{k.Annuality.description}
-															{/if}
-														</td>
-														<td>{getResultField(k, 'ClarkWSL_Result')?.Q ? getResultField(k, 'ClarkWSL_Result').Q.toFixed(2) : '-'}</td>
+														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
-												{/each}
-											</tbody>
-										</table>
+												</thead>
+												<tbody>
+													{#each clark_wsl as k}
+														<tr>
+															<td>
+																{#if k.Annuality}
+																	{k.Annuality.description}
+																{/if}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																{k.ClarkWSL_Result?.Q ? k.ClarkWSL_Result.Q.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																{k.ClarkWSL_Result_1_5?.Q ? k.ClarkWSL_Result_1_5.Q.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																{k.ClarkWSL_Result_2?.Q ? k.ClarkWSL_Result_2.Q.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																{k.ClarkWSL_Result_3?.Q ? k.ClarkWSL_Result_3.Q.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
+																{k.ClarkWSL_Result_4?.Q ? k.ClarkWSL_Result_4.Q.toFixed(2) : '-'}
+															</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										</div>
 									{/if}
 									{#if nam.length > 0}
 										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.nam')}</h4>
 
-										<table class="table mb-0">
-											<thead>
-												<tr>
-													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
-												</tr>
-											</thead>
-											<tbody>
-												{#each nam as n}
+										<div class="table-responsive">
+											<table class="table table-sm mb-0">
+												<thead>
 													<tr>
-														<td>
-															{#if n.Annuality}
-																{n.Annuality.description}
-															{/if}
-														</td>
-														<td>{getResultField(n, 'NAM_Result')?.HQ ? getResultField(n, 'NAM_Result').HQ.toFixed(2) : '-'}</td>
+														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
-												{/each}
-											</tbody>
-										</table>
+												</thead>
+												<tbody>
+													{#each nam as n}
+														<tr>
+															<td>
+																{#if n.Annuality}
+																	{n.Annuality.description}
+																{/if}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																{n.NAM_Result?.HQ ? n.NAM_Result.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																{n.NAM_Result_1_5?.HQ ? n.NAM_Result_1_5.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																{n.NAM_Result_2?.HQ ? n.NAM_Result_2.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																{n.NAM_Result_3?.HQ ? n.NAM_Result_3.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
+																{n.NAM_Result_4?.HQ ? n.NAM_Result_4.HQ.toFixed(2) : '-'}
+															</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										</div>
 									{/if}
 								</div>
 							</div>
