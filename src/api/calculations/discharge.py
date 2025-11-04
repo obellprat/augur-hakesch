@@ -42,17 +42,31 @@ def modifizierte_fliesszeit(self,
     project_easting: Optional[float] = None,
     project_northing: Optional[float] = None,
     cc_degree: float = 0.0,
+    climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
     TB_start=10,    # Initial value for TB [min]
     istep=1,        # Step size for TB [min]
     tol=1,          # Convergence tolerance [mm]
     max_iter=10000
 ):
+    # Map climate scenario to cc_degree if not explicitly set
+    scenario_to_degree = {
+        "current": 0.0,
+        "1_5_degree": 1.5,
+        "2_degree": 2.0,
+        "3_degree": 3.0,
+        "4_degree": 4.0
+    }
+    
+    # Use climate_scenario to determine cc_degree
+    if climate_scenario in scenario_to_degree:
+        cc_degree = scenario_to_degree[climate_scenario]
+    
     # Compute climate change factor from project coordinates if available
     cc_factor = 0.0
     try:
         if project_easting is not None and project_northing is not None:
             lon, lat = _project_to_wgs84(project_easting, project_northing)
-            cc_factor = _load_cc_factor(lon, lat, cc_degree if 'cc_degree' in locals() else 2.0)
+            cc_factor = _load_cc_factor(lon, lat, cc_degree)
     except Exception:
         cc_factor = 0.0
 
@@ -111,35 +125,61 @@ def modifizierte_fliesszeit(self,
     prisma = Prisma()
     prisma.connect()
 
+    # Build the update data based on climate scenario
+    result_data = {
+        'HQ' : HQ,
+        'Tc' : Tc,
+        'TB' : TB,
+        'TFl' : TFl,
+        'Vox' : Vox
+    }
     
+    create_data = {
+        'HQ' : HQ,
+        'Tc' : Tc,
+        'TB' : TB,
+        'i' : i_final,
+        'TFl' : TFl,
+        'Vox' : Vox
+    }
+    
+    # Use conditional logic to set the correct relation field
+    if climate_scenario == "1_5_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_1_5': {
+                'upsert': {'update': result_data, 'create': create_data}
+            }
+        }
+    elif climate_scenario == "2_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_2': {
+                'upsert': {'update': result_data, 'create': create_data}
+            }
+        }
+    elif climate_scenario == "3_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_3': {
+                'upsert': {'update': result_data, 'create': create_data}
+            }
+        }
+    elif climate_scenario == "4_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_4': {
+                'upsert': {'update': result_data, 'create': create_data}
+            }
+        }
+    else:  # current
+        data_update = {
+            'Mod_Fliesszeit_Result': {
+                'upsert': {'update': result_data, 'create': create_data}
+            }
+        }
     
     updatedResults = prisma.mod_fliesszeit.update(
         where = {
             'id' : mod_fliesszeit_id
         },
-        data = {
-            'Mod_Fliesszeit_Result': {
-                'upsert' : {
-                    'update' : {
-                        'HQ' : HQ,
-                        'Tc' : Tc,
-                        'TB' : TB,
-                        'TFl' : TFl,
-                        'Vox' : Vox
-                    },
-                    'create' : {
-                        'HQ' : HQ,
-                        'Tc' : Tc,
-                        'TB' : TB,
-                        'i' : i_final,
-                        'TFl' : TFl,
-                        'Vox' : Vox
-                    }
-                }
-            }
-            
-        }
-        
+        data = data_update
     )
 
     prisma.disconnect(5)
@@ -170,6 +210,7 @@ def koella(self,
     project_easting: Optional[float] = None,
     project_northing: Optional[float] = None,
     cc_degree: float = 0.0,
+    climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
     rs=4,                   # Meltwater equivalent [mm / h]
     snow_melt=False,         # Consider snowmelt [bool]
     TB_start=10,            # Start value for TB [min]
@@ -177,12 +218,25 @@ def koella(self,
     istep=1,                # Step size for TB [min]
     max_iter=10000            # Max. iterations
 ):
+    # Map climate scenario to cc_degree if not explicitly set
+    scenario_to_degree = {
+        "current": 0.0,
+        "1_5_degree": 1.5,
+        "2_degree": 2.0,
+        "3_degree": 3.0,
+        "4_degree": 4.0
+    }
+    
+    # Use climate_scenario to determine cc_degree
+    if climate_scenario in scenario_to_degree:
+        cc_degree = scenario_to_degree[climate_scenario]
+    
     # Compute climate change factor from project coordinates if available
     cc_factor = 0.0
     try:
         if project_easting is not None and project_northing is not None:
             lon, lat = _project_to_wgs84(project_easting, project_northing)
-            cc_factor = _load_cc_factor(lon, lat, cc_degree if 'cc_degree' in locals() else 2.0)
+            cc_factor = _load_cc_factor(lon, lat, cc_degree)
     except Exception:
         cc_factor = 0.0
 
@@ -290,36 +344,54 @@ def koella(self,
     prisma = Prisma()
     prisma.connect()
    
+    # Build the update data based on climate scenario
+    result_data = {
+        "HQ": HQ,
+        "Tc": Tc,
+        "TB": TB,
+        "TFl": TFl,
+        "FLeff": FLeff,
+        "i_final": i_final,
+        "i_korrigiert": i_corrected
+    }
+    
+    # Use conditional logic to set the correct relation field
+    if climate_scenario == "1_5_degree":
+        data_update = {
+            'Koella_Result_1_5': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "2_degree":
+        data_update = {
+            'Koella_Result_2': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "3_degree":
+        data_update = {
+            'Koella_Result_3': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "4_degree":
+        data_update = {
+            'Koella_Result_4': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    else:  # current
+        data_update = {
+            'Koella_Result': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+   
     updatedResults = prisma.koella.update(
         where = {
             'id' : koella_id
         },
-        data = {
-            'Koella_Result': {
-                'upsert' : {
-                    'update' : {
-                        "HQ": HQ,
-                        "Tc": Tc,
-                        "TB": TB,
-                        "TFl": TFl,
-                        "FLeff": FLeff,
-                        "i_final": i_final,
-                        "i_korrigiert": i_corrected
-                    },
-                    'create' : {
-                        "HQ": HQ,
-                        "Tc": Tc,
-                        "TB": TB,
-                        "TFl": TFl,
-                        "FLeff": FLeff,
-                        "i_final": i_final,
-                        "i_korrigiert": i_corrected
-                    }
-                }
-            }
-            
-        }
-        
+        data = data_update
     )
 
     prisma.disconnect(5)
@@ -351,16 +423,30 @@ def clark_wsl_modified(self,
     project_easting: Optional[float] = None,
     project_northing: Optional[float] = None,
     cc_degree: float = 0.0,
+    climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
     intensity_fn=None,         # Precipitation intensity function: i(x, Tc) in mm/h
     dt=10,                     # Time step [min]
     pixel_area_m2=25           # Cell area [m²] (e.g. 5x5 m)
 ):
+    # Map climate scenario to cc_degree if not explicitly set
+    scenario_to_degree = {
+        "current": 0.0,
+        "1_5_degree": 1.5,
+        "2_degree": 2.0,
+        "3_degree": 3.0,
+        "4_degree": 4.0
+    }
+    
+    # Use climate_scenario to determine cc_degree
+    if climate_scenario in scenario_to_degree:
+        cc_degree = scenario_to_degree[climate_scenario]
+    
     # Compute climate change factor from project coordinates if available
     cc_factor = 0.0
     try:
         if project_easting is not None and project_northing is not None:
             lon, lat = _project_to_wgs84(project_easting, project_northing)
-            cc_factor = _load_cc_factor(lon, lat, cc_degree if 'cc_degree' in locals() else 2.0)
+            cc_factor = _load_cc_factor(lon, lat, cc_degree)
     except Exception:
         cc_factor = 0.0
     intensity_fn = construct_idf_curve(
@@ -487,30 +573,51 @@ def clark_wsl_modified(self,
     
     Q_max = float(np.max(Q))
 
+    # Build the update data based on climate scenario
+    result_data = {
+        "Q": Q_max,
+        "W": 0,
+        "K": 0,
+        "Tc": 0
+    }
+    
+    # Use conditional logic to set the correct relation field
+    if climate_scenario == "1_5_degree":
+        data_update = {
+            'ClarkWSL_Result_1_5': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "2_degree":
+        data_update = {
+            'ClarkWSL_Result_2': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "3_degree":
+        data_update = {
+            'ClarkWSL_Result_3': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "4_degree":
+        data_update = {
+            'ClarkWSL_Result_4': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    else:  # current
+        data_update = {
+            'ClarkWSL_Result': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+
     updatedResults = prisma.clarkwsl.update(
         where = {
             'id' : clark_wsl
         },
-        data = {
-            'ClarkWSL_Result': {
-                'upsert' : {
-                    'update' : {
-                        "Q": Q_max,
-                        "W": 0,
-                        "K": 0,
-                        "Tc": 0
-                    },
-                    'create' : {
-                        "Q": Q_max,
-                        "W": 0,
-                        "K": 0,
-                        "Tc": 0
-                    }
-                }
-            }
-            
-        }
-        
+        data = data_update
     )
 
     prisma.disconnect(5)

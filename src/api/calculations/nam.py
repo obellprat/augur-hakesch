@@ -115,6 +115,7 @@ def nam(self,
     project_easting=None,
     project_northing=None,
     cc_degree: float = 0.0,
+    climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
 ):
     """
     NAM (Nedbør-Afstrømnings-Model) calculation based on distributed curve numbers and travel times.
@@ -154,6 +155,19 @@ def nam(self,
         print(f"  Water balance mode description: {nam_obj.WaterBalanceMode.description}")
         print(f"  Storm center mode description: {nam_obj.StormCenterMode.description}")
         print(f"  Routing method description: {nam_obj.RoutingMethod.description}")
+    
+    # Map climate scenario to cc_degree if not explicitly set
+    scenario_to_degree = {
+        "current": 0.0,
+        "1_5_degree": 1.5,
+        "2_degree": 2.0,
+        "3_degree": 3.0,
+        "4_degree": 4.0
+    }
+    
+    # Use climate_scenario to determine cc_degree
+    if climate_scenario in scenario_to_degree:
+        cc_degree = scenario_to_degree[climate_scenario]
     
     # Compute climate change factor if coordinates provided
     cc_factor = 0.0
@@ -1236,38 +1250,56 @@ def nam(self,
         print(f"Debug - Ia type: {type(Ia)}, value: {Ia}")
         print(f"Debug - Pe_final type: {type(Pe_final)}, value: {Pe_final}")
 
+        # Build the update data based on climate scenario
+        result_data = {
+            'HQ': float(HQ),
+            'Tc': Tc,
+            'TB': TB,
+            'TFl': TFl,
+            'i': float(i_final),
+            'S': float(S),
+            'Ia': float(Ia),
+            'Pe': float(Pe_final),
+            'HQ_time': hq_time_json,
+        }
+        
+        # Use conditional logic to set the correct relation field
+        if climate_scenario == "1_5_degree":
+            data_update = {
+                'NAM_Result_1_5': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        elif climate_scenario == "2_degree":
+            data_update = {
+                'NAM_Result_2': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        elif climate_scenario == "3_degree":
+            data_update = {
+                'NAM_Result_3': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        elif climate_scenario == "4_degree":
+            data_update = {
+                'NAM_Result_4': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        else:  # current
+            data_update = {
+                'NAM_Result': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        
         updatedResults = prisma.nam.update(
             where={
                 'id': nam_id
             },
-            data={
-                'NAM_Result': {
-                    'upsert': {
-                        'update': {
-                            'HQ': float(HQ),
-                            'Tc': Tc,
-                            'TB': TB,
-                            'TFl': TFl,
-                            'i': float(i_final),
-                            'S': float(S),
-                            'Ia': float(Ia),
-                            'Pe': float(Pe_final),
-                            'HQ_time': hq_time_json,
-                        },
-                        'create': {
-                            'HQ': float(HQ),
-                            'Tc': Tc,
-                            'TB': TB,
-                            'TFl': TFl,
-                            'i': float(i_final),
-                            'S': float(S),
-                            'Ia': float(Ia),
-                            'Pe': float(Pe_final),
-                            'HQ_time': hq_time_json,
-                        }
-                    }
-                }
-            }
+            data=data_update
         )
         
         print(f"Debug - Database update successful: {updatedResults}")

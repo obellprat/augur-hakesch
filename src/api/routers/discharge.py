@@ -50,42 +50,49 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
 
         doDoTasks = []
 
+        # Climate scenarios to calculate
+        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree", "4_degree"]
+
         for mod_fliesszeit in project.Mod_Fliesszeit:
-            doDoTasks.append(modifizierte_fliesszeit.s(
-                project.IDF_Parameters.P_low_1h, 
-                project.IDF_Parameters.P_high_1h, 
-                project.IDF_Parameters.P_low_24h, 
-                project.IDF_Parameters.P_high_24h, 
-                project.IDF_Parameters.rp_low, 
-                project.IDF_Parameters.rp_high, 
-                mod_fliesszeit.Annuality.number, 
-                mod_fliesszeit.Vo20, 
-                project.channel_length, 
-                project.delta_h, 
-                mod_fliesszeit.psi, 
-                project.catchment_area, 
-                mod_fliesszeit.id,
-                project_easting=project.Point.easting,
-                project_northing=project.Point.northing
-            ))
+            for scenario in climate_scenarios:
+                doDoTasks.append(modifizierte_fliesszeit.s(
+                    project.IDF_Parameters.P_low_1h, 
+                    project.IDF_Parameters.P_high_1h, 
+                    project.IDF_Parameters.P_low_24h, 
+                    project.IDF_Parameters.P_high_24h, 
+                    project.IDF_Parameters.rp_low, 
+                    project.IDF_Parameters.rp_high, 
+                    mod_fliesszeit.Annuality.number, 
+                    mod_fliesszeit.Vo20, 
+                    project.channel_length, 
+                    project.delta_h, 
+                    mod_fliesszeit.psi, 
+                    project.catchment_area, 
+                    mod_fliesszeit.id,
+                    project_easting=project.Point.easting,
+                    project_northing=project.Point.northing,
+                    climate_scenario=scenario
+                ))
 
         for koella_obj in project.Koella:
-            doDoTasks.append(koella.s(
-                project.IDF_Parameters.P_low_1h, 
-                project.IDF_Parameters.P_high_1h, 
-                project.IDF_Parameters.P_low_24h, 
-                project.IDF_Parameters.P_high_24h, 
-                project.IDF_Parameters.rp_low, 
-                project.IDF_Parameters.rp_high, 
-                koella_obj.Annuality.number, 
-                koella_obj.Vo20, 
-                project.cummulative_channel_length/1000, 
-                project.catchment_area, 
-                koella_obj.glacier_area, 
-                koella_obj.id,
-                project_easting=project.Point.easting,
-                project_northing=project.Point.northing
-            ))
+            for scenario in climate_scenarios:
+                doDoTasks.append(koella.s(
+                    project.IDF_Parameters.P_low_1h, 
+                    project.IDF_Parameters.P_high_1h, 
+                    project.IDF_Parameters.P_low_24h, 
+                    project.IDF_Parameters.P_high_24h, 
+                    project.IDF_Parameters.rp_low, 
+                    project.IDF_Parameters.rp_high, 
+                    koella_obj.Annuality.number, 
+                    koella_obj.Vo20, 
+                    project.cummulative_channel_length/1000, 
+                    project.catchment_area, 
+                    koella_obj.glacier_area, 
+                    koella_obj.id,
+                    project_easting=project.Point.easting,
+                    project_northing=project.Point.northing,
+                    climate_scenario=scenario
+                ))
 
                 # TODO: get zone parameters from DB
         zone_parameters = {
@@ -104,50 +111,54 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                 {"typ": f.ZoneParameterTyp, "pct": f.pct}
                 for f in clark_wsl_obj.Fractions
             ]
-            doDoTasks.append(clark_wsl_modified.s(
-                P_low_1h=project.IDF_Parameters.P_low_1h,
-                P_high_1h=project.IDF_Parameters.P_high_1h,
-                P_low_24h=project.IDF_Parameters.P_low_24h,
-                P_high_24h=project.IDF_Parameters.P_high_24h,
-                rp_low=project.IDF_Parameters.rp_low,
-                rp_high=project.IDF_Parameters.rp_high,
-                discharge_types_parameters=zone_parameters,
-                x=clark_wsl_obj.Annuality.number,
-                fractions_dict=fractions_dict,
-                clark_wsl=clark_wsl_obj.id,
-                project_id=project.id,
-                user_id=user.id,
-                project_easting=project.Point.easting,
-                project_northing=project.Point.northing,
-                intensity_fn=None,
-                dt=clark_wsl_obj.dt,
-                pixel_area_m2=clark_wsl_obj.pixel_area_m2
-            ))
+            for scenario in climate_scenarios:
+                doDoTasks.append(clark_wsl_modified.s(
+                    P_low_1h=project.IDF_Parameters.P_low_1h,
+                    P_high_1h=project.IDF_Parameters.P_high_1h,
+                    P_low_24h=project.IDF_Parameters.P_low_24h,
+                    P_high_24h=project.IDF_Parameters.P_high_24h,
+                    rp_low=project.IDF_Parameters.rp_low,
+                    rp_high=project.IDF_Parameters.rp_high,
+                    discharge_types_parameters=zone_parameters,
+                    x=clark_wsl_obj.Annuality.number,
+                    fractions_dict=fractions_dict,
+                    clark_wsl=clark_wsl_obj.id,
+                    project_id=project.id,
+                    user_id=user.id,
+                    project_easting=project.Point.easting,
+                    project_northing=project.Point.northing,
+                    climate_scenario=scenario,
+                    intensity_fn=None,
+                    dt=clark_wsl_obj.dt,
+                    pixel_area_m2=clark_wsl_obj.pixel_area_m2
+                ))
 
         for nam_obj in project.NAM:
-            doDoTasks.append(nam.s(
-                P_low_1h=project.IDF_Parameters.P_low_1h,
-                P_high_1h=project.IDF_Parameters.P_high_1h,
-                P_low_24h=project.IDF_Parameters.P_low_24h,
-                P_high_24h=project.IDF_Parameters.P_high_24h,
-                rp_low=project.IDF_Parameters.rp_low,
-                rp_high=project.IDF_Parameters.rp_high,
-                x=nam_obj.Annuality.number,
-                curve_number=70.0,  # Default fallback value
-                catchment_area=project.catchment_area,
-                channel_length=project.channel_length,
-                delta_h=project.delta_h,
-                nam_id=nam_obj.id,
-                project_id=project.id,
-                user_id=user.id,
-                water_balance_mode=nam_obj.water_balance_mode,
-                precipitation_factor=nam_obj.precipitation_factor,
-                storm_center_mode=nam_obj.storm_center_mode,
-                routing_method=nam_obj.routing_method,
-                readiness_to_drain=nam_obj.readiness_to_drain,
-                project_easting=project.Point.easting,
-                project_northing=project.Point.northing
-            ))
+            for scenario in climate_scenarios:
+                doDoTasks.append(nam.s(
+                    P_low_1h=project.IDF_Parameters.P_low_1h,
+                    P_high_1h=project.IDF_Parameters.P_high_1h,
+                    P_low_24h=project.IDF_Parameters.P_low_24h,
+                    P_high_24h=project.IDF_Parameters.P_high_24h,
+                    rp_low=project.IDF_Parameters.rp_low,
+                    rp_high=project.IDF_Parameters.rp_high,
+                    x=nam_obj.Annuality.number,
+                    curve_number=70.0,  # Default fallback value
+                    catchment_area=project.catchment_area,
+                    channel_length=project.channel_length,
+                    delta_h=project.delta_h,
+                    nam_id=nam_obj.id,
+                    project_id=project.id,
+                    user_id=user.id,
+                    water_balance_mode=nam_obj.water_balance_mode,
+                    precipitation_factor=nam_obj.precipitation_factor,
+                    storm_center_mode=nam_obj.storm_center_mode,
+                    routing_method=nam_obj.routing_method,
+                    readiness_to_drain=nam_obj.readiness_to_drain,
+                    project_easting=project.Point.easting,
+                    project_northing=project.Point.northing,
+                    climate_scenario=scenario
+                ))
 
         if len(doDoTasks) > 0:
             task = group(doDoTasks).apply_async()
@@ -181,23 +192,33 @@ def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User 
         )
 
         modFliesszeit = next((x for x in project.Mod_Fliesszeit if x.id == ModFliesszeitId), None)
-        task = modifizierte_fliesszeit.delay(
-            project.IDF_Parameters.P_low_1h,
-            project.IDF_Parameters.P_high_1h,
-            project.IDF_Parameters.P_low_24h,
-            project.IDF_Parameters.P_high_24h,
-            project.IDF_Parameters.rp_low,
-            project.IDF_Parameters.rp_high,
-            modFliesszeit.Annuality.number,
-            modFliesszeit.Vo20,
-            project.channel_length,
-            project.delta_h,
-            modFliesszeit.psi,
-            project.catchment_area,
-            modFliesszeit.id,
-            project_easting=project.Point.easting,
-            project_northing=project.Point.northing
-        )
+        
+        # Climate scenarios to calculate
+        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree", "4_degree"]
+        
+        doDoTasks = []
+        for scenario in climate_scenarios:
+            doDoTasks.append(modifizierte_fliesszeit.s(
+                project.IDF_Parameters.P_low_1h,
+                project.IDF_Parameters.P_high_1h,
+                project.IDF_Parameters.P_low_24h,
+                project.IDF_Parameters.P_high_24h,
+                project.IDF_Parameters.rp_low,
+                project.IDF_Parameters.rp_high,
+                modFliesszeit.Annuality.number,
+                modFliesszeit.Vo20,
+                project.channel_length,
+                project.delta_h,
+                modFliesszeit.psi,
+                project.catchment_area,
+                modFliesszeit.id,
+                project_easting=project.Point.easting,
+                project_northing=project.Point.northing,
+                climate_scenario=scenario
+            ))
+        
+        task = group(doDoTasks).apply_async()
+        task.save()
         return JSONResponse({"task_id": task.id}) 
     except:
         # Handle missing user scenario
@@ -226,22 +247,32 @@ def get_koella(ProjectId:str, KoellaId: int, user: User = Depends(get_user)):
         )
 
         koella_obj = next((x for x in project.Koella if x.id == KoellaId), None)
-        task = koella.delay(
-            project.IDF_Parameters.P_low_1h,
-            project.IDF_Parameters.P_high_1h,
-            project.IDF_Parameters.P_low_24h,
-            project.IDF_Parameters.P_high_24h,
-            project.IDF_Parameters.rp_low,
-            project.IDF_Parameters.rp_high,
-            koella_obj.Annuality.number,
-            koella_obj.Vo20,
-            project.cummulative_channel_length/1000,
-            project.catchment_area,
-            koella_obj.glacier_area,
-            koella_obj.id,
-            project_easting=project.Point.easting,
-            project_northing=project.Point.northing,
-        )
+        
+        # Climate scenarios to calculate
+        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree", "4_degree"]
+        
+        doDoTasks = []
+        for scenario in climate_scenarios:
+            doDoTasks.append(koella.s(
+                project.IDF_Parameters.P_low_1h,
+                project.IDF_Parameters.P_high_1h,
+                project.IDF_Parameters.P_low_24h,
+                project.IDF_Parameters.P_high_24h,
+                project.IDF_Parameters.rp_low,
+                project.IDF_Parameters.rp_high,
+                koella_obj.Annuality.number,
+                koella_obj.Vo20,
+                project.cummulative_channel_length/1000,
+                project.catchment_area,
+                koella_obj.glacier_area,
+                koella_obj.id,
+                project_easting=project.Point.easting,
+                project_northing=project.Point.northing,
+                climate_scenario=scenario
+            ))
+        
+        task = group(doDoTasks).apply_async()
+        task.save()
         return JSONResponse({"task_id": task.id}) 
     except:
         # Handle missing user scenario
@@ -302,25 +333,34 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
             for f in clark_wsl_obj.Fractions
         ]
 
-        task = clark_wsl_modified.delay(
-            P_low_1h=project.IDF_Parameters.P_low_1h,
-            P_high_1h=project.IDF_Parameters.P_high_1h,
-            P_low_24h=project.IDF_Parameters.P_low_24h,
-            P_high_24h=project.IDF_Parameters.P_high_24h,
-            rp_low=project.IDF_Parameters.rp_low,
-            rp_high=project.IDF_Parameters.rp_high,
-            discharge_types_parameters=zone_parameters,
-            x=clark_wsl_obj.Annuality.number,
-            fractions_dict=fractions_dict,
-            clark_wsl=clark_wsl_obj.id,
-            project_id=project.id,
-            user_id=user.id,
-            project_easting=project.Point.easting,
-            project_northing=project.Point.northing,
-            intensity_fn=None,
-            dt=clark_wsl_obj.dt,
-            pixel_area_m2=clark_wsl_obj.pixel_area_m2
-        )
+        # Climate scenarios to calculate
+        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree", "4_degree"]
+        
+        doDoTasks = []
+        for scenario in climate_scenarios:
+            doDoTasks.append(clark_wsl_modified.s(
+                P_low_1h=project.IDF_Parameters.P_low_1h,
+                P_high_1h=project.IDF_Parameters.P_high_1h,
+                P_low_24h=project.IDF_Parameters.P_low_24h,
+                P_high_24h=project.IDF_Parameters.P_high_24h,
+                rp_low=project.IDF_Parameters.rp_low,
+                rp_high=project.IDF_Parameters.rp_high,
+                discharge_types_parameters=zone_parameters,
+                x=clark_wsl_obj.Annuality.number,
+                fractions_dict=fractions_dict,
+                clark_wsl=clark_wsl_obj.id,
+                project_id=project.id,
+                user_id=user.id,
+                project_easting=project.Point.easting,
+                project_northing=project.Point.northing,
+                climate_scenario=scenario,
+                intensity_fn=None,
+                dt=clark_wsl_obj.dt,
+                pixel_area_m2=clark_wsl_obj.pixel_area_m2
+            ))
+        
+        task = group(doDoTasks).apply_async()
+        task.save()
         return JSONResponse({"task_id": task.id})
     except:
         # Handle missing user scenario
@@ -391,31 +431,40 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
             )
 
         # Only proceed with NAM calculation if both prerequisites succeeded
-        task = nam.delay(
-            P_low_1h=project.IDF_Parameters.P_low_1h,
-            P_high_1h=project.IDF_Parameters.P_high_1h,
-            P_low_24h=project.IDF_Parameters.P_low_24h,
-            P_high_24h=project.IDF_Parameters.P_high_24h,
-            rp_low=project.IDF_Parameters.rp_low,
-            rp_high=project.IDF_Parameters.rp_high,
-            x=nam_obj.Annuality.number,
-            curve_number=70.0,  # Default fallback value
-            catchment_area=project.catchment_area,
-            channel_length=project.channel_length,
-            delta_h=project.delta_h,
-            nam_id=nam_obj.id,
-            project_id=project.id,
-            user_id=user.id,
-            water_balance_mode=nam_obj.water_balance_mode,
-            precipitation_factor=nam_obj.precipitation_factor,
-            storm_center_mode=nam_obj.storm_center_mode,
-            routing_method=nam_obj.routing_method,
-            readiness_to_drain=nam_obj.readiness_to_drain,
-            discharge_point=discharge_point,
-            discharge_point_crs=discharge_point_crs,
-            project_easting=project.Point.easting,
-            project_northing=project.Point.northing,
-        )
+        # Climate scenarios to calculate
+        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree", "4_degree"]
+        
+        doDoTasks = []
+        for scenario in climate_scenarios:
+            doDoTasks.append(nam.s(
+                P_low_1h=project.IDF_Parameters.P_low_1h,
+                P_high_1h=project.IDF_Parameters.P_high_1h,
+                P_low_24h=project.IDF_Parameters.P_low_24h,
+                P_high_24h=project.IDF_Parameters.P_high_24h,
+                rp_low=project.IDF_Parameters.rp_low,
+                rp_high=project.IDF_Parameters.rp_high,
+                x=nam_obj.Annuality.number,
+                curve_number=70.0,  # Default fallback value
+                catchment_area=project.catchment_area,
+                channel_length=project.channel_length,
+                delta_h=project.delta_h,
+                nam_id=nam_obj.id,
+                project_id=project.id,
+                user_id=user.id,
+                water_balance_mode=nam_obj.water_balance_mode,
+                precipitation_factor=nam_obj.precipitation_factor,
+                storm_center_mode=nam_obj.storm_center_mode,
+                routing_method=nam_obj.routing_method,
+                readiness_to_drain=nam_obj.readiness_to_drain,
+                discharge_point=discharge_point,
+                discharge_point_crs=discharge_point_crs,
+                project_easting=project.Point.easting,
+                project_northing=project.Point.northing,
+                climate_scenario=scenario
+            ))
+        
+        task = group(doDoTasks).apply_async()
+        task.save()
         return JSONResponse({"task_id": task.id})
 
     except Exception as e:
