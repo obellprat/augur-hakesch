@@ -87,7 +87,11 @@ const getProjectById = async (id: string) => {
 				},
 				include: {
 					Annuality: true,
-					Mod_Fliesszeit_Result: true
+					Mod_Fliesszeit_Result: true,
+					Mod_Fliesszeit_Result_1_5: true,
+					Mod_Fliesszeit_Result_2: true,
+					Mod_Fliesszeit_Result_3: true,
+					Mod_Fliesszeit_Result_4: true
 				}
 			},
 			Koella: {
@@ -96,7 +100,11 @@ const getProjectById = async (id: string) => {
 				},
 				include: {
 					Annuality: true,
-					Koella_Result: true
+					Koella_Result: true,
+					Koella_Result_1_5: true,
+					Koella_Result_2: true,
+					Koella_Result_3: true,
+					Koella_Result_4: true
 				}
 			},
 			ClarkWSL: {
@@ -106,6 +114,10 @@ const getProjectById = async (id: string) => {
 				include: {
 					Annuality: true,
 					ClarkWSL_Result: true,
+					ClarkWSL_Result_1_5: true,
+					ClarkWSL_Result_2: true,
+					ClarkWSL_Result_3: true,
+					ClarkWSL_Result_4: true,
 					Fractions: true
 				}
 			},
@@ -116,6 +128,10 @@ const getProjectById = async (id: string) => {
 				include: {
 					Annuality: true,
 					NAM_Result: true,
+					NAM_Result_1_5: true,
+					NAM_Result_2: true,
+					NAM_Result_3: true,
+					NAM_Result_4: true,
 				}
 			}
 		}
