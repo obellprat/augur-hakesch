@@ -555,7 +555,7 @@ def _load_cc_factor(lon: float, lat: float, degree: float = 2.0) -> float:
             if row < 0 or col < 0 or row >= ds.height or col >= ds.width:
                 print(f"Row or column out of bounds: {row}, {col}")
                 return 0.0
-            val = ds.read(1)[row, col]
+            val = ds.read(1)[row, col] / 100.0
             if val is None or np.isnan(val):
                 print(f"Value is None or NaN: {val}")
                 return 0.0

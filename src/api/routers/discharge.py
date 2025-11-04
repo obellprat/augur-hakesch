@@ -196,8 +196,7 @@ def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User 
             project.catchment_area,
             modFliesszeit.id,
             project_easting=project.Point.easting,
-            project_northing=project.Point.northing,
-            cc_degree=2.0
+            project_northing=project.Point.northing
         )
         return JSONResponse({"task_id": task.id}) 
     except:
