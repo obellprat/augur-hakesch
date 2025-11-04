@@ -2,8 +2,9 @@
 
 ### Feat
 
+- **frontend,api**: climate change scenarios implementation
 - **api**: faster catchment calculations
-- **frontend,-api**: NAM hydrograph implementation
+- **frontend,api**: NAM hydrograph implementation
 
 ### Fix
 
