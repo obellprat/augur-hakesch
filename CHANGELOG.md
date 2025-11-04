@@ -1,3 +1,14 @@
+## 0.5.0-dev.1 (2025-11-04)
+
+### Feat
+
+- **api**: faster catchment calculations
+- **frontend,-api**: NAM hydrograph implementation
+
+### Fix
+
+- **TB-convergence**: Adjust parameters for TB convergence in MF and Koella to avoid failing convergence
+
 ## 0.4.0-dev.1 (2025-10-23)
 
 ### Feat

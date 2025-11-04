@@ -7,4 +7,4 @@ automatically updated by the python-semantic-release package.
 DO NOT EDIT IT MANUALLY.
 """
 
-__version__ = "0.4.0-dev.1"
+__version__ = "0.5.0-dev.1"
