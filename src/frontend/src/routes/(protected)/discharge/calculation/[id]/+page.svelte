@@ -122,8 +122,9 @@
 			// First pass: collect all data and find the actual data range
 			for (let i = 0; i < namResults.length; i++) {
 				const nam = namResults[i];
-				if (nam.NAM_Result?.HQ_time) {
-					const dischargeData = JSON.parse(nam.NAM_Result.HQ_time);
+				const namResult = getResultField(nam, 'NAM_Result');
+				if (namResult?.HQ_time) {
+					const dischargeData = JSON.parse(namResult.HQ_time);
 					dischargeDataArray.push(dischargeData);
 					
 					// Find the actual data range for this series
@@ -159,7 +160,8 @@
 			// Process each annuality
 			for (let i = 0; i < namResults.length; i++) {
 				const nam = namResults[i];
-				if (nam.NAM_Result?.HQ_time) {
+				const namResult = getResultField(nam, 'NAM_Result');
+				if (namResult?.HQ_time) {
 					const dischargeData = dischargeDataArray[i];
 					
 					// Extract only the relevant data range
@@ -418,6 +420,30 @@
 	let soilFileExists = $state(false);
 	let useOwnSoilData = $state(false);
 	let isCheckingSoilFile = $state(false);
+	
+	// Climate scenario selection state
+	let selectedClimateScenario = $state<string>('current');
+	
+	// Climate scenario options
+	const climateScenarios = [
+		{ value: 'current', label: 'Current Climate' },
+		{ value: '1_5_degree', label: '+1.5°C' },
+		{ value: '2_degree', label: '+2.0°C' },
+		{ value: '3_degree', label: '+3.0°C' },
+		{ value: '4_degree', label: '+4.0°C' }
+	];
+	
+	// Helper function to get the appropriate result field based on selected climate scenario
+	function getResultField(item: any, baseFieldName: string) {
+		const fieldMap: Record<string, string> = {
+			'current': baseFieldName,
+			'1_5_degree': `${baseFieldName}_1_5`,
+			'2_degree': `${baseFieldName}_2`,
+			'3_degree': `${baseFieldName}_3`,
+			'4_degree': `${baseFieldName}_4`
+		};
+		return item[fieldMap[selectedClimateScenario]];
+	}
 
 	let returnPeriod = $state([
 		{
@@ -483,34 +509,23 @@
 			color: '#1376ef',
 			data: []
 		};
+		const mf_23 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 2.3);
+		const mf_20 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 20);
+		const mf_100 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 100);
+		
 		mod_fliesszeit_data.data.push(
-			mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 2.3)
-				?.Mod_Fliesszeit_Result?.HQ
-				? Number(
-						mod_verfahren
-							.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 2.3)
-							.Mod_Fliesszeit_Result.HQ.toFixed(2)
-					)
+			getResultField(mf_23, 'Mod_Fliesszeit_Result')?.HQ
+				? Number(getResultField(mf_23, 'Mod_Fliesszeit_Result').HQ.toFixed(2))
 				: null
 		);
 		mod_fliesszeit_data.data.push(
-			mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 20)
-				?.Mod_Fliesszeit_Result?.HQ
-				? Number(
-						mod_verfahren
-							.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 20)
-							.Mod_Fliesszeit_Result.HQ.toFixed(2)
-					)
+			getResultField(mf_20, 'Mod_Fliesszeit_Result')?.HQ
+				? Number(getResultField(mf_20, 'Mod_Fliesszeit_Result').HQ.toFixed(2))
 				: null
 		);
 		mod_fliesszeit_data.data.push(
-			mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 100)
-				?.Mod_Fliesszeit_Result?.HQ
-				? Number(
-						mod_verfahren
-							.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 100)
-							.Mod_Fliesszeit_Result.HQ.toFixed(2)
-					)
+			getResultField(mf_100, 'Mod_Fliesszeit_Result')?.HQ
+				? Number(getResultField(mf_100, 'Mod_Fliesszeit_Result').HQ.toFixed(2))
 				: null
 		);
 		let koella_data: { name: string; color: string; data: (number | null)[] } = {
@@ -518,22 +533,23 @@
 			color: '#1e13ef',
 			data: []
 		};
+		const k_23 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 2.3);
+		const k_20 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 20);
+		const k_100 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 100);
+		
 		koella_data.data.push(
-			koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 2.3)
-				?.Koella_Result?.HQ
-				? Number(koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 2.3).Koella_Result.HQ.toFixed(2))
+			getResultField(k_23, 'Koella_Result')?.HQ
+				? Number(getResultField(k_23, 'Koella_Result').HQ.toFixed(2))
 				: null
 		);
 		koella_data.data.push(
-			koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 20)
-				?.Koella_Result?.HQ
-				? Number(koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 20).Koella_Result.HQ.toFixed(2))
+			getResultField(k_20, 'Koella_Result')?.HQ
+				? Number(getResultField(k_20, 'Koella_Result').HQ.toFixed(2))
 				: null
 		);
 		koella_data.data.push(
-			koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 100)
-				?.Koella_Result?.HQ
-				? Number(koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 100).Koella_Result.HQ.toFixed(2))
+			getResultField(k_100, 'Koella_Result')?.HQ
+				? Number(getResultField(k_100, 'Koella_Result').HQ.toFixed(2))
 				: null
 		);
 		let clark_wsl_data: { name: string; color: string; data: (number | null)[] } = {
@@ -541,22 +557,23 @@
 			color: '#13e4ef',
 			data: []
 		};
+		const c_23 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 2.3);
+		const c_20 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 20);
+		const c_100 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 100);
+		
 		clark_wsl_data.data.push(
-			clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 2.3)
-				?.ClarkWSL_Result?.Q
-				? Number(clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 2.3).ClarkWSL_Result.Q.toFixed(2))
+			getResultField(c_23, 'ClarkWSL_Result')?.Q
+				? Number(getResultField(c_23, 'ClarkWSL_Result').Q.toFixed(2))
 				: null
 		);
 		clark_wsl_data.data.push(
-			clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 20)
-				?.ClarkWSL_Result?.Q
-				? Number(clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 20).ClarkWSL_Result.Q.toFixed(2))
+			getResultField(c_20, 'ClarkWSL_Result')?.Q
+				? Number(getResultField(c_20, 'ClarkWSL_Result').Q.toFixed(2))
 				: null
 		);
 		clark_wsl_data.data.push(
-			clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 100)
-				?.ClarkWSL_Result?.Q
-				? Number(clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 100).ClarkWSL_Result.Q.toFixed(2))
+			getResultField(c_100, 'ClarkWSL_Result')?.Q
+				? Number(getResultField(c_100, 'ClarkWSL_Result').Q.toFixed(2))
 				: null
 		);
 		let nam_data: { name: string; color: string; data: (number | null)[] } = {
@@ -564,28 +581,31 @@
 			color: '#ef1313',
 			data: []
 		};
+		const n_23 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 2.3);
+		const n_20 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 20);
+		const n_100 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 100);
+		
 		nam_data.data.push(
-			nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 2.3)
-				?.NAM_Result?.HQ
-				? Number(nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 2.3).NAM_Result.HQ.toFixed(2))
+			getResultField(n_23, 'NAM_Result')?.HQ
+				? Number(getResultField(n_23, 'NAM_Result').HQ.toFixed(2))
 				: null
 		);
 		nam_data.data.push(
-			nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 20)
-				?.NAM_Result?.HQ
-				? Number(nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 20).NAM_Result.HQ.toFixed(2))
+			getResultField(n_20, 'NAM_Result')?.HQ
+				? Number(getResultField(n_20, 'NAM_Result').HQ.toFixed(2))
 				: null
 		);
 		nam_data.data.push(
-			nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 100)
-				?.NAM_Result?.HQ
-				? Number(nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 100).NAM_Result.HQ.toFixed(2))
+			getResultField(n_100, 'NAM_Result')?.HQ
+				? Number(getResultField(n_100, 'NAM_Result').HQ.toFixed(2))
 				: null
 		);
 		chartOneOptions.series = [mod_fliesszeit_data, koella_data, clark_wsl_data, nam_data];
 		chart.ref?.updateSeries(chartOneOptions.series);
 	}
 	$effect(() => {
+		// Re-run when climate scenario changes
+		selectedClimateScenario;
 		showResults();
 	});
 
@@ -639,9 +659,10 @@
 			initial: 0
 		});
 		
-		const taskIds: string[] = [];
+		// Each annuality gets its own API call
+		// Each call returns a group task_id (for all climate scenarios of that annuality)
+		const groupTaskIds: string[] = [];
 		
-		// Call backend API for each annuality in the scenario
 		for (const mod_fz of scenario) {
 			try {
 				const response = await fetch(
@@ -658,15 +679,24 @@
 					}
 				);
 				const result = await response.json();
-				taskIds.push(result.task_id);
+				// Each API call returns a group task_id for all climate scenarios
+				groupTaskIds.push(result.task_id);
 			} catch (error) {
 				console.error('Error calculating ModFliess:', error);
 			}
 		}
 		
-		// Monitor all tasks
-		if (taskIds.length > 0) {
-			getStatusMultiple(taskIds);
+		// Monitor all group tasks
+		if (groupTaskIds.length > 0) {
+			getMultipleGroupStatus(groupTaskIds);
+		} else {
+			toast.pop();
+			toast.push($_('page.discharge.calculation.calcerror'), {
+				theme: {
+					'--toastColor': 'white',
+					'--toastBackground': 'darkred'
+				}
+			});
 		}
 	}
 	
@@ -675,9 +705,10 @@
 			initial: 0
 		});
 		
-		const taskIds: string[] = [];
+		// Each annuality gets its own API call
+		// Each call returns a group task_id (for all climate scenarios of that annuality)
+		const groupTaskIds: string[] = [];
 		
-		// Call backend API for each annuality in the scenario
 		for (const k of scenario) {
 			try {
 				const response = await fetch(
@@ -694,15 +725,24 @@
 					}
 				);
 				const result = await response.json();
-				taskIds.push(result.task_id);
+				// Each API call returns a group task_id for all climate scenarios
+				groupTaskIds.push(result.task_id);
 			} catch (error) {
 				console.error('Error calculating Koella:', error);
 			}
 		}
 		
-		// Monitor all tasks
-		if (taskIds.length > 0) {
-			getStatusMultiple(taskIds);
+		// Monitor all group tasks
+		if (groupTaskIds.length > 0) {
+			getMultipleGroupStatus(groupTaskIds);
+		} else {
+			toast.pop();
+			toast.push($_('page.discharge.calculation.calcerror'), {
+				theme: {
+					'--toastColor': 'white',
+					'--toastBackground': 'darkred'
+				}
+			});
 		}
 	}
 	
@@ -711,9 +751,10 @@
 			initial: 0
 		});
 		
-		const taskIds: string[] = [];
+		// Each annuality gets its own API call
+		// Each call returns a group task_id (for all climate scenarios of that annuality)
+		const groupTaskIds: string[] = [];
 		
-		// Call backend API for each annuality in the scenario
 		for (const k of scenario) {
 			try {
 				const response = await fetch(
@@ -730,15 +771,24 @@
 					}
 				);
 				const result = await response.json();
-				taskIds.push(result.task_id);
+				// Each API call returns a group task_id for all climate scenarios
+				groupTaskIds.push(result.task_id);
 			} catch (error) {
 				console.error('Error calculating ClarkWSL:', error);
 			}
 		}
 		
-		// Monitor all tasks
-		if (taskIds.length > 0) {
-			getStatusMultiple(taskIds);
+		// Monitor all group tasks
+		if (groupTaskIds.length > 0) {
+			getMultipleGroupStatus(groupTaskIds);
+		} else {
+			toast.pop();
+			toast.push($_('page.discharge.calculation.calcerror'), {
+				theme: {
+					'--toastColor': 'white',
+					'--toastBackground': 'darkred'
+				}
+			});
 		}
 	}
 	
@@ -747,9 +797,10 @@
 			initial: 0
 		});
 		
-		const taskIds: string[] = [];
+		// Each annuality gets its own API call
+		// Each call returns a group task_id (for all climate scenarios of that annuality)
+		const groupTaskIds: string[] = [];
 		
-		// Call backend API for each annuality in the scenario
 		for (const n of scenario) {
 			try {
 				const response = await fetch(
@@ -766,15 +817,24 @@
 					}
 				);
 				const result = await response.json();
-				taskIds.push(result.task_id);
+				// Each API call returns a group task_id for all climate scenarios
+				groupTaskIds.push(result.task_id);
 			} catch (error) {
 				console.error('Error calculating NAM:', error);
 			}
 		}
 		
-		// Monitor all tasks
-		if (taskIds.length > 0) {
-			getStatusMultiple(taskIds);
+		// Monitor all group tasks
+		if (groupTaskIds.length > 0) {
+			getMultipleGroupStatus(groupTaskIds);
+		} else {
+			toast.pop();
+			toast.push($_('page.discharge.calculation.calcerror'), {
+				theme: {
+					'--toastColor': 'white',
+					'--toastBackground': 'darkred'
+				}
+			});
 		}
 	}
 
@@ -1061,6 +1121,82 @@
 				}, 1000);
 			})
 			.catch((err) => console.log(err));
+	}
+
+	async function getMultipleGroupStatus(groupTaskIds: string[]) {
+		// Track status of all groups
+		const groupStatuses = new Map<string, { completed: number; total: number; status: string }>();
+		groupTaskIds.forEach(id => groupStatuses.set(id, { completed: 0, total: 0, status: 'PENDING' }));
+		
+		const checkAllGroups = async () => {
+			let allCompleted = true;
+			let anyFailed = false;
+			let totalCompleted = 0;
+			let totalTasks = 0;
+			
+			for (const groupTaskId of groupTaskIds) {
+				try {
+					const response = await fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/group/${groupTaskId}`, {
+						method: 'GET',
+						headers: {
+							Authorization: 'Bearer ' + data.session.access_token,
+							'Content-Type': 'application/json'
+						}
+					});
+					const res = await response.json();
+					
+					groupStatuses.set(groupTaskId, {
+						completed: res.completed,
+						total: res.total,
+						status: res.status
+					});
+					
+					totalCompleted += res.completed;
+					totalTasks += res.total;
+					
+					if (res.status === 'FAILURE') {
+						anyFailed = true;
+					} else if (res.completed !== res.total) {
+						allCompleted = false;
+					}
+				} catch (err) {
+					console.error('Error checking group task status:', err);
+					allCompleted = false;
+				}
+			}
+			
+			if (anyFailed) {
+				toast.pop();
+				toast.push($_('page.discharge.calculation.calcerror'), {
+					theme: {
+						'--toastColor': 'white',
+						'--toastBackground': 'darkred'
+					}
+				});
+				invalidateAll();
+				return;
+			}
+			
+			if (allCompleted) {
+				toast.pop();
+				toast.push($_('page.discharge.calculation.calcsuccess'), {
+					theme: {
+						'--toastColor': 'mintcream',
+						'--toastBackground': 'rgba(72,187,120,0.9)',
+						'--toastBarBackground': '#2F855A'
+					}
+				});
+				invalidateAll();
+				return;
+			}
+			
+			// Continue polling
+			setTimeout(() => {
+				checkAllGroups();
+			}, 1000);
+		};
+		
+		checkAllGroups();
 	}
 
 	onMount(async () => {
@@ -2136,26 +2272,41 @@
 								style=""
 							>
 								<div class="accordion-body">
-									<div use:renderChart={chart}></div>
+									<!-- Climate Scenario Selector -->
+									<div class="mb-3">
+										<label for="climateScenario" class="form-label">
+											<strong>Climate Scenario</strong>
+										</label>
+										<select 
+											id="climateScenario" 
+											class="form-select"
+											bind:value={selectedClimateScenario}
+										>
+											{#each climateScenarios as scenario}
+												<option value={scenario.value}>{scenario.label}</option>
+											{/each}
+										</select>
+									</div>
+									
+									{#key selectedClimateScenario}
+										<div use:renderChart={chart}></div>
+									{/key}
 									
 									<!-- NAM Discharge Timesteps Graph -->
-									{#if nam.some((n: any) => n.NAM_Result?.HQ_time)}
+									{#if nam.some((n: any) => getResultField(n, 'NAM_Result')?.HQ_time)}
 										<div class="mt-4">
 											<h5 class="text-muted">{$_('page.discharge.calculation.chart.dischargeTimeSeries')}</h5>
 											<div class="card">
 												<div class="card-body">
-													{#each nam_scenarios as scenario, scenarioIndex}
-														{#if scenario.some((n: any) => n.NAM_Result?.HQ_time)}
-															<div class="mb-0">
-																
-																<div 
-																	class="discharge-chart" 
-																	style=""
-																	use:renderChart={getMultiAnnualityDischargeChartOptions(scenario, scenarioIndex)}
-																></div>
-															</div>
-														{/if}
-													{/each}
+													{#key selectedClimateScenario}
+														<div class="mb-0">
+															<div 
+																class="discharge-chart" 
+																style=""
+																use:renderChart={getMultiAnnualityDischargeChartOptions(nam, 0)}
+															></div>
+														</div>
+													{/key}
 												</div>
 											</div>
 										</div>
@@ -2163,98 +2314,178 @@
 									{#if mod_verfahren.length > 0}
 										<h4 class="text-muted">{$_('page.discharge.calculation.modFliesszeit')}</h4>
 
-										<table class="table mb-0">
-											<thead>
-												<tr>
-													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
-												</tr>
-											</thead>
-											<tbody>
-												{#each mod_verfahren as mod_fz}
+										<div class="table-responsive">
+											<table class="table table-sm mb-0">
+												<thead>
 													<tr>
-														<td>
-															{#if mod_fz.Annuality}
-																{mod_fz.Annuality.description}
-															{/if}
-														</td>
-														<td>{mod_fz.Mod_Fliesszeit_Result?.HQ.toFixed(2)}</td>
+														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
-												{/each}
-											</tbody>
-										</table>
+												</thead>
+												<tbody>
+													{#each mod_verfahren as mod_fz}
+														<tr>
+															<td>
+																{#if mod_fz.Annuality}
+																	{mod_fz.Annuality.description}
+																{/if}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																{mod_fz.Mod_Fliesszeit_Result?.HQ ? mod_fz.Mod_Fliesszeit_Result.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																{mod_fz.Mod_Fliesszeit_Result_1_5?.HQ ? mod_fz.Mod_Fliesszeit_Result_1_5.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																{mod_fz.Mod_Fliesszeit_Result_2?.HQ ? mod_fz.Mod_Fliesszeit_Result_2.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																{mod_fz.Mod_Fliesszeit_Result_3?.HQ ? mod_fz.Mod_Fliesszeit_Result_3.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
+																{mod_fz.Mod_Fliesszeit_Result_4?.HQ ? mod_fz.Mod_Fliesszeit_Result_4.HQ.toFixed(2) : '-'}
+															</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										</div>
 									{/if}
 									{#if koella.length > 0}
 										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.koells')}</h4>
 
-										<table class="table mb-0">
-											<thead>
-												<tr>
-													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
-												</tr>
-											</thead>
-											<tbody>
-												{#each koella as k}
+										<div class="table-responsive">
+											<table class="table table-sm mb-0">
+												<thead>
 													<tr>
-														<td>
-															{#if k.Annuality}
-																{k.Annuality.description}
-															{/if}
-														</td>
-														<td>{k.Koella_Result?.HQ.toFixed(2)}</td>
+														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
-												{/each}
-											</tbody>
-										</table>
+												</thead>
+												<tbody>
+													{#each koella as k}
+														<tr>
+															<td>
+																{#if k.Annuality}
+																	{k.Annuality.description}
+																{/if}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																{k.Koella_Result?.HQ ? k.Koella_Result.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																{k.Koella_Result_1_5?.HQ ? k.Koella_Result_1_5.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																{k.Koella_Result_2?.HQ ? k.Koella_Result_2.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																{k.Koella_Result_3?.HQ ? k.Koella_Result_3.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
+																{k.Koella_Result_4?.HQ ? k.Koella_Result_4.HQ.toFixed(2) : '-'}
+															</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										</div>
 									{/if}
 									{#if clark_wsl.length > 0}
 										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.clarkwsl')}</h4>
 
-										<table class="table mb-0">
-											<thead>
-												<tr>
-													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
-												</tr>
-											</thead>
-											<tbody>
-												{#each clark_wsl as k}
+										<div class="table-responsive">
+											<table class="table table-sm mb-0">
+												<thead>
 													<tr>
-														<td>
-															{#if k.Annuality}
-																{k.Annuality.description}
-															{/if}
-														</td>
-														<td>{k.ClarkWSL_Result?.Q.toFixed(2)}</td>
+														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
-												{/each}
-											</tbody>
-										</table>
+												</thead>
+												<tbody>
+													{#each clark_wsl as k}
+														<tr>
+															<td>
+																{#if k.Annuality}
+																	{k.Annuality.description}
+																{/if}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																{k.ClarkWSL_Result?.Q ? k.ClarkWSL_Result.Q.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																{k.ClarkWSL_Result_1_5?.Q ? k.ClarkWSL_Result_1_5.Q.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																{k.ClarkWSL_Result_2?.Q ? k.ClarkWSL_Result_2.Q.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																{k.ClarkWSL_Result_3?.Q ? k.ClarkWSL_Result_3.Q.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
+																{k.ClarkWSL_Result_4?.Q ? k.ClarkWSL_Result_4.Q.toFixed(2) : '-'}
+															</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										</div>
 									{/if}
 									{#if nam.length > 0}
 										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.nam')}</h4>
 
-										<table class="table mb-0">
-											<thead>
-												<tr>
-													<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-													<th>{$_('page.discharge.calculation.hq')} [m<sup>3</sup>/s]</th>
-												</tr>
-											</thead>
-											<tbody>
-												{#each nam as n}
+										<div class="table-responsive">
+											<table class="table table-sm mb-0">
+												<thead>
 													<tr>
-														<td>
-															{#if n.Annuality}
-																{n.Annuality.description}
-															{/if}
-														</td>
-														<td>{n.NAM_Result?.HQ.toFixed(2)}</td>
+														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
-												{/each}
-											</tbody>
-										</table>
+												</thead>
+												<tbody>
+													{#each nam as n}
+														<tr>
+															<td>
+																{#if n.Annuality}
+																	{n.Annuality.description}
+																{/if}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																{n.NAM_Result?.HQ ? n.NAM_Result.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																{n.NAM_Result_1_5?.HQ ? n.NAM_Result_1_5.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																{n.NAM_Result_2?.HQ ? n.NAM_Result_2.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																{n.NAM_Result_3?.HQ ? n.NAM_Result_3.HQ.toFixed(2) : '-'}
+															</td>
+															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
+																{n.NAM_Result_4?.HQ ? n.NAM_Result_4.HQ.toFixed(2) : '-'}
+															</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										</div>
 									{/if}
 								</div>
 							</div>

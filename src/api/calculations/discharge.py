@@ -17,7 +17,8 @@ import fiona
 import json
 from fiona.crs import CRS
 from shapely.geometry import shape
-
+from typing import Optional, Tuple
+import pyproj
 
 from calculations.calculations import app
 
@@ -38,12 +39,46 @@ def modifizierte_fliesszeit(self,
     psi:float,            # Peak flow coefficient [-]
     E:float,              # Catchment area [km²]
     mod_fliesszeit_id:int, # db id for updating results
+    project_easting: Optional[float] = None,
+    project_northing: Optional[float] = None,
+    cc_degree: float = 0.0,
+    climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
     TB_start=10,    # Initial value for TB [min]
     istep=1,        # Step size for TB [min]
     tol=1,          # Convergence tolerance [mm]
     max_iter=10000
 ):
-    intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
+    # Map climate scenario to cc_degree if not explicitly set
+    scenario_to_degree = {
+        "current": 0.0,
+        "1_5_degree": 1.5,
+        "2_degree": 2.0,
+        "3_degree": 3.0,
+        "4_degree": 4.0
+    }
+    
+    # Use climate_scenario to determine cc_degree
+    if climate_scenario in scenario_to_degree:
+        cc_degree = scenario_to_degree[climate_scenario]
+    
+    # Compute climate change factor from project coordinates if available
+    cc_factor = 0.0
+    try:
+        if project_easting is not None and project_northing is not None:
+            lon, lat = _project_to_wgs84(project_easting, project_northing)
+            cc_factor = _load_cc_factor(lon, lat, cc_degree)
+    except Exception:
+        cc_factor = 0.0
+
+    intensity_fn = construct_idf_curve(
+        P_low_1h,
+        P_high_1h,
+        P_low_24h,
+        P_high_24h,
+        rp_low,
+        rp_high,
+        cc_factor
+    )
     # 1. Wetting volume depending on x
     if x == 2.3:
         Vox = 0.5 * Vo20
@@ -66,6 +101,7 @@ def modifizierte_fliesszeit(self,
     for _ in range(max_iter):
         Tc = TB + TFl
         ix = intensity_fn(rp_years = x, duration_minutes = Tc)  # [mm/h]
+        #ix = ix * (1 + cc_factor)
         #print(f"Current TB: {TB}, Intensity: {ix}")
         #print(f"Vox: {Vox}, TFl: {TFl}, Tc: {Tc}")
         #print(f"criterion:{abs(TB / 60 * ix - Vox)}")
@@ -89,35 +125,61 @@ def modifizierte_fliesszeit(self,
     prisma = Prisma()
     prisma.connect()
 
+    # Build the update data based on climate scenario
+    result_data = {
+        'HQ' : HQ,
+        'Tc' : Tc,
+        'TB' : TB,
+        'TFl' : TFl,
+        'Vox' : Vox
+    }
     
+    create_data = {
+        'HQ' : HQ,
+        'Tc' : Tc,
+        'TB' : TB,
+        'i' : i_final,
+        'TFl' : TFl,
+        'Vox' : Vox
+    }
+    
+    # Use conditional logic to set the correct relation field
+    if climate_scenario == "1_5_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_1_5': {
+                'upsert': {'update': result_data, 'create': create_data}
+            }
+        }
+    elif climate_scenario == "2_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_2': {
+                'upsert': {'update': result_data, 'create': create_data}
+            }
+        }
+    elif climate_scenario == "3_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_3': {
+                'upsert': {'update': result_data, 'create': create_data}
+            }
+        }
+    elif climate_scenario == "4_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_4': {
+                'upsert': {'update': result_data, 'create': create_data}
+            }
+        }
+    else:  # current
+        data_update = {
+            'Mod_Fliesszeit_Result': {
+                'upsert': {'update': result_data, 'create': create_data}
+            }
+        }
     
     updatedResults = prisma.mod_fliesszeit.update(
         where = {
             'id' : mod_fliesszeit_id
         },
-        data = {
-            'Mod_Fliesszeit_Result': {
-                'upsert' : {
-                    'update' : {
-                        'HQ' : HQ,
-                        'Tc' : Tc,
-                        'TB' : TB,
-                        'TFl' : TFl,
-                        'Vox' : Vox
-                    },
-                    'create' : {
-                        'HQ' : HQ,
-                        'Tc' : Tc,
-                        'TB' : TB,
-                        'i' : i_final,
-                        'TFl' : TFl,
-                        'Vox' : Vox
-                    }
-                }
-            }
-            
-        }
-        
+        data = data_update
     )
 
     prisma.disconnect(5)
@@ -145,6 +207,10 @@ def koella(self,
     E,                      # Catchment area [km²]
     glacier_area,           # Glacier area [km²]
     koella_id,              # db id for updating results
+    project_easting: Optional[float] = None,
+    project_northing: Optional[float] = None,
+    cc_degree: float = 0.0,
+    climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
     rs=4,                   # Meltwater equivalent [mm / h]
     snow_melt=False,         # Consider snowmelt [bool]
     TB_start=10,            # Start value for TB [min]
@@ -152,8 +218,38 @@ def koella(self,
     istep=1,                # Step size for TB [min]
     max_iter=10000            # Max. iterations
 ):
-    intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
+    # Map climate scenario to cc_degree if not explicitly set
+    scenario_to_degree = {
+        "current": 0.0,
+        "1_5_degree": 1.5,
+        "2_degree": 2.0,
+        "3_degree": 3.0,
+        "4_degree": 4.0
+    }
+    
+    # Use climate_scenario to determine cc_degree
+    if climate_scenario in scenario_to_degree:
+        cc_degree = scenario_to_degree[climate_scenario]
+    
+    # Compute climate change factor from project coordinates if available
+    cc_factor = 0.0
+    try:
+        if project_easting is not None and project_northing is not None:
+            lon, lat = _project_to_wgs84(project_easting, project_northing)
+            cc_factor = _load_cc_factor(lon, lat, cc_degree)
+    except Exception:
+        cc_factor = 0.0
 
+    intensity_fn = construct_idf_curve(
+        P_low_1h,
+        P_high_1h,
+        P_low_24h,
+        P_high_24h,
+        rp_low,
+        rp_high,
+        cc_factor
+    )
+    
     # Effective contributing area in km²
     FLeff = 0.12 * (Lg ** 1.07)  
 
@@ -204,6 +300,7 @@ def koella(self,
     for _ in range(max_iter):
         Tc = TB + TFl
         ix = intensity_fn(rp_years = x, duration_minutes = Tc) 
+        #ix = ix * (1 + cc_factor)
         if abs(TB / 60 * ix - Vox) < tol:
             # Convergence reached
             break 
@@ -229,7 +326,7 @@ def koella(self,
         else:
             kGang = 1 + (3 - TRx) / 2 * 0.2
 
-    i_final = intensity_fn(rp_years = x, duration_minutes = Tc) 
+    i_final = intensity_fn(rp_years = x, duration_minutes = Tc) * (1 + cc_factor)
     if snow_melt:
         i_final += rs
 
@@ -247,36 +344,54 @@ def koella(self,
     prisma = Prisma()
     prisma.connect()
    
+    # Build the update data based on climate scenario
+    result_data = {
+        "HQ": HQ,
+        "Tc": Tc,
+        "TB": TB,
+        "TFl": TFl,
+        "FLeff": FLeff,
+        "i_final": i_final,
+        "i_korrigiert": i_corrected
+    }
+    
+    # Use conditional logic to set the correct relation field
+    if climate_scenario == "1_5_degree":
+        data_update = {
+            'Koella_Result_1_5': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "2_degree":
+        data_update = {
+            'Koella_Result_2': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "3_degree":
+        data_update = {
+            'Koella_Result_3': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "4_degree":
+        data_update = {
+            'Koella_Result_4': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    else:  # current
+        data_update = {
+            'Koella_Result': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+   
     updatedResults = prisma.koella.update(
         where = {
             'id' : koella_id
         },
-        data = {
-            'Koella_Result': {
-                'upsert' : {
-                    'update' : {
-                        "HQ": HQ,
-                        "Tc": Tc,
-                        "TB": TB,
-                        "TFl": TFl,
-                        "FLeff": FLeff,
-                        "i_final": i_final,
-                        "i_korrigiert": i_corrected
-                    },
-                    'create' : {
-                        "HQ": HQ,
-                        "Tc": Tc,
-                        "TB": TB,
-                        "TFl": TFl,
-                        "FLeff": FLeff,
-                        "i_final": i_final,
-                        "i_korrigiert": i_corrected
-                    }
-                }
-            }
-            
-        }
-        
+        data = data_update
     )
 
     prisma.disconnect(5)
@@ -305,11 +420,45 @@ def clark_wsl_modified(self,
     clark_wsl,                 # Clark WSL id
     project_id,                # Project ID for getting isozone raster
     user_id,                   # User ID for getting isozone raster
+    project_easting: Optional[float] = None,
+    project_northing: Optional[float] = None,
+    cc_degree: float = 0.0,
+    climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
     intensity_fn=None,         # Precipitation intensity function: i(x, Tc) in mm/h
     dt=10,                     # Time step [min]
     pixel_area_m2=25           # Cell area [m²] (e.g. 5x5 m)
 ):
-    intensity_fn = construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high)
+    # Map climate scenario to cc_degree if not explicitly set
+    scenario_to_degree = {
+        "current": 0.0,
+        "1_5_degree": 1.5,
+        "2_degree": 2.0,
+        "3_degree": 3.0,
+        "4_degree": 4.0
+    }
+    
+    # Use climate_scenario to determine cc_degree
+    if climate_scenario in scenario_to_degree:
+        cc_degree = scenario_to_degree[climate_scenario]
+    
+    # Compute climate change factor from project coordinates if available
+    cc_factor = 0.0
+    try:
+        if project_easting is not None and project_northing is not None:
+            lon, lat = _project_to_wgs84(project_easting, project_northing)
+            cc_factor = _load_cc_factor(lon, lat, cc_degree)
+    except Exception:
+        cc_factor = 0.0
+    intensity_fn = construct_idf_curve(
+        P_low_1h,
+        P_high_1h,
+        P_low_24h,
+        P_high_24h,
+        rp_low,
+        rp_high,
+        cc_factor
+    )
+    
     # read the isozone_raster
     isozone = f"data/{user_id}/{project_id}/isozones_cog.tif"
     grid = Grid.from_raster(isozone)
@@ -319,7 +468,7 @@ def clark_wsl_modified(self,
 
     max_zone = int(np.nanmax(isozone_raster))
     Tc = dt * (max_zone + 1)
-    Ptotal = intensity_fn(rp_years = x, duration_minutes = Tc) * Tc / 60  # mm
+    Ptotal = intensity_fn(rp_years = x, duration_minutes = Tc) * (1 + cc_factor) * Tc / 60  # mm
     W_iso = np.zeros((1, max_zone + 1))
     WSV_weighted_sum = 0
     total_area = 0
@@ -424,30 +573,51 @@ def clark_wsl_modified(self,
     
     Q_max = float(np.max(Q))
 
+    # Build the update data based on climate scenario
+    result_data = {
+        "Q": Q_max,
+        "W": 0,
+        "K": 0,
+        "Tc": 0
+    }
+    
+    # Use conditional logic to set the correct relation field
+    if climate_scenario == "1_5_degree":
+        data_update = {
+            'ClarkWSL_Result_1_5': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "2_degree":
+        data_update = {
+            'ClarkWSL_Result_2': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "3_degree":
+        data_update = {
+            'ClarkWSL_Result_3': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "4_degree":
+        data_update = {
+            'ClarkWSL_Result_4': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    else:  # current
+        data_update = {
+            'ClarkWSL_Result': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+
     updatedResults = prisma.clarkwsl.update(
         where = {
             'id' : clark_wsl
         },
-        data = {
-            'ClarkWSL_Result': {
-                'upsert' : {
-                    'update' : {
-                        "Q": Q_max,
-                        "W": 0,
-                        "K": 0,
-                        "Tc": 0
-                    },
-                    'create' : {
-                        "Q": Q_max,
-                        "W": 0,
-                        "K": 0,
-                        "Tc": 0
-                    }
-                }
-            }
-            
-        }
-        
+        data = data_update
     )
 
     prisma.disconnect(5)
@@ -459,7 +629,58 @@ def clark_wsl_modified(self,
         "Tc": Tc
     }
 
-def construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_high2):
+
+def _project_to_wgs84(easting: float, northing: float) -> Tuple[float, float]:
+    """Convert EPSG:2056 easting/northing to lon/lat (EPSG:4326)."""
+    transformer = pyproj.Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
+    lon, lat = transformer.transform(easting, northing)
+    return lon, lat
+
+
+def _load_cc_factor(lon: float, lat: float, degree: float = 2.0) -> float:
+    """Sample climate change factor from CC raster at lon/lat.
+
+    Returns 0.0 if outside raster or value is nodata/NaN.
+    The factor is assumed additive on a relative basis (e.g., 0.2 means +20%).
+    """
+    print(f"Loading CC factor for {lon}, {lat} with degree {degree}")
+    # Map degree to filename
+    degree_str = str(degree).replace(".0", "")
+    filename = f"data/CC/rx1day_{degree_str}degree_europe.tif"
+    if not os.path.exists(filename):
+        print(f"CC raster not found: {filename}")
+        return 0.0
+    try:
+        with rasterio.open(filename) as ds:
+            # Ensure coordinates are in the raster CRS
+            src_crs = ds.crs
+            x, y = lon, lat
+            if src_crs is not None and src_crs.to_string() not in ("EPSG:4326", "OGC:CRS84"):
+                to_src = pyproj.Transformer.from_crs("EPSG:4326", src_crs, always_xy=True)
+                x, y = to_src.transform(lon, lat)
+            row, col = ds.index(x, y)
+            if row < 0 or col < 0 or row >= ds.height or col >= ds.width:
+                print(f"Row or column out of bounds: {row}, {col}")
+                return 0.0
+            val = ds.read(1)[row, col] / 100.0
+            if val is None or np.isnan(val):
+                print(f"Value is None or NaN: {val}")
+                return 0.0
+            print(f"Value: {val}")
+            return float(val)
+    except Exception:
+        return 0.0
+
+
+def construct_idf_curve(
+    P_low_1h,
+    P_high_1h,
+    P_low_24h,
+    P_high_24h,
+    rp_low,
+    rp_high2,
+    cc_factor
+):
     
     """
     Constructs an IDF curve with user-defined lower and upper return periods.
@@ -470,18 +691,29 @@ def construct_idf_curve(P_low_1h, P_high_1h, P_low_24h, P_high_24h, rp_low, rp_h
         P_high_24h: Precipitation [mm] for upper return period, 24 hour duration
         rp_low:     Lower return period (e.g. 2.33) as string
         rp_high:    Upper return period (e.g. 100) as string
+        cc_factor:  Climate change factor
     Returns:
         idf_intensity: function(duration_minutes, return_period_years) -> intensity [mm/h]
     """
-
+    print("P_low_1h: ", P_low_1h)
+    print("P_high_1h: ", P_high_1h)
+    print("P_low_24h: ", P_low_24h)
+    print("P_high_24h: ", P_high_24h)
+    print("cc_factor: ", cc_factor)
+    print("P_low_1h * (1 + cc_factor): ", P_low_1h * (1 + cc_factor))
+    print("P_high_1h * (1 + cc_factor): ", P_high_1h * (1 + cc_factor))
+    print("P_low_24h * (1 + cc_factor): ", P_low_24h * (1 + cc_factor))
+    print("P_high_24h * (1 + cc_factor): ", P_high_24h * (1 + cc_factor))
     # Convert return periods from string to float
     log_rp = np.log10([rp_low, rp_high2])
-    P_1h = [P_low_1h, P_high_1h]
-    P_24h = [P_low_24h, P_high_24h]
+    P_1h = [P_low_1h * (1 + cc_factor), P_high_1h * (1 + cc_factor)]
+    P_24h = [P_low_24h * (1 + cc_factor), P_high_24h * (1 + cc_factor)]
 
     # Linear fit for 1h and 24h precipitation
     coeffs_1h = np.polyfit(log_rp, P_1h, 1)
     coeffs_24h = np.polyfit(log_rp, P_24h, 1)
+
+    # Climate change factor is applied in hydrologic tasks, not here
 
     def precipitation_amount(duration_h, rp_years):
         log_rp_val = np.log10(rp_years)
