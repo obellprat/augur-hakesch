@@ -1,3 +1,15 @@
+## 0.5.0-dev.1 (2025-11-04)
+
+### Feat
+
+- **api**: faster catchment calculations
+- **frontend,-api**: NAM hydrograph implementation
+
+### Fix
+
+- **api**: fixes strange bug with pysheds array with sizes of 160000... make the reading window a little bit smaller
+- **TB-convergence**: Adjust parameters for TB convergence in MF and Koella to avoid failing convergence
+
 ## 0.4.0-dev.1 (2025-10-23)
 
 ### Feat
