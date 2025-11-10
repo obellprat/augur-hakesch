@@ -44,7 +44,7 @@ def modifizierte_fliesszeit(self,
     cc_degree: float = 0.0,
     climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
     TB_start=10,    # Initial value for TB [min]
-    istep=1,        # Step size for TB [min]
+    istep=0.1,        # Step size for TB [min]
     tol=1,          # Convergence tolerance [mm]
     max_iter=10000
 ):
@@ -94,7 +94,7 @@ def modifizierte_fliesszeit(self,
     
     # 2. Flow time according to Kirpich
     J = delta_H / L
-    TFl = 0.0195 * (L ** 0.77) * (J ** -0.385)
+    TFl = 0.0245 * (L ** 0.77) * (J ** -0.385)
 
     # 3. Iteration to determine TB
     TB = TB_start
@@ -214,7 +214,7 @@ def koella(self,
     rs=4,                   # Meltwater equivalent [mm / h]
     snow_melt=False,         # Consider snowmelt [bool]
     TB_start=10,            # Start value for TB [min]
-    tol=1,                  # Convergence tolerance [mm]
+    tol=0.1,                  # Convergence tolerance [mm]
     istep=1,                # Step size for TB [min]
     max_iter=10000            # Max. iterations
 ):
@@ -251,7 +251,7 @@ def koella(self,
     )
     
     # Effective contributing area in km²
-    FLeff = 0.12 * (Lg ** 1.07)  
+    FLeff = 0.13 * (Lg ** 1.02)  
 
     if x == 2.3:
         Vox = 0.5 * Vo20
@@ -555,7 +555,7 @@ def clark_wsl_modified(self,
     WSV_mean = WSV_weighted_sum / total_area
     WSV_corr_mean = WSV_corr_weighted_sum / total_area
 
-    K = 2.25 * WSV_mean - 18.5  # in minutes
+    K = 2.0 * WSV_mean - 18.5  # in minutes
     K_sec = K * 60 
 
     # Muskingum routing
@@ -744,7 +744,7 @@ def construct_idf_curve(
 # idf_fn = construct_idf_curve(25, 50, 60, 120, 2.33, 100)
 
 @app.task(name="prepare_discharge_hydroparameters", bind=True)
-def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 1000, v_gerinne = 1.5):
+def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 3000, v_gerinne = 1.5):
     # Send immediate progress update to indicate task has started
     self.update_state(state='PROGRESS',
                 meta={'text': 'Task started, initializing...', 'progress' : 5})
