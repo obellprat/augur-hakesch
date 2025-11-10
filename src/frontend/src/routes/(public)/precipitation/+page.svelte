@@ -46,6 +46,7 @@
 	let tilesPeriod = 20;
 	let climateChangePeriod = '2030';
 	let showUncertainty = false;
+	let clickMarker: L.Marker | null = null;
 
 	// Bottom sheet state
 	let isBottomSheetOpen = false;
@@ -125,16 +126,35 @@
 			isBottomSheetOpen = true;
 		}
 
+
+	    // orange pin icon (SVG data URL)
+    	const orangePinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41"><path d="M12.5 0C7 0 2.7 4.3 2.7 9.8c0 7.1 9.8 21 9.8 21s9.8-13.9 9.8-21C22.3 4.3 18 0 12.5 0z" fill="#ff7f00"/><circle cx="12.5" cy="9.8" r="3.5" fill="#ffffff"/></svg>`;
+    	const orangeIcon = L.icon({
+        	iconUrl: 'data:image/svg+xml;utf8,' + encodeURIComponent(orangePinSvg),
+        	iconSize: [25, 41],
+        	iconAnchor: [12, 41],
+        	popupAnchor: [1, -34]
+    	});
+
 		// Map click handler
 		map.on('click', async (e: any) => {
-			const { lat, lng } = e.latlng;
-			selectedLocation = { lat, lng };
-			await fetchPrecipitationData(lat, lng);
-			// Reset any inline transform styles and open the sheet
-			if (bottomSheet) {
-				bottomSheet.style.transform = '';
-			}
-			isBottomSheetOpen = true;
+            const latlng = e.latlng;
+            const { lat, lng } = latlng;
+            selectedLocation = { lat, lng };
+
+            if (clickMarker) {
+                clickMarker.setLatLng(latlng);
+				clickMarker.setIcon(orangeIcon);
+            } else {
+            	clickMarker = L.marker(latlng, { icon: orangeIcon, riseOnHover: true }).addTo(map);
+            }
+
+            await fetchPrecipitationData(lat, lng);
+            // Reset any inline transform styles and open the sheet
+            if (bottomSheet) {
+                bottomSheet.style.transform = '';
+            }
+            isBottomSheetOpen = true;
 		});
 
 		// Event listeners for controls

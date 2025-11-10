@@ -4,7 +4,7 @@
       "title": "Dashboard",
       "nav": "Dashboard",
       "welcome": "Welcome to AUGUR",
-      "welcome_text": "Set of methods for flood estimation",
+      "welcome_text": "Set of methods for flood estimation of small catchments under climate change.",
       "precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios",
       "precipitationtool": "Precipitation Tool",
       "precipitation": "Precipitation",
@@ -106,6 +106,12 @@
     "precipitation": {
       "title": "Precipitation",
       "nav": "Precipitation"
+    },
+    "science": {
+      "title": "Science",
+      "heading": "Precipitation Global",
+      "p1": "AUGUR estimates extreme precipitation events at 5-kilometer resolution from the satellite product CHIRPS. The events derive from annual maximum one-day precipitation sums [mm/d] fitted by statistical distribution for extreme events.Estimated events are corrected using ground precipitation observations from GHCN. This correction allows to account for the underestimation of the satellite precipitation particularly over tropical regions.The climate change signals are computed from the Intergovernmental Panel on Climate Change (IPCC) Sixth Assessment Report (AR6). The data shows only the SS5-8.5 scenario.",
+      "p2": ""
     },
     "nav": {
       "tools": "Tools",

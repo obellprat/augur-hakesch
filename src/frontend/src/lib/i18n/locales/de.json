@@ -4,7 +4,7 @@
       "title": " ",
       "nav": "Dashboard",
       "welcome": "Willkommen zu AUGUR",
-      "welcome_text": "Methodenset zur Hochwasserabschätzung",
+      "welcome_text": "Methodenset zur Hochwasserabschätzung für kleine Einzugsgebiete unter einbezug des Klimwandels.",
       "precipitation_card": "Erhalten sie die extreme Niederschalgswerte weltweit unter einbezug der IPCC Klimaszenarien",
       "dischargedesc": "Berechnen sie den lokalen hydrologischen Abfluss für einen gewählten Ablfussort",
       "precipitation": "Niederschlag",
@@ -106,6 +106,12 @@
     "precipitation": {
       "title": "Precipitation",
       "nav": "Niederschlag"
+    },
+    "science": {
+      "title": "Hintergrund",
+      "heading": "Niederschlag Global",
+      "p1": "AUGUR schätzt extreme Niederschlagsereignisse mit einer Auflösung von 5 Kilometern anhand des Satellitenprodukts CHIRPS. Die Ereignisse leiten sich aus den jährlichen maximalen Tagesniederschlagssummen [mm/d] ab, die anhand einer statistischen Verteilung für Extremereignisse angepasst wurden.Die geschätzten Ereignisse werden anhand von Boden-Niederschlagsbeobachtungen aus GHCN korrigiert. Diese Korrektur ermöglicht es, die Unterschätzung der Satelliten-Niederschläge insbesondere über tropischen Regionen zu berücksichtigen.Die Klimawandelsignale werden aus dem Sechsten Sachstandsbericht (AR6) des Zwischenstaatlichen Ausschusses für Klimawandel (IPCC) berechnet. Die Daten zeigen nur das Szenario SS5-8.5.",
+      "p2": ""
     },
     "nav": {
       "tools": "Tools",
