@@ -5,10 +5,10 @@
       "nav": "Dashboard",
       "welcome": "Welcome to AUGUR",
       "welcome_text": "Set of methods for flood estimation of small catchments under climate change.",
-      "precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios",
+      "precipitation_card": "Precipitation values worldwide, taking into account IPCC climate scenarios",
       "precipitationtool": "Precipitation Tool",
       "precipitation": "Precipitation",
-      "dischargedesc": "Calculation of hydrological runoff modelling, such as modified flow time method, Koella or Clark-WSL."
+      "dischargedesc": "Runoff calculation for a selected runoff location using different models"
     },
     "discharge": {
       "title": "Discharge",

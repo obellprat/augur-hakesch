@@ -4,9 +4,9 @@
       "title": " ",
       "nav": "Dashboard",
       "welcome": "Willkommen zu AUGUR",
-      "welcome_text": "Methodenset zur Hochwasserabschätzung für kleine Einzugsgebiete unter einbezug des Klimwandels.",
-      "precipitation_card": "Erhalten sie die extreme Niederschalgswerte weltweit unter einbezug der IPCC Klimaszenarien",
-      "dischargedesc": "Berechnen sie den lokalen hydrologischen Abfluss für einen gewählten Ablfussort",
+      "welcome_text": "Methodenset zur Hochwasserabschätzung für kleine Einzugsgebiete unter Einbezug des Klimawandels.",
+      "precipitation_card": "Niederschlagswerte weltweit unter Einbezug der IPCC Klimaszenarien",
+      "dischargedesc": "Abflussberechnung für einen gewählten Ablfussort mit verschiedenen Modellen",
       "precipitation": "Niederschlag",
       "precipitationtool": "Niederschlagstool"
     },
