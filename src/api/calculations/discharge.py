@@ -66,7 +66,8 @@ def modifizierte_fliesszeit(self,
     try:
         if project_easting is not None and project_northing is not None:
             lon, lat = _project_to_wgs84(project_easting, project_northing)
-            cc_factor = _load_cc_factor(lon, lat, cc_degree)
+            #cc_factor = _load_cc_factor(lon, lat, cc_degree)
+            cc_factor = _load_cc_factor_simple(cc_degree)
     except Exception:
         cc_factor = 0.0
 
@@ -236,7 +237,8 @@ def koella(self,
     try:
         if project_easting is not None and project_northing is not None:
             lon, lat = _project_to_wgs84(project_easting, project_northing)
-            cc_factor = _load_cc_factor(lon, lat, cc_degree)
+            #cc_factor = _load_cc_factor(lon, lat, cc_degree)
+            cc_factor = _load_cc_factor_simple(cc_degree)
     except Exception:
         cc_factor = 0.0
 
@@ -446,7 +448,8 @@ def clark_wsl_modified(self,
     try:
         if project_easting is not None and project_northing is not None:
             lon, lat = _project_to_wgs84(project_easting, project_northing)
-            cc_factor = _load_cc_factor(lon, lat, cc_degree)
+            #cc_factor = _load_cc_factor(lon, lat, cc_degree)
+            cc_factor = _load_cc_factor_simple(cc_degree)
     except Exception:
         cc_factor = 0.0
     intensity_fn = construct_idf_curve(
@@ -629,6 +632,15 @@ def clark_wsl_modified(self,
         "Tc": Tc
     }
 
+def _load_cc_factor_simple(degree: float = 2.0) -> float:
+    if degree == 1.5:
+        return 0.036
+    elif degree == 2.0:
+        return 0.048
+    elif degree == 3.0:
+        return 0.097
+    else:
+        return 0.0
 
 def _project_to_wgs84(easting: float, northing: float) -> Tuple[float, float]:
     """Convert EPSG:2056 easting/northing to lon/lat (EPSG:4326)."""

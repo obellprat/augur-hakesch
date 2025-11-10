@@ -161,8 +161,7 @@ def nam(self,
         "current": 0.0,
         "1_5_degree": 1.5,
         "2_degree": 2.0,
-        "3_degree": 3.0,
-        "4_degree": 4.0
+        "3_degree": 3.0
     }
     
     # Use climate_scenario to determine cc_degree
@@ -173,9 +172,10 @@ def nam(self,
     cc_factor = 0.0
     try:
         if project_easting is not None and project_northing is not None:
-            from calculations.discharge import _project_to_wgs84, _load_cc_factor
+            from calculations.discharge import _project_to_wgs84, _load_cc_factor_simple    
             lon, lat = _project_to_wgs84(project_easting, project_northing)
-            cc_factor = _load_cc_factor(lon, lat, cc_degree)
+            #cc_factor = _load_cc_factor(lon, lat, cc_degree)
+            cc_factor = _load_cc_factor_simple(cc_degree)
     except Exception:
         cc_factor = 0.0
 

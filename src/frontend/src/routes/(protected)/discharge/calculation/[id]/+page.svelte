@@ -429,8 +429,7 @@
 		{ value: 'current', label: 'Current Climate' },
 		{ value: '1_5_degree', label: '+1.5°C' },
 		{ value: '2_degree', label: '+2.0°C' },
-		{ value: '3_degree', label: '+3.0°C' },
-		{ value: '4_degree', label: '+4.0°C' }
+		{ value: '3_degree', label: '+3.0°C' }	
 	];
 	
 	// Helper function to get the appropriate result field based on selected climate scenario
@@ -439,8 +438,7 @@
 			'current': baseFieldName,
 			'1_5_degree': `${baseFieldName}_1_5`,
 			'2_degree': `${baseFieldName}_2`,
-			'3_degree': `${baseFieldName}_3`,
-			'4_degree': `${baseFieldName}_4`
+			'3_degree': `${baseFieldName}_3`
 		};
 		return item[fieldMap[selectedClimateScenario]];
 	}
@@ -2323,7 +2321,6 @@
 														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
 														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
 														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
-														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
 												</thead>
 												<tbody>
@@ -2346,9 +2343,6 @@
 															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
 																{mod_fz.Mod_Fliesszeit_Result_3?.HQ ? mod_fz.Mod_Fliesszeit_Result_3.HQ.toFixed(2) : '-'}
 															</td>
-															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
-																{mod_fz.Mod_Fliesszeit_Result_4?.HQ ? mod_fz.Mod_Fliesszeit_Result_4.HQ.toFixed(2) : '-'}
-															</td>
 														</tr>
 													{/each}
 												</tbody>
@@ -2367,7 +2361,6 @@
 														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
 														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
 														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
-														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
 												</thead>
 												<tbody>
@@ -2390,9 +2383,6 @@
 															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
 																{k.Koella_Result_3?.HQ ? k.Koella_Result_3.HQ.toFixed(2) : '-'}
 															</td>
-															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
-																{k.Koella_Result_4?.HQ ? k.Koella_Result_4.HQ.toFixed(2) : '-'}
-															</td>
 														</tr>
 													{/each}
 												</tbody>
@@ -2411,7 +2401,6 @@
 														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
 														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
 														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
-														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
 												</thead>
 												<tbody>
@@ -2434,9 +2423,6 @@
 															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
 																{k.ClarkWSL_Result_3?.Q ? k.ClarkWSL_Result_3.Q.toFixed(2) : '-'}
 															</td>
-															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
-																{k.ClarkWSL_Result_4?.Q ? k.ClarkWSL_Result_4.Q.toFixed(2) : '-'}
-															</td>
 														</tr>
 													{/each}
 												</tbody>
@@ -2455,7 +2441,6 @@
 														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
 														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
 														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
-														<th class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>+4.0°C</th>
 													</tr>
 												</thead>
 												<tbody>
@@ -2477,9 +2462,6 @@
 															</td>
 															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
 																{n.NAM_Result_3?.HQ ? n.NAM_Result_3.HQ.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '4_degree'} class:text-primary={selectedClimateScenario === '4_degree'}>
-																{n.NAM_Result_4?.HQ ? n.NAM_Result_4.HQ.toFixed(2) : '-'}
 															</td>
 														</tr>
 													{/each}

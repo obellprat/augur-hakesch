@@ -51,7 +51,7 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
         doDoTasks = []
 
         # Climate scenarios to calculate
-        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree", "4_degree"]
+        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree"]
 
         for mod_fliesszeit in project.Mod_Fliesszeit:
             for scenario in climate_scenarios:
@@ -194,7 +194,7 @@ def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User 
         modFliesszeit = next((x for x in project.Mod_Fliesszeit if x.id == ModFliesszeitId), None)
         
         # Climate scenarios to calculate
-        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree", "4_degree"]
+        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree"]
         
         doDoTasks = []
         for scenario in climate_scenarios:
@@ -249,7 +249,7 @@ def get_koella(ProjectId:str, KoellaId: int, user: User = Depends(get_user)):
         koella_obj = next((x for x in project.Koella if x.id == KoellaId), None)
         
         # Climate scenarios to calculate
-        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree", "4_degree"]
+        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree"]
         
         doDoTasks = []
         for scenario in climate_scenarios:
@@ -334,7 +334,7 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
         ]
 
         # Climate scenarios to calculate
-        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree", "4_degree"]
+        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree"]
         
         doDoTasks = []
         for scenario in climate_scenarios:
@@ -432,7 +432,7 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
 
         # Only proceed with NAM calculation if both prerequisites succeeded
         # Climate scenarios to calculate
-        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree", "4_degree"]
+        climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree"]
         
         doDoTasks = []
         for scenario in climate_scenarios:
