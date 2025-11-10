@@ -1,4 +1,5 @@
 import traceback
+import builtins
 import numpy as np
 import os
 from datetime import datetime
@@ -116,12 +117,22 @@ def nam(self,
     project_northing=None,
     cc_degree: float = 0.0,
     climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
+    debug: bool = False,
 ):
     """
     NAM (Nedbør-Afstrømnings-Model) calculation based on distributed curve numbers and travel times.
     This is a distributed rainfall-runoff model that uses curve numbers for each cell and 
     calculates runoff at 10-minute timesteps using either travel time or isozone routing methods.
     """
+
+    def _nam_print(*args, **kwargs):
+        warning = kwargs.pop("warning", False)
+        message = " ".join(str(arg) for arg in args) if args else ""
+        message_lower = message.lower()
+        if debug or warning or any(token in message_lower for token in ("warning", "error", "exception", "not found", "failed", "could not")):
+            builtins.print(*args, **kwargs)
+
+    print = _nam_print  # noqa: F841
 
     # Get NAM parameters from database only if not provided
     nam_obj = None

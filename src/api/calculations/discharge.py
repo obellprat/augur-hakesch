@@ -707,15 +707,7 @@ def construct_idf_curve(
     Returns:
         idf_intensity: function(duration_minutes, return_period_years) -> intensity [mm/h]
     """
-    print("P_low_1h: ", P_low_1h)
-    print("P_high_1h: ", P_high_1h)
-    print("P_low_24h: ", P_low_24h)
-    print("P_high_24h: ", P_high_24h)
-    print("cc_factor: ", cc_factor)
-    print("P_low_1h * (1 + cc_factor): ", P_low_1h * (1 + cc_factor))
-    print("P_high_1h * (1 + cc_factor): ", P_high_1h * (1 + cc_factor))
-    print("P_low_24h * (1 + cc_factor): ", P_low_24h * (1 + cc_factor))
-    print("P_high_24h * (1 + cc_factor): ", P_high_24h * (1 + cc_factor))
+
     # Convert return periods from string to float
     log_rp = np.log10([rp_low, rp_high2])
     P_1h = [P_low_1h * (1 + cc_factor), P_high_1h * (1 + cc_factor)]
