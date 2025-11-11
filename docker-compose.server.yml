@@ -58,7 +58,11 @@ services:
 
   worker:
     image: stumpisuter/augur-hakesch-worker:latest
-    command: celery -A calculations.calculations.app worker --loglevel=info --logfile=./logs/celery.log
+    # Use thread pool for I/O-bound tasks (raster file operations)
+    # Concurrency of 4 allows parallel execution while staying within resource limits
+    # With worker_prefetch_multiplier=1, this ensures tasks start immediately
+    # --without-gossip and --without-mingle reduce worker startup overhead
+    command: celery -A calculations.calculations.app worker --pool threads --concurrency 4 --loglevel=info --logfile=./logs/celery.log --without-gossip --without-mingle
     volumes:
       - ./data:/usr/src/app/data
       - ./logs:/usr/src/app/logs
@@ -71,8 +75,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '2'
           memory: 8g
+        reservations:
+          cpus: '1'
+          memory: 4g
     networks:
       # Use the public network created to be shared between Traefik and
       # any other service that needs to be publicly available with HTTPS

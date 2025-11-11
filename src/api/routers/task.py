@@ -23,27 +23,40 @@ def get_status(task_id):
             "task_status": task_result.status,
             "task_result": str(task_result.result)
         }
+    #task_result.forget()
     return JSONResponse(result)
 
 @router.get("/group/{task_id}")
 def get_group_status(task_id):
     group_result = GroupResult.restore(task_id)
-    results = [
-        {
-            "task_id": res.id,
-            "task_status": res.status,
-            "task_result": json.dumps(res.result)
-        }
-        for res in group_result.results
-    ]
+    try:
+        results = [
+            {
+                "task_id": res.id,
+                "task_status": res.status,
+                "task_result": json.dumps(res.result)
+            }
+            for res in group_result.results
+        ]
+    except:
+        results = [
+            {
+                "task_id": res.id,
+                "task_status": res.status,
+                "task_result": str(res.result)
+            }
+            for res in group_result.results
+        ]
     # Check for failure and get the first failure result if any
     failure = next((r for r in results if r["task_status"] == "FAILURE"), None)
     if failure:
         overall_status = "FAILURE"
-        task_result = failure["task_result"]
+        task_result = json.dumps(failure["task_result"])
     else:
         overall_status = "SUCCESS"
         task_result = None
+
+    #group_result.forget()
 
     result = {
         "group_id": task_id,

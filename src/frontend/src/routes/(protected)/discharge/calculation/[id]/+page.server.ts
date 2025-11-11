@@ -340,7 +340,7 @@ export const actions = {
 		if (!id) {
 			return fail(400, { message: 'Missing required fields' });
 		}
-		// First, find the Annuality record by number to get its id
+		
 		const annuality = await prisma.Annualities.findUnique({
 			where: {
 				number: Number(x) || 0
@@ -352,7 +352,7 @@ export const actions = {
 		}
 
 		// Validate that the mode values exist in their respective tables
-		const validWaterBalanceMode = water_balance_mode || "simple";
+		const validWaterBalanceMode = water_balance_mode || "cumulative";
 		const validStormCenterMode = storm_center_mode || "centroid";
 		const validRoutingMethod = routing_method || "time_values";
 
@@ -378,25 +378,69 @@ export const actions = {
 				id: Number(nam_id) || 0
 			},
 			update: {
-				x: annuality.id,
-				precipitation_factor: Number(precipitation_factor) || 1.0,
+				Annuality: {
+					connect: {
+						id: annuality.id
+					}
+				},
+				precipitation_factor: Number(precipitation_factor) || 0,
 				readiness_to_drain: Number(readiness_to_drain) || 0,
-				water_balance_mode: validWaterBalanceMode,
-				storm_center_mode: validStormCenterMode,
-				routing_method: validRoutingMethod
+				WaterBalanceMode: {
+					connect: {
+						mode: validWaterBalanceMode
+					}
+				},
+				StormCenterMode: {
+					connect: {
+						mode: validStormCenterMode
+					}
+				},
+				RoutingMethod: {
+					connect: {
+						method: validRoutingMethod
+					}
+				}
 			},
 			create: {
-				x: annuality.id,
-				precipitation_factor: Number(precipitation_factor) || 1.0,
+				Annuality: {
+					connect: {
+						number: Number(x) || 0
+					}
+				},
+				precipitation_factor: Number(precipitation_factor) || 0,
 				readiness_to_drain: Number(readiness_to_drain) || 0,
-				water_balance_mode: validWaterBalanceMode,
-				storm_center_mode: validStormCenterMode,
-				routing_method: validRoutingMethod,
-				project_id: id
+				WaterBalanceMode: {
+					connect: {
+						mode: validWaterBalanceMode
+					}
+				},
+				StormCenterMode: {
+					connect: {
+						mode: validStormCenterMode
+					}
+				},
+				RoutingMethod: {
+					connect: {
+						method: validRoutingMethod
+					}
+				},
+				Project: {
+					connect: {
+						id: id
+					}
+				}
 			}
 		});
-		const project = await prisma.project.findUnique({
+		
+		const project = await prisma.project.update({
 			where: { id: id! },
+			data: {
+				NAM: {
+					connect: {
+						id: newnam.id
+					}
+				}
+			},
 			include: {
 				Point: true,
 				IDF_Parameters: true,
@@ -470,5 +514,186 @@ export const actions = {
 				id: Number(id)
 			}
 		});
+	},
+
+	deleteScenario: async ({ request }) => {
+		const formData = await request.formData();
+		const ids = formData.getAll('ids[]') as string[];
+		const type = formData.get('type') as string;
+
+		if (!ids || ids.length === 0 || !type) {
+			return fail(400, { message: 'Missing required fields' });
+		}
+
+		// Delete all entries for this scenario (3 annualities)
+		const numericIds = ids.map((id) => Number(id));
+
+		switch (type) {
+			case 'modfliesszeit':
+				await prisma.Mod_Fliesszeit.deleteMany({
+					where: {
+						id: {
+							in: numericIds
+						}
+					}
+				});
+				break;
+			case 'koella':
+				await prisma.Koella.deleteMany({
+					where: {
+						id: {
+							in: numericIds
+						}
+					}
+				});
+				break;
+			case 'clarkwsl':
+				// First delete fractions for all ClarkWSL entries
+				await prisma.Fractions.deleteMany({
+					where: {
+						clarkwsl_id: {
+							in: numericIds
+						}
+					}
+				});
+				// Then delete the ClarkWSL entries
+				await prisma.ClarkWSL.deleteMany({
+					where: {
+						id: {
+							in: numericIds
+						}
+					}
+				});
+				break;
+			case 'nam':
+				await prisma.NAM.deleteMany({
+					where: {
+						id: {
+							in: numericIds
+						}
+					}
+				});
+				break;
+			default:
+				return fail(400, { message: 'Invalid calculation type' });
+		}
+
+		return { success: true };
+	},
+
+	updateScenario: async ({ request }) => {
+		// Read formData once (can't read request body multiple times)
+		const formDataRaw = await request.formData();
+		const ids = formDataRaw.getAll('ids[]') as string[];
+		const type = formDataRaw.get('type') as string;
+		const project_id = formDataRaw.get('project_id') as string;
+
+		if (!ids || ids.length === 0 || !type) {
+			return fail(400, { message: 'Missing required fields' });
+		}
+
+		const numericIds = ids.map((id) => Number(id));
+
+		// Update all entries in the scenario with the same values
+		switch (type) {
+			case 'modfliesszeit':
+				const Vo20 = Number(formDataRaw.get('Vo20')) || 0;
+				const psi = Number(formDataRaw.get('psi')) || 0;
+				
+				for (const id of numericIds) {
+					await prisma.Mod_Fliesszeit.update({
+						where: { id },
+						data: { Vo20, psi }
+					});
+				}
+				break;
+
+			case 'koella':
+				const kVo20 = Number(formDataRaw.get('Vo20')) || 0;
+				const glacier_area = Number(formDataRaw.get('glacier_area')) || 0;
+				
+				for (const id of numericIds) {
+					await prisma.Koella.update({
+						where: { id },
+						data: { Vo20: kVo20, glacier_area }
+					});
+				}
+				break;
+
+			case 'clarkwsl':
+				const zones = await getAllZones();
+				
+				for (const id of numericIds) {
+					// Delete existing fractions
+					await prisma.Fractions.deleteMany({
+						where: { clarkwsl_id: id }
+					});
+					
+					// Create new fractions
+					const fractions = zones.map((zone: ZoneParameter, index: number) => ({
+						ZoneParameterTyp: zone.typ,
+						pct: Number(formDataRaw.get(`zone_${index}`)) || 0,
+						clarkwsl_id: id
+					}));
+					
+					await prisma.Fractions.createMany({
+						data: fractions,
+						skipDuplicates: true
+					});
+				}
+				break;
+
+			case 'nam':
+				const precipitation_factor = Number(formDataRaw.get('precipitation_factor')) || 0.7;
+				console.log(precipitation_factor);
+				const readiness_to_drain = Number(formDataRaw.get('readiness_to_drain')) || 0;
+				const water_balance_mode = (formDataRaw.get('water_balance_mode') as string) || 'cumulative';
+				const storm_center_mode = (formDataRaw.get('storm_center_mode') as string) || 'centroid';
+				const routing_method = (formDataRaw.get('routing_method') as string) || 'time_values';
+				
+				for (const id of numericIds) {
+					await prisma.NAM.update({
+						where: { id },
+						data: {
+							precipitation_factor,
+							readiness_to_drain,
+							water_balance_mode,
+							storm_center_mode,
+							routing_method
+						}
+					});
+				}
+				break;
+
+			default:
+				return fail(400, { message: 'Invalid calculation type' });
+		}
+
+		// Return updated project
+		const project = await prisma.project.findUnique({
+			where: { id: project_id },
+			include: {
+				Point: true,
+				IDF_Parameters: true,
+				Mod_Fliesszeit: {
+					orderBy: { id: 'asc' },
+					include: { Annuality: true, Mod_Fliesszeit_Result: true }
+				},
+				Koella: {
+					orderBy: { id: 'asc' },
+					include: { Annuality: true, Koella_Result: true }
+				},
+				ClarkWSL: {
+					orderBy: { id: 'asc' },
+					include: { Annuality: true, ClarkWSL_Result: true, Fractions: true }
+				},
+				NAM: {
+					orderBy: { id: 'asc' },
+					include: { Annuality: true, NAM_Result: true }
+				}
+			}
+		});
+
+		return project;
 	}
 } satisfies Actions;

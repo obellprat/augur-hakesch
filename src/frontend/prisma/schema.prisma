@@ -67,19 +67,27 @@ model IDF_Parameters {
 }
 
 model Mod_Fliesszeit {
-  id                       Int                    @id @default(autoincrement())
-  x                        Int
-  Annuality                Annualities            @relation(fields: [x], references: [id])
-  Vo20                     Float
-  psi                      Float
-  TB_start                 Int                    @default(30)
-  istep                    Int                    @default(5)
-  tol                      Int                    @default(5)
-  max_iter                 Int                    @default(1000)
-  project_id               String
-  Project                  Project                @relation(fields: [project_id], references: [id])
-  mod_fliesszeit_result_id Int?                   @unique
-  Mod_Fliesszeit_Result    Mod_Fliesszeit_Result? @relation(fields: [mod_fliesszeit_result_id], references: [id], onDelete: Cascade)
+  id                          Int                    @id @default(autoincrement())
+  x                           Int
+  Annuality                   Annualities            @relation(fields: [x], references: [id])
+  Vo20                        Float
+  psi                         Float
+  TB_start                    Int                    @default(30)
+  istep                       Int                    @default(5)
+  tol                         Int                    @default(5)
+  max_iter                    Int                    @default(1000)
+  project_id                  String
+  Project                     Project                @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  mod_fliesszeit_result_id    Int?                   @unique
+  Mod_Fliesszeit_Result       Mod_Fliesszeit_Result? @relation(name: "current", fields: [mod_fliesszeit_result_id], references: [id], onDelete: Cascade)
+  mod_fliesszeit_result_1_5_id Int?                   @unique
+  Mod_Fliesszeit_Result_1_5   Mod_Fliesszeit_Result? @relation(name:"1_5_degree", fields: [mod_fliesszeit_result_1_5_id], references: [id], onDelete: Cascade)
+  mod_fliesszeit_result_2_id  Int?                   @unique
+  Mod_Fliesszeit_Result_2     Mod_Fliesszeit_Result? @relation(name:"2_degree", fields: [mod_fliesszeit_result_2_id], references: [id], onDelete: Cascade)
+  mod_fliesszeit_result_3_id  Int?                   @unique
+  Mod_Fliesszeit_Result_3     Mod_Fliesszeit_Result? @relation(name:"3_degree", fields: [mod_fliesszeit_result_3_id], references: [id], onDelete: Cascade)
+  mod_fliesszeit_result_4_id  Int?                   @unique
+  Mod_Fliesszeit_Result_4     Mod_Fliesszeit_Result? @relation(name:"4_degree", fields: [mod_fliesszeit_result_4_id], references: [id], onDelete: Cascade)
 }
 
 model Mod_Fliesszeit_Result {
@@ -90,7 +98,11 @@ model Mod_Fliesszeit_Result {
   TFl            Float
   i              Float
   Vox            Float
-  Mod_Fliesszeit Mod_Fliesszeit?
+  Mod_Fliesszeit                    Mod_Fliesszeit? @relation("current")
+  Mod_Fliesszeit_1_5                Mod_Fliesszeit? @relation("1_5_degree")
+  Mod_Fliesszeit_2                  Mod_Fliesszeit? @relation("2_degree")
+  Mod_Fliesszeit_3                  Mod_Fliesszeit? @relation("3_degree")
+  Mod_Fliesszeit_4                  Mod_Fliesszeit? @relation("4_degree")
 }
 
 model Koella {
@@ -104,9 +116,17 @@ model Koella {
   istep                    Int                    @default(5)
   max_iter                 Int                    @default(1000)
   project_id               String
-  Project                  Project                @relation(fields: [project_id], references: [id])
+  Project                  Project                @relation(fields: [project_id], references: [id], onDelete: Cascade)  
   koella_result_id         Int?                   @unique
-  Koella_Result            Koella_Result? @relation(fields: [koella_result_id], references: [id], onDelete: Cascade)
+  Koella_Result            Koella_Result? @relation(name:"current", fields: [koella_result_id], references: [id], onDelete: Cascade)
+  koella_result_1_5_id     Int?                   @unique
+  Koella_Result_1_5        Koella_Result? @relation(name:"1_5_degree", fields: [koella_result_1_5_id], references: [id], onDelete: Cascade)
+  koella_result_2_id       Int?                   @unique
+  Koella_Result_2          Koella_Result? @relation(name: "2_degree", fields: [koella_result_2_id], references: [id], onDelete: Cascade)
+  koella_result_3_id       Int?                   @unique
+  Koella_Result_3          Koella_Result? @relation(name: "3_degree", fields: [koella_result_3_id], references: [id], onDelete: Cascade)
+  koella_result_4_id       Int?                   @unique
+  Koella_Result_4            Koella_Result? @relation(name: "4_degree", fields: [koella_result_4_id], references: [id], onDelete: Cascade)
 }
 
 model Koella_Result {
@@ -118,7 +138,11 @@ model Koella_Result {
   FLeff          Float
   i_final        Float
   i_korrigiert   Float
-  Koella  Koella?
+  Koella                    Koella? @relation("current")
+  Koella_1_5                Koella? @relation("1_5_degree")
+  Koella_2                  Koella? @relation("2_degree")
+  Koella_3                  Koella? @relation("3_degree")
+  Koella_4                  Koella? @relation("4_degree")
 }
 
 
@@ -130,9 +154,17 @@ model ClarkWSL {
   pixel_area_m2            Int                    @default(25)
   Fractions                Fractions[]
   project_id               String
-  Project                  Project                @relation(fields: [project_id], references: [id])
+  Project                  Project                @relation(fields: [project_id], references: [id], onDelete: Cascade)
   clarkwsl_result_id       Int?                   @unique
-  ClarkWSL_Result          ClarkWSL_Result? @relation(fields: [clarkwsl_result_id], references: [id], onDelete: Cascade)
+  ClarkWSL_Result          ClarkWSL_Result? @relation(name: "current", fields: [clarkwsl_result_id], references: [id], onDelete: Cascade)
+  clarkwsl_result_1_5_id   Int?                   @unique
+  ClarkWSL_Result_1_5      ClarkWSL_Result? @relation(name: "1_5_degree", fields: [clarkwsl_result_1_5_id], references: [id], onDelete: Cascade)
+  clarkwsl_result_2_id    Int?                   @unique
+  ClarkWSL_Result_2        ClarkWSL_Result? @relation(name: "2_degree", fields: [clarkwsl_result_2_id], references: [id], onDelete: Cascade)
+  clarkwsl_result_3_id     Int?                   @unique
+  ClarkWSL_Result_3        ClarkWSL_Result? @relation(name: "3_degree", fields: [clarkwsl_result_3_id], references: [id], onDelete: Cascade)
+  clarkwsl_result_4_id     Int?                   @unique
+  ClarkWSL_Result_4        ClarkWSL_Result? @relation(name: "4_degree", fields: [clarkwsl_result_4_id], references: [id], onDelete: Cascade)
 }
 
 model Fractions {
@@ -141,7 +173,7 @@ model Fractions {
   ZoneParameter            ZoneParameter @relation(fields: [ZoneParameterTyp], references: [typ])
   pct                      Float
   clarkwsl_id              Int 
-  ClarkWSL                 ClarkWSL @relation(fields: [clarkwsl_id], references: [id])
+  ClarkWSL                 ClarkWSL @relation(fields: [clarkwsl_id], references: [id], onDelete: Cascade)
 }
 
 model ZoneParameter {
@@ -159,15 +191,19 @@ model ClarkWSL_Result {
   W             Float
   K             Float
   Tc            Float
-  ClarkWSL  ClarkWSL?
+  ClarkWSL                    ClarkWSL? @relation("current")
+  ClarkWSL_1_5                ClarkWSL? @relation("1_5_degree")
+  ClarkWSL_2                  ClarkWSL? @relation("2_degree")
+  ClarkWSL_3                  ClarkWSL? @relation("3_degree")
+  ClarkWSL_4                  ClarkWSL? @relation("4_degree")
 }
 
 model NAM {
   id                       Int                    @id @default(autoincrement())
   x                        Int
   Annuality                Annualities            @relation(fields: [x], references: [id])
-  precipitation_factor     Float                  @default(1.0)
-  water_balance_mode       String                 @default("simple")
+  precipitation_factor     Float                  @default(0.7)
+  water_balance_mode       String                 @default("cumulative")
   WaterBalanceMode         WaterBalanceMode       @relation(fields: [water_balance_mode], references: [mode])
   storm_center_mode        String                 @default("centroid")
   StormCenterMode          StormCenterMode        @relation(fields: [storm_center_mode], references: [mode])
@@ -176,9 +212,17 @@ model NAM {
   readiness_to_drain       Int                    @default(0)
   use_own_soil_data        Boolean                @default(false)
   project_id               String
-  Project                  Project                @relation(fields: [project_id], references: [id])
+  Project                  Project                @relation(fields: [project_id], references: [id], onDelete: Cascade)
   nam_result_id            Int?                   @unique
-  NAM_Result               NAM_Result? @relation(fields: [nam_result_id], references: [id], onDelete: Cascade)
+  NAM_Result               NAM_Result? @relation(name: "current", fields: [nam_result_id], references: [id], onDelete: Cascade)
+  nam_result_1_5_id        Int?                   @unique
+  NAM_Result_1_5           NAM_Result? @relation(name: "1_5_degree", fields: [nam_result_1_5_id], references: [id], onDelete: Cascade)
+  nam_result_2_id          Int?                   @unique
+  NAM_Result_2             NAM_Result? @relation(name: "2_degree", fields: [nam_result_2_id], references: [id], onDelete: Cascade)
+  nam_result_3_id          Int?                   @unique
+  NAM_Result_3             NAM_Result? @relation(name: "3_degree", fields: [nam_result_3_id], references: [id], onDelete: Cascade)
+  nam_result_4_id          Int?                   @unique
+  NAM_Result_4             NAM_Result? @relation(name: "4_degree", fields: [nam_result_4_id], references: [id], onDelete: Cascade)
 }
 
 model NAM_Result {
@@ -191,8 +235,13 @@ model NAM_Result {
   S                      Float
   Ia                     Float
   Pe                     Float
+  HQ_time                String?         
   effective_curve_number Float?
-  NAM                    NAM?
+  NAM                    NAM? @relation("current")
+  NAM_1_5                NAM? @relation("1_5_degree")
+  NAM_2                  NAM? @relation("2_degree")
+  NAM_3                  NAM? @relation("3_degree")
+  NAM_4                  NAM? @relation("4_degree")
 }
 
 model Annualities {

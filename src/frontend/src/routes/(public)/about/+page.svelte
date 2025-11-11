@@ -5,6 +5,20 @@
 	import { base } from '$app/paths';
 
 	$pageTitle = $_('page.about.title');
+
+    let isDark = false;
+
+    // Detect dark mode by checking the data-bs-theme attribute on <html>
+    onMount(() => {
+        const checkTheme = () => {
+            isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        };
+        checkTheme();
+        // Listen for theme changes if your app supports switching at runtime
+        const observer = new MutationObserver(checkTheme);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+        return () => observer.disconnect();
+    });	
 </script>
 
 <svelte:head>
@@ -16,28 +30,37 @@
 		<div class="col">
 			<div class="card d-block">
 				<div class="card-body">
-					<h1 class="card-title">{$_('page.about.title')}</h1>
-
-					<h4 class="mt-3">{$_('page.about.intro.heading')}</h4>
+					<h3 class="mt-3">{$_('page.about.intro.heading')}</h3>
 					<p class="card-text">{$_('page.about.intro.p1')}</p>
 					<p class="card-text">{$_('page.about.intro.p2')}</p>
 
-					<h4 class="mt-4">{$_('page.about.idea.heading')}</h4>
+					<h3 class="mt-4">{$_('page.about.idea.heading')}</h3>
 					<p class="card-text">{$_('page.about.idea.p1')}</p>
 					<p class="card-text">{$_('page.about.idea.p2')}</p>
 
-					<h4 class="mt-4">{$_('page.about.technology.heading')}</h4>
-					<p class="card-text">{$_('page.about.technology.p1')}</p>
-					<ul>
-						<li>{$_('page.about.technology.list.svelte')}</li>
-						<li>{$_('page.about.technology.list.fastapi')}</li>
-						<li>{$_('page.about.technology.list.prisma')}</li>
-						<li>{$_('page.about.technology.list.celery')}</li>
-						<li>{$_('page.about.technology.list.redis')}</li>
-						<li>{$_('page.about.technology.list.docker')}</li>
-					</ul>
+					<div class="my-4 p-0 d-flex justify-content-start" style="margin: 0;">
+						<img
+							src="{base}/assets/images/AUGUR-process-Ilustration{isDark ? '-dark' : ''}.png"
+							alt="AUGUR process illustration"
+							class="img-fluid"
+							style="max-width: 60%; height: auto; display: block; margin: 0 auto; border: none; padding: 0;"
+						/>
+					</div>
 
-					<h4 class="mt-4">{$_('page.about.getting_started.heading')}</h4>
+					<h3 class="mt-4">{$_('page.about.technology.heading')}</h3>
+					<p class="card-text">{$_('page.about.technology.p1')}</p>
+					<p class="card-text">{$_('page.about.technology.p2')}</p>
+					<p class="card-text">{$_('page.about.technology.p3')}</p>
+					<div class="my-4 p-0" style="margin: 0;">
+						<img
+							src="{base}/assets/images/AUGUR-concept{isDark ? '-dark' : ''}.png"
+							alt="AUGUR process illustration"
+							class="img-fluid"
+							style="max-width: 60%; height: auto; display: block; margin: 0 auto; border: none; padding: 0;"
+						/>
+					</div>
+
+					<h3 class="mt-4">{$_('page.about.getting_started.heading')}</h3>
 					<p class="card-text">{$_('page.about.getting_started.p1')}</p>
 					<div class="d-flex gap-2">
 						<a class="btn btn-primary" href="{base}/precipitation"
@@ -48,8 +71,33 @@
 						>
 					</div>
 
-					<h4 class="mt-4">{$_('page.about.credits.heading')}</h4>
+					<h3 class="mt-4">{$_('page.about.credits.heading')}</h3>
 					<p class="card-text">{$_('page.about.credits.p1')}</p>
+					<p class="card-text">{$_('page.about.credits.p2')}</p>
+					<div class="my-4 p-0" style="margin: 0;">
+						<div 
+							class="d-flex justify-content-center align-items-center gap-4"
+						    style="background: {isDark ? 'rgba(255,255,255,0.85)' : 'none'}; border-radius: 0.5rem; padding: 0.5rem;">
+							<img
+								src="{base}/assets/images/logo-deza.png"
+								alt="DEZA logo"
+								class="img-fluid"
+								style="max-width: 20%; height: auto; border: none; padding: 0;"
+							/>
+							<img
+								src="{base}/assets/images/logo-bern.png"
+								alt="Bern logo"
+								class="img-fluid"
+								style="max-width: 20%; height: auto; border: none; padding: 0;"
+							/>
+							<img
+								src="{base}/assets/images/logo-srk.png"
+								alt="SRK logo"
+								class="img-fluid"
+								style="max-width: 20%; height: auto; border: none; padding: 0;"
+							/>
+						</div>
+					</div>
 				</div>
 				<!-- end card-body-->
 			</div>

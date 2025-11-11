@@ -1,3 +1,43 @@
+## 0.5.0-dev.1 (2025-11-04)
+
+### Feat
+
+- **frontend,api**: climate change instagration
+- **api**: faster catchment calculations
+- **frontend,-api**: NAM hydrograph implementation
+
+### Fix
+
+- **api**: fixes strange bug with pysheds array with sizes of 160000... make the reading window a little bit smaller
+- **TB-convergence**: Adjust parameters for TB convergence in MF and Koella to avoid failing convergence
+
+## 0.4.0-dev.1 (2025-10-23)
+
+### Feat
+
+- **frontend**: Combine annualities and init hydrological processes
+
+### Fix
+
+- **frontend**: welcome text change
+
+## 0.3.1-dev.1 (2025-10-21)
+
+### Feat
+
+- **darkmode-images**: Add functionality to show different images in dark mode as well as the logos
+
+### Fix
+
+- **frontend**: same height for all card-img-top
+- **frontend**: fixes bugs in adding new calculations after saving
+
+### Refactor
+
+- **frontend**: Set and hide standard NAM parameters
+- **frontend**: hide donation box
+- **api,frontend**: small changes in spinner, translation and docker
+
 ## 0.3.0-beta.0 (2025-09-15)
 
 ### Feat

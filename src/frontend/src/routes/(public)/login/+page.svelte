@@ -33,7 +33,7 @@
 					<div class="card-body">
 						<h1 class="card-title">{$_('page.login.title')}</h1>
 
-						<h4 class="mt-3">{$_('page.login.why_heading')}</h4>
+						<h4 class="mt-4">{$_('page.login.why_heading')}</h4>
 						<p class="card-text">{$_('page.login.why_p1')}</p>
 						<p class="card-text">{$_('page.login.why_p2')}</p>
 

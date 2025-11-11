@@ -4,11 +4,11 @@
       "title": "Dashboard",
       "nav": "Dashboard",
       "welcome": "Welcome to AUGUR",
-      "welcome_text": "Welcome to AUGR",
-      "precipitation_card": "Receive the precipitiation values ​​worldwide with the inclusion of the climate scenarios",
+      "welcome_text": "Set of methods for flood estimation of small catchments under climate change.",
+      "precipitation_card": "Precipitation values worldwide, taking into account IPCC climate scenarios",
       "precipitationtool": "Precipitation Tool",
       "precipitation": "Precipitation",
-      "dischargedesc": "Calculation of hydrological runoff modelling, such as modified flow time method, Koella or Clark-WSL."
+      "dischargedesc": "Runoff calculation for a selected runoff location using different models"
     },
     "discharge": {
       "title": "Discharge",
@@ -83,6 +83,13 @@
           "uploadZipFileHelp": "You can create your own shapefile with the soil types (A, B, C and D) and upload it here as a ZIP file.",
           "soilFileExists": "There is a separate soil classification system."
         },
+        "chart": {
+          "discharge": "Discharge",
+          "dischargeUnit": "Discharge [m³/s]",
+          "timeUnit": "Time [min]",
+          "dischargeTimeSeries": "Discharge Time Series",
+          "dischargeTooltip": "m³/s"
+        },
         "generalInput": "General",
         "inputsForPrecipitationIntensity": "Information on the calculation of precipitation intensity",
         "modFliesszeit": "Modified flow time method",
@@ -104,6 +111,12 @@
     "precipitation": {
       "title": "Precipitation",
       "nav": "Precipitation"
+    },
+    "science": {
+      "title": "Science",
+      "heading": "Precipitation Global",
+      "p1": "AUGUR estimates extreme precipitation events at 5-kilometer resolution from the satellite product CHIRPS. The events derive from annual maximum one-day precipitation sums [mm/d] fitted by statistical distribution for extreme events.Estimated events are corrected using ground precipitation observations from GHCN. This correction allows to account for the underestimation of the satellite precipitation particularly over tropical regions.The climate change signals are computed from the Intergovernmental Panel on Climate Change (IPCC) Sixth Assessment Report (AR6). The data shows only the SS5-8.5 scenario.",
+      "p2": ""
     },
     "nav": {
       "tools": "Tools",
@@ -131,17 +144,19 @@
       "title": "About AUGUR",
       "intro": {
         "heading": "What is AUGUR?",
-        "p1": "AUGUR helps estimate precipitation and river discharge for catchments worldwide.",
-        "p2": "It brings science-based methods into an easy web app for planners, educators and curious users."
+        "p1": "AUGUR helps estimate precipitation and river discharge for catchments worldwide to account for climate change.",
+        "p2": "This makes it possible to plan local flood assessments and adaptations to climate change – even when only limited data is available."
       },
       "idea": {
         "heading": "The idea",
-        "p1": "Start with a location and a few inputs. AUGUR combines climate information with hydrologic methods to deliver quick, comparable results.",
-        "p2": "Explore scenarios and methods side by side to understand sensitivity and uncertainty."
+        "p1": "AUGUR combines climate information with hydrological methods and quickly delivers comparable results.",
+        "p2": "Scenarios and methods can be viewed side by side – making sensitivities and uncertainties visible."
       },
       "technology": {
         "heading": "How it works (simple)",
-        "p1": "Behind the scenes, AUGUR has a modern web UI and a robust API. Calculations run in the background so longer tasks don’t block the page.",
+        "p1": "AUGUR makes established scientific methods accessible in an easy-to-use web application.",
+        "p2": "Observational data and models are combined to estimate precipitation and runoff.",
+        "p3": "In the background, a robust API ensures that calculations can be performed simultaneously.",
         "list": {
           "svelte": "SvelteKit interface for maps, charts and projects.",
           "fastapi": "FastAPI provides the API and authentication (Keycloak).",
@@ -159,7 +174,8 @@
       },
       "credits": {
         "heading": "Credits & data",
-        "p1": "AUGUR implements methods such as the modified flow time method, Kölla and Clark‑WSL, and uses climatological datasets from official sources. Results are indicative and do not replace professional studies."
+        "p1": "AUGUR is open source and was launched for global use with the support of the 'Innovation Meets Practice Accelerator' 2022 of the Humanitarian Aid of the Swiss Agency for Development and Cooperation (SDC).",
+        "p2": "With funding from the Canton of Bern, AUGUR was further developed with the methods of HAKESCH and a rainfall-runoff model (NAM) in collaboration with Hunziker, Zarn und Partner (HZP) and Scherrer Hydrologie."
       }
     },
     "login": {

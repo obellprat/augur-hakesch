@@ -1,12 +1,12 @@
 {
   "page": {
     "dashboard": {
-      "title": "Dashboard",
+      "title": " ",
       "nav": "Dashboard",
-      "welcome": "Willkommen bei AUGUR",
-      "welcome_text": "Herzlich willkommen bei AUGR",
-      "precipitation_card": "Erhalten sie die Niederschalgswerte weltweit unter einbezug der Klimaszenarien",
-      "dischargedesc": "Berechnen von hydrologischen Abflussmodellierungen, wie modifiziertes Fliesszeitverfahren, Kölla oder Clark-WSL.",
+      "welcome": "Willkommen zu AUGUR",
+      "welcome_text": "Methodenset zur Hochwasserabschätzung für kleine Einzugsgebiete unter Einbezug des Klimawandels.",
+      "precipitation_card": "Niederschlagswerte weltweit unter Einbezug der IPCC Klimaszenarien",
+      "dischargedesc": "Abflussberechnung für einen gewählten Ablfussort mit verschiedenen Modellen",
       "precipitation": "Niederschlag",
       "precipitationtool": "Niederschlagstool"
     },
@@ -66,6 +66,13 @@
           "uploadZipFileHelp": "Es kann ein eigenes Shapefile mit den Bodentypen (A, B, C und D) erstellt und hier als ZIP-File hochgeladen werden.",
           "soilFileExists": "Es existiert eine eigene Bodenklassierung"
         },
+        "chart": {
+          "discharge": "Abfluss",
+          "dischargeUnit": "Abfluss [m³/s]",
+          "timeUnit": "Zeit [min]",
+          "dischargeTimeSeries": "Abfluss-Zeitreihe",
+          "dischargeTooltip": "m³/s"
+        },
         "generalInput": "Allgemeine Angaben",
         "inputsForPrecipitationIntensity": "Angaben zur Berechnung der Niederschlags-Intensität",
         "successfullsave": "Erfolgreich gespeichert!",
@@ -105,6 +112,12 @@
       "title": "Precipitation",
       "nav": "Niederschlag"
     },
+    "science": {
+      "title": "Hintergrund",
+      "heading": "Niederschlag Global",
+      "p1": "AUGUR schätzt extreme Niederschlagsereignisse mit einer Auflösung von 5 Kilometern anhand des Satellitenprodukts CHIRPS. Die Ereignisse leiten sich aus den jährlichen maximalen Tagesniederschlagssummen [mm/d] ab, die anhand einer statistischen Verteilung für Extremereignisse angepasst wurden.Die geschätzten Ereignisse werden anhand von Boden-Niederschlagsbeobachtungen aus GHCN korrigiert. Diese Korrektur ermöglicht es, die Unterschätzung der Satelliten-Niederschläge insbesondere über tropischen Regionen zu berücksichtigen.Die Klimawandelsignale werden aus dem Sechsten Sachstandsbericht (AR6) des Zwischenstaatlichen Ausschusses für Klimawandel (IPCC) berechnet. Die Daten zeigen nur das Szenario SS5-8.5.",
+      "p2": ""
+    },
     "nav": {
       "tools": "Tools",
       "about": "Information",
@@ -128,20 +141,22 @@
       "backend": "Backend"
     },
     "about": {
-      "title": "Informationen zu AUGUR",
+      "title": " ",
       "intro": {
         "heading": "Was ist AUGUR?",
-        "p1": "AUGUR hilft, Niederschlag und Abfluss für Einzugsgebiete weltweit abzuschätzen.",
-        "p2": "Es bringt wissenschaftlich fundierte Verfahren in eine leicht verständliche Web‑App – für Planerinnen, Lehrpersonen und Interessierte."
+        "p1": "AUGUR hilft, Niederschlag und Abfluss für Einzugsgebiete weltweit abzuschätzen und den Klimawandel zu berücksichtigen.",
+        "p2": "Damit wird es möglich, lokale Hochwasserabschätzungen und Anpassungen an den Klimawandel zu planen – auch wenn nur wenige Daten vorliegen."
       },
       "idea": {
         "heading": "Die Idee",
-        "p1": "Ausgehend von einem Ort und wenigen Eingaben kombiniert AUGUR Klimainformationen mit hydrologischen Verfahren und liefert schnell vergleichbare Resultate.",
+        "p1": "AUGUR kombiniert Klimainformationen mit hydrologischen Verfahren und liefert schnell vergleichbare Resultate.",
         "p2": "Szenarien und Methoden lassen sich nebeneinander betrachten – so werden Sensitivität und Unsicherheiten sichtbar."
       },
       "technology": {
         "heading": "So funktioniert es (einfach erklärt)",
-        "p1": "Im Hintergrund arbeitet eine moderne Oberfläche mit einer robusten API. Berechnungen laufen im Hintergrund, damit längere Aufgaben die Seite nicht blockieren.",
+        "p1": "AUGUR macht etablierte wissenschaftliche Methoden in einer einfach zu bedienenden Web-Applikation zugänglich.",
+        "p2": "Beobachtungsdaten und Modelle werden kombiniert für die Abschätzung von Niederschläge und Abflüsse.",
+        "p3": "Im Hintergrund arbeitet eine robuste API damit die Berechnungen simulaten durchgeführt werden können.",
         "list": {
           "svelte": "SvelteKit‑Oberfläche für Karten, Diagramme und Projekte.",
           "fastapi": "FastAPI stellt die API und die Authentifizierung (Keycloak) bereit.",
@@ -158,8 +173,9 @@
         "open_discharge": "Abfluss öffnen"
       },
       "credits": {
-        "heading": "Herkunft & Daten",
-        "p1": "AUGUR implementiert Verfahren wie das modifizierte Fliesszeitverfahren, Kölla und Clark‑WSL und nutzt klimatologische Datensätze offizieller Stellen. Resultate sind indikativ und ersetzen keine fachliche Studie."
+        "heading": "Credits",
+        "p1": "AUGUR ist Open Source und wurde durch die Untersütztung vom 'Innovation Meets Practice Accelartor' 2022 der Humanitären Hilfe der DEZA lanciert für eine globale Anwendung.",
+        "p2": "Durch eine  Förderung des Kantons Bern wurde AUGUR mit den Methoden von HAKESCH und einem Niederschlag Abfluss-Model (NAM) weiterentwickelt in Zusammenarbeit mit Hunziker, Zarn und Partner (HZP) und Scherrer Hydrologie." 
       }
     },
     "login": {

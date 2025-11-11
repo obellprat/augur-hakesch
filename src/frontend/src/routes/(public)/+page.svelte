@@ -10,6 +10,14 @@
 	<title>{$pageTitle} | AUGUR</title>
 </svelte:head>
 
+<style>
+	.card-img-top {
+		height: 200px;
+		object-fit: cover;
+		object-position: center;
+	}
+</style>
+
 <div class="page-container">
 	<div class="row row-cols-xxl-1 row-cols-md-1 row-cols-1">
 		<div class="col">
