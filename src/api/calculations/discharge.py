@@ -634,11 +634,11 @@ def clark_wsl_modified(self,
 
 def _load_cc_factor_simple(degree: float = 2.0) -> float:
     if degree == 1.5:
-        return 0.036
+        return 0.063
     elif degree == 2.0:
-        return 0.048
+        return 0.098
     elif degree == 3.0:
-        return 0.097
+        return 0.196
     else:
         return 0.0
 
