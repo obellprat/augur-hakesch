@@ -76,7 +76,7 @@
 			colors: ['transparent']
 		},
 		xaxis: {
-			categories: ['2.3', '20', '100']
+			categories: ['30', '100', '300']
 		},
 		yaxis: {
 			title: {
@@ -113,15 +113,19 @@
 		}
 
 		try {
+			// Sort by annuality number in ascending order
+			const sortedNamResults = namResults.slice().sort((a, b) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0));
+			
 			const series = [];
 			const colors = ['#1376ef', '#4a90e2', '#7bb3f0']; // Different shades of blue
 			let dischargeDataArray = [];
 			let globalStartIndex = Infinity;
 			let globalEndIndex = 0;
+			let dischargeDataIndex = 0;
 			
 			// First pass: collect all data and find the actual data range
-			for (let i = 0; i < namResults.length; i++) {
-				const nam = namResults[i];
+			for (let i = 0; i < sortedNamResults.length; i++) {
+				const nam = sortedNamResults[i];
 				const namResult = getResultField(nam, 'NAM_Result');
 				if (namResult?.HQ_time) {
 					const dischargeData = JSON.parse(namResult.HQ_time);
@@ -158,11 +162,11 @@
 			const timeSteps = Array.from({length: dataLength}, (_, index) => (globalStartIndex + index) * 10);
 			
 			// Process each annuality
-			for (let i = 0; i < namResults.length; i++) {
-				const nam = namResults[i];
+			for (let i = 0; i < sortedNamResults.length; i++) {
+				const nam = sortedNamResults[i];
 				const namResult = getResultField(nam, 'NAM_Result');
 				if (namResult?.HQ_time) {
-					const dischargeData = dischargeDataArray[i];
+					const dischargeData = dischargeDataArray[dischargeDataIndex];
 					
 					// Extract only the relevant data range
 					const filteredData = dischargeData.slice(globalStartIndex, globalEndIndex);
@@ -170,8 +174,10 @@
 					series.push({
 						name: nam.Annuality?.description || `Annuality ${i + 1}`,
 						data: filteredData,
-						color: colors[i % colors.length]
+						color: colors[series.length % colors.length]
 					});
+					
+					dischargeDataIndex++;
 				}
 			}
 			
@@ -434,6 +440,7 @@
 	
 	// Helper function to get the appropriate result field based on selected climate scenario
 	function getResultField(item: any, baseFieldName: string) {
+		if (!item) return undefined;
 		const fieldMap: Record<string, string> = {
 			'current': baseFieldName,
 			'1_5_degree': `${baseFieldName}_1_5`,
@@ -442,47 +449,69 @@
 		};
 		return item[fieldMap[selectedClimateScenario]];
 	}
+	let isFetchingHades = $state(false);
+
+	// Reactive state for IDF parameters
+	let pLow1h = $state(Number(data.project.IDF_Parameters?.P_low_1h) || 0);
+	let pLow24h = $state(Number(data.project.IDF_Parameters?.P_low_24h) || 0);
+	let pHigh1h = $state(Number(data.project.IDF_Parameters?.P_high_1h) || 0);
+	let pHigh24h = $state(Number(data.project.IDF_Parameters?.P_high_24h) || 0);
+	let rpLow = $state(data.project.IDF_Parameters?.rp_low || 30);
+	let rpHigh = $state(data.project.IDF_Parameters?.rp_high || 100);
+
+	// Update state when data changes
+	$effect(() => {
+		pLow1h = Number(data.project.IDF_Parameters?.P_low_1h) || 0;
+		pLow24h = Number(data.project.IDF_Parameters?.P_low_24h) || 0;
+		pHigh1h = Number(data.project.IDF_Parameters?.P_high_1h) || 0;
+		pHigh24h = Number(data.project.IDF_Parameters?.P_high_24h) || 0;
+		rpLow = data.project.IDF_Parameters?.rp_low || 30;
+		rpHigh = data.project.IDF_Parameters?.rp_high || 100;
+	});
 
 	let returnPeriod = $state([
 		{
-			id: 2.3,
-			text: `2.3`
-		},
-		{
-			id: 20,
-			text: `20`
+			id: 30,
+			text: `30`
 		},
 		{
 			id: 100,
 			text: `100`
+		},
+		{
+			id: 300,
+			text: `300`
 		}
 	]);
 
 	let returnPeriodx = $state([
 		{
 			id: 0,
-			text: `2.3`
+			text: `30`
 		},
 		{
 			id: 1,
-			text: `20`
+			text: `100`
 		},
 		{
 			id: 2,
-			text: `100`
+			text: `300`
 		}
 	]);
 
 	let calulcationType = $state(0);
-	let mod_verfahren = $state(data.project.Mod_Fliesszeit);
-	let koella = $state(data.project.Koella);
-	let clark_wsl = $state(data.project.ClarkWSL);
-	let nam = $state(data.project.NAM);
+	let mod_verfahren = $state(data.project.Mod_Fliesszeit || []);
+	let koella = $state(data.project.Koella || []);
+	let clark_wsl = $state(data.project.ClarkWSL || []);
+	let nam = $state(data.project.NAM || []);
 	//k.Koella_Result?.HQ.toFixed(2)
 
 	// Group calculations by scenarios (groups of 3 annualities)
 	// Each scenario should have entries for annualities 2.3, 20, and 100
 	function groupByScenario(calculations: any[]) {
+		if (!calculations || !Array.isArray(calculations)) {
+			return [];
+		}
 		// Sort by ID to ensure consistent grouping
 		const sorted = [...calculations].sort((a, b) => a.id - b.id);
 		const scenarios = [];
@@ -507,9 +536,9 @@
 			color: '#1376ef',
 			data: []
 		};
-		const mf_23 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 2.3);
-		const mf_20 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 20);
-		const mf_100 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 100);
+		const mf_23 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 30);
+		const mf_20 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 100);
+		const mf_100 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 300);
 		
 		mod_fliesszeit_data.data.push(
 			getResultField(mf_23, 'Mod_Fliesszeit_Result')?.HQ
@@ -531,9 +560,9 @@
 			color: '#1e13ef',
 			data: []
 		};
-		const k_23 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 2.3);
-		const k_20 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 20);
-		const k_100 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 100);
+		const k_23 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 30);
+		const k_20 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 100);
+		const k_100 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 300);
 		
 		koella_data.data.push(
 			getResultField(k_23, 'Koella_Result')?.HQ
@@ -555,9 +584,9 @@
 			color: '#13e4ef',
 			data: []
 		};
-		const c_23 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 2.3);
-		const c_20 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 20);
-		const c_100 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 100);
+		const c_23 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 30);
+		const c_20 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 100);
+		const c_100 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 300);
 		
 		clark_wsl_data.data.push(
 			getResultField(c_23, 'ClarkWSL_Result')?.Q
@@ -579,9 +608,9 @@
 			color: '#ef1313',
 			data: []
 		};
-		const n_23 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 2.3);
-		const n_20 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 20);
-		const n_100 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 100);
+		const n_23 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 	30);
+		const n_20 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 100);
+		const n_100 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 300);
 		
 		nam_data.data.push(
 			getResultField(n_23, 'NAM_Result')?.HQ
@@ -609,10 +638,10 @@
 
 	// Update local state when data changes
 	$effect(() => {
-		mod_verfahren = data.project.Mod_Fliesszeit;
-		koella = data.project.Koella;
-		clark_wsl = data.project.ClarkWSL;
-		nam = data.project.NAM;
+		mod_verfahren = data.project.Mod_Fliesszeit || [];
+		koella = data.project.Koella || [];
+		clark_wsl = data.project.ClarkWSL || [];
+		nam = data.project.NAM || [];
 	});
 
 	function addCalculation() {
@@ -1197,6 +1226,107 @@
 		checkAllGroups();
 	}
 
+	// Coordinate conversion from EPSG:2056 (Swiss CH1903+ / LV95) to WGS84 lat/lon
+	function convertEPSG2056ToWGS84(easting: number, northing: number): { lat: number; lon: number } {
+		// Swiss CH1903+ / LV95 to WGS84 conversion
+		// This is a simplified approximation for Swiss coordinates
+		// For exact transformation, consider using a proper projection library like proj4js
+		
+		// Convert from LV95 to LV03 (CH1903) first
+		const y = (easting - 2600000) / 1000000;
+		const x = (northing - 1200000) / 1000000;
+		
+		// Convert from LV03 to WGS84 using approximate formulas
+		// These formulas are from the Swiss Federal Office of Topography (swisstopo)
+		const lat_aux = 16.9023892 + 3.238272 * x - 0.270978 * Math.pow(x, 2) - 0.002528 * Math.pow(x, 3) - 0.0447 * Math.pow(y, 2) - 0.0140 * Math.pow(y, 3);
+		const lon_aux = 2.6779094 + 4.728982 * y + 0.791484 * y * x + 0.1306 * y * Math.pow(x, 2) - 0.0436 * Math.pow(y, 3);
+		
+		// Convert to decimal degrees
+		const lat = 46.952405556 + (lat_aux * 100 / 36) / 3600; 
+		const lon = 7.439583333 + (lon_aux * 100 / 36) / 3600;
+		
+		return { lat, lon };
+	}
+
+	async function fetchHadesValues() {
+		if (!data.project.Point) {
+			toast.push($_('page.discharge.calculation.hadesValuesNoCoordinates'), {
+				theme: {
+					'--toastColor': 'white',
+					'--toastBackground': 'darkred'
+				},
+				initial: 0
+			});
+			return;
+		}
+
+		isFetchingHades = true;
+		
+		try {
+			// Convert coordinates from EPSG:2056 to lat/lon
+			const { lat, lon } = convertEPSG2056ToWGS84(data.project.Point.easting, data.project.Point.northing);
+			
+			// Fetch precipitation data from the API
+			const response = await fetch(
+				`${env.PUBLIC_HAKESCH_API_PATH}/netcdf/precipitation?lon=${lon}&lat=${lat}`,
+				{
+					method: 'GET',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
+					}
+				}
+			);
+			
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			
+			const precipitationData = await response.json();
+			
+			// Extract the 50% probability values (median) for the IDF parameters
+			const data10y60m = precipitationData.data['10_years_60_minutes'];
+			const data10y24h = precipitationData.data['10_years_24h'];
+			const data30y60m = precipitationData.data['30_years_60_minutes'];
+			const data30y24h = precipitationData.data['30_years_24h'];
+			const data100y60m = precipitationData.data['100_years_60_minutes'];
+			const data100y24h = precipitationData.data['100_years_24h'];
+			
+			// Fill in the form values using reactive state
+			pLow1h = Math.round(data30y60m.probability_levels['50%']*100)/100;
+			pHigh1h = Math.round(data100y60m.probability_levels['50%']*100)/100;
+			pLow24h = Math.round(data30y24h.probability_levels['50%']*100)/100;
+			pHigh24h = Math.round(data100y24h.probability_levels['50%']*100)/100;
+			
+			// Set return periods
+			rpLow = 30;
+			rpHigh = 100;
+			
+			toast.push($_('page.discharge.calculation.hadesValuesSuccess'), {
+				theme: {
+					'--toastColor': 'mintcream',
+					'--toastBackground': 'rgba(72,187,120,0.9)',
+					'--toastBarBackground': '#2F855A'
+				}
+			});
+			
+		} catch (error) {
+			console.error('Error fetching HADES values:', error);
+			toast.push(
+				'<h3 style="padding:5;">' + $_('page.discharge.calculation.hadesValuesError') + '</h3>' +
+				(error instanceof Error ? error.message : String(error)),
+				{
+					theme: {
+						'--toastColor': 'white',
+						'--toastBackground': 'darkred'
+					},
+					initial: 0
+				}
+			);
+		} finally {
+			isFetchingHades = false;
+		}
+	}
+
 	onMount(async () => {
 		// Check if soil shape-file exists
 		await checkSoilFileExists(data.project.id);
@@ -1326,10 +1456,11 @@
 												>
 												<input
 													type="number"
+													step="any"
 													class="form-control"
 													name="P_low_1h"
 													id="P_low_1h"
-													value={Number(data.project.IDF_Parameters?.P_low_1h)}
+													bind:value={pLow1h}
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
@@ -1338,10 +1469,11 @@
 												>
 												<input
 													type="number"
+													step="any"
 													class="form-control"
 													id="P_low_24h"
 													name="P_low_24h"
-													value={Number(data.project.IDF_Parameters?.P_low_24h)}
+													bind:value={pLow24h}
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
@@ -1352,7 +1484,7 @@
 													id="rp_low"
 													name="rp_low"
 													class="form-select"
-													value={data.project.IDF_Parameters?.rp_low}
+													bind:value={rpLow}
 												>
 													{#each returnPeriod as rp}
 														<option value={rp.id}>
@@ -1369,10 +1501,11 @@
 												>
 												<input
 													type="number"
+													step="any"
 													class="form-control"
 													id="P_high_1h"
 													name="P_high_1h"
-													value={Number(data.project.IDF_Parameters?.P_high_1h)}
+													bind:value={pHigh1h}
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
@@ -1381,10 +1514,11 @@
 												>
 												<input
 													type="number"
+													step="any"
 													class="form-control"
 													id="P_high_24h"
 													name="P_high_24h"
-													value={Number(data.project.IDF_Parameters?.P_high_24h)}
+													bind:value={pHigh24h}
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
@@ -1396,7 +1530,7 @@
 													id="rp_high"
 													name="rp_high"
 													class="form-select"
-													value={data.project.IDF_Parameters?.rp_high}
+													bind:value={rpHigh}
 												>
 													{#each returnPeriod as rp}
 														<option value={rp.id}>
@@ -1406,16 +1540,33 @@
 												</select>
 											</div>
 										</div>
-										<button type="submit" class="btn btn-primary" disabled={isGeneralSaving}>
-											{#if isGeneralSaving}
-												<span
-													class="spinner-border spinner-border-sm me-2"
-													role="status"
-													aria-hidden="true"
-												></span>
-											{/if}
-											{$_('page.general.save')}
-										</button>
+										<div class="d-flex align-items-center gap-2">
+											<button 
+												type="button" 
+												class="btn btn-secondary" 
+												onclick={fetchHadesValues}
+												disabled={isFetchingHades}
+											>
+												{#if isFetchingHades}
+													<span
+														class="spinner-border spinner-border-sm me-2"
+														role="status"
+														aria-hidden="true"
+													></span>
+												{/if}
+												{$_('page.discharge.calculation.hadesValues')}
+											</button>
+											<button type="submit" class="btn btn-primary" disabled={isGeneralSaving}>
+												{#if isGeneralSaving}
+													<span
+														class="spinner-border spinner-border-sm me-2"
+														role="status"
+														aria-hidden="true"
+													></span>
+												{/if}
+												{$_('page.general.save')}
+											</button>
+										</div>
 									</form>
 								</div>
 							</div>
@@ -2324,7 +2475,7 @@
 													</tr>
 												</thead>
 												<tbody>
-													{#each mod_verfahren as mod_fz}
+													{#each mod_verfahren.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as mod_fz}
 														<tr>
 															<td>
 																{#if mod_fz.Annuality}
@@ -2364,7 +2515,7 @@
 													</tr>
 												</thead>
 												<tbody>
-													{#each koella as k}
+													{#each koella.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
 														<tr>
 															<td>
 																{#if k.Annuality}
@@ -2404,7 +2555,7 @@
 													</tr>
 												</thead>
 												<tbody>
-													{#each clark_wsl as k}
+													{#each clark_wsl.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
 														<tr>
 															<td>
 																{#if k.Annuality}
@@ -2444,7 +2595,7 @@
 													</tr>
 												</thead>
 												<tbody>
-													{#each nam as n}
+													{#each nam.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as n}
 														<tr>
 															<td>
 																{#if n.Annuality}

@@ -6,7 +6,7 @@ const createNewProject = async (project: Prisma.ProjectCreateInput) => {
 	const annualities = await prisma.Annualities.findMany({
 		where: {
 			number: {
-				in: [2.3, 20, 100]
+				in: [30, 100, 300]
 			}
 		}
 	});
@@ -15,9 +15,9 @@ const createNewProject = async (project: Prisma.ProjectCreateInput) => {
 	if (annualities.length === 0) {
 		await prisma.Annualities.createMany({
 			data: [
-				{ number: 2.3, description: 'HQ 2.3' },
-				{ number: 20, description: 'HQ 20' },
-				{ number: 100, description: 'HQ 100' }
+				{ number: 30, description: 'HQ 30' },
+				{ number: 100, description: 'HQ 100' },
+				{ number: 300, description: 'HQ 300' }
 			],
 			skipDuplicates: true
 		});
@@ -25,7 +25,7 @@ const createNewProject = async (project: Prisma.ProjectCreateInput) => {
 		const newAnnualities = await prisma.Annualities.findMany({
 			where: {
 				number: {
-					in: [2.3, 20, 100]
+					in: [30, 100, 300]
 				}
 			}
 		});

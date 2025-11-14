@@ -13,19 +13,220 @@ import pandas as pd
 import os
 from prisma import Prisma
 from calculations.calculations import app
+try:
+    from prisma.engine.errors import EngineConnectionError
+except ImportError:
+    # Fallback for different Prisma versions
+    from prisma.errors import EngineConnectionError
+try:
+    import httpx
+    _HTTPX_AVAILABLE = True
+except ImportError:
+    _HTTPX_AVAILABLE = False
 import fiona
 import json
 from fiona.crs import CRS
 from shapely.geometry import shape
 from typing import Optional, Tuple
 import pyproj
+import time
+import random
+import threading
 
 from calculations.calculations import app
 
+# Semaphore to limit concurrent Prisma connections
+# Set to 8 to allow some parallelism while preventing connection exhaustion
+# This is higher than worker concurrency (4) to allow retries but lower than unlimited
+_prisma_connection_semaphore = threading.Semaphore(8)
+
+
+def connect_prisma_with_retry(max_retries=10, base_delay=0.2, max_delay=5.0):
+    """
+    Connect to Prisma with exponential backoff retry logic and connection limiting.
+    This helps handle concurrent connection attempts from parallel Celery tasks.
+    
+    Uses a semaphore to limit concurrent connection attempts, preventing connection
+    pool exhaustion when many tasks run in parallel.
+    
+    Args:
+        max_retries: Maximum number of connection retry attempts (increased from 5 to 10)
+        base_delay: Base delay in seconds for exponential backoff (increased from 0.1 to 0.2)
+        max_delay: Maximum delay in seconds between retries (increased from 2.0 to 5.0)
+    
+    Returns:
+        Prisma instance with established connection
+    
+    Raises:
+        EngineConnectionError: If connection fails after all retries
+    """
+    # Acquire semaphore to limit concurrent connections
+    # This prevents overwhelming the Prisma query engine
+    _prisma_connection_semaphore.acquire()
+    
+    prisma = Prisma()
+    
+    try:
+        for attempt in range(max_retries):
+            try:
+                # Add random jitter to prevent thundering herd
+                # Jitter increases with attempt number to spread out retries
+                jitter = random.uniform(0, base_delay * (1 + attempt * 0.5))
+                delay = min(base_delay * (2 ** attempt) + jitter, max_delay)
+                
+                if attempt > 0:
+                    time.sleep(delay)
+                
+                prisma.connect()
+                return prisma
+            except Exception as e:
+                # Check if it's a connection-related error
+                is_connection_error = isinstance(e, (EngineConnectionError, ConnectionError, OSError))
+                if not is_connection_error and _HTTPX_AVAILABLE:
+                    try:
+                        is_connection_error = isinstance(e, httpx.ConnectError)
+                    except:
+                        pass
+                if not is_connection_error:
+                    # Not a connection error, re-raise immediately
+                    raise
+                if attempt == max_retries - 1:
+                    # Last attempt failed, clean up and raise
+                    try:
+                        prisma.disconnect()
+                    except:
+                        pass
+                    raise EngineConnectionError(
+                        f'Could not connect to the query engine after {max_retries} attempts'
+                    ) from e
+                # Continue to next retry
+                continue
+        
+        # Should never reach here, but just in case
+        raise EngineConnectionError('Could not connect to the query engine')
+    finally:
+        # Always release semaphore, even if connection fails
+        # This ensures other tasks can proceed
+        _prisma_connection_semaphore.release()
 
 
 @app.task(name="modifizierte_fliesszeit", bind=True)
 def modifizierte_fliesszeit(self, 
+    P_low_1h,
+    P_high_1h,
+    P_low_24h,
+    P_high_24h,
+    rp_low,
+    rp_high,  
+    x:float,
+    Vo20:int,           # Wetting volume for 20-year event [mm]
+    L:float,              # Channel length up to the watershed ridge [m] 
+    delta_H:float,        # Elevation difference along L [m]
+    psi:float,            # Peak flow coefficient [-]
+    E:float,              # Catchment area [km²]
+    mod_fliesszeit_id:int, # db id for updating results
+    project_easting: Optional[float] = None,
+    project_northing: Optional[float] = None,
+    cc_degree: float = 0.0,
+    climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
+    TB_start=10,    # Initial value for TB [min]
+    istep=0.1,        # Step size for TB [min]
+    tol=1,          # Convergence tolerance [mm]
+    max_iter=10000
+):
+    result_data = {}    
+    if x == 2.3 or x == 100 or x == 20:
+        result_data = modifizierte_fliesszeit_standardVo(self, 
+            P_low_1h,
+            P_high_1h,
+            P_low_24h,
+            P_high_24h,
+            rp_low,
+            rp_high,  
+            x, Vo20, L, delta_H, psi, E, mod_fliesszeit_id, project_easting, project_northing, cc_degree, climate_scenario, TB_start, istep, tol, max_iter)
+    elif x == 30 or x == 300:
+        result_data_20 = modifizierte_fliesszeit_standardVo(self, 
+            P_low_1h,
+            P_high_1h,
+            P_low_24h,
+            P_high_24h,
+            rp_low,
+            rp_high,  
+            20, Vo20, L, delta_H, psi, E, mod_fliesszeit_id, project_easting, project_northing, cc_degree, climate_scenario, TB_start, istep, tol, max_iter)
+        result_data_100 = modifizierte_fliesszeit_standardVo(self, 
+            P_low_1h,
+            P_high_1h,
+            P_low_24h,
+            P_high_24h,
+            rp_low,
+            rp_high,  
+            100, Vo20, L, delta_H, psi, E, mod_fliesszeit_id, project_easting, project_northing, cc_degree, climate_scenario, TB_start, istep, tol, max_iter)
+        hq = loglog_interp_targets(20, result_data_20['HQ'], 100, result_data_100['HQ'])
+        result_data = {
+            "HQ": hq[x],
+            "Tc": result_data_20['Tc'],
+            "TB": result_data_20['TB'],
+            "TFl": result_data_20['TFl'],
+            "i": result_data_20['i'],
+            "Vox": result_data_20['Vox']
+        }
+    else:
+        raise ValueError("Return period x must be 2.3, 20 or 100.")
+
+    prisma = None
+    try:
+        # Use retry logic to handle concurrent connection attempts
+        prisma = connect_prisma_with_retry()
+        
+        # Use conditional logic to set the correct relation field
+        if climate_scenario == "1_5_degree":
+            data_update = {
+                'Mod_Fliesszeit_Result_1_5': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        elif climate_scenario == "2_degree":
+            data_update = {
+                'Mod_Fliesszeit_Result_2': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        elif climate_scenario == "3_degree":
+            data_update = {
+                'Mod_Fliesszeit_Result_3': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        elif climate_scenario == "4_degree":
+            data_update = {
+                'Mod_Fliesszeit_Result_4': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        else:  # current
+            data_update = {
+                'Mod_Fliesszeit_Result': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        
+        updatedResults = prisma.mod_fliesszeit.update(
+            where = {
+                'id' : mod_fliesszeit_id
+            },
+            data = data_update
+        )
+    finally:
+        # Ensure cleanup even if update fails
+        if prisma is not None:
+            try:
+                prisma.disconnect(5)
+            except:
+                pass
+    return result_data
+
+
+def modifizierte_fliesszeit_standardVo(self, 
     P_low_1h,
     P_high_1h,
     P_low_24h,
@@ -122,69 +323,6 @@ def modifizierte_fliesszeit(self,
     i_final = intensity_fn(rp_years = x, duration_minutes = Tc)
     HQ = 0.278 * i_final * psi * E
 
-
-    prisma = Prisma()
-    prisma.connect()
-
-    # Build the update data based on climate scenario
-    result_data = {
-        'HQ' : HQ,
-        'Tc' : Tc,
-        'TB' : TB,
-        'TFl' : TFl,
-        'Vox' : Vox
-    }
-    
-    create_data = {
-        'HQ' : HQ,
-        'Tc' : Tc,
-        'TB' : TB,
-        'i' : i_final,
-        'TFl' : TFl,
-        'Vox' : Vox
-    }
-    
-    # Use conditional logic to set the correct relation field
-    if climate_scenario == "1_5_degree":
-        data_update = {
-            'Mod_Fliesszeit_Result_1_5': {
-                'upsert': {'update': result_data, 'create': create_data}
-            }
-        }
-    elif climate_scenario == "2_degree":
-        data_update = {
-            'Mod_Fliesszeit_Result_2': {
-                'upsert': {'update': result_data, 'create': create_data}
-            }
-        }
-    elif climate_scenario == "3_degree":
-        data_update = {
-            'Mod_Fliesszeit_Result_3': {
-                'upsert': {'update': result_data, 'create': create_data}
-            }
-        }
-    elif climate_scenario == "4_degree":
-        data_update = {
-            'Mod_Fliesszeit_Result_4': {
-                'upsert': {'update': result_data, 'create': create_data}
-            }
-        }
-    else:  # current
-        data_update = {
-            'Mod_Fliesszeit_Result': {
-                'upsert': {'update': result_data, 'create': create_data}
-            }
-        }
-    
-    updatedResults = prisma.mod_fliesszeit.update(
-        where = {
-            'id' : mod_fliesszeit_id
-        },
-        data = data_update
-    )
-
-    prisma.disconnect(5)
-
     return {
         "HQ": HQ,
         "Tc": Tc,
@@ -196,6 +334,123 @@ def modifizierte_fliesszeit(self,
 
 @app.task(name="koella", bind=True)
 def koella(self,
+    P_low_1h,
+    P_high_1h,
+    P_low_24h,
+    P_high_24h,
+    rp_low,
+    rp_high,  
+    x,                      # Recurrence interval: "2.3", "20", "100"
+    Vo20,                   # Wetting volume for 20-year event [mm]
+    Lg,                     # Cumulative channel length [km]
+    E,                      # Catchment area [km²]
+    glacier_area,           # Glacier area [km²]
+    koella_id,              # db id for updating results
+    project_easting: Optional[float] = None,
+    project_northing: Optional[float] = None,
+    cc_degree: float = 0.0,
+    climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
+    rs=4,                   # Meltwater equivalent [mm / h]
+    snow_melt=False,         # Consider snowmelt [bool]
+    TB_start=10,            # Start value for TB [min]
+    tol=0.1,                  # Convergence tolerance [mm]
+    istep=1,                # Step size for TB [min]
+    max_iter=10000            # Max. iterations
+):
+    result_data = {}    
+    if x == 2.3 or x == 100 or x == 20:
+        result_data = koella_standardVo(self, 
+            P_low_1h,
+            P_high_1h,
+            P_low_24h,
+            P_high_24h,
+            rp_low,
+            rp_high,  
+            x, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
+    elif x == 30 or x == 300:
+        result_data_20 = koella_standardVo(self, 
+            P_low_1h,
+            P_high_1h,
+            P_low_24h,
+            P_high_24h,
+            rp_low,
+            rp_high,  
+            x, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
+        result_data_100 = koella_standardVo(self, 
+            P_low_1h,
+            P_high_1h,
+            P_low_24h,
+            P_high_24h,
+            rp_low,
+            rp_high,  
+            x, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
+        hq = loglog_interp_targets(20, result_data_20['HQ'], 100, result_data_100['HQ'])
+        result_data = {
+            "HQ": hq[x],
+            "Tc": result_data_20['Tc'],
+            "TB": result_data_20['TB'],
+            "TFl": result_data_20['TFl'],
+            "FLeff": result_data_20['FLeff'],
+            "i_final": result_data_20['i_final'],
+            "i_korrigiert": result_data_20['i_korrigiert']
+        }
+    else:
+        raise ValueError("Return period x must be 2.3, 20 or 100.")
+    
+    prisma = None
+    try:
+        # Use retry logic to handle concurrent connection attempts
+        prisma = connect_prisma_with_retry()
+        
+        # Use conditional logic to set the correct relation field
+        if climate_scenario == "1_5_degree":
+            data_update = {
+                'Koella_Result_1_5': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        elif climate_scenario == "2_degree":
+            data_update = {
+                'Koella_Result_2': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        elif climate_scenario == "3_degree":
+            data_update = {
+                'Koella_Result_3': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        elif climate_scenario == "4_degree":
+            data_update = {
+                'Koella_Result_4': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+        else:  # current
+            data_update = {
+                'Koella_Result': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
+       
+        updatedResults = prisma.koella.update(
+            where = {
+                'id' : koella_id
+            },
+            data = data_update
+        )
+    finally:
+        # Ensure cleanup even if update fails
+        if prisma is not None:
+            try:
+                prisma.disconnect(5)
+            except:
+                pass
+    return result_data
+
+
+def koella_standardVo(self,
     P_low_1h,
     P_high_1h,
     P_low_24h,
@@ -342,61 +597,6 @@ def koella(self,
     # 1/3.6 factor for conversion from mm/h to m³/s
     i_corrected_units = i_corrected / 3.6 
     HQ = FLeff * kF * i_corrected_units * kGang + QGle
-
-    prisma = Prisma()
-    prisma.connect()
-   
-    # Build the update data based on climate scenario
-    result_data = {
-        "HQ": HQ,
-        "Tc": Tc,
-        "TB": TB,
-        "TFl": TFl,
-        "FLeff": FLeff,
-        "i_final": i_final,
-        "i_korrigiert": i_corrected
-    }
-    
-    # Use conditional logic to set the correct relation field
-    if climate_scenario == "1_5_degree":
-        data_update = {
-            'Koella_Result_1_5': {
-                'upsert': {'update': result_data, 'create': result_data}
-            }
-        }
-    elif climate_scenario == "2_degree":
-        data_update = {
-            'Koella_Result_2': {
-                'upsert': {'update': result_data, 'create': result_data}
-            }
-        }
-    elif climate_scenario == "3_degree":
-        data_update = {
-            'Koella_Result_3': {
-                'upsert': {'update': result_data, 'create': result_data}
-            }
-        }
-    elif climate_scenario == "4_degree":
-        data_update = {
-            'Koella_Result_4': {
-                'upsert': {'update': result_data, 'create': result_data}
-            }
-        }
-    else:  # current
-        data_update = {
-            'Koella_Result': {
-                'upsert': {'update': result_data, 'create': result_data}
-            }
-        }
-   
-    updatedResults = prisma.koella.update(
-        where = {
-            'id' : koella_id
-        },
-        data = data_update
-    )
-
-    prisma.disconnect(5)
 
     return {
         "HQ": HQ,
@@ -570,60 +770,66 @@ def clark_wsl_modified(self,
     for t in range(1, len(Q)):
         Q[t] = c1 * W[t] + c2 * W[t - 1] + c3 * Q[t - 1]
 
-    prisma = Prisma()
-    prisma.connect()
+    prisma = None
+    try:
+        # Use retry logic to handle concurrent connection attempts
+        prisma = connect_prisma_with_retry()
 
-    
-    Q_max = float(np.max(Q))
+        Q_max = float(np.max(Q))
 
-    # Build the update data based on climate scenario
-    result_data = {
-        "Q": Q_max,
-        "W": 0,
-        "K": 0,
-        "Tc": 0
-    }
-    
-    # Use conditional logic to set the correct relation field
-    if climate_scenario == "1_5_degree":
-        data_update = {
-            'ClarkWSL_Result_1_5': {
-                'upsert': {'update': result_data, 'create': result_data}
-            }
+        # Build the update data based on climate scenario
+        result_data = {
+            "Q": Q_max,
+            "W": 0,
+            "K": 0,
+            "Tc": 0
         }
-    elif climate_scenario == "2_degree":
-        data_update = {
-            'ClarkWSL_Result_2': {
-                'upsert': {'update': result_data, 'create': result_data}
+        
+        # Use conditional logic to set the correct relation field
+        if climate_scenario == "1_5_degree":
+            data_update = {
+                'ClarkWSL_Result_1_5': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
             }
-        }
-    elif climate_scenario == "3_degree":
-        data_update = {
-            'ClarkWSL_Result_3': {
-                'upsert': {'update': result_data, 'create': result_data}
+        elif climate_scenario == "2_degree":
+            data_update = {
+                'ClarkWSL_Result_2': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
             }
-        }
-    elif climate_scenario == "4_degree":
-        data_update = {
-            'ClarkWSL_Result_4': {
-                'upsert': {'update': result_data, 'create': result_data}
+        elif climate_scenario == "3_degree":
+            data_update = {
+                'ClarkWSL_Result_3': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
             }
-        }
-    else:  # current
-        data_update = {
-            'ClarkWSL_Result': {
-                'upsert': {'update': result_data, 'create': result_data}
+        elif climate_scenario == "4_degree":
+            data_update = {
+                'ClarkWSL_Result_4': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
             }
-        }
+        else:  # current
+            data_update = {
+                'ClarkWSL_Result': {
+                    'upsert': {'update': result_data, 'create': result_data}
+                }
+            }
 
-    updatedResults = prisma.clarkwsl.update(
-        where = {
-            'id' : clark_wsl
-        },
-        data = data_update
-    )
-
-    prisma.disconnect(5)
+        updatedResults = prisma.clarkwsl.update(
+            where = {
+                'id' : clark_wsl
+            },
+            data = data_update
+        )
+    finally:
+        # Ensure cleanup even if update fails
+        if prisma is not None:
+            try:
+                prisma.disconnect(5)
+            except:
+                pass
 
     return {
         "Q": Q.tolist(),
@@ -683,6 +889,80 @@ def _load_cc_factor(lon: float, lat: float, degree: float = 2.0) -> float:
     except Exception:
         return 0.0
 
+def loglog_interp_targets(x1, y1, x2, y2, targets=(30, 100, 300), clip_min=1e-12, allow_extrapolate=True):
+    """
+    Log-log interpolate (or extrapolate) values y at return periods x.
+
+    Parameters
+    ----------
+    x1, y1 : numeric
+        Known return period and corresponding model output (e.g. 20, HQ20).
+    x2, y2 : numeric
+        Known return period and corresponding model output (e.g. 100, HQ100).
+    targets : iterable of numeric
+        Return periods to compute (default: (30, 100, 300)).
+    clip_min : float
+        Minimum positive value to avoid zero/negative results when exponentiating logs.
+    allow_extrapolate : bool
+        If False, targets outside [min(x1,x2), max(x1,x2)] will return np.nan.
+
+    Returns
+    -------
+    dict
+        Mapping target_return_period -> interpolated value (float or np.nan).
+
+    """
+    import numpy as np
+
+    # ensure numeric
+    try:
+        x1 = float(x1); x2 = float(x2)
+    except Exception:
+        raise ValueError("x1 and x2 must be numeric return periods")
+
+    # handle invalid y inputs
+    y1_val = np.nan if y1 is None else (np.nan if (isinstance(y1, float) and np.isnan(y1)) else y1)
+    y2_val = np.nan if y2 is None else (np.nan if (isinstance(y2, float) and np.isnan(y2)) else y2)
+
+    # if either y is nan -> cannot interpolate
+    if not np.isfinite(y1_val) or not np.isfinite(y2_val):
+        return {int(t): np.nan for t in targets}
+
+    # both y must be positive for log-log; otherwise clip to clip_min
+    y1_clip = max(float(y1_val), clip_min)
+    y2_clip = max(float(y2_val), clip_min)
+
+    # logs
+    lx1, lx2 = np.log(x1), np.log(x2)
+    ly1, ly2 = np.log(y1_clip), np.log(y2_clip)
+
+    results = {}
+    xmin, xmax = min(x1, x2), max(x1, x2)
+    for t in targets:
+        try:
+            t_f = float(t)
+        except Exception:
+            results[int(t)] = np.nan
+            continue
+
+        # optional extrapolation guard
+        if (not allow_extrapolate) and (t_f < xmin or t_f > xmax):
+            results[int(t_f)] = np.nan
+            continue
+
+        # if exactly equal to a known rp, return exact value (original sign if possible)
+        if np.isclose(t_f, x1):
+            results[int(t_f)] = float(y1_val)
+            continue
+        if np.isclose(t_f, x2):
+            results[int(t_f)] = float(y2_val)
+            continue
+        # perform log-log interpolation / extrapolation
+        ly_t = np.interp(np.log(t_f), [lx1, lx2], [ly1, ly2])
+        y_t = float(np.exp(ly_t))
+        results[int(t_f)] = y_t
+
+    return results
 
 def construct_idf_curve(
     P_low_1h,
@@ -1107,26 +1387,33 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     self.update_state(state='PROGRESS',
             meta={'text': 'Save to database', 'progress' : 99})    
 
-    prisma = Prisma()
-    prisma.connect()
-    
-    updatedProject = prisma.project.update(
-        where = {
-            'id' :  projectId
-        },
-        data = {
-            'isozones_running': False,
-            'catchment_geojson': json.dumps(data),
-            'branches_geojson': json.dumps(branches),
-            'channel_length': dist_max.item(),
-            'catchment_area': catchmentkm2.item(),
-            'cummulative_channel_length': L_cum,
-            'delta_h': delta_H,
+    prisma = None
+    try:
+        # Use retry logic to handle concurrent connection attempts
+        prisma = connect_prisma_with_retry()
+        
+        updatedProject = prisma.project.update(
+            where = {
+                'id' :  projectId
+            },
+            data = {
+                'isozones_running': False,
+                'catchment_geojson': json.dumps(data),
+                'branches_geojson': json.dumps(branches),
+                'channel_length': dist_max.item(),
+                'catchment_area': catchmentkm2.item(),
+                'cummulative_channel_length': L_cum,
+                'delta_h': delta_H,
 
-        },
-        )
-
-    prisma.disconnect(5)
+            },
+            )
+    finally:
+        # Ensure cleanup even if update fails
+        if prisma is not None:
+            try:
+                prisma.disconnect(5)
+            except:
+                pass
     
     self.update_state(state='PROGRESS',
                 meta={'text': 'Finish', 'progress' : 100})
