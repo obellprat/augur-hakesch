@@ -113,15 +113,19 @@
 		}
 
 		try {
+			// Sort by annuality number in ascending order
+			const sortedNamResults = namResults.slice().sort((a, b) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0));
+			
 			const series = [];
 			const colors = ['#1376ef', '#4a90e2', '#7bb3f0']; // Different shades of blue
 			let dischargeDataArray = [];
 			let globalStartIndex = Infinity;
 			let globalEndIndex = 0;
+			let dischargeDataIndex = 0;
 			
 			// First pass: collect all data and find the actual data range
-			for (let i = 0; i < namResults.length; i++) {
-				const nam = namResults[i];
+			for (let i = 0; i < sortedNamResults.length; i++) {
+				const nam = sortedNamResults[i];
 				const namResult = getResultField(nam, 'NAM_Result');
 				if (namResult?.HQ_time) {
 					const dischargeData = JSON.parse(namResult.HQ_time);
@@ -158,11 +162,11 @@
 			const timeSteps = Array.from({length: dataLength}, (_, index) => (globalStartIndex + index) * 10);
 			
 			// Process each annuality
-			for (let i = 0; i < namResults.length; i++) {
-				const nam = namResults[i];
+			for (let i = 0; i < sortedNamResults.length; i++) {
+				const nam = sortedNamResults[i];
 				const namResult = getResultField(nam, 'NAM_Result');
 				if (namResult?.HQ_time) {
-					const dischargeData = dischargeDataArray[i];
+					const dischargeData = dischargeDataArray[dischargeDataIndex];
 					
 					// Extract only the relevant data range
 					const filteredData = dischargeData.slice(globalStartIndex, globalEndIndex);
@@ -170,8 +174,10 @@
 					series.push({
 						name: nam.Annuality?.description || `Annuality ${i + 1}`,
 						data: filteredData,
-						color: colors[i % colors.length]
+						color: colors[series.length % colors.length]
 					});
+					
+					dischargeDataIndex++;
 				}
 			}
 			
@@ -2469,7 +2475,7 @@
 													</tr>
 												</thead>
 												<tbody>
-													{#each mod_verfahren as mod_fz}
+													{#each mod_verfahren.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as mod_fz}
 														<tr>
 															<td>
 																{#if mod_fz.Annuality}
@@ -2509,7 +2515,7 @@
 													</tr>
 												</thead>
 												<tbody>
-													{#each koella as k}
+													{#each koella.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
 														<tr>
 															<td>
 																{#if k.Annuality}
@@ -2549,7 +2555,7 @@
 													</tr>
 												</thead>
 												<tbody>
-													{#each clark_wsl as k}
+													{#each clark_wsl.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
 														<tr>
 															<td>
 																{#if k.Annuality}
@@ -2589,7 +2595,7 @@
 													</tr>
 												</thead>
 												<tbody>
-													{#each nam as n}
+													{#each nam.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as n}
 														<tr>
 															<td>
 																{#if n.Annuality}
