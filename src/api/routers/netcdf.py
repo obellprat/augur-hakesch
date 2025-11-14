@@ -144,6 +144,8 @@ def get_precipitation_data(
             "data": {
                 "10_years_60_minutes": extract_precipitation_data(ds_60m, "X10", lon, lat),
                 "10_years_24h": extract_precipitation_data(ds_24h, "X10", lon, lat),
+                "30_years_60_minutes": extract_precipitation_data(ds_60m, "X30", lon, lat),
+                "30_years_24h": extract_precipitation_data(ds_24h, "X30", lon, lat),
                 "100_years_60_minutes": extract_precipitation_data(ds_60m, "X100", lon, lat),
                 "100_years_24h": extract_precipitation_data(ds_24h, "X100", lon, lat)
             }

@@ -76,7 +76,7 @@
 			colors: ['transparent']
 		},
 		xaxis: {
-			categories: ['2.3', '20', '100']
+			categories: ['30', '100', '300']
 		},
 		yaxis: {
 			title: {
@@ -434,6 +434,7 @@
 	
 	// Helper function to get the appropriate result field based on selected climate scenario
 	function getResultField(item: any, baseFieldName: string) {
+		if (!item) return undefined;
 		const fieldMap: Record<string, string> = {
 			'current': baseFieldName,
 			'1_5_degree': `${baseFieldName}_1_5`,
@@ -444,46 +445,67 @@
 	}
 	let isFetchingHades = $state(false);
 
+	// Reactive state for IDF parameters
+	let pLow1h = $state(Number(data.project.IDF_Parameters?.P_low_1h) || 0);
+	let pLow24h = $state(Number(data.project.IDF_Parameters?.P_low_24h) || 0);
+	let pHigh1h = $state(Number(data.project.IDF_Parameters?.P_high_1h) || 0);
+	let pHigh24h = $state(Number(data.project.IDF_Parameters?.P_high_24h) || 0);
+	let rpLow = $state(data.project.IDF_Parameters?.rp_low || 30);
+	let rpHigh = $state(data.project.IDF_Parameters?.rp_high || 100);
+
+	// Update state when data changes
+	$effect(() => {
+		pLow1h = Number(data.project.IDF_Parameters?.P_low_1h) || 0;
+		pLow24h = Number(data.project.IDF_Parameters?.P_low_24h) || 0;
+		pHigh1h = Number(data.project.IDF_Parameters?.P_high_1h) || 0;
+		pHigh24h = Number(data.project.IDF_Parameters?.P_high_24h) || 0;
+		rpLow = data.project.IDF_Parameters?.rp_low || 30;
+		rpHigh = data.project.IDF_Parameters?.rp_high || 100;
+	});
+
 	let returnPeriod = $state([
 		{
-			id: 2.3,
-			text: `2.3`
-		},
-		{
-			id: 20,
-			text: `20`
+			id: 30,
+			text: `30`
 		},
 		{
 			id: 100,
 			text: `100`
+		},
+		{
+			id: 300,
+			text: `300`
 		}
 	]);
 
 	let returnPeriodx = $state([
 		{
 			id: 0,
-			text: `2.3`
+			text: `30`
 		},
 		{
 			id: 1,
-			text: `20`
+			text: `100`
 		},
 		{
 			id: 2,
-			text: `100`
+			text: `300`
 		}
 	]);
 
 	let calulcationType = $state(0);
-	let mod_verfahren = $state(data.project.Mod_Fliesszeit);
-	let koella = $state(data.project.Koella);
-	let clark_wsl = $state(data.project.ClarkWSL);
-	let nam = $state(data.project.NAM);
+	let mod_verfahren = $state(data.project.Mod_Fliesszeit || []);
+	let koella = $state(data.project.Koella || []);
+	let clark_wsl = $state(data.project.ClarkWSL || []);
+	let nam = $state(data.project.NAM || []);
 	//k.Koella_Result?.HQ.toFixed(2)
 
 	// Group calculations by scenarios (groups of 3 annualities)
 	// Each scenario should have entries for annualities 2.3, 20, and 100
 	function groupByScenario(calculations: any[]) {
+		if (!calculations || !Array.isArray(calculations)) {
+			return [];
+		}
 		// Sort by ID to ensure consistent grouping
 		const sorted = [...calculations].sort((a, b) => a.id - b.id);
 		const scenarios = [];
@@ -508,9 +530,9 @@
 			color: '#1376ef',
 			data: []
 		};
-		const mf_23 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 2.3);
-		const mf_20 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 20);
-		const mf_100 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 100);
+		const mf_23 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 30);
+		const mf_20 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 100);
+		const mf_100 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 300);
 		
 		mod_fliesszeit_data.data.push(
 			getResultField(mf_23, 'Mod_Fliesszeit_Result')?.HQ
@@ -532,9 +554,9 @@
 			color: '#1e13ef',
 			data: []
 		};
-		const k_23 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 2.3);
-		const k_20 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 20);
-		const k_100 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 100);
+		const k_23 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 30);
+		const k_20 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 100);
+		const k_100 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 300);
 		
 		koella_data.data.push(
 			getResultField(k_23, 'Koella_Result')?.HQ
@@ -556,9 +578,9 @@
 			color: '#13e4ef',
 			data: []
 		};
-		const c_23 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 2.3);
-		const c_20 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 20);
-		const c_100 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 100);
+		const c_23 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 30);
+		const c_20 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 100);
+		const c_100 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 300);
 		
 		clark_wsl_data.data.push(
 			getResultField(c_23, 'ClarkWSL_Result')?.Q
@@ -580,9 +602,9 @@
 			color: '#ef1313',
 			data: []
 		};
-		const n_23 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 2.3);
-		const n_20 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 20);
-		const n_100 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 100);
+		const n_23 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 	30);
+		const n_20 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 100);
+		const n_100 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 300);
 		
 		nam_data.data.push(
 			getResultField(n_23, 'NAM_Result')?.HQ
@@ -610,10 +632,10 @@
 
 	// Update local state when data changes
 	$effect(() => {
-		mod_verfahren = data.project.Mod_Fliesszeit;
-		koella = data.project.Koella;
-		clark_wsl = data.project.ClarkWSL;
-		nam = data.project.NAM;
+		mod_verfahren = data.project.Mod_Fliesszeit || [];
+		koella = data.project.Koella || [];
+		clark_wsl = data.project.ClarkWSL || [];
+		nam = data.project.NAM || [];
 	});
 
 	function addCalculation() {
@@ -1258,25 +1280,20 @@
 			// Extract the 50% probability values (median) for the IDF parameters
 			const data10y60m = precipitationData.data['10_years_60_minutes'];
 			const data10y24h = precipitationData.data['10_years_24h'];
+			const data30y60m = precipitationData.data['30_years_60_minutes'];
+			const data30y24h = precipitationData.data['30_years_24h'];
 			const data100y60m = precipitationData.data['100_years_60_minutes'];
 			const data100y24h = precipitationData.data['100_years_24h'];
 			
-			// Fill in the form values
-			const pLow1h = Math.round(data10y60m.probability_levels['50%']*100)/100;
-			const pHigh1h = Math.round(data100y60m.probability_levels['50%']*100)/100;
-			const pLow24h = Math.round(data10y24h.probability_levels['50%']*100)/100;
-			const pHigh24h = Math.round(data100y24h.probability_levels['50%']*100)/100	;
+			// Fill in the form values using reactive state
+			pLow1h = Math.round(data30y60m.probability_levels['50%']*100)/100;
+			pHigh1h = Math.round(data100y60m.probability_levels['50%']*100)/100;
+			pLow24h = Math.round(data30y24h.probability_levels['50%']*100)/100;
+			pHigh24h = Math.round(data100y24h.probability_levels['50%']*100)/100;
 			
-			// Update the form inputs
-			const pLow1hInput = document.getElementById('P_low_1h') as HTMLInputElement;
-			const pHigh1hInput = document.getElementById('P_high_1h') as HTMLInputElement;
-			const pLow24hInput = document.getElementById('P_low_24h') as HTMLInputElement;
-			const pHigh24hInput = document.getElementById('P_high_24h') as HTMLInputElement;
-			
-			if (pLow1hInput && pLow1h !== null) pLow1hInput.value = (Math.round(pLow1h*100)/100).toString();
-			if (pHigh1hInput && pHigh1h !== null) pHigh1hInput.value = pHigh1h.toString();
-			if (pLow24hInput && pLow24h !== null) pLow24hInput.value = pLow24h.toString();
-			if (pHigh24hInput && pHigh24h !== null) pHigh24hInput.value = pHigh24h.toString();
+			// Set return periods
+			rpLow = 30;
+			rpHigh = 100;
 			
 			toast.push($_('page.discharge.calculation.hadesValuesSuccess'), {
 				theme: {
@@ -1433,10 +1450,11 @@
 												>
 												<input
 													type="number"
+													step="any"
 													class="form-control"
 													name="P_low_1h"
 													id="P_low_1h"
-													value={Number(data.project.IDF_Parameters?.P_low_1h)}
+													bind:value={pLow1h}
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
@@ -1445,10 +1463,11 @@
 												>
 												<input
 													type="number"
+													step="any"
 													class="form-control"
 													id="P_low_24h"
 													name="P_low_24h"
-													value={Number(data.project.IDF_Parameters?.P_low_24h)}
+													bind:value={pLow24h}
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
@@ -1459,7 +1478,7 @@
 													id="rp_low"
 													name="rp_low"
 													class="form-select"
-													value={data.project.IDF_Parameters?.rp_low}
+													bind:value={rpLow}
 												>
 													{#each returnPeriod as rp}
 														<option value={rp.id}>
@@ -1476,10 +1495,11 @@
 												>
 												<input
 													type="number"
+													step="any"
 													class="form-control"
 													id="P_high_1h"
 													name="P_high_1h"
-													value={Number(data.project.IDF_Parameters?.P_high_1h)}
+													bind:value={pHigh1h}
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
@@ -1488,10 +1508,11 @@
 												>
 												<input
 													type="number"
+													step="any"
 													class="form-control"
 													id="P_high_24h"
 													name="P_high_24h"
-													value={Number(data.project.IDF_Parameters?.P_high_24h)}
+													bind:value={pHigh24h}
 												/>
 											</div>
 											<div class="mb-3 col-md-4">
@@ -1503,7 +1524,7 @@
 													id="rp_high"
 													name="rp_high"
 													class="form-select"
-													value={data.project.IDF_Parameters?.rp_high}
+													bind:value={rpHigh}
 												>
 													{#each returnPeriod as rp}
 														<option value={rp.id}>
