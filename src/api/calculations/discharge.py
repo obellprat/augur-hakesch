@@ -23,9 +23,130 @@ import pyproj
 from calculations.calculations import app
 
 
-
 @app.task(name="modifizierte_fliesszeit", bind=True)
 def modifizierte_fliesszeit(self, 
+    P_low_1h,
+    P_high_1h,
+    P_low_24h,
+    P_high_24h,
+    rp_low,
+    rp_high,  
+    x:float,
+    Vo20:int,           # Wetting volume for 20-year event [mm]
+    L:float,              # Channel length up to the watershed ridge [m] 
+    delta_H:float,        # Elevation difference along L [m]
+    psi:float,            # Peak flow coefficient [-]
+    E:float,              # Catchment area [km²]
+    mod_fliesszeit_id:int, # db id for updating results
+    project_easting: Optional[float] = None,
+    project_northing: Optional[float] = None,
+    cc_degree: float = 0.0,
+    climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
+    TB_start=10,    # Initial value for TB [min]
+    istep=0.1,        # Step size for TB [min]
+    tol=1,          # Convergence tolerance [mm]
+    max_iter=10000
+):
+    print("calculation started for climate scenario = ", climate_scenario)
+    result_data = {}    
+    if x == 2.3 or x == 100 or x == 20:
+        result_data = modifizierte_fliesszeit_standardVo(self, 
+            P_low_1h,
+            P_high_1h,
+            P_low_24h,
+            P_high_24h,
+            rp_low,
+            rp_high,  
+            x, Vo20, L, delta_H, psi, E, mod_fliesszeit_id, project_easting, project_northing, cc_degree, climate_scenario, TB_start, istep, tol, max_iter)
+    elif x == 30 or x == 300:
+        result_data_20 = modifizierte_fliesszeit_standardVo(self, 
+            P_low_1h,
+            P_high_1h,
+            P_low_24h,
+            P_high_24h,
+            rp_low,
+            rp_high,  
+            20, Vo20, L, delta_H, psi, E, mod_fliesszeit_id, project_easting, project_northing, cc_degree, climate_scenario, TB_start, istep, tol, max_iter)
+        result_data_100 = modifizierte_fliesszeit_standardVo(self, 
+            P_low_1h,
+            P_high_1h,
+            P_low_24h,
+            P_high_24h,
+            rp_low,
+            rp_high,  
+            100, Vo20, L, delta_H, psi, E, mod_fliesszeit_id, project_easting, project_northing, cc_degree, climate_scenario, TB_start, istep, tol, max_iter)
+        hq = loglog_interp_targets(20, result_data_20['HQ'], 100, result_data_100['HQ'])
+        result_data = {
+            "HQ": hq[x],
+            "Tc": result_data_20['Tc'],
+            "TB": result_data_20['TB'],
+            "TFl": result_data_20['TFl'],
+            "i": result_data_20['i'],
+            "Vox": result_data_20['Vox']
+        }
+    else:
+        print("Return period x must be 2.3, 20 or 100.")
+        raise ValueError("Return period x must be 2.3, 20 or 100.")
+
+    
+    print("calculation successful for climate scenario = ", climate_scenario)
+
+    prisma = Prisma()
+    prisma.connect()
+
+    
+    # Use conditional logic to set the correct relation field
+    if climate_scenario == "1_5_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_1_5': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "2_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_2': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "3_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_3': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    elif climate_scenario == "4_degree":
+        data_update = {
+            'Mod_Fliesszeit_Result_4': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    else:  # current
+        data_update = {
+            'Mod_Fliesszeit_Result': {
+                'upsert': {'update': result_data, 'create': result_data}
+            }
+        }
+    
+    updatedResults = prisma.mod_fliesszeit.update(
+        where = {
+            'id' : mod_fliesszeit_id
+        },
+        data = data_update
+    )
+
+    prisma.disconnect(5)
+    print("calculation completed for return period x = ", x)
+    print("and climate scenario = ", climate_scenario)
+    print("HQ = ", result_data['HQ'])
+    print("Tc = ", result_data['Tc'])
+    print("TB = ", result_data['TB'])
+    print("TFl = ", result_data['TFl'])
+    print("i = ", result_data['i'])
+    print("Vox = ", result_data['Vox'])
+    return result_data
+
+
+def modifizierte_fliesszeit_standardVo(self, 
     P_low_1h,
     P_high_1h,
     P_low_24h,
@@ -121,69 +242,6 @@ def modifizierte_fliesszeit(self,
     Tc = TB + TFl
     i_final = intensity_fn(rp_years = x, duration_minutes = Tc)
     HQ = 0.278 * i_final * psi * E
-
-
-    prisma = Prisma()
-    prisma.connect()
-
-    # Build the update data based on climate scenario
-    result_data = {
-        'HQ' : HQ,
-        'Tc' : Tc,
-        'TB' : TB,
-        'TFl' : TFl,
-        'Vox' : Vox
-    }
-    
-    create_data = {
-        'HQ' : HQ,
-        'Tc' : Tc,
-        'TB' : TB,
-        'i' : i_final,
-        'TFl' : TFl,
-        'Vox' : Vox
-    }
-    
-    # Use conditional logic to set the correct relation field
-    if climate_scenario == "1_5_degree":
-        data_update = {
-            'Mod_Fliesszeit_Result_1_5': {
-                'upsert': {'update': result_data, 'create': create_data}
-            }
-        }
-    elif climate_scenario == "2_degree":
-        data_update = {
-            'Mod_Fliesszeit_Result_2': {
-                'upsert': {'update': result_data, 'create': create_data}
-            }
-        }
-    elif climate_scenario == "3_degree":
-        data_update = {
-            'Mod_Fliesszeit_Result_3': {
-                'upsert': {'update': result_data, 'create': create_data}
-            }
-        }
-    elif climate_scenario == "4_degree":
-        data_update = {
-            'Mod_Fliesszeit_Result_4': {
-                'upsert': {'update': result_data, 'create': create_data}
-            }
-        }
-    else:  # current
-        data_update = {
-            'Mod_Fliesszeit_Result': {
-                'upsert': {'update': result_data, 'create': create_data}
-            }
-        }
-    
-    updatedResults = prisma.mod_fliesszeit.update(
-        where = {
-            'id' : mod_fliesszeit_id
-        },
-        data = data_update
-    )
-
-    prisma.disconnect(5)
 
     return {
         "HQ": HQ,
@@ -683,6 +741,80 @@ def _load_cc_factor(lon: float, lat: float, degree: float = 2.0) -> float:
     except Exception:
         return 0.0
 
+def loglog_interp_targets(x1, y1, x2, y2, targets=(30, 100, 300), clip_min=1e-12, allow_extrapolate=True):
+    """
+    Log-log interpolate (or extrapolate) values y at return periods x.
+
+    Parameters
+    ----------
+    x1, y1 : numeric
+        Known return period and corresponding model output (e.g. 20, HQ20).
+    x2, y2 : numeric
+        Known return period and corresponding model output (e.g. 100, HQ100).
+    targets : iterable of numeric
+        Return periods to compute (default: (30, 100, 300)).
+    clip_min : float
+        Minimum positive value to avoid zero/negative results when exponentiating logs.
+    allow_extrapolate : bool
+        If False, targets outside [min(x1,x2), max(x1,x2)] will return np.nan.
+
+    Returns
+    -------
+    dict
+        Mapping target_return_period -> interpolated value (float or np.nan).
+
+    """
+    import numpy as np
+
+    # ensure numeric
+    try:
+        x1 = float(x1); x2 = float(x2)
+    except Exception:
+        raise ValueError("x1 and x2 must be numeric return periods")
+
+    # handle invalid y inputs
+    y1_val = np.nan if y1 is None else (np.nan if (isinstance(y1, float) and np.isnan(y1)) else y1)
+    y2_val = np.nan if y2 is None else (np.nan if (isinstance(y2, float) and np.isnan(y2)) else y2)
+
+    # if either y is nan -> cannot interpolate
+    if not np.isfinite(y1_val) or not np.isfinite(y2_val):
+        return {int(t): np.nan for t in targets}
+
+    # both y must be positive for log-log; otherwise clip to clip_min
+    y1_clip = max(float(y1_val), clip_min)
+    y2_clip = max(float(y2_val), clip_min)
+
+    # logs
+    lx1, lx2 = np.log(x1), np.log(x2)
+    ly1, ly2 = np.log(y1_clip), np.log(y2_clip)
+
+    results = {}
+    xmin, xmax = min(x1, x2), max(x1, x2)
+    for t in targets:
+        try:
+            t_f = float(t)
+        except Exception:
+            results[int(t)] = np.nan
+            continue
+
+        # optional extrapolation guard
+        if (not allow_extrapolate) and (t_f < xmin or t_f > xmax):
+            results[int(t_f)] = np.nan
+            continue
+
+        # if exactly equal to a known rp, return exact value (original sign if possible)
+        if np.isclose(t_f, x1):
+            results[int(t_f)] = float(y1_val)
+            continue
+        if np.isclose(t_f, x2):
+            results[int(t_f)] = float(y2_val)
+            continue
+        # perform log-log interpolation / extrapolation
+        ly_t = np.interp(np.log(t_f), [lx1, lx2], [ly1, ly2])
+        y_t = float(np.exp(ly_t))
+        results[int(t_f)] = y_t
+
+    return results
 
 def construct_idf_curve(
     P_low_1h,
