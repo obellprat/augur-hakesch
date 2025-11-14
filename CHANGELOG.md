@@ -1,3 +1,19 @@
+## 0.6.0-dev.1 (2025-11-14)
+
+### Feat
+
+- **api,frontend**: New recurrence periods added (30, 100, 300)
+- **api,frontend**: User can get the HADES data in the frontend. Takes the values from the provided netcdf file
+- **frontend,api**: Update to clima scenarios of meteoschweiz
+- **calibration**: Integrate results of the first calibration in the methods
+- **Science**: Add science page, change light background, add marker to precipitation tool
+
+### Fix
+
+- **frontend**: sort results by annuality
+- **climate-change-signal**: values were wrong and have adjusted according to new "note for estimating future changes in extreme precipitation return levels" from MeteoSwiss
+- **api**: fixes strange bug with pysheds array with sizes of 160000... make the reading window a little bit smaller
+
 ## 0.5.0-dev.1 (2025-11-04)
 
 ### Feat
