@@ -891,74 +891,66 @@ def _load_cc_factor(lon: float, lat: float, degree: float = 2.0) -> float:
 
 def loglog_interp_targets(x1, y1, x2, y2, targets=(30, 100, 300), clip_min=1e-12, allow_extrapolate=True):
     """
-    Log-log interpolate (or extrapolate) values y at return periods x.
+    Log-log interpolate or extrapolate values y at return periods x.
 
     Parameters
     ----------
     x1, y1 : numeric
-        Known return period and corresponding model output (e.g. 20, HQ20).
+        Known return period and corresponding value (e.g., 20, HQ20)
     x2, y2 : numeric
-        Known return period and corresponding model output (e.g. 100, HQ100).
+        Known return period and corresponding value (e.g., 100, HQ100)
     targets : iterable of numeric
-        Return periods to compute (default: (30, 100, 300)).
+        Return periods to compute (default: 30, 100, 300)
     clip_min : float
-        Minimum positive value to avoid zero/negative results when exponentiating logs.
+        Minimum positive value for log transform
     allow_extrapolate : bool
-        If False, targets outside [min(x1,x2), max(x1,x2)] will return np.nan.
+        If False, targets outside [x1,x2] will return np.nan
 
     Returns
     -------
     dict
-        Mapping target_return_period -> interpolated value (float or np.nan).
-
+        Mapping target_return_period -> interpolated/extrapolated value
     """
     import numpy as np
 
-    # ensure numeric
-    try:
-        x1 = float(x1); x2 = float(x2)
-    except Exception:
-        raise ValueError("x1 and x2 must be numeric return periods")
+    # Ensure numeric
+    x1, x2 = float(x1), float(x2)
+    y1_val = float(y1) if y1 is not None else np.nan
+    y2_val = float(y2) if y2 is not None else np.nan
 
-    # handle invalid y inputs
-    y1_val = np.nan if y1 is None else (np.nan if (isinstance(y1, float) and np.isnan(y1)) else y1)
-    y2_val = np.nan if y2 is None else (np.nan if (isinstance(y2, float) and np.isnan(y2)) else y2)
-
-    # if either y is nan -> cannot interpolate
+    # Check for valid y-values
     if not np.isfinite(y1_val) or not np.isfinite(y2_val):
         return {int(t): np.nan for t in targets}
 
-    # both y must be positive for log-log; otherwise clip to clip_min
-    y1_clip = max(float(y1_val), clip_min)
-    y2_clip = max(float(y2_val), clip_min)
+    # Clip to minimum positive value
+    y1_clip = max(y1_val, clip_min)
+    y2_clip = max(y2_val, clip_min)
 
-    # logs
+    # Logarithms
     lx1, lx2 = np.log(x1), np.log(x2)
     ly1, ly2 = np.log(y1_clip), np.log(y2_clip)
 
     results = {}
     xmin, xmax = min(x1, x2), max(x1, x2)
-    for t in targets:
-        try:
-            t_f = float(t)
-        except Exception:
-            results[int(t)] = np.nan
-            continue
 
-        # optional extrapolation guard
-        if (not allow_extrapolate) and (t_f < xmin or t_f > xmax):
+    for t in targets:
+        t_f = float(t)
+
+        # Guard against extrapolation if not allowed
+        if not allow_extrapolate and (t_f < xmin or t_f > xmax):
             results[int(t_f)] = np.nan
             continue
 
-        # if exactly equal to a known rp, return exact value (original sign if possible)
-        if np.isclose(t_f, x1):
-            results[int(t_f)] = float(y1_val)
+        # Exact match to known points
+        if t_f == x1:
+            results[int(t_f)] = y1_val
             continue
-        if np.isclose(t_f, x2):
-            results[int(t_f)] = float(y2_val)
+        if t_f == x2:
+            results[int(t_f)] = y2_val
             continue
-        # perform log-log interpolation / extrapolation
-        ly_t = np.interp(np.log(t_f), [lx1, lx2], [ly1, ly2])
+
+        # Perform log-log interpolation / extrapolation
+        ly_t = ly1 + (ly2 - ly1) * (np.log(t_f) - lx1) / (lx2 - lx1)
         y_t = float(np.exp(ly_t))
         results[int(t_f)] = y_t
 
