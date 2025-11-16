@@ -353,7 +353,7 @@ def koella(self,
     rs=4,                   # Meltwater equivalent [mm / h]
     snow_melt=False,         # Consider snowmelt [bool]
     TB_start=10,            # Start value for TB [min]
-    tol=1,                  # Convergence tolerance [mm]
+    tol=5,                  # Convergence tolerance [mm]
     istep=0.1,                # Step size for TB [min]
     max_iter=10000            # Max. iterations
 ):
@@ -470,7 +470,7 @@ def koella_standardVo(self,
     rs=4,                   # Meltwater equivalent [mm / h]
     snow_melt=False,         # Consider snowmelt [bool]
     TB_start=10,            # Start value for TB [min]
-    tol=1,                  # Convergence tolerance [mm]
+    tol=5,                  # Convergence tolerance [mm]
     istep=.1,                # Step size for TB [min]
     max_iter=10000            # Max. iterations
 ):
