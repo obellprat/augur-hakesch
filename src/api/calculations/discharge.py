@@ -163,7 +163,7 @@ def modifizierte_fliesszeit(self,
             100, Vo20, L, delta_H, psi, E, mod_fliesszeit_id, project_easting, project_northing, cc_degree, climate_scenario, TB_start, istep, tol, max_iter)
         hq = loglog_interp_targets(20, result_data_20['HQ'], 100, result_data_100['HQ'])
         result_data = {
-            "HQ": hq[x],
+            "HQ": hq[int(x)],
             "Tc": result_data_20['Tc'],
             "TB": result_data_20['TB'],
             "TFl": result_data_20['TFl'],
@@ -386,7 +386,7 @@ def koella(self,
             x, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
         hq = loglog_interp_targets(20, result_data_20['HQ'], 100, result_data_100['HQ'])
         result_data = {
-            "HQ": hq[x],
+            "HQ": hq[int(x)],
             "Tc": result_data_20['Tc'],
             "TB": result_data_20['TB'],
             "TFl": result_data_20['TFl'],
