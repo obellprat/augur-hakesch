@@ -690,10 +690,13 @@ def clark_wsl_modified(self,
             area = frac * zone_area  # m²
             total_area += area
 
+            # Convert typ to string if it isn't already, to match dictionary keys
+            typ_str = str(typ)
+
             if typ not in discharge_types_parameters:
                 continue
           
-            params = discharge_types_parameters[typ]
+            params = discharge_types_parameters[typ_str]
             WSV60min = params["WSV"]
             
             # WSV correction
