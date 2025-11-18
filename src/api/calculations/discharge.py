@@ -353,7 +353,7 @@ def koella(self,
     rs=4,                   # Meltwater equivalent [mm / h]
     snow_melt=False,         # Consider snowmelt [bool]
     TB_start=10,            # Start value for TB [min]
-    tol=5,                  # Convergence tolerance [mm]
+    tol=1,                  # Convergence tolerance [mm]
     istep=0.1,                # Step size for TB [min]
     max_iter=10000            # Max. iterations
 ):
@@ -375,7 +375,7 @@ def koella(self,
             P_high_24h,
             rp_low,
             rp_high,  
-            x, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
+            20, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
         result_data_100 = koella_standardVo(self, 
             P_low_1h,
             P_high_1h,
@@ -383,7 +383,7 @@ def koella(self,
             P_high_24h,
             rp_low,
             rp_high,  
-            x, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
+            100, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
         hq = loglog_interp_targets(20, result_data_20['HQ'], 100, result_data_100['HQ'])
         result_data = {
             "HQ": hq[int(x)],
@@ -470,7 +470,7 @@ def koella_standardVo(self,
     rs=4,                   # Meltwater equivalent [mm / h]
     snow_melt=False,         # Consider snowmelt [bool]
     TB_start=10,            # Start value for TB [min]
-    tol=5,                  # Convergence tolerance [mm]
+    tol=1,                  # Convergence tolerance [mm]
     istep=.1,                # Step size for TB [min]
     max_iter=10000            # Max. iterations
 ):
@@ -523,7 +523,7 @@ def koella_standardVo(self,
         raise ValueError("Invalid recurrence interval (x)")
 
     # Correction according to recurrence interval
-    
+      
     def get_kF_values(Vo20):
         # Table mapping Vo20 to kF2.33 and kF100
         table = {
@@ -557,7 +557,6 @@ def koella_standardVo(self,
     for _ in range(max_iter):
         Tc = TB + TFl
         ix = intensity_fn(rp_years = x, duration_minutes = Tc) 
-        #ix = ix * (1 + cc_factor)
         if abs(TB / 60 * ix - Vox) < tol:
             # Convergence reached
             break 
@@ -583,7 +582,7 @@ def koella_standardVo(self,
         else:
             kGang = 1 + (3 - TRx) / 2 * 0.2
 
-    i_final = intensity_fn(rp_years = x, duration_minutes = Tc) * (1 + cc_factor)
+    i_final = intensity_fn(rp_years = x, duration_minutes = Tc) 
     if snow_melt:
         i_final += rs
 
@@ -684,17 +683,22 @@ def clark_wsl_modified(self,
 
         zone_area = np.sum(zone_mask) * pixel_area_m2  # m²
                 
-        for typ, pct in fractions.items():
+        for fraction in fractions:
+            typ = fraction.get('typ')
+            pct = fraction.get('pct')
             if pd.isna(pct) or pct == 0:
                 continue
             frac = pct / 100
             area = frac * zone_area  # m²
             total_area += area
 
+            # Convert typ to string if it isn't already, to match dictionary keys
+            typ_str = str(typ)
+
             if typ not in discharge_types_parameters:
                 continue
           
-            params = discharge_types_parameters[typ]
+            params = discharge_types_parameters[typ_str]
             WSV60min = params["WSV"]
             
             # WSV correction
