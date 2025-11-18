@@ -375,7 +375,7 @@ def koella(self,
             P_high_24h,
             rp_low,
             rp_high,  
-            x, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
+            20, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
         result_data_100 = koella_standardVo(self, 
             P_low_1h,
             P_high_1h,
@@ -383,7 +383,7 @@ def koella(self,
             P_high_24h,
             rp_low,
             rp_high,  
-            x, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
+            100, Vo20, Lg, E, glacier_area, koella_id, project_easting, project_northing, cc_degree, climate_scenario, rs, snow_melt, TB_start, tol, istep, max_iter)
         hq = loglog_interp_targets(20, result_data_20['HQ'], 100, result_data_100['HQ'])
         result_data = {
             "HQ": hq[int(x)],
