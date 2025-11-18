@@ -683,7 +683,9 @@ def clark_wsl_modified(self,
 
         zone_area = np.sum(zone_mask) * pixel_area_m2  # m²
                 
-        for typ, pct in fractions.items():
+        for fraction in fractions:
+            typ = fraction.get('typ')
+            pct = fraction.get('pct')
             if pd.isna(pct) or pct == 0:
                 continue
             frac = pct / 100
