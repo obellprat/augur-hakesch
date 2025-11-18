@@ -8,6 +8,33 @@ import { page } from '$app/state';
 import { prisma } from '$lib/prisma';
 import type { ZoneParameter } from '../../../../../../prisma/src/generated/prisma/client';
 
+type BulkScenario<T extends Record<string, unknown>> = {
+	ids?: number[];
+	project_id?: string;
+} & T;
+
+type BulkPayload = {
+	idf?: {
+		idf_id?: number | null;
+		P_low_1h?: number;
+		P_high_1h?: number;
+		P_low_24h?: number;
+		P_high_24h?: number;
+		rp_low?: number;
+		rp_high?: number;
+	} | null;
+	modFliesszeit?: BulkScenario<{ Vo20?: number; psi?: number }>[] | null;
+	koella?: BulkScenario<{ Vo20?: number; glacier_area?: number }>[] | null;
+	clarkWSL?: BulkScenario<{ fractions?: Record<string, number> }>[] | null;
+	nam?: BulkScenario<{
+		precipitation_factor?: number;
+		readiness_to_drain?: number;
+		water_balance_mode?: string;
+		storm_center_mode?: string;
+		routing_method?: string;
+	}>[] | null;
+};
+
 export const load = async ({ params }) => {
 	if (browser) {
 		if (!page.data.session?.user?.name) {
@@ -693,6 +720,192 @@ export const actions = {
 				}
 			}
 		});
+
+		return project;
+	},
+
+	bulkSave: async ({ request }) => {
+		const formData = await request.formData();
+		const projectId = formData.get('project_id') as string | null;
+		const payloadRaw = formData.get('payload') as string | null;
+
+		if (!projectId || !payloadRaw) {
+			return fail(400, { message: 'Missing required fields' });
+		}
+
+		let payload: BulkPayload;
+		try {
+			payload = JSON.parse(payloadRaw) as BulkPayload;
+		} catch (error) {
+			return fail(400, { message: 'Invalid payload format' });
+		}
+
+		const normalizedProjectId = projectId;
+
+		if (payload.idf) {
+			const {
+				idf_id,
+				P_low_1h,
+				P_high_1h,
+				P_low_24h,
+				P_high_24h,
+				rp_low,
+				rp_high
+			} = payload.idf;
+
+			const idfRecord = await prisma.IDF_Parameters.upsert({
+				where: { id: Number(idf_id) || 0 },
+				update: {
+					P_low_1h: Number(P_low_1h) || 0,
+					P_high_1h: Number(P_high_1h) || 0,
+					P_low_24h: Number(P_low_24h) || 0,
+					P_high_24h: Number(P_high_24h) || 0,
+					rp_low: Number(rp_low) || 0,
+					rp_high: Number(rp_high) || 0
+				},
+				create: {
+					P_low_1h: Number(P_low_1h) || 0,
+					P_high_1h: Number(P_high_1h) || 0,
+					P_low_24h: Number(P_low_24h) || 0,
+					P_high_24h: Number(P_high_24h) || 0,
+					rp_low: Number(rp_low) || 0,
+					rp_high: Number(rp_high) || 0
+				}
+			});
+
+			await prisma.project.update({
+				where: { id: normalizedProjectId },
+				data: {
+					IDF_Parameters: {
+						connect: {
+							id: idfRecord.id
+						}
+					}
+				}
+			});
+		}
+
+		if (Array.isArray(payload.modFliesszeit)) {
+			for (const scenario of payload.modFliesszeit) {
+				const ids = (scenario.ids || []).map((id) => Number(id)).filter((id) => id > 0);
+				if (!ids.length) continue;
+				const Vo20 = Number(scenario.Vo20) || 0;
+				const psi = Number(scenario.psi) || 0;
+
+				for (const id of ids) {
+					await prisma.Mod_Fliesszeit.update({
+						where: { id },
+						data: {
+							Vo20,
+							psi
+						}
+					});
+				}
+			}
+		}
+
+		if (Array.isArray(payload.koella)) {
+			for (const scenario of payload.koella) {
+				const ids = (scenario.ids || []).map((id) => Number(id)).filter((id) => id > 0);
+				if (!ids.length) continue;
+				const Vo20 = Number(scenario.Vo20) || 0;
+				const glacier_area = Number(scenario.glacier_area) || 0;
+
+				for (const id of ids) {
+					await prisma.Koella.update({
+						where: { id },
+						data: {
+							Vo20,
+							glacier_area
+						}
+					});
+				}
+			}
+		}
+
+		if (Array.isArray(payload.clarkWSL)) {
+			for (const scenario of payload.clarkWSL) {
+				const ids = (scenario.ids || []).map((id) => Number(id)).filter((id) => id > 0);
+				if (!ids.length) continue;
+				const fractions = scenario.fractions ?? {};
+
+				for (const id of ids) {
+					await prisma.Fractions.deleteMany({
+						where: {
+							clarkwsl_id: id
+						}
+					});
+
+					const entries = Object.entries(fractions).map(([ZoneParameterTyp, pct]) => ({
+						ZoneParameterTyp,
+						pct: Number(pct) || 0,
+						clarkwsl_id: id
+					}));
+
+					if (entries.length) {
+						await prisma.Fractions.createMany({
+							data: entries,
+							skipDuplicates: true
+						});
+					}
+				}
+			}
+		}
+
+		if (Array.isArray(payload.nam)) {
+			for (const scenario of payload.nam) {
+				const ids = (scenario.ids || []).map((id) => Number(id)).filter((id) => id > 0);
+				if (!ids.length) continue;
+				const precipitation_factor =
+					Number(scenario.precipitation_factor) || 0.7;
+				const readiness_to_drain =
+					Number(scenario.readiness_to_drain) || 0;
+				const water_balance_mode = scenario.water_balance_mode || 'cumulative';
+				const storm_center_mode = scenario.storm_center_mode || 'centroid';
+				const routing_method = scenario.routing_method || 'time_values';
+
+				for (const id of ids) {
+					await prisma.NAM.update({
+						where: { id },
+						data: {
+							precipitation_factor,
+							readiness_to_drain,
+							water_balance_mode,
+							storm_center_mode,
+							routing_method
+						}
+					});
+				}
+			}
+		}
+
+		const project = await prisma.project.findUnique({
+			where: { id: normalizedProjectId },
+			include: {
+				Point: true,
+				IDF_Parameters: true,
+				Mod_Fliesszeit: {
+					orderBy: { id: 'asc' },
+					include: { Annuality: true, Mod_Fliesszeit_Result: true }
+				},
+				Koella: {
+					orderBy: { id: 'asc' },
+					include: { Annuality: true, Koella_Result: true }
+				},
+				ClarkWSL: {
+					orderBy: { id: 'asc' },
+					include: { Annuality: true, ClarkWSL_Result: true, Fractions: true }
+				},
+				NAM: {
+					orderBy: { id: 'asc' },
+					include: { Annuality: true, NAM_Result: true }
+				}
+			}
+		});
+
+		if (!project) {
+			return fail(404, { message: 'Project not found' });
+		}
 
 		return project;
 	}

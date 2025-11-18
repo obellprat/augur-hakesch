@@ -21,6 +21,33 @@
 		ref?: ApexCharts;
 	};
 
+type ScenarioIdentifiers = {
+	ids: number[];
+	projectId: string;
+};
+
+type ModScenarioForm = ScenarioIdentifiers & {
+	vo20: number;
+	psi: number;
+};
+
+type KoellaScenarioForm = ScenarioIdentifiers & {
+	vo20: number;
+	glacier_area: number;
+};
+
+type ClarkScenarioForm = ScenarioIdentifiers & {
+	fractions: Record<string, number>;
+};
+
+type NamScenarioForm = ScenarioIdentifiers & {
+	precipitation_factor: number;
+	readiness_to_drain: number;
+	water_balance_mode: string;
+	storm_center_mode: string;
+	routing_method: string;
+};
+
 	function getPctForZone(zone: string, clarkwsl: any) {
 		if (clarkwsl.Fractions === undefined || clarkwsl.Fractions.length === 0) {
 			return 0;
@@ -414,18 +441,27 @@
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
-	let zones = data.zones;
+	let zones: { typ: string }[] = data.zones;
 
-	let isGeneralSaving = $state(false);
-	let isMFZSaving = $state(false);
-	let isKoellaSaving = $state(false);
-	let isClarkWSLSaving = $state(false);
-	let isNAMSaving = $state(false);
 	let isUploading = $state(false);
 	let couldCalculate = $state(false);
 	let soilFileExists = $state(false);
 	let useOwnSoilData = $state(false);
 	let isCheckingSoilFile = $state(false);
+	let isBulkSaving = $state(false);
+	let bulkSaveForm: HTMLFormElement | null = null;
+	let bulkPayload = $state('{}');
+
+	let modScenarioForms = $state<ModScenarioForm[]>([]);
+	let koellaScenarioForms = $state<KoellaScenarioForm[]>([]);
+	let clarkScenarioForms = $state<ClarkScenarioForm[]>([]);
+	let namScenarioForms = $state<NamScenarioForm[]>([]);
+	let sharedVo20Values = $state<number[]>([]);
+
+	const createRange = (count: number): number[] => Array.from({ length: Math.max(count, 0) }, (_, index) => index);
+	let combinedScenarioRange = $state<number[]>([]);
+	let clarkScenarioRange = $state<number[]>([]);
+	let namScenarioRange = $state<number[]>([]);
 	
 	// Climate scenario selection state
 	let selectedClimateScenario = $state<string>('current');
@@ -483,22 +519,6 @@
 			text: `300`
 		}
 	]);
-
-	let returnPeriodx = $state([
-		{
-			id: 0,
-			text: `30`
-		},
-		{
-			id: 1,
-			text: `100`
-		},
-		{
-			id: 2,
-			text: `300`
-		}
-	]);
-
 	let calulcationType = $state(0);
 	let mod_verfahren = $state(data.project.Mod_Fliesszeit || []);
 	let koella = $state(data.project.Koella || []);
@@ -529,6 +549,190 @@
 	let koella_scenarios = $derived(groupByScenario(koella));
 	let clark_wsl_scenarios = $derived(groupByScenario(clark_wsl));
 	let nam_scenarios = $derived(groupByScenario(nam));
+
+	function sanitizeNumber(value: number | string | null | undefined): number {
+		const numeric = typeof value === 'number' ? value : Number(value);
+		return Number.isFinite(numeric) ? numeric : 0;
+	}
+
+	function initializeScenarioForms() {
+		const newModForms: ModScenarioForm[] = mod_fliesszeit_scenarios.map((scenario) => {
+			const base = scenario[0];
+			return {
+				ids: scenario.map((entry: any) => entry.id),
+				projectId: base?.project_id ?? data.project.id,
+				vo20: sanitizeNumber(base?.Vo20),
+				psi: sanitizeNumber(base?.psi)
+			};
+		});
+
+		const newKoellaForms: KoellaScenarioForm[] = koella_scenarios.map((scenario) => {
+			const base = scenario[0];
+			return {
+				ids: scenario.map((entry: any) => entry.id),
+				projectId: base?.project_id ?? data.project.id,
+				vo20: sanitizeNumber(base?.Vo20),
+				glacier_area: sanitizeNumber(base?.glacier_area)
+			};
+		});
+
+		const newClarkForms: ClarkScenarioForm[] = clark_wsl_scenarios.map((scenario) => {
+			const base = scenario[0];
+			const fractions: Record<string, number> = {};
+		(zones || []).forEach((zone: { typ: string }) => {
+				const pct =
+					base?.Fractions?.find(
+						(fraction: { ZoneParameterTyp: string }) => fraction.ZoneParameterTyp === zone.typ
+					)?.pct ?? 0;
+				fractions[zone.typ] = sanitizeNumber(pct);
+			});
+			return {
+				ids: scenario.map((entry: any) => entry.id),
+				projectId: base?.project_id ?? data.project.id,
+				fractions
+			};
+		});
+
+		const newNamForms: NamScenarioForm[] = nam_scenarios.map((scenario) => {
+			const base = scenario[0];
+			return {
+				ids: scenario.map((entry: any) => entry.id),
+				projectId: base?.project_id ?? data.project.id,
+				precipitation_factor: sanitizeNumber(base?.precipitation_factor ?? 0.7),
+				readiness_to_drain: sanitizeNumber(base?.readiness_to_drain ?? 0),
+				water_balance_mode: base?.water_balance_mode || 'cumulative',
+				storm_center_mode: base?.storm_center_mode || 'centroid',
+				routing_method: base?.routing_method || 'time_values'
+			};
+		});
+
+		modScenarioForms = newModForms;
+		koellaScenarioForms = newKoellaForms;
+		clarkScenarioForms = newClarkForms;
+		namScenarioForms = newNamForms;
+
+		const maxLength = Math.max(newModForms.length, newKoellaForms.length);
+		sharedVo20Values = createRange(maxLength).map((index) => {
+			const modValue = newModForms[index]?.vo20;
+			const koellaValue = newKoellaForms[index]?.vo20;
+			if (typeof modValue === 'number') {
+				return modValue;
+			}
+			if (typeof koellaValue === 'number') {
+				return koellaValue;
+			}
+			return 0;
+		});
+	}
+
+	function updateSharedVo20(index: number, value: number) {
+		const sanitized = sanitizeNumber(value);
+		sharedVo20Values = sharedVo20Values.map((current, idx) => (idx === index ? sanitized : current));
+		modScenarioForms = modScenarioForms.map((scenario, idx) =>
+			idx === index ? { ...scenario, vo20: sanitized } : scenario
+		);
+		koellaScenarioForms = koellaScenarioForms.map((scenario, idx) =>
+			idx === index ? { ...scenario, vo20: sanitized } : scenario
+		);
+	}
+
+	function updateModPsi(index: number, value: number) {
+		const sanitized = sanitizeNumber(value);
+		modScenarioForms = modScenarioForms.map((scenario, idx) =>
+			idx === index ? { ...scenario, psi: sanitized } : scenario
+		);
+	}
+
+	function updateGlacierArea(index: number, value: number) {
+		const sanitized = sanitizeNumber(value);
+		koellaScenarioForms = koellaScenarioForms.map((scenario, idx) =>
+			idx === index ? { ...scenario, glacier_area: sanitized } : scenario
+		);
+	}
+
+	function updateFractionValue(index: number, zoneTyp: string, value: number) {
+		const sanitized = sanitizeNumber(value);
+		clarkScenarioForms = clarkScenarioForms.map((scenario, idx) =>
+			idx === index
+				? { ...scenario, fractions: { ...scenario.fractions, [zoneTyp]: sanitized } }
+				: scenario
+		);
+	}
+
+	type NamEditableKey = Exclude<keyof NamScenarioForm, 'ids' | 'projectId'>;
+
+	function updateNamScenario(index: number, key: NamEditableKey, value: number | string) {
+		const sanitized =
+			typeof value === 'string' && (key === 'water_balance_mode' || key === 'storm_center_mode' || key === 'routing_method')
+				? value
+				: sanitizeNumber(value as number);
+
+		namScenarioForms = namScenarioForms.map((scenario, idx) =>
+			idx === index ? { ...scenario, [key]: sanitized } : scenario
+		);
+	}
+
+	function buildBulkPayload() {
+		return {
+			idf: {
+				idf_id: data.project.IDF_Parameters?.id ?? null,
+				P_low_1h: sanitizeNumber(pLow1h),
+				P_high_1h: sanitizeNumber(pHigh1h),
+				P_low_24h: sanitizeNumber(pLow24h),
+				P_high_24h: sanitizeNumber(pHigh24h),
+				rp_low: sanitizeNumber(rpLow),
+				rp_high: sanitizeNumber(rpHigh)
+			},
+			modFliesszeit: modScenarioForms.map((scenario, index) => ({
+				ids: scenario.ids,
+				project_id: scenario.projectId,
+				Vo20: sharedVo20Values[index] ?? scenario.vo20,
+				psi: scenario.psi
+			})),
+			koella: koellaScenarioForms.map((scenario, index) => ({
+				ids: scenario.ids,
+				project_id: scenario.projectId,
+				Vo20: sharedVo20Values[index] ?? scenario.vo20,
+				glacier_area: scenario.glacier_area
+			})),
+			clarkWSL: clarkScenarioForms.map((scenario) => ({
+				ids: scenario.ids,
+				project_id: scenario.projectId,
+				fractions: scenario.fractions
+			})),
+			nam: namScenarioForms.map((scenario) => ({
+				ids: scenario.ids,
+				project_id: scenario.projectId,
+				precipitation_factor: scenario.precipitation_factor,
+				readiness_to_drain: scenario.readiness_to_drain,
+				water_balance_mode: scenario.water_balance_mode,
+				storm_center_mode: scenario.storm_center_mode,
+				routing_method: scenario.routing_method
+			}))
+		};
+	}
+
+	$effect(() => {
+		mod_fliesszeit_scenarios;
+		koella_scenarios;
+		clark_wsl_scenarios;
+		nam_scenarios;
+		initializeScenarioForms();
+	});
+
+	$effect(() => {
+		modScenarioForms;
+		koellaScenarioForms;
+		clarkScenarioForms;
+		namScenarioForms;
+		combinedScenarioRange = createRange(Math.max(modScenarioForms.length, koellaScenarioForms.length));
+		clarkScenarioRange = createRange(clarkScenarioForms.length);
+		namScenarioRange = createRange(namScenarioForms.length);
+	});
+
+	$effect(() => {
+		bulkPayload = JSON.stringify(buildBulkPayload());
+	});
 
 	function showResults() {
 		let mod_fliesszeit_data: { name: string; color: string; data: (number | null)[] } = {
@@ -1392,1011 +1596,631 @@
 						{data.project.title}
 					</h3>
 				</div>
-				<div class="d-xl-flex align-items-center gap-2">
-					<button
-						type="button"
-						onclick={() => calculateProject(data.project.id)}
-						class="btn btn-sm btn-icon btn-ghost-primary"
-						title={$_('page.discharge.calculation.calculate')}
-						aria-label={$_('page.discharge.calculation.calculate')}
-					>
-						<i class="ti ti-calculator fs-24"></i>
-					</button>
-					
-				</div>
 			</div>
 		</div>
 		<div class="card-body">
 			<div class="row">
 				<!-- Input Part -->
-				<div class="col-lg-8">
-					<div class="accordion" id="accordionPanelsStayOpenExample">
-						<!-- General Input Part -->
-						<div class="accordion-item">
-							<h2 class="accordion-header" id="panelsStayOpen-headingOne">
-								<button
-									class="accordion-button"
-									type="button"
-									data-bs-toggle="collapse"
-									data-bs-target="#panelsStayOpen-collapseOne"
-									aria-expanded="true"
-									aria-controls="panelsStayOpen-collapseOne"
-								>
-									{$_('page.discharge.calculation.generalInput')}
-								</button>
-							</h2>
-							<div
-								id="panelsStayOpen-collapseOne"
-								class="accordion-collapse collapse show"
-								aria-labelledby="panelsStayOpen-headingOne"
-								style=""
-							>
-								<div class="accordion-body">
-									<form
-										method="post"
-										action="?/updatefnp"
-										use:enhance={() => {
-											isGeneralSaving = true;
-											return async ({ update }) => {
-												await update();
-												currentProject.title = data.project.title;
-												isGeneralSaving = false;
-											};
-										}}
-									>
-										<input type="hidden" name="id" value={data.project.id} />
-										<input type="hidden" name="idf_id" value={data.project.IDF_Parameters?.id} />
-										<h4 class="text-muted">
-											{$_('page.discharge.calculation.inputsForPrecipitationIntensity')}
-										</h4>
-										<div class="row g-2 py-2 align-items-end">
-											<div class="mb-3 col-md-4">
-												<label for="P_low_1h" class="form-label"
-													>{$_('page.discharge.calculation.idf.precipLowerPeriod1h')}</label
-												>
-												<input
-													type="number"
-													step="any"
-													class="form-control"
-													name="P_low_1h"
-													id="P_low_1h"
-													bind:value={pLow1h}
-												/>
-											</div>
-											<div class="mb-3 col-md-4">
-												<label for="P_low_24h" class="form-label"
-													>{$_('page.discharge.calculation.idf.precipLowerPeriod24h')}</label
-												>
-												<input
-													type="number"
-													step="any"
-													class="form-control"
-													id="P_low_24h"
-													name="P_low_24h"
-													bind:value={pLow24h}
-												/>
-											</div>
-											<div class="mb-3 col-md-4">
-												<label for="rp_low" class="form-label"
-													>{$_('page.discharge.calculation.idf.returnPeriod')}</label
-												>
-												<select
-													id="rp_low"
-													name="rp_low"
-													class="form-select"
-													bind:value={rpLow}
-												>
-													{#each returnPeriod as rp}
-														<option value={rp.id}>
-															{rp.text}
-														</option>
-													{/each}
-												</select>
-											</div>
-										</div>
-										<div class="row g-2 align-items-end">
-											<div class="mb-3 col-md-4">
-												<label for="P_high_1h" class="form-label"
-													>{$_('page.discharge.calculation.idf.precipUpperPeriod1h')}</label
-												>
-												<input
-													type="number"
-													step="any"
-													class="form-control"
-													id="P_high_1h"
-													name="P_high_1h"
-													bind:value={pHigh1h}
-												/>
-											</div>
-											<div class="mb-3 col-md-4">
-												<label for="P_high_24h" class="form-label"
-													>{$_('page.discharge.calculation.idf.precipUpperPeriod24h')}</label
-												>
-												<input
-													type="number"
-													step="any"
-													class="form-control"
-													id="P_high_24h"
-													name="P_high_24h"
-													bind:value={pHigh24h}
-												/>
-											</div>
-											<div class="mb-3 col-md-4">
-												<label for="rp_high" class="form-label"
-													>{$_('page.discharge.calculation.idf.upperReturnPeriod')}</label
-												>
+                <div class="col-lg-8">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+                        <div class="d-flex gap-2">
+                            <button
+                                type="button"
+                                class="btn btn-primary"
+                                onclick={() => bulkSaveForm?.requestSubmit()}
+                                disabled={isBulkSaving}
+                            >
+                                {#if isBulkSaving}
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                {/if}
+                                {$_('page.general.save')}
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-outline-primary"
+                                onclick={() => calculateProject(data.project.id)}
+                                disabled={!couldCalculate || isBulkSaving}
+                            >
+                                <i class="ti ti-calculator me-1"></i>
+                                {$_('page.general.calculate')}
+                            </button>
+                        </div>
+                    </div>
 
-												<select
-													id="rp_high"
-													name="rp_high"
-													class="form-select"
-													bind:value={rpHigh}
-												>
-													{#each returnPeriod as rp}
-														<option value={rp.id}>
-															{rp.text}
-														</option>
-													{/each}
-												</select>
-											</div>
-										</div>
-										<div class="d-flex align-items-center gap-2">
-											<button 
-												type="button" 
-												class="btn btn-secondary" 
-												onclick={fetchHadesValues}
-												disabled={isFetchingHades}
-											>
-												{#if isFetchingHades}
-													<span
-														class="spinner-border spinner-border-sm me-2"
-														role="status"
-														aria-hidden="true"
-													></span>
-												{/if}
-												{$_('page.discharge.calculation.hadesValues')}
-											</button>
-											<button type="submit" class="btn btn-primary" disabled={isGeneralSaving}>
-												{#if isGeneralSaving}
-													<span
-														class="spinner-border spinner-border-sm me-2"
-														role="status"
-														aria-hidden="true"
-													></span>
-												{/if}
-												{$_('page.general.save')}
-											</button>
-										</div>
-									</form>
-								</div>
-							</div>
-						</div>
-						<!-- End of General Input Part -->
-						<!-- Mod. Fliesszeit Part -->
-						{#if mod_verfahren.length > 0}
-							<div class="accordion-item">
-								<h2 class="accordion-header" id="panelsStayOpen-headingMFZ">
-									<button
-										class="accordion-button collapsed"
-										type="button"
-										data-bs-toggle="collapse"
-										data-bs-target="#panelsStayOpen-collapseMFZ"
-										aria-expanded="false"
-										aria-controls="panelsStayOpen-collapseThree"
-									>
-										{$_('page.discharge.calculation.modFliesszeit')}
-									</button>
-								</h2>
-								<div
-									id="panelsStayOpen-collapseMFZ"
-									class="accordion-collapse collapse"
-									aria-labelledby="panelsStayOpen-headingMFZ"
-									style=""
-								>
-									<div class="accordion-body">
-										<div class="accordion" id="accordionPanelsMFZ">
-											{#each mod_fliesszeit_scenarios as scenario, scenarioIndex}
-												
-												<form
-													method="post"
-													action="?/updateScenario"
-													use:enhance={({ formElement, formData, action, cancel, submitter }) => {
-														isMFZSaving = true;
-														return async ({ result, update }) => {
-															await update({ reset: false });
-															if (result.type === 'success' && result.data) {
-																data.project = result.data;
-															}
-															isMFZSaving = false;
+                    <form
+                        class="d-none"
+                        method="post"
+                        action="?/bulkSave"
+                        bind:this={bulkSaveForm}
+                        use:enhance={() => {
+                            isBulkSaving = true;
+                            return async ({ result, update }) => {
+                                await update({ reset: false });
+                                isBulkSaving = false;
+                                if (result.type === 'success' && result.data) {
+                                    data.project = result.data;
+                                    toast.push($_('page.discharge.calculation.successfullsave'), {
+                                        theme: {
+                                            '--toastColor': 'mintcream',
+                                            '--toastBackground': 'rgba(72,187,120,0.9)',
+                                            '--toastBarBackground': '#2F855A'
+                                        }
+                                    });
+                                } else if (result.type === 'failure') {
+                                    const failure = (result.data as { message?: string })?.message || $_('page.discharge.calculation.calcerror');
+                                    toast.push(
+                                        '<h3 style="padding:5;">' + failure + '</h3>',
+                                        {
+                                            theme: {
+                                                '--toastColor': 'white',
+                                                '--toastBackground': 'darkred'
+                                            },
+                                            initial: 0
+                                        }
+                                    );
+                                }
+                            };
+                        }}
+                    >
+                        <input type="hidden" name="project_id" value={data.project.id} />
+                        <input type="hidden" name="payload" value={bulkPayload} />
+                    </form>
 
-														if (submitter?.id==`calcMFZButton-scenario${scenarioIndex}`){
-															// Calculate all 3 annualities in the scenario
-															calculateModFliess(scenario);
-														}
-															else {
-																toast.push($_('page.discharge.calculation.successfullsave'), {
-																	theme: {
-																		'--toastColor': 'mintcream',
-																		'--toastBackground': 'rgba(72,187,120,0.9)',
-																		'--toastBarBackground': '#2F855A'
-																	}
-																});
-															}
-														};
-													}}
-												>
-													<input type="hidden" name="project_id" value={scenario[0].project_id} />
-													<input type="hidden" name="type" value="modfliesszeit" />
-													{#each scenario as mod_fz}
-														<input type="hidden" name="ids[]" value={mod_fz.id} />
-													{/each}
-													
-													<div class="row g-2 py-2 align-items-end">
-														<div class="mb-3 col-md-6">
-															<label for="Vo20-scenario{scenarioIndex}" class="form-label"
-																>{$_(
-																	'page.discharge.calculation.modFZV.wettingVolume'
-																)}</label
-															>
-															<input
-																type="number"
-																step="any"
-																class="form-control"
-																id="Vo20-scenario{scenarioIndex}"
-																name="Vo20"
-																value={Number(scenario[0].Vo20)}
-															/>
-														</div>
-														<div class="mb-3 col-md-6">
-															<label for="psi-scenario{scenarioIndex}" class="form-label"
-																>{$_('page.discharge.calculation.modFZV.peakFlow')}</label
-															>
-															<input
-																type="number"
-																step="any"
-																class="form-control"
-																id="psi-scenario{scenarioIndex}"
-																name="psi"
-																value={Number(scenario[0].psi)}
-															/>
-														</div>
-													</div>
-													<div class="d-flex align-items-center justify-content-between py-1 mb-3">
-														<div class="d-flex align-items-center gap-2">
-															<button
-																type="submit"
-																class="btn btn-sm btn-primary"
-																disabled={isMFZSaving}
-															>
-																{#if isMFZSaving}
-																	<span
-																		class="spinner-border spinner-border-sm me-2"
-																		role="status"
-																		aria-hidden="true"
-																	></span>
-																{/if}
-																{$_('page.general.save')}
-															</button>
-															<button
-																type="submit" id="calcMFZButton-scenario{scenarioIndex}"
-																class="btn btn-sm btn-primary"
-																disabled={isMFZSaving || !couldCalculate}
-																>{$_('page.general.calculate')}</button
-															>
-														</div>
-													</div>
-												</form>
-												
-												<div class="d-flex align-items-center justify-content-end py-1">
-													<span
-														class="btn btn-sm btn-icon btn-ghost-danger d-xl-flex"
-														data-bs-placement="top"
-														title={$_('page.general.delete')}
-														aria-label="delete"
-														data-bs-toggle="modal"
-														data-bs-target="#delete-scenario-mfz-modal{scenarioIndex}"
-													>
-														<i class="ti ti-trash fs-20"></i>
-													</span>
-												</div>
-												
-												<!-- Delete Scenario Modal -->
-												<div
-													id="delete-scenario-mfz-modal{scenarioIndex}"
-													class="modal fade"
-													tabindex="-1"
-													role="dialog"
-													aria-labelledby="warning-header-modalLabel"
-													aria-hidden="true"
-												>
-													<div class="modal-dialog">
-														<div class="modal-content">
-															<div class="modal-header text-bg-warning border-0">
-																<h4 class="modal-title" id="warning-header-modalLabel">
-																	{$_('page.discharge.calculation.deleteCalculation')}
-																</h4>
-																<button
-																	type="button"
-																	class="btn-close btn-close-white"
-																	data-bs-dismiss="modal"
-																	aria-label={$_('page.general.close')}
-																></button>
-															</div>
-															<div class="modal-body">
-																<p>
-																	{$_('page.discharge.calculation.deleteCalculationQuestion')}
-																</p>
-															</div>
-															<div class="modal-footer">
-																<button
-																	type="button"
-																	class="btn btn-light"
-																	data-bs-dismiss="modal">{$_('page.general.cancel')}</button
-																>
-																<form method="POST" action="?/deleteScenario">
-																	{#each scenario as mod_fz}
-																		<input type="hidden" name="ids[]" value={mod_fz.id} />
-																	{/each}
-																	<input type="hidden" name="type" value="modfliesszeit" />
-																	<button type="submit" class="btn btn-warning"
-																		>{$_('page.general.delete')}</button
-																	>
-																</form>
-															</div>
-														</div>
-														<!-- /.modal-content -->
-													</div>
-													<!-- /.modal-dialog -->
-												</div>
-												<!-- /.modal -->
-											{/each}
-										</div>
-									</div>
-								</div>
-							</div>
-						{/if}
-						<!-- End of Mod. Fliesszeit Part -->
-						<!-- Koella Part -->
-						{#if koella.length > 0}
-							<div class="accordion-item">
-								<h2 class="accordion-header" id="panelsStayOpen-headingThree">
-									<button
-										class="accordion-button collapsed"
-										type="button"
-										data-bs-toggle="collapse"
-										data-bs-target="#panelsStayOpen-collapseKoella"
-										aria-expanded="false"
-										aria-controls="panelsStayOpen-collapseKoella"
-									>
-										{$_('page.discharge.calculation.koells')}
-									</button>
-								</h2>
-								<div
-									id="panelsStayOpen-collapseKoella"
-									class="accordion-collapse collapse"
-									aria-labelledby="panelsStayOpen-headingKoella"
-									style=""
-								>
-									<div class="accordion-body">
-										<div class="accordion" id="accordionPanelsKoella">
-											{#each koella_scenarios as scenario, scenarioIndex}
-												
-												<form
-													method="post"
-													action="?/updateScenario"
-													use:enhance={({ formElement, formData, action, cancel, submitter }) => {
-														isKoellaSaving = true;
-														return async ({ result, update }) => {
-															await update({ reset: false });
-															if (result.type === 'success' && result.data) {
-																data.project = result.data;
-															}
-															isKoellaSaving = false;
-														if (submitter?.id==`calcKoellaButton-scenario${scenarioIndex}`){
-															// Calculate all 3 annualities in the scenario
-															calculateKoella(scenario);
-														}
-															else {
-																toast.push($_('page.discharge.calculation.successfullsave'), {
-																	theme: {
-																		'--toastColor': 'mintcream',
-																		'--toastBackground': 'rgba(72,187,120,0.9)',
-																		'--toastBarBackground': '#2F855A'
-																	}
-																});
-															}
-														};
-													}}
-												>
-													<input type="hidden" name="project_id" value={scenario[0].project_id} />
-													<input type="hidden" name="type" value="koella" />
-													{#each scenario as k}
-														<input type="hidden" name="ids[]" value={k.id} />
-													{/each}
-													
-													<div class="row g-2 py-2 align-items-end">
-														<div class="mb-3 col-md-6">
-															<label for="Vo20-koella-scenario{scenarioIndex}" class="form-label"
-																>{$_(
-																	'page.discharge.calculation.modFZV.wettingVolume'
-																)}</label
-															>
-															<input
-																type="number"
-																step="any"
-																class="form-control"
-																id="Vo20-koella-scenario{scenarioIndex}"
-																name="Vo20"
-																value={Number(scenario[0].Vo20)}
-															/>
-														</div>
-														<div class="mb-3 col-md-6">
-															<label for="glacier_area-scenario{scenarioIndex}" class="form-label"
-																>{$_('page.discharge.calculation.koella.glacierArea')} km<sup
-																	>2</sup
-																></label
-															>
-															<input
-																type="number"
-																step="1"
-																class="form-control"
-																id="glacier_area-scenario{scenarioIndex}"
-																name="glacier_area"
-																value={Number(scenario[0].glacier_area)}
-															/>
-														</div>
-													</div>
-													<div class="d-flex align-items-center justify-content-between py-1 mb-3">
-														<div class="d-flex align-items-center gap-2">
-															<button
-																type="submit"
-																class="btn btn-sm btn-primary"
-																disabled={isKoellaSaving}
-															>
-																{#if isKoellaSaving}
-																	<span
-																		class="spinner-border spinner-border-sm me-2"
-																		role="status"
-																		aria-hidden="true"
-																	></span>
-																{/if}
-																{$_('page.general.save')}
-															</button>
-															<button
-																type="submit" id="calcKoellaButton-scenario{scenarioIndex}"
-																class="btn btn-sm btn-primary"
-																disabled={isKoellaSaving || !couldCalculate}
-																>{$_('page.general.calculate')}</button
-															>
-														</div>
-													</div>
-												</form>
-												
-												<div class="d-flex align-items-center justify-content-end py-1">
-													<span
-														class="btn btn-sm btn-icon btn-ghost-danger d-xl-flex"
-														data-bs-placement="top"
-														title={$_('page.general.delete')}
-														aria-label="delete"
-														data-bs-toggle="modal"
-														data-bs-target="#delete-scenario-koella-modal{scenarioIndex}"
-													>
-														<i class="ti ti-trash fs-20"></i>
-													</span>
-												</div>
-												
-												<!-- Delete Scenario Modal -->
-												<div
-													id="delete-scenario-koella-modal{scenarioIndex}"
-													class="modal fade"
-													tabindex="-1"
-													role="dialog"
-													aria-labelledby="warning-header-modalLabel"
-													aria-hidden="true"
-												>
-													<div class="modal-dialog">
-														<div class="modal-content">
-															<div class="modal-header text-bg-warning border-0">
-																<h4 class="modal-title" id="warning-header-modalLabel">
-																	{$_('page.discharge.calculation.deleteCalculation')}
-																</h4>
-																<button
-																	type="button"
-																	class="btn-close btn-close-white"
-																	data-bs-dismiss="modal"
-																	aria-label="Close"
-																></button>
-															</div>
-															<div class="modal-body">
-																<p>
-																	{$_('page.discharge.calculation.deleteCalculationQuestion')}
-																</p>
-															</div>
-															<div class="modal-footer">
-																<button
-																	type="button"
-																	class="btn btn-light"
-																	data-bs-dismiss="modal">{$_('page.general.cancel')}</button
-																>
-																<form method="POST" action="?/deleteScenario">
-																	{#each scenario as k}
-																		<input type="hidden" name="ids[]" value={k.id} />
-																	{/each}
-																	<input type="hidden" name="type" value="koella" />
-																	<button type="submit" class="btn btn-warning"
-																		>{$_('page.general.delete')}</button
-																	>
-																</form>
-															</div>
-														</div>
-														<!-- /.modal-content -->
-													</div>
-													<!-- /.modal-dialog -->
-												</div>
-												<!-- /.modal -->
-											{/each}
-										</div>
-									</div>
-								</div>
-							</div>
-						{/if}
-						<!-- End of Koella Part -->
-						<!-- Clark WSL Part -->
-						{#if clark_wsl.length > 0}
-							<div class="accordion-item">
-								<h2 class="accordion-header" id="panelsStayOpen-headingClarkWSL">
-									<button
-										class="accordion-button collapsed"
-										type="button"
-										data-bs-toggle="collapse"
-										data-bs-target="#panelsStayOpen-collapseClarkWSL"
-										aria-expanded="false"
-										aria-controls="panelsStayOpen-collapseClarkWSL"
-									>
-										{$_('page.discharge.calculation.clarkwslname')}
-									</button>
-								</h2>
-								<div
-									id="panelsStayOpen-collapseClarkWSL"
-									class="accordion-collapse collapse"
-									aria-labelledby="panelsStayOpen-headingClarkWSL"
-									style=""
-								>
-									<div class="accordion-body">
-										<div class="accordion" id="accordionPanelsClarkWSL">
-											{#each clark_wsl_scenarios as scenario, scenarioIndex}
-												<form
-													method="post"
-													action="?/updateScenario"
-													use:enhance={({ formElement, formData, action, cancel, submitter}) => {
-														isClarkWSLSaving = true;
-														return async ({ result, update }) => {
-															await update({ reset: false });
-															if (result.type === 'success' && result.data) {
-																data.project = result.data;
-															}
-															isClarkWSLSaving = false;
-														if (submitter?.id==`calcClarkWSLButton-scenario${scenarioIndex}`){
-															// Calculate all 3 annualities in the scenario
-															calculateClarkWSL(scenario);
-														}
-															else {
-																toast.push($_('page.discharge.calculation.successfullsave'), {
-																	theme: {
-																		'--toastColor': 'mintcream',
-																		'--toastBackground': 'rgba(72,187,120,0.9)',
-																		'--toastBarBackground': '#2F855A'
-																	}
-																});
-															}
-														};
-													}}
-												>
-													<input type="hidden" name="project_id" value={scenario[0].project_id} />
-													<input type="hidden" name="type" value="clarkwsl" />
-													{#each scenario as k}
-														<input type="hidden" name="ids[]" value={k.id} />
-													{/each}
-													
-													<div class="row g-2 py-2 align-items-start">
-													<div class="mb-3 col-md-12 d-flex">
-														<div
-															class="d-flex align-items-stretch align-self-center justify-content-between flex-column"
-														>
-															{#each zones as z, i}
-																<div class="d-flex align-items-center gap-2 flex-row">
-																	<label for="zone_{i}-scenario{scenarioIndex}" class="flex-fill text-end"
-																		>{z.typ}</label
-																	>
-																	<div class="" style="max-width:130px;">
-																		<input
-																			type="number"
-																			step="any"
-																			class="form-control text-end"
-																			style="-webkit-appearance: none; -moz-appearance: textfield;"
-																			id="zone_{i}-scenario{scenarioIndex}"
-																			name="zone_{i}"
-																			value={getPctForZone(z.typ, scenario[0])}
-																		/>
-																	</div>
-																	<div class="text-start">%</div>
-																</div>
-															{/each}
-														</div>
-													</div>
-												</div>
-												<div class="d-flex align-items-center justify-content-between py-1 mb-3">
-													<div class="d-flex align-items-center gap-2">
-														<button
-															type="submit"
-															class="btn btn-sm btn-primary"
-															disabled={isClarkWSLSaving}
-														>
-															{#if isClarkWSLSaving}
-																<span
-																	class="spinner-border spinner-border-sm me-2"
-																	role="status"
-																	aria-hidden="true"
-																></span>
-															{/if}
-															{$_('page.general.save')}
-														</button>
-														<button
-															type="submit" id="calcClarkWSLButton-scenario{scenarioIndex}"
-															class="btn btn-sm btn-primary"
-															disabled={isClarkWSLSaving || !couldCalculate}
-															>{$_('page.general.calculate')}</button
-														>
-													</div>
-												</div>
-											</form>
-											
-											<div class="d-flex align-items-center justify-content-end py-1">
-												<span
-													class="btn btn-sm btn-icon btn-ghost-danger d-xl-flex"
-													data-bs-placement="top"
-													title={$_('page.general.delete')}
-													aria-label="delete"
-													data-bs-toggle="modal"
-													data-bs-target="#delete-scenario-clarkwsl-modal{scenarioIndex}"
-												>
-													<i class="ti ti-trash fs-20"></i>
-												</span>
-											</div>
-											
-											<!-- Delete Scenario Modal -->
-											<div
-												id="delete-scenario-clarkwsl-modal{scenarioIndex}"
-												class="modal fade"
-												tabindex="-1"
-												role="dialog"
-												aria-labelledby="warning-header-modalLabel"
-												aria-hidden="true"
-											>
-												<div class="modal-dialog">
-													<div class="modal-content">
-														<div class="modal-header text-bg-warning border-0">
-															<h4 class="modal-title" id="warning-header-modalLabel">
-																{$_('page.discharge.calculation.deleteCalculation')}
-															</h4>
-															<button
-																type="button"
-																class="btn-close btn-close-white"
-																data-bs-dismiss="modal"
-																aria-label="Close"
-															></button>
-														</div>
-														<div class="modal-body">
-															<p>
-																{$_('page.discharge.calculation.deleteCalculationQuestion')}
-															</p>
-														</div>
-														<div class="modal-footer">
-															<button
-																type="button"
-																class="btn btn-light"
-																data-bs-dismiss="modal">{$_('page.general.cancel')}</button
-															>
-															<form method="POST" action="?/deleteScenario">
-																{#each scenario as k}
-																	<input type="hidden" name="ids[]" value={k.id} />
-																{/each}
-																<input type="hidden" name="type" value="clarkwsl" />
-																<button type="submit" class="btn btn-warning"
-																	>{$_('page.general.delete')}</button
-																>
-															</form>
-														</div>
-													</div>
-													<!-- /.modal-content -->
-												</div>
-												<!-- /.modal-dialog -->
-											</div>
-											<!-- /.modal -->
-										{/each}
-										</div>
-									</div>
-								</div>
-							</div>
-						{/if}
-						<!-- End of Clark WSL Part -->
-						<!-- NAM Part -->
-						{#if nam.length > 0}
-							<div class="accordion-item">
-								<h2 class="accordion-header" id="panelsStayOpen-headingNAM">
-									<button
-										class="accordion-button collapsed"
-										type="button"
-										data-bs-toggle="collapse"
-										data-bs-target="#panelsStayOpen-collapseNAM"
-										aria-expanded="false"
-										aria-controls="panelsStayOpen-collapseNAM"
-									>
-										{$_('page.discharge.calculation.nam')}
-									</button>
-								</h2>
-								<div
-									id="panelsStayOpen-collapseNAM"
-									class="accordion-collapse collapse"
-									aria-labelledby="panelsStayOpen-headingNAM"
-									style=""
-								>
-									<div class="accordion-body">
-										<div class="accordion" id="accordionPanelsNAM">
-											{#each nam_scenarios as scenario, scenarioIndex}
-												<form
-													method="post"
-													action="?/updateScenario"
-													use:enhance={({ formElement, formData, action, cancel, submitter}) => {
-														isNAMSaving = true;
-														return async ({ result, update }) => {
-															await update({ reset: false });
-															if (result.type === 'success' && result.data) {
-																data.project = result.data;
-															}
-															isNAMSaving = false;
-														if (submitter?.id==`calcNAMButton-scenario${scenarioIndex}`){
-															// Calculate all 3 annualities in the scenario
-															calculateNAM(scenario);
-														}
-															else {
-																toast.push($_('page.discharge.calculation.successfullsave'), {
-																	theme: {
-																		'--toastColor': 'mintcream',
-																		'--toastBackground': 'rgba(72,187,120,0.9)',
-																		'--toastBarBackground': '#2F855A'
-																	}
-																});
-															}
-														};
-													}}
-												>
-													<input type="hidden" name="project_id" value={scenario[0].project_id} />
-													<input type="hidden" name="type" value="nam" />
-													{#each scenario as n}
-														<input type="hidden" name="ids[]" value={n.id} />
-													{/each}
-													
-													<div class="row g-2 py-2 align-items-end"  style="display:none;">
-														<div class="mb-3 col-md-4">
-															<label for="precipitation_factor-scenario{scenarioIndex}" class="form-label"
-																>{$_('page.discharge.calculation.namParams.precipitationFactor')}</label
-															>
-															<input
-																type="number"
-																step="any"
-																class="form-control"
-																id="precipitation_factor-scenario{scenarioIndex}"
-																name="precipitation_factor"
-																value={Number(scenario[0].precipitation_factor)}
-															/>
-														</div>
-														<div class="mb-3 col-md-4">
-															<label for="readiness_to_drain-scenario{scenarioIndex}" class="form-label"
-																>{$_('page.discharge.calculation.namParams.readinessToDrain')}</label
-															>
-															<input
-																type="number"
-																step="1"
-																class="form-control"
-																id="readiness_to_drain-scenario{scenarioIndex}"
-																name="readiness_to_drain"
-																value={Number(scenario[0].readiness_to_drain)}
-															/>
-														</div>
-													</div>
-													<div class="row g-2 py-2 align-items-end" style="display:none;">
-														<div class="mb-3 col-md-4">
-															<label for="water_balance_mode-scenario{scenarioIndex}" class="form-label"
-																>{$_('page.discharge.calculation.namParams.waterBalanceMode')}</label
-															>
-															<select
-																id="water_balance_mode-scenario{scenarioIndex}"
-																name="water_balance_mode"
-																class="form-select"
-																value={scenario[0].water_balance_mode}
-															>
-																<option value="simple">{$_('page.discharge.calculation.namParams.simple')}</option>
-																<option value="cumulative">{$_('page.discharge.calculation.namParams.advanced')}</option>
-															</select>
-														</div>
-														<div class="mb-3 col-md-4">
-															<label for="storm_center_mode-scenario{scenarioIndex}" class="form-label"
-																>{$_('page.discharge.calculation.namParams.stormCenterMode')}</label
-															>
-															<select
-																id="storm_center_mode-scenario{scenarioIndex}"
-																name="storm_center_mode"
-																class="form-select"
-																value={scenario[0].storm_center_mode}
-															>
-																<option value="centroid">{$_('page.discharge.calculation.namParams.centroid')}</option>
-																<option value="discharge_point">{$_('page.discharge.calculation.namParams.dischargePoint')}</option>
-															</select>
-														</div>
-														<div class="mb-3 col-md-4">
-															<label for="routing_method-scenario{scenarioIndex}" class="form-label"
-																>{$_('page.discharge.calculation.namParams.routingMethod')}</label
-															>
-															<select
-																id="routing_method-scenario{scenarioIndex}"
-																name="routing_method"
-																class="form-select"
-																value={scenario[0].routing_method}
-															>
-																<option value="time_values">{$_('page.discharge.calculation.namParams.timeValues')}</option>
-																<option value="travel_time">{$_('page.discharge.calculation.namParams.traveltime')}</option>
-																<option value="isozone">{$_('page.discharge.calculation.namParams.traveltime')}</option>
-															</select>
-														</div>
-													</div>
-													<div class="row g-2 py-2 align-items-end">
-														<div class="mb-3 col-md-12">
-															{#if soilFileExists}
-																<div class="mb-3">
-																	<div class="form-check">
-																		<input
-																			class="form-check-input"
-																			type="checkbox"
-																			id="use_own_soil_data"
-																			bind:checked={useOwnSoilData}
-																		/>
-																		<label class="form-check-label" for="use_own_soil_data">
-																			{$_('page.discharge.calculation.namParams.useOwnSoilData')}
-																		</label>
-																	</div>
-																	<div class="form-text">
-																		{$_('page.discharge.calculation.namParams.useOwnSoilDataHelp')}
-																	</div>
-																</div>
-															{/if}
-															
-															{#if !soilFileExists || useOwnSoilData}
-																<label for="zip_upload-scenario{scenarioIndex}" class="form-label">
-																	{$_('page.discharge.calculation.namParams.uploadZipFile')}
-																</label>
-																<input
-																	type="file"
-																	class="form-control"
-																	id="zip_upload-scenario{scenarioIndex}"
-																	accept=".zip"
-																	onchange={(e) => {
-																		const target = e.target as HTMLInputElement;
-																		const file = target.files?.[0];
-																		if (file) {
-																			uploadZipFile(scenario[0].project_id, file);
-																		}
-																	}}
-																	disabled={isUploading || isCheckingSoilFile}
-																/>
-																<div class="form-text">
-																	{$_('page.discharge.calculation.namParams.uploadZipFileHelp')}
-																</div>
-															{:else}
-																<div class="alert alert-info">
-																	<i class="ti ti-info-circle me-2"></i>
-																	{$_('page.discharge.calculation.namParams.soilFileExists')}
-																</div>
-															{/if}
-														</div>
-													</div>
-													<div class="d-flex align-items-center justify-content-between py-1 mb-3">
-														<div class="d-flex align-items-center gap-2">
-															<button
-																type="submit"
-																class="btn btn-sm btn-primary"
-																disabled={isNAMSaving}
-															>
-																{#if isNAMSaving}
-																	<span
-																		class="spinner-border spinner-border-sm me-2"
-																		role="status"
-																		aria-hidden="true"
-																	></span>
-																{/if}
-																{$_('page.general.save')}
-															</button>
-															<button
-																type="submit" id="calcNAMButton-scenario{scenarioIndex}"
-																class="btn btn-sm btn-primary"
-																disabled={isNAMSaving || !couldCalculate}
-																>{$_('page.general.calculate')}</button
-															>
-														</div>
-													</div>
-												</form>
-											
-											<div class="d-flex align-items-center justify-content-end py-1">
-												<span
-													class="btn btn-sm btn-icon btn-ghost-danger d-xl-flex"
-													data-bs-placement="top"
-													title={$_('page.general.delete')}
-													aria-label="delete"
-													data-bs-toggle="modal"
-													data-bs-target="#delete-scenario-nam-modal{scenarioIndex}"
-												>
-													<i class="ti ti-trash fs-20"></i>
-												</span>
-											</div>
-											
-											<!-- Delete Scenario Modal -->
-											<div
-												id="delete-scenario-nam-modal{scenarioIndex}"
-												class="modal fade"
-												tabindex="-1"
-												role="dialog"
-												aria-labelledby="warning-header-modalLabel"
-												aria-hidden="true"
-											>
-												<div class="modal-dialog">
-													<div class="modal-content">
-														<div class="modal-header text-bg-warning border-0">
-															<h4 class="modal-title" id="warning-header-modalLabel">
-																{$_('page.discharge.calculation.deleteCalculation')}
-															</h4>
-															<button
-																type="button"
-																class="btn-close btn-close-white"
-																data-bs-dismiss="modal"
-																aria-label="Close"
-															></button>
-														</div>
-														<div class="modal-body">
-															<p>
-																{$_('page.discharge.calculation.deleteCalculationQuestion')}
-															</p>
-														</div>
-														<div class="modal-footer">
-															<button
-																type="button"
-																class="btn btn-light"
-																data-bs-dismiss="modal">{$_('page.general.cancel')}</button
-															>
-															<form method="POST" action="?/deleteScenario">
-																{#each scenario as n}
-																	<input type="hidden" name="ids[]" value={n.id} />
-																{/each}
-																<input type="hidden" name="type" value="nam" />
-																<button type="submit" class="btn btn-warning"
-																	>{$_('page.general.delete')}</button
-																>
-															</form>
-														</div>
-													</div>
-													<!-- /.modal-content -->
-												</div>
-												<!-- /.modal-dialog -->
-											</div>
-											<!-- /.modal -->
-										{/each}
-										</div>
-									</div>
-								</div>
-							</div>
-						{/if}
-						<!-- End of NAM Part -->
-					</div>
-				</div>
+                    <section class="mb-5">
+                        <h4 class="text-muted">
+                            {$_('page.discharge.calculation.inputsForPrecipitationIntensity')}
+                        </h4>
+                        <div class="row g-2 py-2 align-items-end">
+                            <div class="mb-3 col-md-4">
+                                <label for="P_low_1h" class="form-label">
+                                    {$_('page.discharge.calculation.idf.precipLowerPeriod1h')}
+                                </label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    class="form-control"
+                                    id="P_low_1h"
+                                    name="P_low_1h"
+                                    bind:value={pLow1h}
+                                />
+                            </div>
+                            <div class="mb-3 col-md-4">
+                                <label for="P_low_24h" class="form-label">
+                                    {$_('page.discharge.calculation.idf.precipLowerPeriod24h')}
+                                </label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    class="form-control"
+                                    id="P_low_24h"
+                                    name="P_low_24h"
+                                    bind:value={pLow24h}
+                                />
+                            </div>
+                            <div class="mb-3 col-md-4">
+                                <label for="rp_low" class="form-label">
+                                    {$_('page.discharge.calculation.idf.returnPeriod')}
+                                </label>
+                                <select id="rp_low" name="rp_low" class="form-select" bind:value={rpLow}>
+                                    {#each returnPeriod as rp}
+                                        <option value={rp.id}>{rp.text}</option>
+                                    {/each}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-2 align-items-end">
+                            <div class="mb-3 col-md-4">
+                                <label for="P_high_1h" class="form-label">
+                                    {$_('page.discharge.calculation.idf.precipUpperPeriod1h')}
+                                </label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    class="form-control"
+                                    id="P_high_1h"
+                                    name="P_high_1h"
+                                    bind:value={pHigh1h}
+                                />
+                            </div>
+                            <div class="mb-3 col-md-4">
+                                <label for="P_high_24h" class="form-label">
+                                    {$_('page.discharge.calculation.idf.precipUpperPeriod24h')}
+                                </label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    class="form-control"
+                                    id="P_high_24h"
+                                    name="P_high_24h"
+                                    bind:value={pHigh24h}
+                                />
+                            </div>
+                            <div class="mb-3 col-md-4">
+                                <label for="rp_high" class="form-label">
+                                    {$_('page.discharge.calculation.idf.upperReturnPeriod')}
+                                </label>
+                                <select id="rp_high" name="rp_high" class="form-select" bind:value={rpHigh}>
+                                    {#each returnPeriod as rp}
+                                        <option value={rp.id}>{rp.text}</option>
+                                    {/each}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-secondary" onclick={fetchHadesValues} disabled={isFetchingHades}>
+                                {#if isFetchingHades}
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                {/if}
+                                {$_('page.discharge.calculation.hadesValues')}
+                            </button>
+                        </div>
+                    </section>
+
+                    {#if mod_verfahren.length > 0 || koella.length > 0}
+                        <section class="mb-5">
+                            <h4 class="text-muted mb-3">
+                                {$_('page.discharge.calculation.modFliesszeit')} &amp; {$_('page.discharge.calculation.koells')}
+                            </h4>
+                            {#each combinedScenarioRange as scenarioIndex}
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="mb-0">Scenario {scenarioIndex + 1}</h5>
+                                        <div class="d-flex gap-2">
+                                            {#if mod_fliesszeit_scenarios[scenarioIndex]}
+                                                <span
+                                                    class="btn btn-sm btn-icon btn-ghost-danger"
+                                                    data-bs-placement="top"
+                                                    title={$_('page.discharge.calculation.modFliesszeit')}
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target={`#delete-scenario-mfz-modal${scenarioIndex}`}
+                                                >
+                                                    <i class="ti ti-trash fs-20"></i>
+                                                </span>
+                                            {/if}
+                                            {#if koella_scenarios[scenarioIndex]}
+                                                <span
+                                                    class="btn btn-sm btn-icon btn-ghost-danger"
+                                                    data-bs-placement="top"
+                                                    title={$_('page.discharge.calculation.koells')}
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target={`#delete-scenario-koella-modal${scenarioIndex}`}
+                                                >
+                                                    <i class="ti ti-trash fs-20"></i>
+                                                </span>
+                                            {/if}
+                                        </div>
+                                    </div>
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-4">
+                                            <label for={`shared-vo20-${scenarioIndex}`} class="form-label">
+                                                {$_('page.discharge.calculation.modFZV.wettingVolume')}
+                                            </label>
+                                            <input
+                                                id={`shared-vo20-${scenarioIndex}`}
+                                                type="number"
+                                                step="any"
+                                                class="form-control"
+                                                value={sharedVo20Values[scenarioIndex] ?? 0}
+                                                oninput={(event) => {
+                                                    const target = event.currentTarget as HTMLInputElement;
+                                                    updateSharedVo20(
+                                                        scenarioIndex,
+                                                        sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+                                                    );
+                                                }}
+                                            />
+                                        </div>
+                                        {#if modScenarioForms[scenarioIndex]}
+                                            <div class="col-md-4">
+                                                <label for={`psi-scenario${scenarioIndex}`} class="form-label">
+                                                    {$_('page.discharge.calculation.modFZV.peakFlow')}
+                                                </label>
+                                                <input
+                                                    id={`psi-scenario${scenarioIndex}`}
+                                                    type="number"
+                                                    step="any"
+                                                    class="form-control"
+                                                    value={modScenarioForms[scenarioIndex].psi}
+                                                    oninput={(event) => {
+                                                        const target = event.currentTarget as HTMLInputElement;
+                                                        updateModPsi(
+                                                            scenarioIndex,
+                                                            sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+                                                        );
+                                                    }}
+                                                />
+                                            </div>
+                                        {/if}
+                                        {#if koellaScenarioForms[scenarioIndex]}
+                                            <div class="col-md-4">
+                                                <label for={`glacier_area-scenario${scenarioIndex}`} class="form-label">
+                                                    {$_('page.discharge.calculation.koella.glacierArea')} km<sup>2</sup>
+                                                </label>
+                                                <input
+                                                    id={`glacier_area-scenario${scenarioIndex}`}
+                                                    type="number"
+                                                    step="1"
+                                                    class="form-control"
+                                                    value={koellaScenarioForms[scenarioIndex].glacier_area}
+                                                    oninput={(event) => {
+                                                        const target = event.currentTarget as HTMLInputElement;
+                                                        updateGlacierArea(
+                                                            scenarioIndex,
+                                                            sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+                                                        );
+                                                    }}
+                                                />
+                                            </div>
+                                        {/if}
+                                    </div>
+                                </div>
+
+                                {#if mod_fliesszeit_scenarios[scenarioIndex]}
+                                    <div
+                                        id={`delete-scenario-mfz-modal${scenarioIndex}`}
+                                        class="modal fade"
+                                        tabindex="-1"
+                                        role="dialog"
+                                        aria-labelledby="warning-header-modalLabel"
+                                        aria-hidden="true"
+                                    >
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header text-bg-warning border-0">
+                                                    <h4 class="modal-title" id="warning-header-modalLabel">
+                                                        {$_('page.discharge.calculation.deleteCalculation')}
+                                                    </h4>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label={$_('page.general.close')}></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
+                                                    <form method="POST" action="?/deleteScenario">
+                                                        {#each mod_fliesszeit_scenarios[scenarioIndex] as mod_fz}
+                                                            <input type="hidden" name="ids[]" value={mod_fz.id} />
+                                                        {/each}
+                                                        <input type="hidden" name="type" value="modfliesszeit" />
+                                                        <button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {/if}
+
+                                {#if koella_scenarios[scenarioIndex]}
+                                    <div
+                                        id={`delete-scenario-koella-modal${scenarioIndex}`}
+                                        class="modal fade"
+                                        tabindex="-1"
+                                        role="dialog"
+                                        aria-labelledby="warning-header-modalLabel"
+                                        aria-hidden="true"
+                                    >
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header text-bg-warning border-0">
+                                                    <h4 class="modal-title" id="warning-header-modalLabel">
+                                                        {$_('page.discharge.calculation.deleteCalculation')}
+                                                    </h4>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label={$_('page.general.close')}></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
+                                                    <form method="POST" action="?/deleteScenario">
+                                                        {#each koella_scenarios[scenarioIndex] as k}
+                                                            <input type="hidden" name="ids[]" value={k.id} />
+                                                        {/each}
+                                                        <input type="hidden" name="type" value="koella" />
+                                                        <button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {/if}
+                            {/each}
+                        </section>
+                    {/if}
+
+                    {#if clark_wsl.length > 0}
+                        <section class="mb-5">
+                            <h4 class="text-muted mb-3">{$_('page.discharge.calculation.clarkwslname')}</h4>
+                            {#each clarkScenarioRange as scenarioIndex}
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="mb-0">Clark WSL {scenarioIndex + 1}</h5>
+                                        <span
+                                            class="btn btn-sm btn-icon btn-ghost-danger"
+                                            data-bs-placement="top"
+                                            title={$_('page.discharge.calculation.clarkwslname')}
+                                            data-bs-toggle="modal"
+                                            data-bs-target={`#delete-scenario-clarkwsl-modal${scenarioIndex}`}
+                                        >
+                                            <i class="ti ti-trash fs-20"></i>
+                                        </span>
+                                    </div>
+                                    <div class="row g-2 py-2 align-items-start">
+                                        <div class="mb-3 col-md-12 d-flex">
+                                            <div class="d-flex flex-column gap-2 w-100">
+                                                {#each zones as z, i}
+                                                    <div class="d-flex align-items-center gap-2 flex-row">
+                                                        <label for={`zone_${i}-scenario${scenarioIndex}`} class="flex-fill text-end">{z.typ}</label>
+                                                        <div style="max-width:130px;">
+                                                            <input
+                                                                type="number"
+                                                                step="any"
+                                                                class="form-control text-end"
+                                                                style="-webkit-appearance: none; -moz-appearance: textfield;"
+                                                                id={`zone_${i}-scenario${scenarioIndex}`}
+                                                                name={`zone_${i}`}
+                                                                value={clarkScenarioForms[scenarioIndex]?.fractions?.[z.typ] ?? 0}
+                                                                oninput={(event) => {
+                                                                    const target = event.currentTarget as HTMLInputElement;
+                                                                    updateFractionValue(
+                                                                        scenarioIndex,
+                                                                        z.typ,
+                                                                        sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div class="text-start">%</div>
+                                                    </div>
+                                                {/each}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div
+                                    id={`delete-scenario-clarkwsl-modal${scenarioIndex}`}
+                                    class="modal fade"
+                                    tabindex="-1"
+                                    role="dialog"
+                                    aria-labelledby="warning-header-modalLabel"
+                                    aria-hidden="true"
+                                >
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header text-bg-warning border-0">
+                                                <h4 class="modal-title" id="warning-header-modalLabel">
+                                                    {$_('page.discharge.calculation.deleteCalculation')}
+                                                </h4>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
+                                                <form method="POST" action="?/deleteScenario">
+                                                    {#each clark_wsl_scenarios[scenarioIndex] as k}
+                                                        <input type="hidden" name="ids[]" value={k.id} />
+                                                    {/each}
+                                                    <input type="hidden" name="type" value="clarkwsl" />
+                                                    <button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {/each}
+                        </section>
+                    {/if}
+
+                    {#if nam.length > 0}
+                        <section class="mb-5">
+                            <h4 class="text-muted mb-3">{$_('page.discharge.calculation.nam')}</h4>
+                            {#each namScenarioRange as scenarioIndex}
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="mb-0">NAM {scenarioIndex + 1}</h5>
+                                        <span
+                                            class="btn btn-sm btn-icon btn-ghost-danger"
+                                            data-bs-placement="top"
+                                            title={$_('page.discharge.calculation.nam')}
+                                            data-bs-toggle="modal"
+                                            data-bs-target={`#delete-scenario-nam-modal${scenarioIndex}`}
+                                        >
+                                            <i class="ti ti-trash fs-20"></i>
+                                        </span>
+                                    </div>
+                                    <div class="row g-2 py-2 align-items-end" style="display:none;">
+                                        <div class="mb-3 col-md-4">
+                                            <label for={`precipitation_factor-scenario${scenarioIndex}`} class="form-label">
+                                                {$_('page.discharge.calculation.namParams.precipitationFactor')}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="any"
+                                                class="form-control"
+                                                id={`precipitation_factor-scenario${scenarioIndex}`}
+                                                name="precipitation_factor"
+                                                value={namScenarioForms[scenarioIndex]?.precipitation_factor ?? 0}
+                                                oninput={(event) => {
+                                                    const target = event.currentTarget as HTMLInputElement;
+                                                    updateNamScenario(
+                                                        scenarioIndex,
+                                                        'precipitation_factor',
+                                                        sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+                                                    );
+                                                }}
+                                            />
+                                        </div>
+                                        <div class="mb-3 col-md-4">
+                                            <label for={`readiness_to_drain-scenario${scenarioIndex}`} class="form-label">
+                                                {$_('page.discharge.calculation.namParams.readinessToDrain')}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="1"
+                                                class="form-control"
+                                                id={`readiness_to_drain-scenario${scenarioIndex}`}
+                                                name="readiness_to_drain"
+                                                value={namScenarioForms[scenarioIndex]?.readiness_to_drain ?? 0}
+                                                oninput={(event) => {
+                                                    const target = event.currentTarget as HTMLInputElement;
+                                                    updateNamScenario(
+                                                        scenarioIndex,
+                                                        'readiness_to_drain',
+                                                        sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+                                                    );
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 py-2 align-items-end" style="display:none;">
+                                        <div class="mb-3 col-md-4">
+                                            <label for={`water_balance_mode-scenario${scenarioIndex}`} class="form-label">
+                                                {$_('page.discharge.calculation.namParams.waterBalanceMode')}
+                                            </label>
+                                            <select
+                                                id={`water_balance_mode-scenario${scenarioIndex}`}
+                                                name="water_balance_mode"
+                                                class="form-select"
+                                                value={namScenarioForms[scenarioIndex]?.water_balance_mode}
+                                                onchange={(event) => {
+                                                    const target = event.currentTarget as HTMLSelectElement;
+                                                    updateNamScenario(scenarioIndex, 'water_balance_mode', target.value);
+                                                }}
+                                            >
+                                                <option value="simple">{$_('page.discharge.calculation.namParams.simple')}</option>
+                                                <option value="cumulative">{$_('page.discharge.calculation.namParams.advanced')}</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3 col-md-4">
+                                            <label for={`storm_center_mode-scenario${scenarioIndex}`} class="form-label">
+                                                {$_('page.discharge.calculation.namParams.stormCenterMode')}
+                                            </label>
+                                            <select
+                                                id={`storm_center_mode-scenario${scenarioIndex}`}
+                                                name="storm_center_mode"
+                                                class="form-select"
+                                                value={namScenarioForms[scenarioIndex]?.storm_center_mode}
+                                                onchange={(event) => {
+                                                    const target = event.currentTarget as HTMLSelectElement;
+                                                    updateNamScenario(scenarioIndex, 'storm_center_mode', target.value);
+                                                }}
+                                            >
+                                                <option value="centroid">{$_('page.discharge.calculation.namParams.centroid')}</option>
+                                                <option value="discharge_point">{$_('page.discharge.calculation.namParams.dischargePoint')}</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3 col-md-4">
+                                            <label for={`routing_method-scenario${scenarioIndex}`} class="form-label">
+                                                {$_('page.discharge.calculation.namParams.routingMethod')}
+                                            </label>
+                                            <select
+                                                id={`routing_method-scenario${scenarioIndex}`}
+                                                name="routing_method"
+                                                class="form-select"
+                                                value={namScenarioForms[scenarioIndex]?.routing_method}
+                                                onchange={(event) => {
+                                                    const target = event.currentTarget as HTMLSelectElement;
+                                                    updateNamScenario(scenarioIndex, 'routing_method', target.value);
+                                                }}
+                                            >
+                                                <option value="time_values">{$_('page.discharge.calculation.namParams.timeValues')}</option>
+                                                <option value="travel_time">{$_('page.discharge.calculation.namParams.traveltime')}</option>
+                                                <option value="isozone">{$_('page.discharge.calculation.namParams.traveltime')}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 py-2 align-items-end">
+                                        <div class="mb-3 col-md-12">
+                                            {#if soilFileExists}
+                                                <div class="mb-3">
+                                                    <div class="form-check">
+                                                        <input
+                                                            class="form-check-input"
+                                                            type="checkbox"
+                                                            id="use_own_soil_data"
+                                                            bind:checked={useOwnSoilData}
+                                                        />
+                                                        <label class="form-check-label" for="use_own_soil_data">
+                                                            {$_('page.discharge.calculation.namParams.useOwnSoilData')}
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-text">
+                                                        {$_('page.discharge.calculation.namParams.useOwnSoilDataHelp')}
+                                                    </div>
+                                                </div>
+                                            {/if}
+
+                                            {#if !soilFileExists || useOwnSoilData}
+                                                <label for={`zip_upload-scenario${scenarioIndex}`} class="form-label">
+                                                    {$_('page.discharge.calculation.namParams.uploadZipFile')}
+                                                </label>
+                                                <input
+                                                    type="file"
+                                                    class="form-control"
+                                                    id={`zip_upload-scenario${scenarioIndex}`}
+                                                    accept=".zip"
+                                                onchange={(event) => {
+                                                        const target = event.currentTarget as HTMLInputElement;
+                                                        const file = target.files?.[0];
+                                                        const projectId = nam_scenarios[scenarioIndex]?.[0]?.project_id;
+                                                        if (file && projectId) {
+                                                            uploadZipFile(projectId, file);
+                                                        }
+                                                    }}
+                                                    disabled={isUploading || isCheckingSoilFile}
+                                                />
+                                                <div class="form-text">
+                                                    {$_('page.discharge.calculation.namParams.uploadZipFileHelp')}
+                                                </div>
+                                            {:else}
+                                                <div class="alert alert-info">
+                                                    <i class="ti ti-info-circle me-2"></i>
+                                                    {$_('page.discharge.calculation.namParams.soilFileExists')}
+                                                </div>
+                                            {/if}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div
+                                    id={`delete-scenario-nam-modal${scenarioIndex}`}
+                                    class="modal fade"
+                                    tabindex="-1"
+                                    role="dialog"
+                                    aria-labelledby="warning-header-modalLabel"
+                                    aria-hidden="true"
+                                >
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header text-bg-warning border-0">
+                                                <h4 class="modal-title" id="warning-header-modalLabel">
+                                                    {$_('page.discharge.calculation.deleteCalculation')}
+                                                </h4>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
+                                                <form method="POST" action="?/deleteScenario">
+                                                    {#each nam_scenarios[scenarioIndex] as n}
+                                                        <input type="hidden" name="ids[]" value={n.id} />
+                                                    {/each}
+                                                    <input type="hidden" name="type" value="nam" />
+                                                    <button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {/each}
+                        </section>
+                    {/if}
+                </div>
 				<!-- End of Input Part -->
 				<!-- Results Part -->
 				<div class="col-lg-4">
