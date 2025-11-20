@@ -48,6 +48,36 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
             }
         )
 
+         # Get discharge point coordinates from project if available
+        discharge_point = None
+        discharge_point_crs = "EPSG:4326"
+        if hasattr(project, 'Point') and project.Point:
+            # Convert from EPSG:2056 (Swiss coordinates) to geographic coordinates for routing
+            try:
+                import pyproj
+                transformer = pyproj.Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
+                lon, lat = transformer.transform(project.Point.easting, project.Point.northing)
+                discharge_point = (lon, lat)
+            except Exception as e:
+                print(f"Warning: Could not convert discharge point coordinates: {e}")
+                discharge_point = None
+        
+        # Execute extract_dem and check for success
+        dem_result = extract_dem.apply(args=[project.id, user.id])
+        if dem_result.failed():
+            raise HTTPException(
+                status_code=500,
+                detail=f"DEM extraction failed: {dem_result.result}"
+            )
+        
+        # Execute get_curve_numbers and check for success
+        curve_numbers_result = get_curve_numbers.apply(args=[project.id, user.id, "bek", project.NAM[0].use_own_soil_data])
+        if curve_numbers_result.failed():
+            raise HTTPException(
+                status_code=500,
+                detail=f"Curve numbers calculation failed: {curve_numbers_result.result}"
+            )
+
         doDoTasks = []
 
         # Climate scenarios to calculate
@@ -155,6 +185,8 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                     storm_center_mode=nam_obj.storm_center_mode,
                     routing_method=nam_obj.routing_method,
                     readiness_to_drain=nam_obj.readiness_to_drain,
+                    discharge_point=(project.Point.easting, project.Point.northing),
+                    discharge_point_crs="EPSG:2056",
                     project_easting=project.Point.easting,
                     project_northing=project.Point.northing,
                     climate_scenario=scenario
@@ -165,11 +197,13 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
             task.save()
             return JSONResponse({"task_id": task.id})
 
-    except:
+    except Exception as e:
         # Handle missing user scenario
+        err = type(e).__name__
+        message = str(e)
         raise HTTPException(
             status_code=404,
-            detail="Unable to retrieve project",
+            detail=f"Unable to retrieve project: {err} - {message}",
         )
 
 @router.get("/modifizierte_fliesszeit")
@@ -456,8 +490,8 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
                 storm_center_mode=nam_obj.storm_center_mode,
                 routing_method=nam_obj.routing_method,
                 readiness_to_drain=nam_obj.readiness_to_drain,
-                discharge_point=discharge_point,
-                discharge_point_crs=discharge_point_crs,
+                discharge_point=(project.Point.easting, project.Point.northing),
+                discharge_point_crs="EPSG:2056",
                 project_easting=project.Point.easting,
                 project_northing=project.Point.northing,
                 climate_scenario=scenario

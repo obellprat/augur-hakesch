@@ -4,7 +4,6 @@ import numpy as np
 import os
 from datetime import datetime
 from calculations.curvenumbers import get_curve_numbers
-from prisma import Prisma
 from calculations.calculations import app
 import json
 from shapely import ops
@@ -14,9 +13,7 @@ import rasterio
 from rasterio.features import rasterize
 import pyproj
 
-from prisma import Prisma
-
-from calculations.discharge import construct_idf_curve
+from calculations.discharge import construct_idf_curve, connect_prisma_with_retry
 
 def geographic_to_raster_coords(lon, lat, transform, shape):
     """
@@ -117,7 +114,7 @@ def nam(self,
     project_northing=None,
     cc_degree: float = 0.0,
     climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
-    debug: bool = False,
+    debug: bool = True,
 ):
     """
     NAM (Nedbør-Afstrømnings-Model) calculation based on distributed curve numbers and travel times.
@@ -489,7 +486,7 @@ def nam(self,
     # Calculate total storm precipitation for SCS method
 
     # We need the total precipitation for the entire storm duration
-    i_total = intensity_fn(rp_years=x, duration_minutes=Tc_total) * (1 + cc_factor)  # [mm/h]
+    i_total = intensity_fn(rp_years=x, duration_minutes=Tc_total)  # [mm/h]
     P_total_storm = i_total * Tc_total / 60  # [mm] - total storm precipitation
     print(f"Total storm precipitation: {P_total_storm:.2f} mm over {Tc_total} minutes")
     
@@ -1232,14 +1229,14 @@ def nam(self,
     Tc = (max_timestep + 1) * dt  # [min]
     TB = Tc  # Simplified for distributed approach
     TFl = 0  # Not used in distributed approach
-    i_final = intensity_fn(rp_years=x, duration_minutes=Tc) * (1 + cc_factor)  # [mm/h]
+    i_final = intensity_fn(rp_years=x, duration_minutes=Tc)  # [mm/h]
     S = np.nanmean(S_cells[valid_mask])  # Average S for reporting
     Ia = np.nanmean(Ia_cells[valid_mask])  # Average Ia for reporting
     Pe_final = HQ * dt * 60 / (np.sum(valid_mask) * pixel_area_m2 / 1000)  # Average Pe for reporting
     # 7. Update database
+    prisma = None
     try:
-        prisma = Prisma()
-        prisma.connect()
+        prisma = connect_prisma_with_retry()
         
         # Calculate average curve number for reporting
         effective_curve_number = np.nanmean(cn_data[valid_mask]) if cn_data is not None else curve_number
@@ -1318,7 +1315,11 @@ def nam(self,
         print(f"Error updating NAM results: {e}")
         print(traceback.format_exc())
     finally:
-        prisma.disconnect(5)
+        if prisma is not None:
+            try:
+                prisma.disconnect(5)
+            except Exception:
+                pass
     print("NAM results updated in database.")
     return {
         "HQ": float(HQ),
@@ -1372,14 +1373,20 @@ def extract_dem(self, projectId: str, userId: int):
                 meta={'text': 'Loading project data', 'progress': 5})
     
     # Get project data from database
-    prisma = Prisma()
-    prisma.connect()
-    
-    project = prisma.project.find_unique_or_raise(
-        where={
-            'id': projectId
-        }
-    )
+    prisma = None
+    try:
+        prisma = connect_prisma_with_retry()
+        project = prisma.project.find_unique_or_raise(
+            where={
+                'id': projectId
+            }
+        )
+    finally:
+        if prisma is not None:
+            try:
+                prisma.disconnect(5)
+            except Exception:
+                pass
     
     # Parse catchment geojson
     catchment_geojson = json.loads(project.catchment_geojson)
@@ -1495,8 +1502,6 @@ def extract_dem(self, projectId: str, userId: int):
             print(f"  - Mean elevation: {mean_elev:.1f} m")
             print(f"  - File size: {os.path.getsize(output_file) / 1024:.1f} KB")
             
-            prisma.disconnect(5)
-            
             return {
                 "dem_file": output_file,
                 "min_elevation": float(min_elev),
@@ -1509,5 +1514,4 @@ def extract_dem(self, projectId: str, userId: int):
             
     except Exception as e:
         print(f"Error extracting DEM: {e}")
-        prisma.disconnect(5)
         raise e
