@@ -1,6 +1,6 @@
 [project]
 name = "augur.world"
-version = "0.7.0-dev.1"
+version = "0.7.0-dev.2"
 
 [tool.commitizen]
 name = "cz_conventional_commits"

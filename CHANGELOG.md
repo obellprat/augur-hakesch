@@ -1,3 +1,9 @@
+## 0.7.0-dev.2 (2025-11-20)
+
+### Fix
+
+- **frontend**: layout improvements on calculation page
+
 ## 0.7.0-dev.1 (2025-11-20)
 
 ### Feat
