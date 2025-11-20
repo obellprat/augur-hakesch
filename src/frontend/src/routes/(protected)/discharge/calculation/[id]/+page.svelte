@@ -1596,37 +1596,89 @@ type NamScenarioForm = ScenarioIdentifiers & {
 						{data.project.title}
 					</h3>
 				</div>
+							<!-- Dropdown -->
+				<div class="dropdown align-items-center d-flex d-xl-none">
+					<a
+						class="dropdown-toggle drop-arrow-none px-2"
+						data-bs-toggle="dropdown"
+						data-bs-offset="0,10"
+						type="button"
+						aria-haspopup="false"
+						aria-expanded="false"
+						aria-label="Tools"
+						title="Tools"
+					>
+						<span class="pt-2 align-middle"> <i class="ri-arrow-down-s-line ms-1 fs-2"></i></span>
+					</a>
+
+						<div class="dropdown-menu dropdown-menu-end">
+							<!-- item-->	
+						
+							<button
+							type="button"
+							class="dropdown-item"
+							onclick={() => bulkSaveForm?.requestSubmit()}
+							disabled={isBulkSaving}
+							title={$_('page.general.save')}
+							aria-label={$_('page.general.save')}
+						>
+							{#if isBulkSaving}
+								<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+							{/if}
+							<i class="ti ti-device-floppy me-1 fs-24 align-middle"></i>
+							<span class="align-middle">{$_('page.general.save')}</span>
+						</button>
+						<button
+							type="button"
+							class="dropdown-item"
+							onclick={() => calculateProject(data.project.id)}
+							disabled={!couldCalculate || isBulkSaving}
+							
+							title={$_('page.general.calculate')}
+							aria-label={$_('page.general.calculate')}
+						>
+							<i class="ti ti-calculator fs-24 me-1 fs-24 align-middle"></i>
+							<span class="align-middle">{$_('page.general.calculate')}</span>
+						</button>
+						
+					</div>
+				</div>
+				<!-- End dropdown -->
+
+				<div class="d-none d-xl-flex align-items-center gap-2">
+					<button
+						type="button"
+						class="btn btn-sm btn-icon btn-ghost-primary d-flex"
+						onclick={() => bulkSaveForm?.requestSubmit()}
+						disabled={isBulkSaving}
+						title={$_('page.general.save')}
+						aria-label={$_('page.general.save')}
+					>
+						{#if isBulkSaving}
+							<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+						{/if}
+						<i class="ti ti-device-floppy fs-24"></i>
+					</button>
+					<button
+						type="button"
+						class="btn btn-sm btn-icon btn-ghost-primary d-flex"
+						onclick={() => calculateProject(data.project.id)}
+						disabled={!couldCalculate || isBulkSaving}
+						
+						title={$_('page.general.calculate')}
+						aria-label={$_('page.general.calculate')}
+					>
+						<i class="ti ti-calculator fs-24"></i>
+					</button>
+
+				</div>
 			</div>
+
 		</div>
 		<div class="card-body">
 			<div class="row">
 				<!-- Input Part -->
-                <div class="col-lg-8">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
-                        <div class="d-flex gap-2">
-                            <button
-                                type="button"
-                                class="btn btn-primary"
-                                onclick={() => bulkSaveForm?.requestSubmit()}
-                                disabled={isBulkSaving}
-                            >
-                                {#if isBulkSaving}
-                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                {/if}
-                                {$_('page.general.save')}
-                            </button>
-                            <button
-                                type="button"
-                                class="btn btn-outline-primary"
-                                onclick={() => calculateProject(data.project.id)}
-                                disabled={!couldCalculate || isBulkSaving}
-                            >
-                                <i class="ti ti-calculator me-1"></i>
-                                {$_('page.general.calculate')}
-                            </button>
-                        </div>
-                    </div>
-
+                <div class="col-lg-6">
                     <form
                         class="d-none"
                         method="post"
@@ -1762,168 +1814,69 @@ type NamScenarioForm = ScenarioIdentifiers & {
                                 {$_('page.discharge.calculation.modFliesszeit')} &amp; {$_('page.discharge.calculation.koells')}
                             </h4>
                             {#each combinedScenarioRange as scenarioIndex}
-                                <div class="border rounded p-3 mb-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h5 class="mb-0">Scenario {scenarioIndex + 1}</h5>
-                                        <div class="d-flex gap-2">
-                                            {#if mod_fliesszeit_scenarios[scenarioIndex]}
-                                                <span
-                                                    class="btn btn-sm btn-icon btn-ghost-danger"
-                                                    data-bs-placement="top"
-                                                    title={$_('page.discharge.calculation.modFliesszeit')}
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target={`#delete-scenario-mfz-modal${scenarioIndex}`}
-                                                >
-                                                    <i class="ti ti-trash fs-20"></i>
-                                                </span>
-                                            {/if}
-                                            {#if koella_scenarios[scenarioIndex]}
-                                                <span
-                                                    class="btn btn-sm btn-icon btn-ghost-danger"
-                                                    data-bs-placement="top"
-                                                    title={$_('page.discharge.calculation.koells')}
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target={`#delete-scenario-koella-modal${scenarioIndex}`}
-                                                >
-                                                    <i class="ti ti-trash fs-20"></i>
-                                                </span>
-                                            {/if}
-                                        </div>
-                                    </div>
-                                    <div class="row g-3 align-items-end">
-                                        <div class="col-md-4">
-                                            <label for={`shared-vo20-${scenarioIndex}`} class="form-label">
-                                                {$_('page.discharge.calculation.modFZV.wettingVolume')}
-                                            </label>
-                                            <input
-                                                id={`shared-vo20-${scenarioIndex}`}
-                                                type="number"
-                                                step="any"
-                                                class="form-control"
-                                                value={sharedVo20Values[scenarioIndex] ?? 0}
-                                                oninput={(event) => {
-                                                    const target = event.currentTarget as HTMLInputElement;
-                                                    updateSharedVo20(
-                                                        scenarioIndex,
-                                                        sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-                                                    );
-                                                }}
-                                            />
-                                        </div>
-                                        {#if modScenarioForms[scenarioIndex]}
-                                            <div class="col-md-4">
-                                                <label for={`psi-scenario${scenarioIndex}`} class="form-label">
-                                                    {$_('page.discharge.calculation.modFZV.peakFlow')}
-                                                </label>
-                                                <input
-                                                    id={`psi-scenario${scenarioIndex}`}
-                                                    type="number"
-                                                    step="any"
-                                                    class="form-control"
-                                                    value={modScenarioForms[scenarioIndex].psi}
-                                                    oninput={(event) => {
-                                                        const target = event.currentTarget as HTMLInputElement;
-                                                        updateModPsi(
-                                                            scenarioIndex,
-                                                            sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-                                                        );
-                                                    }}
-                                                />
-                                            </div>
-                                        {/if}
-                                        {#if koellaScenarioForms[scenarioIndex]}
-                                            <div class="col-md-4">
-                                                <label for={`glacier_area-scenario${scenarioIndex}`} class="form-label">
-                                                    {$_('page.discharge.calculation.koella.glacierArea')} km<sup>2</sup>
-                                                </label>
-                                                <input
-                                                    id={`glacier_area-scenario${scenarioIndex}`}
-                                                    type="number"
-                                                    step="1"
-                                                    class="form-control"
-                                                    value={koellaScenarioForms[scenarioIndex].glacier_area}
-                                                    oninput={(event) => {
-                                                        const target = event.currentTarget as HTMLInputElement;
-                                                        updateGlacierArea(
-                                                            scenarioIndex,
-                                                            sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-                                                        );
-                                                    }}
-                                                />
-                                            </div>
-                                        {/if}
-                                    </div>
-                                </div>
-
-                                {#if mod_fliesszeit_scenarios[scenarioIndex]}
-                                    <div
-                                        id={`delete-scenario-mfz-modal${scenarioIndex}`}
-                                        class="modal fade"
-                                        tabindex="-1"
-                                        role="dialog"
-                                        aria-labelledby="warning-header-modalLabel"
-                                        aria-hidden="true"
-                                    >
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header text-bg-warning border-0">
-                                                    <h4 class="modal-title" id="warning-header-modalLabel">
-                                                        {$_('page.discharge.calculation.deleteCalculation')}
-                                                    </h4>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label={$_('page.general.close')}></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
-                                                    <form method="POST" action="?/deleteScenario">
-                                                        {#each mod_fliesszeit_scenarios[scenarioIndex] as mod_fz}
-                                                            <input type="hidden" name="ids[]" value={mod_fz.id} />
-                                                        {/each}
-                                                        <input type="hidden" name="type" value="modfliesszeit" />
-                                                        <button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {/if}
-
-                                {#if koella_scenarios[scenarioIndex]}
-                                    <div
-                                        id={`delete-scenario-koella-modal${scenarioIndex}`}
-                                        class="modal fade"
-                                        tabindex="-1"
-                                        role="dialog"
-                                        aria-labelledby="warning-header-modalLabel"
-                                        aria-hidden="true"
-                                    >
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header text-bg-warning border-0">
-                                                    <h4 class="modal-title" id="warning-header-modalLabel">
-                                                        {$_('page.discharge.calculation.deleteCalculation')}
-                                                    </h4>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label={$_('page.general.close')}></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
-                                                    <form method="POST" action="?/deleteScenario">
-                                                        {#each koella_scenarios[scenarioIndex] as k}
-                                                            <input type="hidden" name="ids[]" value={k.id} />
-                                                        {/each}
-                                                        <input type="hidden" name="type" value="koella" />
-                                                        <button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {/if}
+								<div class="row g-3 align-items-end">
+									<div class="col-md-4">
+										<label for={`shared-vo20-${scenarioIndex}`} class="form-label">
+											{$_('page.discharge.calculation.modFZV.wettingVolume')}
+										</label>
+										<input
+											id={`shared-vo20-${scenarioIndex}`}
+											type="number"
+											step="any"
+											class="form-control"
+											value={sharedVo20Values[scenarioIndex] ?? 0}
+											oninput={(event) => {
+												const target = event.currentTarget as HTMLInputElement;
+												updateSharedVo20(
+													scenarioIndex,
+													sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+												);
+											}}
+										/>
+									</div>
+									{#if modScenarioForms[scenarioIndex]}
+										<div class="col-md-4">
+											<label for={`psi-scenario${scenarioIndex}`} class="form-label">
+												{$_('page.discharge.calculation.modFZV.peakFlow')}
+											</label>
+											<input
+												id={`psi-scenario${scenarioIndex}`}
+												type="number"
+												step="any"
+												class="form-control"
+												value={modScenarioForms[scenarioIndex].psi}
+												oninput={(event) => {
+													const target = event.currentTarget as HTMLInputElement;
+													updateModPsi(
+														scenarioIndex,
+														sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+													);
+												}}
+											/>
+										</div>
+									{/if}
+									{#if koellaScenarioForms[scenarioIndex]}
+										<div class="col-md-4">
+											<label for={`glacier_area-scenario${scenarioIndex}`} class="form-label">
+												{$_('page.discharge.calculation.koella.glacierArea')} km<sup>2</sup>
+											</label>
+											<input
+												id={`glacier_area-scenario${scenarioIndex}`}
+												type="number"
+												step="1"
+												class="form-control"
+												value={koellaScenarioForms[scenarioIndex].glacier_area}
+												oninput={(event) => {
+													const target = event.currentTarget as HTMLInputElement;
+													updateGlacierArea(
+														scenarioIndex,
+														sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+													);
+												}}
+											/>
+										</div>
+									{/if}
+								</div>
                             {/each}
                         </section>
                     {/if}
@@ -1932,84 +1885,37 @@ type NamScenarioForm = ScenarioIdentifiers & {
                         <section class="mb-5">
                             <h4 class="text-muted mb-3">{$_('page.discharge.calculation.clarkwslname')}</h4>
                             {#each clarkScenarioRange as scenarioIndex}
-                                <div class="border rounded p-3 mb-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h5 class="mb-0">Clark WSL {scenarioIndex + 1}</h5>
-                                        <span
-                                            class="btn btn-sm btn-icon btn-ghost-danger"
-                                            data-bs-placement="top"
-                                            title={$_('page.discharge.calculation.clarkwslname')}
-                                            data-bs-toggle="modal"
-                                            data-bs-target={`#delete-scenario-clarkwsl-modal${scenarioIndex}`}
-                                        >
-                                            <i class="ti ti-trash fs-20"></i>
-                                        </span>
-                                    </div>
-                                    <div class="row g-2 py-2 align-items-start">
-                                        <div class="mb-3 col-md-12 d-flex">
-                                            <div class="d-flex flex-column gap-2 w-100">
-                                                {#each zones as z, i}
-                                                    <div class="d-flex align-items-center gap-2 flex-row">
-                                                        <label for={`zone_${i}-scenario${scenarioIndex}`} class="flex-fill text-end">{z.typ}</label>
-                                                        <div style="max-width:130px;">
-                                                            <input
-                                                                type="number"
-                                                                step="any"
-                                                                class="form-control text-end"
-                                                                style="-webkit-appearance: none; -moz-appearance: textfield;"
-                                                                id={`zone_${i}-scenario${scenarioIndex}`}
-                                                                name={`zone_${i}`}
-                                                                value={clarkScenarioForms[scenarioIndex]?.fractions?.[z.typ] ?? 0}
-                                                                oninput={(event) => {
-                                                                    const target = event.currentTarget as HTMLInputElement;
-                                                                    updateFractionValue(
-                                                                        scenarioIndex,
-                                                                        z.typ,
-                                                                        sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-                                                                    );
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <div class="text-start">%</div>
-                                                    </div>
-                                                {/each}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div
-                                    id={`delete-scenario-clarkwsl-modal${scenarioIndex}`}
-                                    class="modal fade"
-                                    tabindex="-1"
-                                    role="dialog"
-                                    aria-labelledby="warning-header-modalLabel"
-                                    aria-hidden="true"
-                                >
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header text-bg-warning border-0">
-                                                <h4 class="modal-title" id="warning-header-modalLabel">
-                                                    {$_('page.discharge.calculation.deleteCalculation')}
-                                                </h4>
-                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
-                                                <form method="POST" action="?/deleteScenario">
-                                                    {#each clark_wsl_scenarios[scenarioIndex] as k}
-                                                        <input type="hidden" name="ids[]" value={k.id} />
-                                                    {/each}
-                                                    <input type="hidden" name="type" value="clarkwsl" />
-                                                    <button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+								<div class="row g-2 py-2 align-items-start">
+									<div class="mb-3 col-md-12 d-flex">
+										<div class="d-flex flex-column gap-2 w-100">
+											{#each zones as z, i}
+												<div class="d-flex align-items-center gap-2 flex-row">
+													<label for={`zone_${i}-scenario${scenarioIndex}`} class="flex-fill text-end" style="max-width:100px;">{z.typ}</label>
+													<div style="max-width:130px;">
+														<input
+															type="number"
+															step="any"
+															class="form-control text-end"
+															style="-webkit-appearance: none; -moz-appearance: textfield;"
+															id={`zone_${i}-scenario${scenarioIndex}`}
+															name={`zone_${i}`}
+															value={clarkScenarioForms[scenarioIndex]?.fractions?.[z.typ] ?? 0}
+															oninput={(event) => {
+																const target = event.currentTarget as HTMLInputElement;
+																updateFractionValue(
+																	scenarioIndex,
+																	z.typ,
+																	sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+																);
+															}}
+														/>
+													</div>
+													<div class="text-start">%</div>
+												</div>
+											{/each}
+										</div>
+									</div>
+								</div>
                             {/each}
                         </section>
                     {/if}
@@ -2018,212 +1924,167 @@ type NamScenarioForm = ScenarioIdentifiers & {
                         <section class="mb-5">
                             <h4 class="text-muted mb-3">{$_('page.discharge.calculation.nam')}</h4>
                             {#each namScenarioRange as scenarioIndex}
-                                <div class="border rounded p-3 mb-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <h5 class="mb-0">NAM {scenarioIndex + 1}</h5>
-                                        <span
-                                            class="btn btn-sm btn-icon btn-ghost-danger"
-                                            data-bs-placement="top"
-                                            title={$_('page.discharge.calculation.nam')}
-                                            data-bs-toggle="modal"
-                                            data-bs-target={`#delete-scenario-nam-modal${scenarioIndex}`}
-                                        >
-                                            <i class="ti ti-trash fs-20"></i>
-                                        </span>
-                                    </div>
-                                    <div class="row g-2 py-2 align-items-end" style="display:none;">
-                                        <div class="mb-3 col-md-4">
-                                            <label for={`precipitation_factor-scenario${scenarioIndex}`} class="form-label">
-                                                {$_('page.discharge.calculation.namParams.precipitationFactor')}
-                                            </label>
-                                            <input
-                                                type="number"
-                                                step="any"
-                                                class="form-control"
-                                                id={`precipitation_factor-scenario${scenarioIndex}`}
-                                                name="precipitation_factor"
-                                                value={namScenarioForms[scenarioIndex]?.precipitation_factor ?? 0}
-                                                oninput={(event) => {
-                                                    const target = event.currentTarget as HTMLInputElement;
-                                                    updateNamScenario(
-                                                        scenarioIndex,
-                                                        'precipitation_factor',
-                                                        sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-                                                    );
-                                                }}
-                                            />
-                                        </div>
-                                        <div class="mb-3 col-md-4">
-                                            <label for={`readiness_to_drain-scenario${scenarioIndex}`} class="form-label">
-                                                {$_('page.discharge.calculation.namParams.readinessToDrain')}
-                                            </label>
-                                            <input
-                                                type="number"
-                                                step="1"
-                                                class="form-control"
-                                                id={`readiness_to_drain-scenario${scenarioIndex}`}
-                                                name="readiness_to_drain"
-                                                value={namScenarioForms[scenarioIndex]?.readiness_to_drain ?? 0}
-                                                oninput={(event) => {
-                                                    const target = event.currentTarget as HTMLInputElement;
-                                                    updateNamScenario(
-                                                        scenarioIndex,
-                                                        'readiness_to_drain',
-                                                        sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-                                                    );
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div class="row g-2 py-2 align-items-end" style="display:none;">
-                                        <div class="mb-3 col-md-4">
-                                            <label for={`water_balance_mode-scenario${scenarioIndex}`} class="form-label">
-                                                {$_('page.discharge.calculation.namParams.waterBalanceMode')}
-                                            </label>
-                                            <select
-                                                id={`water_balance_mode-scenario${scenarioIndex}`}
-                                                name="water_balance_mode"
-                                                class="form-select"
-                                                value={namScenarioForms[scenarioIndex]?.water_balance_mode}
-                                                onchange={(event) => {
-                                                    const target = event.currentTarget as HTMLSelectElement;
-                                                    updateNamScenario(scenarioIndex, 'water_balance_mode', target.value);
-                                                }}
-                                            >
-                                                <option value="simple">{$_('page.discharge.calculation.namParams.simple')}</option>
-                                                <option value="cumulative">{$_('page.discharge.calculation.namParams.advanced')}</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3 col-md-4">
-                                            <label for={`storm_center_mode-scenario${scenarioIndex}`} class="form-label">
-                                                {$_('page.discharge.calculation.namParams.stormCenterMode')}
-                                            </label>
-                                            <select
-                                                id={`storm_center_mode-scenario${scenarioIndex}`}
-                                                name="storm_center_mode"
-                                                class="form-select"
-                                                value={namScenarioForms[scenarioIndex]?.storm_center_mode}
-                                                onchange={(event) => {
-                                                    const target = event.currentTarget as HTMLSelectElement;
-                                                    updateNamScenario(scenarioIndex, 'storm_center_mode', target.value);
-                                                }}
-                                            >
-                                                <option value="centroid">{$_('page.discharge.calculation.namParams.centroid')}</option>
-                                                <option value="discharge_point">{$_('page.discharge.calculation.namParams.dischargePoint')}</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3 col-md-4">
-                                            <label for={`routing_method-scenario${scenarioIndex}`} class="form-label">
-                                                {$_('page.discharge.calculation.namParams.routingMethod')}
-                                            </label>
-                                            <select
-                                                id={`routing_method-scenario${scenarioIndex}`}
-                                                name="routing_method"
-                                                class="form-select"
-                                                value={namScenarioForms[scenarioIndex]?.routing_method}
-                                                onchange={(event) => {
-                                                    const target = event.currentTarget as HTMLSelectElement;
-                                                    updateNamScenario(scenarioIndex, 'routing_method', target.value);
-                                                }}
-                                            >
-                                                <option value="time_values">{$_('page.discharge.calculation.namParams.timeValues')}</option>
-                                                <option value="travel_time">{$_('page.discharge.calculation.namParams.traveltime')}</option>
-                                                <option value="isozone">{$_('page.discharge.calculation.namParams.traveltime')}</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="row g-2 py-2 align-items-end">
-                                        <div class="mb-3 col-md-12">
-                                            {#if soilFileExists}
-                                                <div class="mb-3">
-                                                    <div class="form-check">
-                                                        <input
-                                                            class="form-check-input"
-                                                            type="checkbox"
-                                                            id="use_own_soil_data"
-                                                            bind:checked={useOwnSoilData}
-                                                        />
-                                                        <label class="form-check-label" for="use_own_soil_data">
-                                                            {$_('page.discharge.calculation.namParams.useOwnSoilData')}
-                                                        </label>
-                                                    </div>
-                                                    <div class="form-text">
-                                                        {$_('page.discharge.calculation.namParams.useOwnSoilDataHelp')}
-                                                    </div>
-                                                </div>
-                                            {/if}
+								<div class="row g-2 py-2 align-items-end" style="display:none;">
+									<div class="mb-3 col-md-4">
+										<label for={`precipitation_factor-scenario${scenarioIndex}`} class="form-label">
+											{$_('page.discharge.calculation.namParams.precipitationFactor')}
+										</label>
+										<input
+											type="number"
+											step="any"
+											class="form-control"
+											id={`precipitation_factor-scenario${scenarioIndex}`}
+											name="precipitation_factor"
+											value={namScenarioForms[scenarioIndex]?.precipitation_factor ?? 0}
+											oninput={(event) => {
+												const target = event.currentTarget as HTMLInputElement;
+												updateNamScenario(
+													scenarioIndex,
+													'precipitation_factor',
+													sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+												);
+											}}
+										/>
+									</div>
+									<div class="mb-3 col-md-4">
+										<label for={`readiness_to_drain-scenario${scenarioIndex}`} class="form-label">
+											{$_('page.discharge.calculation.namParams.readinessToDrain')}
+										</label>
+										<input
+											type="number"
+											step="1"
+											class="form-control"
+											id={`readiness_to_drain-scenario${scenarioIndex}`}
+											name="readiness_to_drain"
+											value={namScenarioForms[scenarioIndex]?.readiness_to_drain ?? 0}
+											oninput={(event) => {
+												const target = event.currentTarget as HTMLInputElement;
+												updateNamScenario(
+													scenarioIndex,
+													'readiness_to_drain',
+													sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+												);
+											}}
+										/>
+									</div>
+								</div>
+								<div class="row g-2 py-2 align-items-end" style="display:none;">
+									<div class="mb-3 col-md-4">
+										<label for={`water_balance_mode-scenario${scenarioIndex}`} class="form-label">
+											{$_('page.discharge.calculation.namParams.waterBalanceMode')}
+										</label>
+										<select
+											id={`water_balance_mode-scenario${scenarioIndex}`}
+											name="water_balance_mode"
+											class="form-select"
+											value={namScenarioForms[scenarioIndex]?.water_balance_mode}
+											onchange={(event) => {
+												const target = event.currentTarget as HTMLSelectElement;
+												updateNamScenario(scenarioIndex, 'water_balance_mode', target.value);
+											}}
+										>
+											<option value="simple">{$_('page.discharge.calculation.namParams.simple')}</option>
+											<option value="cumulative">{$_('page.discharge.calculation.namParams.advanced')}</option>
+										</select>
+									</div>
+									<div class="mb-3 col-md-4">
+										<label for={`storm_center_mode-scenario${scenarioIndex}`} class="form-label">
+											{$_('page.discharge.calculation.namParams.stormCenterMode')}
+										</label>
+										<select
+											id={`storm_center_mode-scenario${scenarioIndex}`}
+											name="storm_center_mode"
+											class="form-select"
+											value={namScenarioForms[scenarioIndex]?.storm_center_mode}
+											onchange={(event) => {
+												const target = event.currentTarget as HTMLSelectElement;
+												updateNamScenario(scenarioIndex, 'storm_center_mode', target.value);
+											}}
+										>
+											<option value="centroid">{$_('page.discharge.calculation.namParams.centroid')}</option>
+											<option value="discharge_point">{$_('page.discharge.calculation.namParams.dischargePoint')}</option>
+										</select>
+									</div>
+									<div class="mb-3 col-md-4">
+										<label for={`routing_method-scenario${scenarioIndex}`} class="form-label">
+											{$_('page.discharge.calculation.namParams.routingMethod')}
+										</label>
+										<select
+											id={`routing_method-scenario${scenarioIndex}`}
+											name="routing_method"
+											class="form-select"
+											value={namScenarioForms[scenarioIndex]?.routing_method}
+											onchange={(event) => {
+												const target = event.currentTarget as HTMLSelectElement;
+												updateNamScenario(scenarioIndex, 'routing_method', target.value);
+											}}
+										>
+											<option value="time_values">{$_('page.discharge.calculation.namParams.timeValues')}</option>
+											<option value="travel_time">{$_('page.discharge.calculation.namParams.traveltime')}</option>
+											<option value="isozone">{$_('page.discharge.calculation.namParams.traveltime')}</option>
+										</select>
+									</div>
+								</div>
+								<div class="row g-2 py-2 align-items-end">
+									<div class="mb-3 col-md-12">
+										{#if soilFileExists}
+											<div class="mb-3">
+												<div class="form-check">
+													<input
+														class="form-check-input"
+														type="checkbox"
+														id="use_own_soil_data"
+														bind:checked={useOwnSoilData}
+													/>
+													<label class="form-check-label" for="use_own_soil_data">
+														{$_('page.discharge.calculation.namParams.useOwnSoilData')}
+													</label>
+												</div>
+												<div class="form-text">
+													{$_('page.discharge.calculation.namParams.useOwnSoilDataHelp')}
+												</div>
+											</div>
+										{/if}
 
-                                            {#if !soilFileExists || useOwnSoilData}
-                                                <label for={`zip_upload-scenario${scenarioIndex}`} class="form-label">
-                                                    {$_('page.discharge.calculation.namParams.uploadZipFile')}
-                                                </label>
-                                                <input
-                                                    type="file"
-                                                    class="form-control"
-                                                    id={`zip_upload-scenario${scenarioIndex}`}
-                                                    accept=".zip"
-                                                onchange={(event) => {
-                                                        const target = event.currentTarget as HTMLInputElement;
-                                                        const file = target.files?.[0];
-                                                        const projectId = nam_scenarios[scenarioIndex]?.[0]?.project_id;
-                                                        if (file && projectId) {
-                                                            uploadZipFile(projectId, file);
-                                                        }
-                                                    }}
-                                                    disabled={isUploading || isCheckingSoilFile}
-                                                />
-                                                <div class="form-text">
-                                                    {$_('page.discharge.calculation.namParams.uploadZipFileHelp')}
-                                                </div>
-                                            {:else}
-                                                <div class="alert alert-info">
-                                                    <i class="ti ti-info-circle me-2"></i>
-                                                    {$_('page.discharge.calculation.namParams.soilFileExists')}
-                                                </div>
-                                            {/if}
-                                        </div>
-                                    </div>
-                                </div>
+										{#if !soilFileExists || useOwnSoilData}
+											<label for={`zip_upload-scenario${scenarioIndex}`} class="form-label">
+												{$_('page.discharge.calculation.namParams.uploadZipFile')}
+											</label>
+											<input
+												type="file"
+												class="form-control"
+												id={`zip_upload-scenario${scenarioIndex}`}
+												accept=".zip"
+											onchange={(event) => {
+													const target = event.currentTarget as HTMLInputElement;
+													const file = target.files?.[0];
+													const projectId = nam_scenarios[scenarioIndex]?.[0]?.project_id;
+													if (file && projectId) {
+														uploadZipFile(projectId, file);
+													}
+												}}
+												disabled={isUploading || isCheckingSoilFile}
+											/>
+											<div class="form-text">
+												{$_('page.discharge.calculation.namParams.uploadZipFileHelp')}
+											</div>
+										{:else}
+											<div class="alert alert-info">
+												<i class="ti ti-info-circle me-2"></i>
+												{$_('page.discharge.calculation.namParams.soilFileExists')}
+											</div>
+										{/if}
+									</div>
+								</div>
 
-                                <div
-                                    id={`delete-scenario-nam-modal${scenarioIndex}`}
-                                    class="modal fade"
-                                    tabindex="-1"
-                                    role="dialog"
-                                    aria-labelledby="warning-header-modalLabel"
-                                    aria-hidden="true"
-                                >
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header text-bg-warning border-0">
-                                                <h4 class="modal-title" id="warning-header-modalLabel">
-                                                    {$_('page.discharge.calculation.deleteCalculation')}
-                                                </h4>
-                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p>{$_('page.discharge.calculation.deleteCalculationQuestion')}</p>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
-                                                <form method="POST" action="?/deleteScenario">
-                                                    {#each nam_scenarios[scenarioIndex] as n}
-                                                        <input type="hidden" name="ids[]" value={n.id} />
-                                                    {/each}
-                                                    <input type="hidden" name="type" value="nam" />
-                                                    <button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                
                             {/each}
                         </section>
                     {/if}
                 </div>
 				<!-- End of Input Part -->
 				<!-- Results Part -->
-				<div class="col-lg-4">
+				<div class="col-lg-6">
 					<div class="accordion" id="accordionPanelsResults">
 						<div class="accordion-item">
 							<h2 class="accordion-header" id="panelsResults-headingOne">
@@ -2261,189 +2122,196 @@ type NamScenarioForm = ScenarioIdentifiers & {
 										</select>
 									</div>
 									
-									{#key selectedClimateScenario}
-										<div use:renderChart={chart}></div>
-									{/key}
-									
-									<!-- NAM Discharge Timesteps Graph -->
-									{#if nam.some((n: any) => getResultField(n, 'NAM_Result')?.HQ_time)}
-										<div class="mt-4">
-											<h5 class="text-muted">{$_('page.discharge.calculation.chart.dischargeTimeSeries')}</h5>
-											<div class="card">
-												<div class="card-body">
-													{#key selectedClimateScenario}
-														<div class="mb-0">
-															<div 
-																class="discharge-chart" 
-																style=""
-																use:renderChart={getMultiAnnualityDischargeChartOptions(nam, 0)}
-															></div>
+									<div class="row">
+										<!-- Input Part -->
+										<div class="col-lg-6">
+											{#key selectedClimateScenario}
+												<div use:renderChart={chart}></div>
+											{/key}
+											
+											<!-- NAM Discharge Timesteps Graph -->
+											{#if nam.some((n: any) => getResultField(n, 'NAM_Result')?.HQ_time)}
+												<div class="mt-4">
+													<h5 class="text-muted">{$_('page.discharge.calculation.chart.dischargeTimeSeries')}</h5>
+													<div class="card">
+														<div class="card-body">
+															{#key selectedClimateScenario}
+																<div class="mb-0">
+																	<div 
+																		class="discharge-chart" 
+																		style=""
+																		use:renderChart={getMultiAnnualityDischargeChartOptions(nam, 0)}
+																	></div>
+																</div>
+															{/key}
 														</div>
-													{/key}
+													</div>
 												</div>
-											</div>
+											{/if}
 										</div>
-									{/if}
-									{#if mod_verfahren.length > 0}
-										<h4 class="text-muted">{$_('page.discharge.calculation.modFliesszeit')}</h4>
+										<div class="col-lg-6">
+											{#if mod_verfahren.length > 0}
+												<h4 class="text-muted">{$_('page.discharge.calculation.modFliesszeit')}</h4>
 
-										<div class="table-responsive">
-											<table class="table table-sm mb-0">
-												<thead>
-													<tr>
-														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
-														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
-														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
-														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
-													</tr>
-												</thead>
-												<tbody>
-													{#each mod_verfahren.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as mod_fz}
-														<tr>
-															<td>
-																{#if mod_fz.Annuality}
-																	{mod_fz.Annuality.description}
-																{/if}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
-																{mod_fz.Mod_Fliesszeit_Result?.HQ ? mod_fz.Mod_Fliesszeit_Result.HQ.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
-																{mod_fz.Mod_Fliesszeit_Result_1_5?.HQ ? mod_fz.Mod_Fliesszeit_Result_1_5.HQ.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
-																{mod_fz.Mod_Fliesszeit_Result_2?.HQ ? mod_fz.Mod_Fliesszeit_Result_2.HQ.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
-																{mod_fz.Mod_Fliesszeit_Result_3?.HQ ? mod_fz.Mod_Fliesszeit_Result_3.HQ.toFixed(2) : '-'}
-															</td>
-														</tr>
-													{/each}
-												</tbody>
-											</table>
-										</div>
-									{/if}
-									{#if koella.length > 0}
-										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.koells')}</h4>
+												<div class="table-responsive">
+													<table class="table table-sm mb-0">
+														<thead>
+															<tr>
+																<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+																<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+																<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+																<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+																<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+															</tr>
+														</thead>
+														<tbody>
+															{#each mod_verfahren.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as mod_fz}
+																<tr>
+																	<td>
+																		{#if mod_fz.Annuality}
+																			{mod_fz.Annuality.description}
+																		{/if}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																		{mod_fz.Mod_Fliesszeit_Result?.HQ ? mod_fz.Mod_Fliesszeit_Result.HQ.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																		{mod_fz.Mod_Fliesszeit_Result_1_5?.HQ ? mod_fz.Mod_Fliesszeit_Result_1_5.HQ.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																		{mod_fz.Mod_Fliesszeit_Result_2?.HQ ? mod_fz.Mod_Fliesszeit_Result_2.HQ.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																		{mod_fz.Mod_Fliesszeit_Result_3?.HQ ? mod_fz.Mod_Fliesszeit_Result_3.HQ.toFixed(2) : '-'}
+																	</td>
+																</tr>
+															{/each}
+														</tbody>
+													</table>
+												</div>
+											{/if}
+											{#if koella.length > 0}
+												<h4 class="text-muted mt-4">{$_('page.discharge.calculation.koells')}</h4>
 
-										<div class="table-responsive">
-											<table class="table table-sm mb-0">
-												<thead>
-													<tr>
-														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
-														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
-														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
-														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
-													</tr>
-												</thead>
-												<tbody>
-													{#each koella.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
-														<tr>
-															<td>
-																{#if k.Annuality}
-																	{k.Annuality.description}
-																{/if}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
-																{k.Koella_Result?.HQ ? k.Koella_Result.HQ.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
-																{k.Koella_Result_1_5?.HQ ? k.Koella_Result_1_5.HQ.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
-																{k.Koella_Result_2?.HQ ? k.Koella_Result_2.HQ.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
-																{k.Koella_Result_3?.HQ ? k.Koella_Result_3.HQ.toFixed(2) : '-'}
-															</td>
-														</tr>
-													{/each}
-												</tbody>
-											</table>
-										</div>
-									{/if}
-									{#if clark_wsl.length > 0}
-										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.clarkwsl')}</h4>
+												<div class="table-responsive">
+													<table class="table table-sm mb-0">
+														<thead>
+															<tr>
+																<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+																<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+																<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+																<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+																<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+															</tr>
+														</thead>
+														<tbody>
+															{#each koella.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
+																<tr>
+																	<td>
+																		{#if k.Annuality}
+																			{k.Annuality.description}
+																		{/if}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																		{k.Koella_Result?.HQ ? k.Koella_Result.HQ.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																		{k.Koella_Result_1_5?.HQ ? k.Koella_Result_1_5.HQ.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																		{k.Koella_Result_2?.HQ ? k.Koella_Result_2.HQ.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																		{k.Koella_Result_3?.HQ ? k.Koella_Result_3.HQ.toFixed(2) : '-'}
+																	</td>
+																</tr>
+															{/each}
+														</tbody>
+													</table>
+												</div>
+											{/if}
+											{#if clark_wsl.length > 0}
+												<h4 class="text-muted mt-4">{$_('page.discharge.calculation.clarkwsl')}</h4>
 
-										<div class="table-responsive">
-											<table class="table table-sm mb-0">
-												<thead>
-													<tr>
-														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
-														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
-														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
-														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
-													</tr>
-												</thead>
-												<tbody>
-													{#each clark_wsl.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
-														<tr>
-															<td>
-																{#if k.Annuality}
-																	{k.Annuality.description}
-																{/if}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
-																{k.ClarkWSL_Result?.Q ? k.ClarkWSL_Result.Q.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
-																{k.ClarkWSL_Result_1_5?.Q ? k.ClarkWSL_Result_1_5.Q.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
-																{k.ClarkWSL_Result_2?.Q ? k.ClarkWSL_Result_2.Q.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
-																{k.ClarkWSL_Result_3?.Q ? k.ClarkWSL_Result_3.Q.toFixed(2) : '-'}
-															</td>
-														</tr>
-													{/each}
-												</tbody>
-											</table>
-										</div>
-									{/if}
-									{#if nam.length > 0}
-										<h4 class="text-muted mt-4">{$_('page.discharge.calculation.nam')}</h4>
+												<div class="table-responsive">
+													<table class="table table-sm mb-0">
+														<thead>
+															<tr>
+																<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+																<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+																<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+																<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+																<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+															</tr>
+														</thead>
+														<tbody>
+															{#each clark_wsl.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
+																<tr>
+																	<td>
+																		{#if k.Annuality}
+																			{k.Annuality.description}
+																		{/if}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																		{k.ClarkWSL_Result?.Q ? k.ClarkWSL_Result.Q.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																		{k.ClarkWSL_Result_1_5?.Q ? k.ClarkWSL_Result_1_5.Q.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																		{k.ClarkWSL_Result_2?.Q ? k.ClarkWSL_Result_2.Q.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																		{k.ClarkWSL_Result_3?.Q ? k.ClarkWSL_Result_3.Q.toFixed(2) : '-'}
+																	</td>
+																</tr>
+															{/each}
+														</tbody>
+													</table>
+												</div>
+											{/if}
+											{#if nam.length > 0}
+												<h4 class="text-muted mt-4">{$_('page.discharge.calculation.nam')}</h4>
 
-										<div class="table-responsive">
-											<table class="table table-sm mb-0">
-												<thead>
-													<tr>
-														<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-														<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
-														<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
-														<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
-														<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
-													</tr>
-												</thead>
-												<tbody>
-													{#each nam.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as n}
-														<tr>
-															<td>
-																{#if n.Annuality}
-																	{n.Annuality.description}
-																{/if}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
-																{n.NAM_Result?.HQ ? n.NAM_Result.HQ.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
-																{n.NAM_Result_1_5?.HQ ? n.NAM_Result_1_5.HQ.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
-																{n.NAM_Result_2?.HQ ? n.NAM_Result_2.HQ.toFixed(2) : '-'}
-															</td>
-															<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
-																{n.NAM_Result_3?.HQ ? n.NAM_Result_3.HQ.toFixed(2) : '-'}
-															</td>
-														</tr>
-													{/each}
-												</tbody>
-											</table>
+												<div class="table-responsive">
+													<table class="table table-sm mb-0">
+														<thead>
+															<tr>
+																<th>{$_('page.discharge.calculation.returnPeriod')}</th>
+																<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
+																<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
+																<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
+																<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+															</tr>
+														</thead>
+														<tbody>
+															{#each nam.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as n}
+																<tr>
+																	<td>
+																		{#if n.Annuality}
+																			{n.Annuality.description}
+																		{/if}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																		{n.NAM_Result?.HQ ? n.NAM_Result.HQ.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																		{n.NAM_Result_1_5?.HQ ? n.NAM_Result_1_5.HQ.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																		{n.NAM_Result_2?.HQ ? n.NAM_Result_2.HQ.toFixed(2) : '-'}
+																	</td>
+																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																		{n.NAM_Result_3?.HQ ? n.NAM_Result_3.HQ.toFixed(2) : '-'}
+																	</td>
+																</tr>
+															{/each}
+														</tbody>
+													</table>
+												</div>
+											{/if}
 										</div>
-									{/if}
+									</div>
 								</div>
 							</div>
 						</div>
