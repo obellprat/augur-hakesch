@@ -1678,7 +1678,7 @@ type NamScenarioForm = ScenarioIdentifiers & {
 		<div class="card-body">
 			<div class="row">
 				<!-- Input Part -->
-                <div class="col-lg-6">
+                <div class="col-lg-4">
                     <form
                         class="d-none"
                         method="post"
@@ -1718,12 +1718,40 @@ type NamScenarioForm = ScenarioIdentifiers & {
                         <input type="hidden" name="payload" value={bulkPayload} />
                     </form>
 
+                    <div class="d-flex flex-wrap gap-2 mb-4">
+                        <button
+                            type="button"
+                            class="btn btn-primary d-flex align-items-center gap-2"
+                            onclick={() => bulkSaveForm?.requestSubmit()}
+                            disabled={isBulkSaving}
+                            title={$_('page.general.save')}
+                            aria-label={$_('page.general.save')}
+                        >
+                            {#if isBulkSaving}
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            {/if}
+                            <i class="ti ti-device-floppy fs-20"></i>
+                            <span>{$_('page.general.save')}</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-outline-primary d-flex align-items-center gap-2"
+                            onclick={() => calculateProject(data.project.id)}
+                            disabled={!couldCalculate || isBulkSaving}
+                            title={$_('page.general.calculate')}
+                            aria-label={$_('page.general.calculate')}
+                        >
+                            <i class="ti ti-calculator fs-20"></i>
+                            <span>{$_('page.general.calculate')}</span>
+                        </button>
+                    </div>
+
                     <section class="mb-5">
                         <h4 class="text-muted">
                             {$_('page.discharge.calculation.inputsForPrecipitationIntensity')}
                         </h4>
                         <div class="row g-2 py-2 align-items-end">
-                            <div class="mb-3 col-md-4">
+                            <div class="mb-3 col-md-6">
                                 <label for="P_low_1h" class="form-label">
                                     {$_('page.discharge.calculation.idf.precipLowerPeriod1h')}
                                 </label>
@@ -1736,7 +1764,7 @@ type NamScenarioForm = ScenarioIdentifiers & {
                                     bind:value={pLow1h}
                                 />
                             </div>
-                            <div class="mb-3 col-md-4">
+                            <div class="mb-3 col-md-6">
                                 <label for="P_low_24h" class="form-label">
                                     {$_('page.discharge.calculation.idf.precipLowerPeriod24h')}
                                 </label>
@@ -1749,7 +1777,7 @@ type NamScenarioForm = ScenarioIdentifiers & {
                                     bind:value={pLow24h}
                                 />
                             </div>
-                            <div class="mb-3 col-md-4">
+                            <div class="mb-3 col-md-4"  style="display:none;">
                                 <label for="rp_low" class="form-label">
                                     {$_('page.discharge.calculation.idf.returnPeriod')}
                                 </label>
@@ -1761,7 +1789,7 @@ type NamScenarioForm = ScenarioIdentifiers & {
                             </div>
                         </div>
                         <div class="row g-2 align-items-end">
-                            <div class="mb-3 col-md-4">
+                            <div class="mb-3 col-md-6">
                                 <label for="P_high_1h" class="form-label">
                                     {$_('page.discharge.calculation.idf.precipUpperPeriod1h')}
                                 </label>
@@ -1774,7 +1802,7 @@ type NamScenarioForm = ScenarioIdentifiers & {
                                     bind:value={pHigh1h}
                                 />
                             </div>
-                            <div class="mb-3 col-md-4">
+                            <div class="mb-3 col-md-6">
                                 <label for="P_high_24h" class="form-label">
                                     {$_('page.discharge.calculation.idf.precipUpperPeriod24h')}
                                 </label>
@@ -1787,7 +1815,7 @@ type NamScenarioForm = ScenarioIdentifiers & {
                                     bind:value={pHigh24h}
                                 />
                             </div>
-                            <div class="mb-3 col-md-4">
+                            <div class="mb-3 col-md-4" style="display:none;">
                                 <label for="rp_high" class="form-label">
                                     {$_('page.discharge.calculation.idf.upperReturnPeriod')}
                                 </label>
@@ -1881,49 +1909,53 @@ type NamScenarioForm = ScenarioIdentifiers & {
                         </section>
                     {/if}
 
-                    {#if clark_wsl.length > 0}
-                        <section class="mb-5">
-                            <h4 class="text-muted mb-3">{$_('page.discharge.calculation.clarkwslname')}</h4>
-                            {#each clarkScenarioRange as scenarioIndex}
-								<div class="row g-2 py-2 align-items-start">
-									<div class="mb-3 col-md-12 d-flex">
-										<div class="d-flex flex-column gap-2 w-100">
-											{#each zones as z, i}
-												<div class="d-flex align-items-center gap-2 flex-row">
-													<label for={`zone_${i}-scenario${scenarioIndex}`} class="flex-fill text-end" style="max-width:100px;">{z.typ}</label>
-													<div style="max-width:130px;">
-														<input
-															type="number"
-															step="any"
-															class="form-control text-end"
-															style="-webkit-appearance: none; -moz-appearance: textfield;"
-															id={`zone_${i}-scenario${scenarioIndex}`}
-															name={`zone_${i}`}
-															value={clarkScenarioForms[scenarioIndex]?.fractions?.[z.typ] ?? 0}
-															oninput={(event) => {
-																const target = event.currentTarget as HTMLInputElement;
-																updateFractionValue(
-																	scenarioIndex,
-																	z.typ,
-																	sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-																);
-															}}
-														/>
+                    {#if clark_wsl.length > 0 || nam.length > 0}
+                        <div class="row g-4">
+                            {#if clark_wsl.length > 0}
+                                <div class="col-12 col-xl-6">
+                                    <section class="mb-5 mb-xl-0 h-100">
+                                        <h4 class="text-muted mb-3">{$_('page.discharge.calculation.clarkwslname')}</h4>
+                                        {#each clarkScenarioRange as scenarioIndex}
+											<div class="row g-2 py-2 align-items-start">
+												<div class="mb-3 col-md-12 d-flex">
+													<div class="d-flex flex-column gap-2 w-100">
+														{#each zones as z, i}
+															<div class="d-flex align-items-center gap-2 flex-row">
+																<label for={`zone_${i}-scenario${scenarioIndex}`} class="flex-fill text-end" style="max-width:100px;">{z.typ}</label>
+																<div style="max-width:130px;">
+																	<input
+																		type="number"
+																		step="any"
+																		class="form-control text-end"
+																		style="-webkit-appearance: none; -moz-appearance: textfield;"
+																		id={`zone_${i}-scenario${scenarioIndex}`}
+																		name={`zone_${i}`}
+																		value={clarkScenarioForms[scenarioIndex]?.fractions?.[z.typ] ?? 0}
+																		oninput={(event) => {
+																			const target = event.currentTarget as HTMLInputElement;
+																			updateFractionValue(
+																				scenarioIndex,
+																				z.typ,
+																				sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+																			);
+																		}}
+																	/>
+																</div>
+																<div class="text-start">%</div>
+															</div>
+														{/each}
 													</div>
-													<div class="text-start">%</div>
 												</div>
-											{/each}
-										</div>
-									</div>
-								</div>
-                            {/each}
-                        </section>
-                    {/if}
-
-                    {#if nam.length > 0}
-                        <section class="mb-5">
-                            <h4 class="text-muted mb-3">{$_('page.discharge.calculation.nam')}</h4>
-                            {#each namScenarioRange as scenarioIndex}
+											</div>
+                                        {/each}
+                                    </section>
+                                </div>
+                            {/if}
+                            {#if nam.length > 0}
+                                <div class="col-12 col-xl-6">
+                                    <section class="mb-5 mb-xl-0 h-100">
+                                        <h4 class="text-muted mb-3">{$_('page.discharge.calculation.nam')}</h4>
+                                        {#each namScenarioRange as scenarioIndex}
 								<div class="row g-2 py-2 align-items-end" style="display:none;">
 									<div class="mb-3 col-md-4">
 										<label for={`precipitation_factor-scenario${scenarioIndex}`} class="form-label">
@@ -2076,15 +2108,17 @@ type NamScenarioForm = ScenarioIdentifiers & {
 										{/if}
 									</div>
 								</div>
-
-                                
-                            {/each}
-                        </section>
+                                        
+                                    {/each}
+                                    </section>
+                                </div>
+                            {/if}
+                        </div>
                     {/if}
                 </div>
 				<!-- End of Input Part -->
 				<!-- Results Part -->
-				<div class="col-lg-6">
+				<div class="col-lg-8">
 					<div class="accordion" id="accordionPanelsResults">
 						<div class="accordion-item">
 							<h2 class="accordion-header" id="panelsResults-headingOne">
