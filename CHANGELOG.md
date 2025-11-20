@@ -1,3 +1,22 @@
+## 0.7.0-dev.1 (2025-11-20)
+
+### Feat
+
+- **frontend**: Reorganization of the Hydrological Calculation Page. All fields below each other and new layout
+
+### Fix
+
+- **API,-NAM**: bug fixing cc_factor on rain in NAM
+- **api,ClarkWSL**: bugfixing fraction lists missing items. It is a list
+- **ClarkWSL**: Ensure that discharge types are handed over as strings
+- **interpolation-koella**: Koella was not correctly passed for the loglog-interpolation without explicitly putting x=20 and x=100
+- **api**: Fix for Koella's calculation with the new recurrence periods
+- **koella**: Further add tolerance for TB conversion
+- **koella**: Change parameters for TB conversion also in the second koella function
+- **loglog-int**: fix isclose issue in function
+- **loglog-int**: Log-log interpolation is not selecting properly 300 year period
+- **koella**: Correct TB conversion parameters
+
 ## 0.6.0-dev.1 (2025-11-14)
 
 ### Feat
