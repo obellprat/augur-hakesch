@@ -35,12 +35,12 @@
       },
       "calculation": {
         "idf": {
-          "precipLowerPeriod1h": "Precipitation [mm] for lower return period, 1 hour duration",
-          "precipLowerPeriod24h": "Precipitation [mm] for lower return period, 24 hour duration",
-          "returnPeriod": "Lower return period",
-          "precipUpperPeriod1h": "Precipitation [mm] for upper return period, 1 hour duration",
-          "precipUpperPeriod24h": "Precipitation [mm] for upper return period, 24 hour duration",
-          "upperReturnPeriod": "Upper return period"
+          "precipLowerPeriod1h": "Precipitation [mm] for 30-year return period, 1 hour duration",
+          "precipLowerPeriod24h": "Precipitation [mm] for  30-year return period, 24 hour duration",
+          "returnPeriod": " 30-year return period",
+          "precipUpperPeriod1h": "Precipitation [mm] for 100-year return period, 1 hour duration",
+          "precipUpperPeriod24h": "Precipitation [mm] for 100-year return period, 24 hour duration",
+          "upperReturnPeriod": "100-year return period"
         },
         "szenario": "Scenario",
         "modFZV": {

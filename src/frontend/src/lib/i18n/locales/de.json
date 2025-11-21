@@ -81,10 +81,10 @@
         "deleteCalculationQuestion": "Soll die Berechnung wirklich gelöscht werden?",
         "hq": "HQ",
         "idf": {
-          "precipLowerPeriod1h": "Niederschlag [mm] für die untere Wiederkehrperiode, 1 Stunde Dauer",
-          "precipLowerPeriod24h": "Niederschlag [mm] für die untere Wiederkehrperiode, 24 Stunden Dauer",
-          "precipUpperPeriod1h": "Niederschlag [mm] für die obere Wiederkehrperiode, 1 Stunde Dauer",
-          "precipUpperPeriod24h": "Niederschlag [mm] für die obere Wiederkehrperiode, 24 Stunde Dauer",
+          "precipLowerPeriod1h": "Niederschlag [mm] für die 30 jährige Wiederkehrperiode, 1 Stunde Dauer",
+          "precipLowerPeriod24h": "Niederschlag [mm] für die 30 jährige  Wiederkehrperiode, 24 Stunden Dauer",
+          "precipUpperPeriod1h": "Niederschlag [mm] für die 100 jährige Wiederkehrperiode, 1 Stunde Dauer",
+          "precipUpperPeriod24h": "Niederschlag [mm] für die 100 jährige  Wiederkehrperiode, 24 Stunde Dauer",
           "returnPeriod": "Untere Wiederkehrperiode",
           "upperReturnPeriod": "Obere Wiederkehrperiode"
         },
