@@ -150,7 +150,20 @@ const getAllProjects = async (userId: number) => {
 		where: {
 			user: { id: userId }
 		},
-		include: {
+		select: {
+			userId: true,
+			title: true,
+			pointId: true,
+			lastModified: true,
+			isozones_taskid: true,
+			isozones_running: true,
+			idfParameterId: true,
+			id: true,
+			description: true,
+			delta_h: true,
+			cummulative_channel_length: true,
+			channel_length: true,
+			catchment_area: true,
 			Point: true
 		},
 		orderBy: {
