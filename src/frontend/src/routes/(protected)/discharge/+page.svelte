@@ -3,10 +3,56 @@
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 	import { _ } from 'svelte-i18n';
+	import type { PageServerData } from './$types';
 
-	export let data;
+	let { data }: { data: PageServerData } = $props();
 
 	$pageTitle = $_('page.discharge.title') + '-' + $_('page.discharge.projects');
+
+	let selectedProjects = $state<string[]>([]);
+	let selectAll = $state(false);
+
+	function toggleSelectAll() {
+		if (selectAll) {
+			selectedProjects = data.projects?.map((p: { id: string }) => p.id) || [];
+		} else {
+			selectedProjects = [];
+		}
+	}
+
+	function toggleProject(projectId: string) {
+		const index = selectedProjects.indexOf(projectId);
+		if (index > -1) {
+			selectedProjects = selectedProjects.filter((id) => id !== projectId);
+		} else {
+			selectedProjects = [...selectedProjects, projectId];
+		}
+		// Update select all checkbox state
+		selectAll = selectedProjects.length === (data.projects?.length || 0) && selectedProjects.length > 0;
+	}
+
+	$effect(() => {
+		// Update select all when projects change
+		selectAll = selectedProjects.length === (data.projects?.length || 0) && selectedProjects.length > 0;
+	});
+
+	function showDeleteModal() {
+		if (selectedProjects.length === 0) {
+			return;
+		}
+		// Use Bootstrap modal API (compatible with jQuery if available)
+		const modalElement = document.getElementById('delete-projects-modal');
+		if (modalElement) {
+			// Check if Bootstrap 5 is available
+			if ((window as any).bootstrap) {
+				const modal = new (window as any).bootstrap.Modal(modalElement);
+				modal.show();
+			} else if ((globalThis as any).$) {
+				// Fallback to jQuery if available
+				(globalThis as any).$('#delete-projects-modal').modal('show');
+			}
+		}
+	}
 
 	onMount(async () => {});
 </script>
@@ -20,7 +66,17 @@
 		<div class="card-body py-2">
 			<div class="d-flex align-items-center gap-2">
 				<div class="form-check">
-					<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" />
+					<input
+						class="form-check-input"
+						type="checkbox"
+						value=""
+						id="flexCheckDefault"
+						checked={selectAll}
+						onchange={() => {
+							selectAll = !selectAll;
+							toggleSelectAll();
+						}}
+					/>
 				</div>
 
 				<div class="d-flex align-items-center">
@@ -33,6 +89,8 @@
 						data-bs-placement="top"
 						data-bs-title="<span class='fs-12'>Delete</span>"
 						aria-label="delete"
+						disabled={selectedProjects.length === 0}
+						onclick={showDeleteModal}
 					>
 						<i class="ri-delete-bin-2-line fs-18"></i>
 					</button>
@@ -70,7 +128,12 @@
 							{#each data.projects as project (project.id)}
 								<tr class="position-relative">
 									<td class="ps-3">
-										<input class="form-check-input position-relative z-2" type="checkbox" />
+										<input
+											class="form-check-input position-relative z-2"
+											type="checkbox"
+											checked={selectedProjects.includes(project.id)}
+											onchange={() => toggleProject(project.id)}
+										/>
 									</td>
 
 									<td>
@@ -119,3 +182,59 @@
 		</div>
 	</div>
 </div>
+
+<!-- Delete Projects Modal -->
+<div
+	id="delete-projects-modal"
+	class="modal fade"
+	tabindex="-1"
+	role="dialog"
+	aria-labelledby="warning-header-modalLabel"
+	aria-hidden="true"
+>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header text-bg-warning border-0">
+				<h4 class="modal-title" id="warning-header-modalLabel">
+					{$_('page.discharge.overview.deleteProject')}
+				</h4>
+				<button
+					type="button"
+					class="btn-close btn-close-white"
+					data-bs-dismiss="modal"
+					aria-label="Close"
+				></button>
+			</div>
+			<div class="modal-body">
+				<p>
+					{#if selectedProjects.length === 1}
+						{$_('page.discharge.overview.shoulddeleteproject', {
+							values: {
+								title:
+									data.projects?.find((p: { id: string }) => p.id === selectedProjects[0])?.title ||
+									''
+							}
+						})}
+					{:else}
+						Sollen {selectedProjects.length} Projekte gelöscht werden?
+					{/if}
+				</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-light" data-bs-dismiss="modal"
+					>{$_('page.general.cancel')}</button
+				>
+				<form method="POST" action="?/delete">
+					{#each selectedProjects as projectId}
+						<input type="hidden" name="ids[]" value={projectId} />
+					{/each}
+					<input type="hidden" name="userid" value={data.session?.myuser.id} />
+					<button type="submit" class="btn btn-warning">{$_('page.general.delete')}</button>
+				</form>
+			</div>
+		</div>
+		<!-- /.modal-content -->
+	</div>
+	<!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
