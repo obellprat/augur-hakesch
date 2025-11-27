@@ -303,7 +303,7 @@
 		);
 	}
 
-	onMount(async () => {
+onMount(async () => {
 		const stroke = new Stroke({ color: 'black', width: 2 });
 		const fill = new Fill({ color: 'blue' });
 		var vectorSource = new VectorSource({});
@@ -381,6 +381,13 @@
 
 			globalThis.$('#recalculate-modal').modal('show');
 		});
+
+		if (!data.project.isozones_taskid || data.project.isozones_taskid === '') {
+			const jq = (globalThis as any).$;
+			if (jq) {
+				jq('#missinggeodata-modal').modal('show');
+			}
+		}
 	});
 </script>
 
@@ -487,6 +494,45 @@
 										data-bs-target="#generate-modal"
 										onclick={calculateGeodatas}>Ja</button
 									><button type="button" class="btn btn-light" data-bs-dismiss="modal">Nein</button>
+								</div>
+							</div>
+							<!-- /.modal-content -->
+						</div>
+						<!-- /.modal-dialog -->
+					</div>
+
+					<div
+						id="missinggeodata-modal"
+						class="modal fade"
+						tabindex="-1"
+						role="dialog"
+						aria-labelledby="missinggeodata-modal-label"
+						aria-hidden="true"
+					>
+						<div class="modal-dialog">
+							<div class="modal-content">
+								<div class="modal-header">
+									<h4 class="modal-title" id="missinggeodata-modal-label">
+										{$_('page.discharge.overview.missinggeodataTitle')}
+									</h4>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label={$_('page.general.close')}
+									></button>
+								</div>
+								<div class="modal-body">
+									<p>{$_('page.discharge.overview.missingGeodata')}</p>
+								</div>
+								<div class="modal-footer">
+									<button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.cancel')}</button>
+									<button
+										type="button"
+										class="btn btn-primary"
+										data-bs-dismiss="modal"
+										data-bs-toggle="modal"
+										data-bs-target="#generate-modal"
+										onclick={calculateGeodatas}
+									>
+										{$_('page.discharge.overview.calculateGeodata')}
+									</button>
 								</div>
 							</div>
 							<!-- /.modal-content -->

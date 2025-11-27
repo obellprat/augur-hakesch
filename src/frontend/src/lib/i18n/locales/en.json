@@ -23,6 +23,8 @@
         "discharge-projekt": "Discharge - Project",
         "pourpoint": "Poutpoint",
         "projectTitle": "Project title",
+        "missinggeodataTitle": "Geodata not yet calculated",
+        "missingGeodata": "The geodata has not yet been calculated. Would you like to perform the calculation now?",
         "shoulddeleteproject": "Do you want to delete the project {title}?",
         "changePoutPoint": "Select by clicking on the map",
         "easting": "Easting",

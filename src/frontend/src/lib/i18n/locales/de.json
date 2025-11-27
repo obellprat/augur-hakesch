@@ -23,6 +23,8 @@
         "description": "Beschreibung",
         "pourpoint": "Abflusspunkt",
         "deleteProject": "Projekt löschen",
+        "missinggeodataTitle": "Geodaten noch nicht berechnet",
+        "missingGeodata": "Die Geodaten wurden noch nicht berechnet. Sollen die Berechnung nun durchgeführt werden?",
         "shoulddeleteproject": "Soll das Projekt {title} wirklich gelöscht werden?",
         "changePoutPoint": "Mit einem Klick auf die Karte auswählen",
         "easting": "Easting",
