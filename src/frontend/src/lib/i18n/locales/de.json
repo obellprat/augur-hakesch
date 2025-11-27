@@ -37,6 +37,8 @@
       "calculation": {
         "calcrunning": "Berechnung läuft...",
         "calcsuccess": "Erfolgreich berechnet!",
+        "missingIdfTitle": "Niederschlagswerte fehlen",
+        "missingIdfMessage": "Bitte setzen Sie zuerst die Niederschlagsintensitäten (P_low 1h, P_low 24h, P_high 1h und P_high 24h), bevor Sie die Berechnung starten.",
         "calculationTitle": "Berechnungen | AUGUR",
         "addcalculation": "Hydrologische Berechnung hinzufügen",
         "typeOfCalculation": "Welches Verfahren soll dem Projekt hinzugefügt weden?",

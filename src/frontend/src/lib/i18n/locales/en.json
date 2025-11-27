@@ -61,6 +61,8 @@
         "addcalculation": "Add hydrologic calculation",
         "calcrunning": "Calculataion is running...",
         "calcsuccess": "Successfully calculated!",
+        "missingIdfTitle": "Precipitation inputs required",
+        "missingIdfMessage": "Please enter the precipitation intensity values (P_low 1h, P_low 24h, P_high 1h and P_high 24h) before starting the calculation.",
         "calculationTitle": "- Calculation | AUGUR",
         "clarkwsl": "Clark WSL",
         "nam": "NAM",

@@ -464,6 +464,22 @@ function handleApiError(context: string, error: unknown) {
 	showApiErrorModal(detail);
 }
 
+function hasValidIdfInputs() {
+	return pLow1h > 0 && pLow24h > 0 && pHigh1h > 0 && pHigh24h > 0;
+}
+
+function showMissingIdfModal() {
+	(globalThis as any).$('#missing-idf-modal').modal('show');
+}
+
+function ensureIdfInputs() {
+	if (hasValidIdfInputs()) {
+		return true;
+	}
+	showMissingIdfModal();
+	return false;
+}
+
 	let isUploading = $state(false);
 	let couldCalculate = $state(false);
 	let soilFileExists = $state(false);
@@ -907,6 +923,9 @@ function handleApiError(context: string, error: unknown) {
 	}
 
 	async function calculateModFliess(scenario: any[]) {
+	if (!ensureIdfInputs()) {
+		return;
+	}
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
@@ -961,6 +980,9 @@ function handleApiError(context: string, error: unknown) {
 	}
 	
 	async function calculateKoella(scenario: any[]) {
+	if (!ensureIdfInputs()) {
+		return;
+	}
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
@@ -1015,6 +1037,9 @@ function handleApiError(context: string, error: unknown) {
 	}
 	
 	async function calculateClarkWSL(scenario: any[]) {
+	if (!ensureIdfInputs()) {
+		return;
+	}
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
@@ -1069,6 +1094,9 @@ function handleApiError(context: string, error: unknown) {
 	}
 	
 	async function calculateNAM(scenario: any[]) {
+	if (!ensureIdfInputs()) {
+		return;
+	}
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
@@ -1339,6 +1367,9 @@ function handleApiError(context: string, error: unknown) {
 	}
 
 	async function calculateProject(project_id: Number) {
+	if (!ensureIdfInputs()) {
+		return;
+	}
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
@@ -1650,6 +1681,41 @@ function handleApiError(context: string, error: unknown) {
 		<!-- /.modal-content -->
 	</div>
 	<!-- /.modal-dialog -->
+</div>
+
+<div
+	id="missing-idf-modal"
+	class="modal fade"
+	tabindex="-1"
+	role="dialog"
+	aria-labelledby="missing-idf-modal-label"
+	aria-hidden="true"
+>
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="missing-idf-modal-label">
+					{$_('page.discharge.calculation.missingIdfTitle')}
+				</h4>
+				<button
+					type="button"
+					class="btn-close"
+					data-bs-dismiss="modal"
+					aria-label={$_('page.general.close')}
+				></button>
+			</div>
+			<div class="modal-body">
+				<p>{$_('page.discharge.calculation.missingIdfMessage')}</p>
+			</div>
+			<div class="modal-footer">
+				<button
+					type="button"
+					class="btn btn-primary"
+					data-bs-dismiss="modal">{$_('page.general.ok')}</button
+				>
+			</div>
+		</div>
+	</div>
 </div>
 
 <div
