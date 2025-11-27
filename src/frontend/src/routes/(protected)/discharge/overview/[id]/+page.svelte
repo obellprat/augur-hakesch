@@ -42,31 +42,56 @@
 	currentProject.id = data.project.id;
 
 	let map: Map;
+	const API_ERROR_KEY = 'page.discharge.overview.apiUnavailable';
+	function getApiErrorFallback() {
+		return $_(API_ERROR_KEY);
+	}
+	let apiErrorMessage = $state(getApiErrorFallback());
+	$effect(() => {
+		apiErrorMessage = getApiErrorFallback();
+	});
 
 	async function calculateGeodatas() {
-		await fetch('?/update', {
-			body: new FormData(document.getElementById('project-form') as HTMLFormElement),
-			method: 'post'
-		});
-		invalidateAll();
-		fetch(
-			env.PUBLIC_HAKESCH_API_PATH +
-				'/discharge/prepare_discharge_hydroparameters?ProjectId=' +
-				data.project.id,
-			{
-				method: 'GET',
-				headers: {
-					Authorization: 'Bearer ' + data.session.access_token
-				}
-			}
-		)
-			.then((response) => response.json())
-			.then((data) => {
-				const actTime = new Date();
-				document.getElementById('progresstext')!.innerHTML = `${actTime.toUTCString()} Starting`;
-				globalThis.$('.progress-bar').css('width', '0%').attr('aria-valuenow', 0);
-				getStatus(data.task_id);
+		try {
+			await fetch('?/update', {
+				body: new FormData(document.getElementById('project-form') as HTMLFormElement),
+				method: 'post'
 			});
+			invalidateAll();
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH +
+					'/discharge/prepare_discharge_hydroparameters?ProjectId=' +
+					data.project.id,
+				{
+					method: 'GET',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
+					}
+				}
+			);
+			if (!response.ok) {
+				throw new Error(`API returned status ${response.status}`);
+			}
+			const payload = await response.json();
+			if (!payload?.task_id) {
+				throw new Error('API Antwort ohne task_id');
+			}
+			const actTime = new Date();
+			document.getElementById('progresstext')!.innerHTML = `${actTime.toUTCString()} Starting`;
+			globalThis.$('.progress-bar').css('width', '0%').attr('aria-valuenow', 0);
+			getStatus(payload.task_id);
+		} catch (error) {
+			console.error('calculateGeodatas failed', error);
+			const detail = error instanceof Error ? error.message : '';
+			showApiErrorModal(detail);
+		}
+	}
+
+	function showApiErrorModal(detail?: string) {
+		const fallback = getApiErrorFallback();
+		apiErrorMessage = detail ? `${fallback} (${detail})` : fallback;
+		globalThis.$('#generate-modal').modal('hide');
+		globalThis.$('#api-error-modal').modal('show');
 	}
 	function getStatus(taskID: String) {
 		fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
@@ -467,6 +492,31 @@
 							<!-- /.modal-content -->
 						</div>
 						<!-- /.modal-dialog -->
+					</div>
+
+					<div
+						id="api-error-modal"
+						class="modal fade"
+						tabindex="-1"
+						role="dialog"
+						aria-labelledby="api-error-modal-label"
+						aria-hidden="true"
+					>
+						<div class="modal-dialog modal-dialog-centered">
+							<div class="modal-content">
+								<div class="modal-header text-bg-danger border-0">
+									<h4 class="modal-title" id="api-error-modal-label">Verbindungsfehler</h4>
+									<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"
+									></button>
+								</div>
+								<div class="modal-body">
+									<p>{apiErrorMessage}</p>
+								</div>
+								<div class="modal-footer border-0">
+									<button type="button" class="btn btn-danger" data-bs-dismiss="modal">Schliessen</button>
+								</div>
+							</div>
+						</div>
 					</div>
 
 					<!-- End Modals -->

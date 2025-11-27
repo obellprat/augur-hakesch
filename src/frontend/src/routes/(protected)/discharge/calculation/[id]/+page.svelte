@@ -443,6 +443,27 @@ type NamScenarioForm = ScenarioIdentifiers & {
 	currentProject.id = data.project.id;
 	let zones: { typ: string }[] = data.zones;
 
+const API_ERROR_KEY = 'page.discharge.overview.apiUnavailable';
+function getApiErrorFallback() {
+	return $_(API_ERROR_KEY);
+}
+let apiErrorMessage = $state(getApiErrorFallback());
+$effect(() => {
+	apiErrorMessage = getApiErrorFallback();
+});
+
+function showApiErrorModal(detail?: string) {
+	const fallback = getApiErrorFallback();
+	apiErrorMessage = detail ? `${fallback} (${detail})` : fallback;
+	(globalThis as any).$('#api-error-modal').modal('show');
+}
+
+function handleApiError(context: string, error: unknown) {
+	console.error(context, error);
+	const detail = error instanceof Error ? error.message : undefined;
+	showApiErrorModal(detail);
+}
+
 	let isUploading = $state(false);
 	let couldCalculate = $state(false);
 	let soilFileExists = $state(false);
@@ -894,28 +915,36 @@ type NamScenarioForm = ScenarioIdentifiers & {
 		// Each call returns a group task_id (for all climate scenarios of that annuality)
 		const groupTaskIds: string[] = [];
 		
-		for (const mod_fz of scenario) {
-			try {
-				const response = await fetch(
-					env.PUBLIC_HAKESCH_API_PATH +
-						'/discharge/modifizierte_fliesszeit?ProjectId=' +
-						mod_fz.project_id +
-						'&ModFliesszeitId=' +
-						mod_fz.id,
-					{
-						method: 'GET',
-						headers: {
-							Authorization: 'Bearer ' + data.session.access_token
-						}
+	for (const mod_fz of scenario) {
+		try {
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH +
+					'/discharge/modifizierte_fliesszeit?ProjectId=' +
+					mod_fz.project_id +
+					'&ModFliesszeitId=' +
+					mod_fz.id,
+				{
+					method: 'GET',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
 					}
-				);
-				const result = await response.json();
-				// Each API call returns a group task_id for all climate scenarios
-				groupTaskIds.push(result.task_id);
-			} catch (error) {
-				console.error('Error calculating ModFliess:', error);
+				}
+			);
+			if (!response.ok) {
+				throw new Error(`API returned status ${response.status}`);
 			}
+			const result = await response.json();
+			if (!result?.task_id) {
+				throw new Error('API response missing task_id');
+			}
+			// Each API call returns a group task_id for all climate scenarios
+			groupTaskIds.push(result.task_id);
+		} catch (error) {
+			handleApiError('Error calculating ModFliess', error);
+			toast.pop();
+			return;
 		}
+	}
 		
 		// Monitor all group tasks
 		if (groupTaskIds.length > 0) {
@@ -940,28 +969,36 @@ type NamScenarioForm = ScenarioIdentifiers & {
 		// Each call returns a group task_id (for all climate scenarios of that annuality)
 		const groupTaskIds: string[] = [];
 		
-		for (const k of scenario) {
-			try {
-				const response = await fetch(
-					env.PUBLIC_HAKESCH_API_PATH +
-						'/discharge/koella?ProjectId=' +
-						k.project_id +
-						'&KoellaId=' +
-						k.id,
-					{
-						method: 'GET',
-						headers: {
-							Authorization: 'Bearer ' + data.session.access_token
-						}
+	for (const k of scenario) {
+		try {
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH +
+					'/discharge/koella?ProjectId=' +
+					k.project_id +
+					'&KoellaId=' +
+					k.id,
+				{
+					method: 'GET',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
 					}
-				);
-				const result = await response.json();
-				// Each API call returns a group task_id for all climate scenarios
-				groupTaskIds.push(result.task_id);
-			} catch (error) {
-				console.error('Error calculating Koella:', error);
+				}
+			);
+			if (!response.ok) {
+				throw new Error(`API returned status ${response.status}`);
 			}
+			const result = await response.json();
+			if (!result?.task_id) {
+				throw new Error('API response missing task_id');
+			}
+			// Each API call returns a group task_id for all climate scenarios
+			groupTaskIds.push(result.task_id);
+		} catch (error) {
+			handleApiError('Error calculating Koella', error);
+			toast.pop();
+			return;
 		}
+	}
 		
 		// Monitor all group tasks
 		if (groupTaskIds.length > 0) {
@@ -986,28 +1023,36 @@ type NamScenarioForm = ScenarioIdentifiers & {
 		// Each call returns a group task_id (for all climate scenarios of that annuality)
 		const groupTaskIds: string[] = [];
 		
-		for (const k of scenario) {
-			try {
-				const response = await fetch(
-					env.PUBLIC_HAKESCH_API_PATH +
-						'/discharge/clark-wsl?ProjectId=' +
-						k.project_id +
-						'&ClarkWSLId=' +
-						k.id,
-					{
-						method: 'GET',
-						headers: {
-							Authorization: 'Bearer ' + data.session.access_token
-						}
+	for (const k of scenario) {
+		try {
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH +
+					'/discharge/clark-wsl?ProjectId=' +
+					k.project_id +
+					'&ClarkWSLId=' +
+					k.id,
+				{
+					method: 'GET',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
 					}
-				);
-				const result = await response.json();
-				// Each API call returns a group task_id for all climate scenarios
-				groupTaskIds.push(result.task_id);
-			} catch (error) {
-				console.error('Error calculating ClarkWSL:', error);
+				}
+			);
+			if (!response.ok) {
+				throw new Error(`API returned status ${response.status}`);
 			}
+			const result = await response.json();
+			if (!result?.task_id) {
+				throw new Error('API response missing task_id');
+			}
+			// Each API call returns a group task_id for all climate scenarios
+			groupTaskIds.push(result.task_id);
+		} catch (error) {
+			handleApiError('Error calculating ClarkWSL', error);
+			toast.pop();
+			return;
 		}
+	}
 		
 		// Monitor all group tasks
 		if (groupTaskIds.length > 0) {
@@ -1032,28 +1077,36 @@ type NamScenarioForm = ScenarioIdentifiers & {
 		// Each call returns a group task_id (for all climate scenarios of that annuality)
 		const groupTaskIds: string[] = [];
 		
-		for (const n of scenario) {
-			try {
-				const response = await fetch(
-					env.PUBLIC_HAKESCH_API_PATH +
-						'/discharge/nam?ProjectId=' +
-						n.project_id +
-						'&NAMId=' +
-						n.id,
-					{
-						method: 'GET',
-						headers: {
-							Authorization: 'Bearer ' + data.session.access_token
-						}
+	for (const n of scenario) {
+		try {
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH +
+					'/discharge/nam?ProjectId=' +
+					n.project_id +
+					'&NAMId=' +
+					n.id,
+				{
+					method: 'GET',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
 					}
-				);
-				const result = await response.json();
-				// Each API call returns a group task_id for all climate scenarios
-				groupTaskIds.push(result.task_id);
-			} catch (error) {
-				console.error('Error calculating NAM:', error);
+				}
+			);
+			if (!response.ok) {
+				throw new Error(`API returned status ${response.status}`);
 			}
+			const result = await response.json();
+			if (!result?.task_id) {
+				throw new Error('API response missing task_id');
+			}
+			// Each API call returns a group task_id for all climate scenarios
+			groupTaskIds.push(result.task_id);
+		} catch (error) {
+			handleApiError('Error calculating NAM', error);
+			toast.pop();
+			return;
 		}
+	}
 		
 		// Monitor all group tasks
 		if (groupTaskIds.length > 0) {
@@ -1285,20 +1338,32 @@ type NamScenarioForm = ScenarioIdentifiers & {
 		checkAllTasks();
 	}
 
-	function calculateProject(project_id: Number) {
+	async function calculateProject(project_id: Number) {
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
-		fetch(env.PUBLIC_HAKESCH_API_PATH + '/discharge/calculate_project?ProjectId=' + project_id, {
-			method: 'GET',
-			headers: {
-				Authorization: 'Bearer ' + data.session.access_token
+		try {
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH + '/discharge/calculate_project?ProjectId=' + project_id,
+				{
+					method: 'GET',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
+					}
+				}
+			);
+			if (!response.ok) {
+				throw new Error(`API returned status ${response.status}`);
 			}
-		})
-			.then((response) => response.json())
-			.then((data) => {
-				getGroupStatus(data.task_id);
-			});
+			const payload = await response.json();
+			if (!payload?.task_id) {
+				throw new Error('API response missing task_id');
+			}
+			getGroupStatus(payload.task_id);
+		} catch (error) {
+			handleApiError('calculateProject failed', error);
+			toast.pop();
+		}
 	}
 	function getGroupStatus(taskID: String) {
 		fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/group/${taskID}`, {
@@ -1585,6 +1650,41 @@ type NamScenarioForm = ScenarioIdentifiers & {
 		<!-- /.modal-content -->
 	</div>
 	<!-- /.modal-dialog -->
+</div>
+
+<div
+	id="api-error-modal"
+	class="modal fade"
+	tabindex="-1"
+	role="dialog"
+	aria-labelledby="api-error-modal-label"
+	aria-hidden="true"
+>
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header text-bg-danger border-0">
+				<h4 class="modal-title" id="api-error-modal-label">
+					{$_('page.discharge.calculation.calcerror')}
+				</h4>
+				<button
+					type="button"
+					class="btn-close btn-close-white"
+					data-bs-dismiss="modal"
+					aria-label={$_('page.general.close')}
+				></button>
+			</div>
+			<div class="modal-body">
+				<p>{apiErrorMessage}</p>
+			</div>
+			<div class="modal-footer border-0">
+				<button
+					type="button"
+					class="btn btn-danger"
+					data-bs-dismiss="modal">{$_('page.general.close')}</button
+				>
+			</div>
+		</div>
+	</div>
 </div>
 
 <div class="flex-grow-1 card">

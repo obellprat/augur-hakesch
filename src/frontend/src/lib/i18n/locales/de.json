@@ -27,7 +27,8 @@
         "changePoutPoint": "Mit einem Klick auf die Karte auswählen",
         "easting": "Easting",
         "northing": "Northing",
-        "calculateGeodata": "Geodaten neu berechnen"
+        "calculateGeodata": "Geodaten neu berechnen",
+        "apiUnavailable": "Die Verbindung zum AUGUR Dienst konnte nicht hergestellt werden. Bitte versuchen Sie es später erneut."
       },
       "project": "Projekt",
       "create": {
