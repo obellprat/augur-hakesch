@@ -8,7 +8,7 @@
       "precipitation_card": "Precipitation values worldwide, taking into account IPCC climate scenarios",
       "precipitationtool": "Precipitation Tool",
       "precipitation": "Precipitation",
-      "dischargedesc": "Runoff calculation for a selected runoff location using different models"
+      "dischargedesc": "Runoff calculation incorporating IPCC climate scenarios for small catchments"
     },
     "discharge": {
       "title": "Discharge",
