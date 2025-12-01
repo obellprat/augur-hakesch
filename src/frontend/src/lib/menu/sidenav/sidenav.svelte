@@ -53,7 +53,7 @@
 
 			<li class="side-nav-title mt-2">{$_('page.nav.about')}</li>
 
-			<Navlink title={$_('page.nav.science')} href="science" icon="ti ti-school" />
+			<!--<Navlink title={$_('page.nav.science')} href="science" icon="ti ti-school" />-->
 
 			<Navlink title={$_('page.nav.aboutAugur')} href="about" icon="ti ti-info-circle" />
 		</ul>
