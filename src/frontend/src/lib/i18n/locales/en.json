@@ -48,7 +48,7 @@
         "szenario": "Scenario",
         "modFZV": {
           "wettingVolume": "Wetting volume for 20-year event [mm]",
-          "peakFlow": "Peak flow coefficient [-]"
+          "peakFlow": "Peak flow coefficient [psi]"
         },
         "calculate": "Calculate hydrology",
         "deleteCalculation": "Delete calculation",

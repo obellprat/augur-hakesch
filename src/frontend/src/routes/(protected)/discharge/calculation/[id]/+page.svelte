@@ -2309,7 +2309,7 @@ function ensureIdfInputs() {
 									<!-- Climate Scenario Selector -->
 									<div class="mb-3">
 										<label for="climateScenario" class="form-label">
-											<strong>Climate Scenario</strong>
+											<strong>Klimaszenario (CH2025)</strong>
 										</label>
 										<select 
 											id="climateScenario" 
