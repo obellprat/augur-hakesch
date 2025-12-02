@@ -13,10 +13,10 @@ const config = {
 		adapter: adapter(),
 		paths: {
 			base: '/abfluss'
-		}
-		/*csrf: {
+		},
+		csrf: {
 			checkOrigin: false,
-		}*/
+		}
 	}
 };
 
