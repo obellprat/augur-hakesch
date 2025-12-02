@@ -53,6 +53,9 @@ def parse_discharge_point(discharge_point, discharge_point_crs, transform=None, 
     Returns:
         tuple: (row, col) raster coordinates or (None, None) if conversion failed
     """
+    print(f"parse_discharge_point: input discharge_point coordinates: {discharge_point}")
+    print(f"parse_discharge_point: input discharge_point_crs: {discharge_point_crs}")
+    
     if discharge_point is None or len(discharge_point) != 2:
         return None, None
     
@@ -811,7 +814,7 @@ def nam(self,
             print(f"  Consider increasing precipitation_factor or return period.")
     # Calculate travel time for each cell
     # Determine discharge point coordinates (separate from storm center)
-    discharge_row, discharge_col = parse_discharge_point(discharge_point, "EPSG:3857", cn_transform, cn_data.shape)
+    discharge_row, discharge_col = parse_discharge_point(discharge_point, discharge_point_crs, cn_transform, cn_data.shape)
     
     # Fallback to isozone 0 (discharge point) if no user coordinates provided
     if discharge_row is None:
