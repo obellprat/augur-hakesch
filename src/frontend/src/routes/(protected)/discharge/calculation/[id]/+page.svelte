@@ -13,6 +13,7 @@
 	import type { Action } from 'svelte/action';
 
 	import { env } from '$env/dynamic/public';
+	import proj4 from 'proj4';
 	//import Apexchart from '$lib/apexchart.svelte';
 
 	type Chart = {
@@ -1528,22 +1529,17 @@ function ensureIdfInputs() {
 
 	// Coordinate conversion from EPSG:2056 (Swiss CH1903+ / LV95) to WGS84 lat/lon
 	function convertEPSG2056ToWGS84(easting: number, northing: number): { lat: number; lon: number } {
-		// Swiss CH1903+ / LV95 to WGS84 conversion
-		// This is a simplified approximation for Swiss coordinates
-		// For exact transformation, consider using a proper projection library like proj4js
+		// Define EPSG:2056 projection if not already defined
+		if (!proj4.defs('EPSG:2056')) {
+			proj4.defs(
+				'EPSG:2056',
+				'+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs'
+			);
+		}
 		
-		// Convert from LV95 to LV03 (CH1903) first
-		const y = (easting - 2600000) / 1000000;
-		const x = (northing - 1200000) / 1000000;
-		
-		// Convert from LV03 to WGS84 using approximate formulas
-		// These formulas are from the Swiss Federal Office of Topography (swisstopo)
-		const lat_aux = 16.9023892 + 3.238272 * x - 0.270978 * Math.pow(x, 2) - 0.002528 * Math.pow(x, 3) - 0.0447 * Math.pow(y, 2) - 0.0140 * Math.pow(y, 3);
-		const lon_aux = 2.6779094 + 4.728982 * y + 0.791484 * y * x + 0.1306 * y * Math.pow(x, 2) - 0.0436 * Math.pow(y, 3);
-		
-		// Convert to decimal degrees
-		const lat = 46.952405556 + (lat_aux * 100 / 36) / 3600; 
-		const lon = 7.439583333 + (lon_aux * 100 / 36) / 3600;
+		// Convert from EPSG:2056 to WGS84 (EPSG:4326)
+		// proj4 returns [lon, lat] for EPSG:4326
+		const [lon, lat] = proj4('EPSG:2056', 'EPSG:4326', [easting, northing]);
 		
 		return { lat, lon };
 	}
