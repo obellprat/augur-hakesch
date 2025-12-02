@@ -264,7 +264,7 @@
 	async function fetchPrecipitationData(lat: number, lng: number) {
 		isLoading = true;
 		try {
-			const response = await fetch(`/hakesch2/precipitation/api/location?lat=${lat}&lng=${lng}`);
+			const response = await fetch(`/abfluss/precipitation/api/location?lat=${lat}&lng=${lng}`);
 			precipitationData = await response.json();
 			updateChart();
 		} catch (error) {

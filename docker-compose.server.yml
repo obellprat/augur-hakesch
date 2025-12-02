@@ -42,6 +42,12 @@ services:
     command: node build/index.js
     environment:
       ORIGIN: "https://dev.augur.world"
+      # AUTH_URL: Optional - Base URL WITHOUT the SvelteKit base path.
+      # With trustHost: true, Auth.js auto-detects the origin from request headers,
+      # allowing both www and non-www domains to work automatically.
+      # Only set this if you need to override auto-detection (e.g., behind complex proxy).
+      # If set, use your PRIMARY domain (usually non-www). Keycloak must accept both variants.
+      # AUTH_URL: "https://dev.augur.world"
       NODE_ENV: production
       PUBLIC_HAKESCH_API_PATH: "/../api"
     labels:
