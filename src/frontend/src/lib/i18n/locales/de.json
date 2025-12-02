@@ -6,7 +6,7 @@
       "welcome": "Willkommen zu AUGUR",
       "welcome_text": "Methodenset zur Hochwasserabschätzung für kleine Einzugsgebiete unter Einbezug des Klimawandels.",
       "precipitation_card": "Niederschlagswerte weltweit unter Einbezug der IPCC Klimaszenarien",
-      "dischargedesc": "Abflussberechnung für einen gewählten Ablfussort mit verschiedenen Modellen",
+      "dischargedesc": "Abflussberechnung unter Einbezug der IPCC Klimaszenarien",
       "precipitation": "Niederschlag",
       "precipitationtool": "Niederschlagstool"
     },
@@ -94,7 +94,7 @@
           "upperReturnPeriod": "100-järige Wiederkehrperiode"
         },
         "modFZV": {
-          "peakFlow": "Spitzendurchflusskoeffizient [-]",
+          "peakFlow": "Abflussflusskoeffizient [psi]",
           "wettingVolume": "Benetzungsvolumen für 20-jähriges Ereignis [mm]"
         },
         "results": "Resultate",

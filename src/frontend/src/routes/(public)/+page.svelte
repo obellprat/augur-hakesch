@@ -37,9 +37,9 @@
 	<!-- end row -->
 
 	<div class="row">
-		<div class="col-sm-6 col-lg-3 d-flex align-items-stretch">
+		<div class="col-sm-6 col-lg-6 d-flex align-items-stretch">
 			<!-- Simple card -->
-			<div class="card d-block">
+			<div class="card d-block w-100">
 				<img
 					class="card-img-top"
 					src="assets/images/tools/precipitation.png"
@@ -60,9 +60,9 @@
 		</div>
 		<!-- end col -->
 
-		<div class="col-sm-6 col-lg-3 d-flex align-items-stretch">
+		<div class="col-sm-6 col-lg-6 d-flex align-items-stretch">
 			<!-- Simple card -->
-			<div class="card d-block">
+			<div class="card d-block w-100">
 				<img
 					class="card-img-top"
 					src="assets/images/tools/discharge.png"
