@@ -1,3 +1,18 @@
+## 1.0.0-alpha.0 (2025-12-02)
+
+### Feat
+
+- **frontend**: When creating a project, the user is asked whether the geodata should be calculated
+- **frontend**: Delete multiple projects simultaneously
+
+### Fix
+
+- **frontend**: csrf disabled because multiple subdomains (www and without)
+- **frontend**: checks the precip values before the calculation
+- **frontend**: error handling when api is not working
+- **frontend**: faster project loading without the geojsons
+- **frontend**: Text adjustments for recurring periods
+
 ## 0.7.0-dev.2 (2025-11-20)
 
 ### Fix
