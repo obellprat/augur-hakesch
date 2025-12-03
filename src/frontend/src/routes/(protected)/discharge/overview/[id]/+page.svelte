@@ -130,10 +130,9 @@
 					} else if (res.task_status == 'SUCCESS') {
 						html = 'Die Geodaten wurden erfolgrech berechnet.';
 
-						invalidateAll();
-						addIsozones();
-						addBranches();
 						globalThis.$('#generate-modal').modal('hide');
+						addIsozones();
+						
 					}
 					document.getElementById('progresstext')!.innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
 				} catch (e) {
