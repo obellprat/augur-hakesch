@@ -75,6 +75,47 @@ type NamScenarioForm = ScenarioIdentifiers & {
 		};
 	};
 
+	const initTooltip: Action<HTMLElement> = (node) => {
+		let tooltip: any = null;
+		let checkInterval: ReturnType<typeof setInterval> | null = null;
+
+		const init = () => {
+			if (typeof (window as any).bootstrap !== 'undefined') {
+				tooltip = new (window as any).bootstrap.Tooltip(node);
+				if (checkInterval) {
+					clearInterval(checkInterval);
+					checkInterval = null;
+				}
+			}
+		};
+
+		// Try to initialize immediately
+		init();
+
+		// If Bootstrap isn't available yet, check periodically
+		if (!tooltip) {
+			checkInterval = setInterval(init, 100);
+			// Stop checking after 5 seconds
+			setTimeout(() => {
+				if (checkInterval) {
+					clearInterval(checkInterval);
+					checkInterval = null;
+				}
+			}, 5000);
+		}
+
+		return {
+			destroy: () => {
+				if (checkInterval) {
+					clearInterval(checkInterval);
+				}
+				if (tooltip) {
+					tooltip.dispose();
+				}
+			}
+		};
+	};
+
 	const chartOneOptions: any = {
 		series: [
 			{
@@ -2062,6 +2103,17 @@ function ensureIdfInputs() {
 									<div class="col-md-4">
 										<label for={`shared-vo20-${scenarioIndex}`} class="form-label">
 											{$_('page.discharge.calculation.modFZV.wettingVolume')}
+											<span
+													class="badge badge-circle"
+													data-bs-toggle="tooltip"
+													data-bs-trigger="hover"
+													data-bs-placement="top"
+													data-bs-title={$_('page.discharge.calculation.modFZV.wettingVolumeTooltip')}
+													style="cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0;"
+													use:initTooltip
+												>
+													<i class="ri-question-line mb-1" style="font-weight: 100;"></i>
+												</span>
 										</label>
 										<input
 											id={`shared-vo20-${scenarioIndex}`}
@@ -2082,6 +2134,17 @@ function ensureIdfInputs() {
 										<div class="col-md-4">
 											<label for={`psi-scenario${scenarioIndex}`} class="form-label">
 												{$_('page.discharge.calculation.modFZV.peakFlow')}
+												<span
+													class="badge badge-circle"
+													data-bs-toggle="tooltip"
+													data-bs-trigger="hover"
+													data-bs-placement="top"
+													data-bs-title={$_('page.discharge.calculation.modFZV.peakFlowTooltip')}
+													style="cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0;"
+													use:initTooltip
+												>
+													<i class="ri-question-line mb-1" style="font-weight: 100;"></i>
+												</span>
 											</label>
 											<input
 												id={`psi-scenario${scenarioIndex}`}
@@ -2103,6 +2166,7 @@ function ensureIdfInputs() {
 										<div class="col-md-4">
 											<label for={`glacier_area-scenario${scenarioIndex}`} class="form-label">
 												{$_('page.discharge.calculation.koella.glacierArea')} km<sup>2</sup>
+												
 											</label>
 											<input
 												id={`glacier_area-scenario${scenarioIndex}`}

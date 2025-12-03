@@ -95,7 +95,9 @@
         },
         "modFZV": {
           "peakFlow": "Abflussflusskoeffizient [psi]",
-          "wettingVolume": "Benetzungsvolumen für 20-jähriges Ereignis [mm]"
+          "wettingVolume": "Benetzungsvolumen für 20-jähriges Ereignis [mm]",
+          "peakFlowTooltip": "Noch kein Text definiert",
+          "wettingVolumeTooltip": "Noch nicht definiert"
         },
         "results": "Resultate",
         "returnPeriod": "Wiederkehrperiode",
@@ -180,7 +182,7 @@
       "credits": {
         "heading": "Credits",
         "p1": "AUGUR ist Open Source und wurde durch die Untersütztung vom 'Innovation Meets Practice Accelartor' 2022 der Humanitären Hilfe der DEZA lanciert für eine globale Anwendung.",
-        "p2": "Durch eine  Förderung des Kantons Bern wurde AUGUR mit den Methoden von HAKESCH und einem Niederschlag Abfluss-Model (NAM) weiterentwickelt in Zusammenarbeit mit Hunziker, Zarn und Partner (HZP) und Scherrer Hydrologie." 
+        "p2": "Durch eine  Förderung des Kantons Bern wurde AUGUR mit den Methoden von HAKESCH und einem Niederschlag Abfluss-Model (NAM) weiterentwickelt in Zusammenarbeit mit Hunziker, Zarn und Partner (HZP) und Scherrer Hydrologie."
       }
     },
     "login": {
