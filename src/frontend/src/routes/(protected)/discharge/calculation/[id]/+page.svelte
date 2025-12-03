@@ -1371,9 +1371,15 @@ function ensureIdfInputs() {
 	if (!ensureIdfInputs()) {
 		return;
 	}
-		toast.push($_('page.discharge.calculation.calcrunning'), {
-			initial: 0
-		});
+		// Show modal and initialize progress
+		(globalThis as any).$('#calculation-progress-modal').modal('show');
+		const progressBarEl = document.querySelector('#calculation-progress-modal .progress-bar') as HTMLElement;
+
+		if (progressBarEl) {
+			progressBarEl.style.width = '0%';
+			progressBarEl.setAttribute('aria-valuenow', '0');
+		}
+		
 		try {
 			const response = await fetch(
 				env.PUBLIC_HAKESCH_API_PATH + '/discharge/calculate_project?ProjectId=' + project_id,
@@ -1394,7 +1400,7 @@ function ensureIdfInputs() {
 			getGroupStatus(payload.task_id);
 		} catch (error) {
 			handleApiError('calculateProject failed', error);
-			toast.pop();
+			(globalThis as any).$('#calculation-progress-modal').modal('hide');
 		}
 	}
 	function getGroupStatus(taskID: String) {
@@ -1407,14 +1413,25 @@ function ensureIdfInputs() {
 		})
 			.then((response) => response.json())
 			.then((res) => {
-				// write out the state
-				const actTime = new Date();
-				//let html = `${actTime.toUTCString()} ${res.task_status} `;
-				let html = ``;
 				const completed = res.completed;
 				const total = res.total;
+				const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+				
+				// Update progress bar
+				const progressBarEl = document.querySelector('#calculation-progress-modal .progress-bar') as HTMLElement;
+				const progressTextEl = document.getElementById('calculation-progresstext');
+				
+				if (progressBarEl) {
+					progressBarEl.style.width = progress + '%';
+					progressBarEl.setAttribute('aria-valuenow', progress.toString());
+				}
+				
+				if (progressTextEl) {
+					progressTextEl.innerHTML = `${completed} / ${total} (${progress}%)`;
+				}
+				
 				if (completed === total) {
-					toast.pop();
+					(globalThis as any).$('#calculation-progress-modal').modal('hide');
 					toast.push($_('page.discharge.calculation.calcsuccess'), {
 						theme: {
 							'--toastColor': 'mintcream',
@@ -1425,7 +1442,7 @@ function ensureIdfInputs() {
 					invalidateAll();
 					return;
 				} else if (res.status === 'FAILURE') {
-					toast.pop();
+					(globalThis as any).$('#calculation-progress-modal').modal('hide');
 					toast.push(
 						'<h3 style="padding:5;">' +
 							$_('page.discharge.calculation.calcerror') +
@@ -1448,7 +1465,10 @@ function ensureIdfInputs() {
 					getGroupStatus(res.group_id);
 				}, 1000);
 			})
-			.catch((err) => console.log(err));
+			.catch((err) => {
+				console.log(err);
+				(globalThis as any).$('#calculation-progress-modal').modal('hide');
+			});
 	}
 
 	async function getMultipleGroupStatus(groupTaskIds: string[]) {
@@ -1744,6 +1764,40 @@ function ensureIdfInputs() {
 					class="btn btn-danger"
 					data-bs-dismiss="modal">{$_('page.general.close')}</button
 				>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Calculation Progress Modal -->
+<div
+	id="calculation-progress-modal"
+	class="modal fade"
+	tabindex="-1"
+	role="dialog"
+	aria-labelledby="calculation-progress-modal-label"
+	aria-hidden="true"
+	data-bs-backdrop="static"
+	data-bs-keyboard="false"
+>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="calculation-progress-modal-label">
+					{$_('page.discharge.calculation.calcrunning')}
+				</h4>
+			</div>
+			<div class="modal-body">
+				<div class="progress mb-2">
+					<div
+						class="progress-bar"
+						role="progressbar"
+						style="width: 0%"
+						aria-valuenow="0"
+						aria-valuemin="0"
+						aria-valuemax="100"
+					></div>
+				</div>
 			</div>
 		</div>
 	</div>
