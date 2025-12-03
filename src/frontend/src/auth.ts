@@ -19,14 +19,10 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 		// This allows it to work with both www and non-www domains automatically
 		// Only set url explicitly if you need to override this behavior
 		// AUTH_URL should be the base URL WITHOUT the SvelteKit base path (/abfluss)
-		...(env.AUTH_URL && { url: env.AUTH_URL }),
 		debug: true,
 		callbacks: {
 			async jwt({ token, account }) {
 				if (account) {
-					console.log('jwt');
-					console.log(token);
-					console.log(account);
 					return {
 						...token,
 						access_token: account.access_token,
