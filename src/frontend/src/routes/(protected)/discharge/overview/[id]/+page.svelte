@@ -132,6 +132,7 @@
 
 						invalidateAll();
 						addIsozones();
+						addBranches();
 						globalThis.$('#generate-modal').modal('hide');
 					}
 					document.getElementById('progresstext')!.innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
