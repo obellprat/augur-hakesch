@@ -1,3 +1,15 @@
+## 1.0.0-alpha.1 (2025-12-03)
+
+### Feat
+
+- **frontend**: Infobutton with hoover for explanations
+- **frontend**: Show a progressbar while calculation
+
+### Fix
+
+- **frontend**: reload branches over the isozones after catchment analysis
+- **frontend**: HADES values with correct coordinate transformation
+
 ## 1.0.0-alpha.0 (2025-12-02)
 
 ### Feat
