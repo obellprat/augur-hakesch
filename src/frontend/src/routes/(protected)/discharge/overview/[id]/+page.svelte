@@ -1,7 +1,7 @@
 <script lang="ts">
 	import pageTitle from '$lib/page/pageTitle';
 	import type { ActionData, PageServerData } from './$types';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { currentProject } from '$lib/state.svelte';
 	import { enhance } from '$app/forms';
 	import { base } from '$app/paths';
@@ -51,13 +51,28 @@
 		apiErrorMessage = getApiErrorFallback();
 	});
 
+	// Track if component is mounted to prevent invalidateAll() calls after destruction
+	let isMounted = $state(true);
+	let statusCheckTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	// Safe wrapper for invalidateAll that checks if component is still mounted
+	function safeInvalidateAll() {
+		if (!isMounted) return;
+		try {
+			invalidateAll();
+		} catch (error) {
+			// Component may have been destroyed, ignore the error
+			console.debug('invalidateAll called after component destruction:', error);
+		}
+	}
+
 	async function calculateGeodatas() {
 		try {
 			await fetch('?/update', {
 				body: new FormData(document.getElementById('project-form') as HTMLFormElement),
 				method: 'post'
 			});
-			invalidateAll();
+			safeInvalidateAll();
 			const response = await fetch(
 				env.PUBLIC_HAKESCH_API_PATH +
 					'/discharge/prepare_discharge_hydroparameters?ProjectId=' +
@@ -94,6 +109,8 @@
 		globalThis.$('#api-error-modal').modal('show');
 	}
 	function getStatus(taskID: String) {
+		if (!isMounted) return;
+		
 		fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
 			method: 'GET',
 			headers: {
@@ -103,6 +120,8 @@
 		})
 			.then((response) => response.json())
 			.then((res) => {
+				if (!isMounted) return;
+				
 				// write out the state
 				const actTime = new Date();
 				try {
@@ -131,10 +150,18 @@
 						html = 'Die Geodaten wurden erfolgrech berechnet.';
 
 						globalThis.$('#generate-modal').modal('hide');
-						addIsozones();
-						
+						safeInvalidateAll();
+						if (isMounted) {
+							addIsozones();
+							addBranches();
+						}
 					}
-					document.getElementById('progresstext')!.innerHTML = html; // + '<br>' + document.getElementById('progresstext').innerHTML;
+					if (isMounted) {
+						const progressTextEl = document.getElementById('progresstext');
+						if (progressTextEl) {
+							progressTextEl.innerHTML = html;
+						}
+					}
 				} catch (e) {
 					console.log(e);
 				}
@@ -145,9 +172,11 @@
 					return false;
 				}
 
-				setTimeout(function () {
-					getStatus(taskID);
-				}, 1000);
+				if (isMounted) {
+					statusCheckTimeout = setTimeout(function () {
+						getStatus(taskID);
+					}, 1000);
+				}
 			})
 			.catch((err) => console.log(err));
 	}
@@ -389,6 +418,14 @@ onMount(async () => {
 			}
 		}
 	});
+
+	onDestroy(() => {
+		isMounted = false;
+		if (statusCheckTimeout) {
+			clearTimeout(statusCheckTimeout);
+			statusCheckTimeout = null;
+		}
+	});
 </script>
 
 <svelte:head>
@@ -404,7 +441,7 @@ onMount(async () => {
 			return async ({ update }) => {
 				await update();
 				currentProject.title = data.project.title;
-				invalidateAll();
+				safeInvalidateAll();
 			};
 		}}
 	>
