@@ -1,3 +1,14 @@
+## 1.0.0-alpha.2 (2025-12-10)
+
+### Feat
+
+- **frontend**: ClarkWSL Help modal
+
+### Fix
+
+- **frontend**: Remove the buttons for calculation and saving on the top right
+- **frontend**: InvalidateAll on project overview after recalculation shows also the geo-metadatas
+
 ## 1.0.0-alpha.1 (2025-12-03)
 
 ### Feat

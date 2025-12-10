@@ -488,10 +488,49 @@ def nam(self,
     
     # Calculate total storm precipitation for SCS method
 
+    # ------------------------------------------------------------
+    # 3. Calculate total storm precipitation for SCS method
+    # ------------------------------------------------------------
     # We need the total precipitation for the entire storm duration
+
+    # Raw IDF intensity for requested return period & climate scenario
     i_total = intensity_fn(rp_years=x, duration_minutes=Tc_total)  # [mm/h]
-    P_total_storm = i_total * Tc_total / 60  # [mm] - total storm precipitation
-    print(f"Total storm precipitation: {P_total_storm:.2f} mm over {Tc_total} minutes")
+    I_event = float(i_total)
+    duration_h = Tc_total / 60.0
+
+    # Reference intensity for 100-year CURRENT climate (no cc_factor)
+    try:
+        i_100_ref = intensity_fn(rp_years=100, duration_minutes=Tc_total)
+        I_ref_100 = float(i_100_ref)
+    except Exception:
+        # Fallback if 100a is outside the rp_low/rp_high range
+        I_ref_100 = I_event
+
+    # Soft limiter for extreme events:
+    # - Do nothing up to 100a current climate (keeps calibration)
+    # - For RP >= 300 OR any climate scenario above current,
+    #   reduce the extra growth above 100a.
+    k_extreme = 0.4  # 0 = no growth beyond 100a, 1 = full IDF; tune 0.3–0.5
+
+    if ((x >= 300) or (x >= 100 and cc_degree > 0.0)) and (I_event > I_ref_100):
+        I_eff = I_ref_100 + k_extreme * (I_event - I_ref_100)
+        print(
+            f"Extreme event adjustment: RP={x}, cc_degree={cc_degree}, "
+            f"I_event={I_event:.1f} mm/h, I_ref_100={I_ref_100:.1f} mm/h, "
+            f"I_eff={I_eff:.1f} mm/h (k_extreme={k_extreme:.2f})"
+        )
+    else:
+        I_eff = I_event
+        print(
+            f"No extreme adjustment: RP={x}, cc_degree={cc_degree}, "
+            f"I_event={I_event:.1f} mm/h, I_ref_100={I_ref_100:.1f} mm/h"
+        )
+
+    # Use effective intensity for the storm depth
+    P_total_storm = I_eff * duration_h  # [mm]
+    print(f"Total storm precipitation (effective): {P_total_storm:.2f} mm over {Tc_total} minutes")
+
+
     
     # Check if P_total_storm is sufficient to generate runoff
     mean_Ia = np.nanmean(Ia_cells[valid_mask])
@@ -508,6 +547,11 @@ def nam(self,
     
     print(f"Starting distributed NAM calculation with {max_timesteps} timesteps...")
     
+    # Initialise storm stats (will be overwritten once storm_distribution is built)
+    max_precip = float("nan")
+    min_precip = float("nan")
+    mean_precip = float("nan")
+
     # Create natural storm distribution (circular storm with maximum at center)
     if storm_center_mode == "user_point":
         storm_location = "user-provided point"
@@ -567,56 +611,80 @@ def nam(self,
         center_col = int(np.mean(valid_indices[1]))
         print(f"Storm center at catchment centroid: ({center_row}, {center_col})")
     # Large stratiform storm
-    storm_radius_km = 4.0
+    # ------------------------------------------------------------
+    # 3a. Storm geometry (same base behaviour as original)
+    # ------------------------------------------------------------
+    storm_radius_km = 4.0  # large stratiform storm
 
-    # Create storm distribution with physically meaningful radius for Swiss storms
     # Get grid resolution in meters (EPSG:2056 coordinates)
     cell_size_m = abs(cn_transform.a)  # meters per pixel in x direction
     if cell_size_m <= 0:
-        cell_size_m = 5.0  # fallback to typical 30m resolution
-    
-    # Define storm radius in kilometers based on typical Swiss storm characteristics
-    # Can be overridden by setting storm_radius_km variable
-    try:
-        storm_radius_km = storm_radius_km
-    except NameError:
-        # Default: convective storm ~3km radius (typical for Swiss summer storms)
-        storm_radius_km = 3.0
-    
-    # Convert to pixels
+        cell_size_m = 5.0  # fallback
+
+    # Convert radius to pixels
     storm_radius_pixels = (storm_radius_km * 1000.0) / cell_size_m
-    
-    print(f"Storm parameters: radius={storm_radius_km:.1f}km ({storm_radius_pixels:.1f} pixels), cell_size={cell_size_m:.1f}m")
-    
-    # Calculate distance from storm center for each cell
-    rows, cols = np.meshgrid(np.arange(cn_data.shape[0]), np.arange(cn_data.shape[1]), indexing='ij')
-    distances = np.sqrt((rows - center_row)**2 + (cols - center_col)**2)
-    
-    # Create storm distribution: maximum at center, decreases with distance
-    # Option 1: Exponential decay (more realistic for convective storms)
-    storm_distribution = P_total_storm * np.exp(-distances / storm_radius_pixels)
-    
-    # Option 2: Gaussian distribution (alternative, more gradual decay)
-    #storm_distribution = P_total_storm * np.exp(-(distances / storm_radius_pixels)**2)
-    
-    # Option 3: Linear decay (simpler, more uniform)
-    #storm_distribution = P_total_storm * np.maximum(0, 1 - distances / storm_radius_pixels)
-    
-    # Ensure no negative precipitation
-    storm_distribution = np.maximum(storm_distribution, 0)
-    
-    # Apply storm distribution to valid cells only
-    remaining_water[valid_mask] = storm_distribution[valid_mask]
-    
-    # Calculate statistics
-    max_precip = np.max(storm_distribution[valid_mask])
-    min_precip = np.min(storm_distribution[valid_mask])
-    mean_precip = np.mean(storm_distribution[valid_mask])
-    
-    print(f"Storm distribution: max={max_precip:.2f}mm, min={min_precip:.2f}mm, mean={mean_precip:.2f}mm")
-    print(f"Total water applied: {np.sum(remaining_water[valid_mask]):.2f} mm")
-    
-    print(f"Initial water balance: {np.sum(remaining_water[valid_mask]):.2f} mm total water")
+
+    # Event intensity from IDF [mm/h] for this storm (already computed above)
+    I_event = float(i_total)           # [mm/h]
+    duration_h = Tc_total / 60.0       # [h]
+
+    print(
+        f"Storm parameters: radius={storm_radius_km:.1f}km "
+        f"({storm_radius_pixels:.1f} px), cell_size={cell_size_m:.1f}m, "
+        f"I_event={I_event:.1f} mm/h, duration={duration_h:.2f} h"
+    )
+
+    # ------------------------------------------------------------
+    # 3b. Original exponential field (reference for mean)
+    # ------------------------------------------------------------
+    rows, cols = np.meshgrid(
+        np.arange(cn_data.shape[0]),
+        np.arange(cn_data.shape[1]),
+        indexing="ij",
+    )
+    distances = np.sqrt((rows - center_row) ** 2 + (cols - center_col) ** 2)
+
+    # Original behaviour: exponential decay from storm center
+    base_kernel = np.exp(-distances / storm_radius_pixels)
+
+    # This reproduces your old storm_distribution before we started tweaking:
+    # storm_distribution_orig = P_total_storm * base_kernel
+    storm_distribution = P_total_storm * base_kernel  # [mm]
+
+    # Remember the original catchment-mean precipitation (so we don't change volume)
+    original_mean_precip = float(np.mean(storm_distribution[valid_mask]))
+
+    print(
+        f"Original storm (reference): mean={original_mean_precip:.2f}mm, "
+        f"max={float(np.max(storm_distribution[valid_mask])):.2f}mm"
+    )
+
+    # ------------------------------------------------------------
+    # 3c. Intensity cap: trim unrealistic local peaks ONLY
+    # ------------------------------------------------------------
+    # Convert to local intensity [mm/h] using storm duration
+    I_cells = storm_distribution / duration_h  # [mm/h]
+
+    # Allow local intensities up to some factor of the design event intensity
+    I_cap_factor = 1.2   # tune in 1.1–1.4 range; start with 1.2
+    I_cap = I_cap_factor * I_event
+
+    high_mask = (I_cells > I_cap) & valid_mask
+    if np.any(high_mask):
+        print(
+            f"Intensity capping: {np.sum(high_mask)} cells exceed "
+            f"{I_cap:.1f} mm/h ({I_cap_factor:.1f} × I_event)"
+        )
+
+        # Cap intensities
+        I_cells[high_mask] = I_cap
+        storm_distribution[high_mask] = I_cells[high_mask] * duration_h
+
+        # After capping, renormalise to keep the SAME mean as original
+        mean_after_cap = float(np.mean(storm_distribution[valid_mask]))
+        if mean_after_cap > 0:
+            scale_back = original_mean_precip / mean_afte
+
     
     # Save rain distribution as TIFF file
     try:
