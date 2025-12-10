@@ -1844,6 +1844,99 @@ function ensureIdfInputs() {
 	</div>
 </div>
 
+<!-- ClarkWSL Help Modal -->
+<div
+	id="clarkwsl-help-modal"
+	class="modal fade"
+	tabindex="-1"
+	role="dialog"
+	aria-labelledby="clarkwsl-help-modal-label"
+	aria-hidden="true"
+>
+	<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="clarkwsl-help-modal-label">
+					ClarkWSL - Abflussprozesse
+				</h4>
+				<button
+					type="button"
+					class="btn-close"
+					data-bs-dismiss="modal"
+					aria-label={$_('page.general.close')}
+				></button>
+			</div>
+			<div class="modal-body">
+				<p>
+					Bei der Hochwasserabflussbildung spielen neben der Dauer und der Intensität von Starkniederschlägen und der Grösse/Topographie des Einzugsgebiets die auftretenden Abflussprozesse eine entscheidende Rolle. Zu den wichtigsten bei Starkregen auftretenden Abflussprozessen zählen der Oberflächenabfluss aufgrund von Infiltrationshemmnissen (HOF), der gesättigte Oberflächenabfluss (SOF), der Abfluss im Boden (SSF) und die Tiefenversickerung (DP). Die Abflussprozesstypen können zusätzlich nach ihrer Reaktion in rasch beitragend (z.B. SSF1), verzögert beitragend (z.B. SSF2) und stark verzögert beitragend (z.B. SSF3) unterschieden werden. Methoden zur Bestimmung der im Einzugsgebiet auftretenden Abflussprozesse sind z.B. in [1], [2] oder [3] beschrieben.
+				</p>
+				<p>
+					Eine flächendifferenzierte Ansprache der Abflusstypen mit Zuordnung der Reaktionsfreudigkeit erfordert einen hohen Arbeitsaufwand und ist mit Unschärfen verbunden. Stattdessen wird vorgeschlagen, die Abflussprozesse nach ihrer Abflussreaktion in Abflussklassen zu unterteilen:
+				</p>
+				<table class="table table-sm table-bordered">
+					<thead>
+						<tr>
+							<th>Abflussreaktion Klasse</th>
+							<th>Beschreibung</th>
+							<th>Abflussprozesse</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Klasse 1</td>
+							<td>rasch und stark beitragend</td>
+							<td>HOF1, SOF1</td>
+						</tr>
+						<tr>
+							<td>Klasse 2</td>
+							<td>leicht verzögert beitragend</td>
+							<td>HOF2, SOF2, SSF1</td>
+						</tr>
+						<tr>
+							<td>Klasse 3</td>
+							<td>verzögert beitragend</td>
+							<td>SOF3, SSF2</td>
+						</tr>
+						<tr>
+							<td>Klasse 4</td>
+							<td>stark verzögert beitragend</td>
+							<td>SOF3, SSF3</td>
+						</tr>
+						<tr>
+							<td>Klasse 5</td>
+							<td>sehr stark verzögert beitragend</td>
+							<td>DP</td>
+						</tr>
+					</tbody>
+				</table>
+				<p class="mt-3">
+					<strong>Literatur:</strong>
+				</p>
+				<ol>
+					<li>
+						«Hochwasserabschätzung in schweizerischen Einzugsgebieten Praxishilfe Berichte des BWG, Serie Wasser Nr. 4, Bern 2003.
+					</li>
+					<li>
+						«Automatisch hergeleitete Abflussprozesskarten – ein neues Werkzeug zur Abschätzung von Hochwasserabflüssen, Felix Naef et al., «Wasser Energie Luft» – 99. Jahrgang, 2007, Heft 3, CH-5401 Baden.
+					</li>
+					<li>
+						Scherrer, S. (2006): Bestimmungsschlüssel zur Identifikation von hochwasserrelevanten Flächen, Herausgeber: Landesamt für Umwelt, Wasserwirtschaft und Gewerbeaufsicht Rheinland-Pfalz (LUWG).
+					</li>
+				</ol>
+			</div>
+			<div class="modal-footer">
+				<button
+					type="button"
+					class="btn btn-primary"
+					data-bs-dismiss="modal"
+				>
+					{$_('page.general.close')}
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <div class="flex-grow-1 card">
 	<div class="h-100">
 		<div class="card-header py-2 px-3 border-bottom">
@@ -2118,7 +2211,20 @@ function ensureIdfInputs() {
                             {#if clark_wsl.length > 0}
                                 <div class="col-12 col-xl-6">
                                     <section class="mb-5 mb-xl-0 h-100">
-                                        <h4 class="text-muted mb-3">{$_('page.discharge.calculation.clarkwslname')}</h4>
+                                        <h4 class="text-muted mb-3 d-flex align-items-center gap-2">
+                                            {$_('page.discharge.calculation.clarkwslname')}
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-link p-0"
+                                                style="line-height: 1; color: var(--bs-info);"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#clarkwsl-help-modal"
+                                                aria-label="ClarkWSL Hilfe"
+                                                title="ClarkWSL Hilfe"
+                                            >
+                                                <i class="ti ti-info-circle fs-18"></i>
+                                            </button>
+                                        </h4>
                                         {#each clarkScenarioRange as scenarioIndex}
 											<div class="row g-2 py-2 align-items-start">
 												<div class="mb-3 col-md-12 d-flex">
