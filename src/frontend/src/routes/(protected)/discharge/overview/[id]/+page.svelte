@@ -56,13 +56,17 @@
 	let statusCheckTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	// Safe wrapper for invalidateAll that checks if component is still mounted
-	function safeInvalidateAll() {
+	async function safeInvalidateAll() {
 		if (!isMounted) return;
 		try {
-			invalidateAll();
+			// invalidateAll() returns a Promise and needs to be awaited
+			await invalidateAll();
 		} catch (error) {
-			// Component may have been destroyed, ignore the error
-			console.debug('invalidateAll called after component destruction:', error);
+			// If invalidateAll fails (e.g., context lost or component destroyed), just log it
+			// Don't try to navigate as that can cause more issues
+			if (isMounted) {
+				console.debug('invalidateAll failed (component may be destroyed):', error);
+			}
 		}
 	}
 
@@ -72,7 +76,7 @@
 				body: new FormData(document.getElementById('project-form') as HTMLFormElement),
 				method: 'post'
 			});
-			safeInvalidateAll();
+			await safeInvalidateAll();
 			const response = await fetch(
 				env.PUBLIC_HAKESCH_API_PATH +
 					'/discharge/prepare_discharge_hydroparameters?ProjectId=' +
@@ -92,8 +96,14 @@
 				throw new Error('API Antwort ohne task_id');
 			}
 			const actTime = new Date();
-			document.getElementById('progresstext')!.innerHTML = `${actTime.toUTCString()} Starting`;
-			globalThis.$('.progress-bar').css('width', '0%').attr('aria-valuenow', 0);
+			const progressTextEl = document.getElementById('progresstext');
+			if (progressTextEl) {
+				progressTextEl.innerHTML = `${actTime.toUTCString()} Starting`;
+			}
+			const jq = (globalThis as any).$;
+			if (jq) {
+				jq('.progress-bar').css('width', '0%').attr('aria-valuenow', 0);
+			}
 			getStatus(payload.task_id);
 		} catch (error) {
 			console.error('calculateGeodatas failed', error);
@@ -105,8 +115,11 @@
 	function showApiErrorModal(detail?: string) {
 		const fallback = getApiErrorFallback();
 		apiErrorMessage = detail ? `${fallback} (${detail})` : fallback;
-		globalThis.$('#generate-modal').modal('hide');
-		globalThis.$('#api-error-modal').modal('show');
+		const jq = (globalThis as any).$;
+		if (jq) {
+			jq('#generate-modal').modal('hide');
+			jq('#api-error-modal').modal('show');
+		}
 	}
 	function getStatus(taskID: String) {
 		if (!isMounted) return;
@@ -135,10 +148,12 @@
 					) {
 						html = `${JSON.stringify(obj.text)}`;
 
-						globalThis
-							.$('.progress-bar')
-							.css('width', obj.progress + '%')
-							.attr('aria-valuenow', obj.progress);
+						const jq = (globalThis as any).$;
+						if (jq) {
+							jq('.progress-bar')
+								.css('width', obj.progress + '%')
+								.attr('aria-valuenow', obj.progress);
+						}
 					} else if (res.task_status == 'PENDING') {
 						html = 'Der Prozess wird intialisiert. Bitte warten...';
 					} else if (res.task_status == 'FAILURE') {
@@ -149,8 +164,14 @@
 					} else if (res.task_status == 'SUCCESS') {
 						html = 'Die Geodaten wurden erfolgrech berechnet.';
 
-						globalThis.$('#generate-modal').modal('hide');
-						safeInvalidateAll();
+						const jq = (globalThis as any).$;
+						if (jq) {
+							jq('#generate-modal').modal('hide');
+						}
+						// Call safeInvalidateAll without await to avoid blocking, errors are handled internally
+						safeInvalidateAll().catch(() => {
+							// Errors are already handled in safeInvalidateAll
+						});
 						if (isMounted) {
 							addIsozones();
 							addBranches();
@@ -182,110 +203,188 @@
 	}
 
 	function addCatchment() {
-		const catchmentSource = new VectorSource({
-			features: new GeoJSON().readFeatures(geojson, {
-				dataProjection: 'EPSG:2056',
-				featureProjection: map.getView().getProjection()
-			})
-		});
-
-		const catchmentLayer = new VectorLayer({
-			source: catchmentSource,
-			name: 'catchment',
-			style: new Style({
-				stroke: new Stroke({
-					color: 'orange',
-					lineDash: [4],
-					width: 3
-				}),
-				fill: new Fill({
-					color: 'rgba(0, 0, 255, 0.1)'
+		if (!geojson || !map) return;
+		
+		try {
+			const catchmentSource = new VectorSource({
+				features: new GeoJSON().readFeatures(geojson, {
+					dataProjection: 'EPSG:2056',
+					featureProjection: map.getView().getProjection()
 				})
-			})
-		});
+			});
 
-		map.getLayers().forEach((layer) => {
-			if (layer && layer.get('name') && layer.get('name') == 'catchment') {
-				map.removeLayer(layer);
-			}
-		});
+			const catchmentLayer = new VectorLayer({
+				source: catchmentSource,
+				name: 'catchment',
+				style: new Style({
+					stroke: new Stroke({
+						color: 'orange',
+						lineDash: [4],
+						width: 3
+					}),
+					fill: new Fill({
+						color: 'rgba(0, 0, 255, 0.1)'
+					})
+				})
+			});
 
-		map.addLayer(catchmentLayer);
+			map.getLayers().forEach((layer) => {
+				if (layer && layer.get('name') && layer.get('name') == 'catchment') {
+					map.removeLayer(layer);
+				}
+			});
+
+			map.addLayer(catchmentLayer);
+		} catch (error) {
+			// GeoJSON might be empty or invalid, just log and continue
+			console.debug('Failed to add catchment layer:', error);
+		}
 	}
 
 	function addBranches() {
-		const branchesSource = new VectorSource({
-			features: new GeoJSON().readFeatures(branches_geojson, {
-				dataProjection: 'EPSG:2056',
-				featureProjection: map.getView().getProjection()
-			})
-		});
-
-		const branchesLayer = new VectorLayer({
-			source: branchesSource,
-			name: 'branches',
-			style: new Style({
-				stroke: new Stroke({
-					color: 'blue',
-					width: 3
-				}),
-				fill: new Fill({
-					color: 'rgba(0, 0, 255, 0.1)'
+		if (!branches_geojson || !map) return;
+		
+		try {
+			const branchesSource = new VectorSource({
+				features: new GeoJSON().readFeatures(branches_geojson, {
+					dataProjection: 'EPSG:2056',
+					featureProjection: map.getView().getProjection()
 				})
-			})
-		});
+			});
 
-		map.getLayers().forEach((layer) => {
-			if (layer && layer.get('name') && layer.get('name') == 'branches') {
-				map.removeLayer(layer);
-			}
-		});
+			const branchesLayer = new VectorLayer({
+				source: branchesSource,
+				name: 'branches',
+				style: new Style({
+					stroke: new Stroke({
+						color: 'blue',
+						width: 3
+					}),
+					fill: new Fill({
+						color: 'rgba(0, 0, 255, 0.1)'
+					})
+				})
+			});
 
-		map.addLayer(branchesLayer);
+			map.getLayers().forEach((layer) => {
+				if (layer && layer.get('name') && layer.get('name') == 'branches') {
+					map.removeLayer(layer);
+				}
+			});
+
+			map.addLayer(branchesLayer);
+		} catch (error) {
+			// GeoJSON might be empty or invalid, just log and continue
+			console.debug('Failed to add branches layer:', error);
+		}
 	}
 
 	function addIsozones() {
-		const isozone_source = new GeoTIFF({
-			sources: [
-				{
-					url:
-						env.PUBLIC_HAKESCH_API_PATH +
-						'/data/' +
-						data.session.myuser.id +
-						'/' +
-						data.project.id +
-						'/isozones_cog.tif?rndstr=' +
-						Date.now()
+		if (!map) return;
+		
+		// Only load isozones if they exist (not empty taskid and not currently running)
+		// This prevents trying to load the file when it doesn't exist yet
+		if (!data.project.isozones_taskid || data.project.isozones_taskid === '' || data.project.isozones_running) {
+			// Remove existing isozone layer if it exists
+			map.getLayers().forEach((layer) => {
+				if (layer && layer.get('name') && layer.get('name') == 'isozone') {
+					map.removeLayer(layer);
 				}
-			],
-			normalize: false
-		});
+			});
+			return;
+		}
+		
+		// Set up a temporary unhandled rejection handler to suppress GeoTIFF errors
+		// The GeoTIFF source may fail to load if the file doesn't exist, which is expected
+		let rejectionHandler: ((event: PromiseRejectionEvent) => void) | null = null;
+		
+		try {
+			// Create a handler that suppresses errors related to isozones_cog.tif
+			rejectionHandler = (event: PromiseRejectionEvent) => {
+				const reason = event.reason;
+				// Check if this is a GeoTIFF AggregateError related to isozones
+				if (reason?.name === 'AggregateError' || 
+				    (reason?.errors && Array.isArray(reason.errors))) {
+					const errorString = JSON.stringify(reason);
+					if (errorString.includes('isozones_cog.tif') || 
+					    errorString.includes('Request failed')) {
+						// Suppress this error - file doesn't exist yet, which is expected
+						event.preventDefault();
+						return;
+					}
+				}
+			};
+			
+			// Add the handler temporarily
+			window.addEventListener('unhandledrejection', rejectionHandler);
+			
+			const isozone_source = new GeoTIFF({
+				sources: [
+					{
+						url:
+							env.PUBLIC_HAKESCH_API_PATH +
+							'/data/' +
+							data.session.myuser.id +
+							'/' +
+							data.project.id +
+							'/isozones_cog.tif?rndstr=' +
+							Date.now()
+					}
+				],
+				normalize: false
+			});
 
-		const isozone = new WebGLTileLayer({
-			source: isozone_source,
-			style: {
-				color: [
-					'interpolate',
-					['linear'],
-					['band', 1],
-					-1, // undefined
-					[0, 0, 0, 0],
-					0, // undefined
-					[255, 0, 0],
-					5,
-					[255, 210, 210]
-				]
+			// Suppress async errors from GeoTIFF source (e.g., 404 when file doesn't exist)
+			isozone_source.on('tileloaderror', () => {
+				// Silently handle tile load errors
+			});
+			
+			const isozone = new WebGLTileLayer({
+				source: isozone_source,
+				style: {
+					color: [
+						'interpolate',
+						['linear'],
+						['band', 1],
+						-1, // undefined
+						[0, 0, 0, 0],
+						0, // undefined
+						[255, 0, 0],
+						5,
+						[255, 210, 210]
+					]
+				}
+			});
+			
+			// Suppress errors on the layer
+			isozone.on('error', () => {
+				// Silently handle layer errors (file might not exist yet)
+			});
+			
+			isozone.set('name', 'isozone');
+
+			map.getLayers().forEach((layer) => {
+				if (layer && layer.get('name') && layer.get('name') == 'isozone') {
+					map.removeLayer(layer);
+				}
+			});
+
+			map.addLayer(isozone);
+			
+			// Remove the rejection handler after a delay to allow async errors to be caught
+			setTimeout(() => {
+				if (rejectionHandler) {
+					window.removeEventListener('unhandledrejection', rejectionHandler);
+				}
+			}, 2000);
+		} catch (error) {
+			// Remove the rejection handler immediately on error
+			if (rejectionHandler) {
+				window.removeEventListener('unhandledrejection', rejectionHandler);
 			}
-		});
-		isozone.set('name', 'isozone');
-
-		map.getLayers().forEach((layer) => {
-			if (layer && layer.get('name') && layer.get('name') == 'isozone') {
-				map.removeLayer(layer);
-			}
-		});
-
-		map.addLayer(isozone);
+			// GeoTIFF might not exist yet or failed to load, just log and continue
+			console.debug('Failed to add isozones layer (file may not exist yet):', error);
+		}
 	}
 
 	async function downloadFile(url: string, filename: string) {
@@ -441,7 +540,7 @@ onMount(async () => {
 			return async ({ update }) => {
 				await update();
 				currentProject.title = data.project.title;
-				safeInvalidateAll();
+				await safeInvalidateAll();
 			};
 		}}
 	>
