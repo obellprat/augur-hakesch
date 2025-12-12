@@ -96,8 +96,8 @@
         "modFZV": {
           "peakFlow": "Abflussflusskoeffizient [psi]",
           "wettingVolume": "Benetzungsvolumen für 20-jähriges Ereignis [mm]",
-          "peakFlowTooltip": "Noch kein Text definiert",
-          "wettingVolumeTooltip": "Noch nicht definiert"
+          "peakFlowTooltip": "Plausible Werte liegen zwischen 0.08 und 0.4",
+          "wettingVolumeTooltip": "Plausible Werte liegen zwischen 20 mm - 45 mm"
         },
         "results": "Resultate",
         "returnPeriod": "Wiederkehrperiode",
