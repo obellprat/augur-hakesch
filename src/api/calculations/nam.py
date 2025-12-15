@@ -614,7 +614,7 @@ def nam(self,
     # ------------------------------------------------------------
     # 3a. Storm geometry (same base behaviour as original)
     # ------------------------------------------------------------
-    storm_radius_km = 4.0  # large stratiform storm
+    storm_radius_km = 8.0  # large stratiform storm
 
     # Get grid resolution in meters (EPSG:2056 coordinates)
     cell_size_m = abs(cn_transform.a)  # meters per pixel in x direction
