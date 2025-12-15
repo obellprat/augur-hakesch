@@ -1,3 +1,9 @@
+## 1.0.0 (2025-12-15)
+
+### Feat
+
+- **frontend**: NAM calibration of storm event
+
 ## 1.0.0-alpha.2 (2025-12-10)
 
 ### Feat
