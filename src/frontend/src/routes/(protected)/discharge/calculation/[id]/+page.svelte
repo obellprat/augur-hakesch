@@ -293,14 +293,14 @@ type NamScenarioForm = ScenarioIdentifiers & {
 						max: maxDischarge * 1.1,
 						labels: {
 							formatter: function (val: number) {
-								return val.toFixed(2);
+								return val.toFixed(1);
 							}
 						}
 					},
 					tooltip: {
 						y: {
 							formatter: function (val: number) {
-								return val.toFixed(2) + ' ' + $_('page.discharge.calculation.chart.dischargeTooltip');
+								return val.toFixed(1) + ' ' + $_('page.discharge.calculation.chart.dischargeTooltip');
 							}
 						},
 						x: {
@@ -432,14 +432,14 @@ type NamScenarioForm = ScenarioIdentifiers & {
 						max: maxDischarge * 1.1, // Slightly above max for better visualization
 						labels: {
 							formatter: function (val: number) {
-								return val.toFixed(2);
+								return val.toFixed(1);
 							}
 						}
 					},
 					tooltip: {
 						y: {
 							formatter: function (val: number) {
-								return val.toFixed(2) + ' ' + $_('page.discharge.calculation.chart.dischargeTooltip');
+								return val.toFixed(1) + ' ' + $_('page.discharge.calculation.chart.dischargeTooltip');
 							}
 						},
 						x: {
@@ -603,7 +603,7 @@ function ensureIdfInputs() {
 	let koella = $state(data.project.Koella || []);
 	let clark_wsl = $state(data.project.ClarkWSL || []);
 	let nam = $state(data.project.NAM || []);
-	//k.Koella_Result?.HQ.toFixed(2)
+	//k.Koella_Result?.HQ.toFixed(1)
 
 	// Group calculations by scenarios (groups of 3 annualities)
 	// Each scenario should have entries for annualities 2.3, 20, and 100
@@ -825,17 +825,17 @@ function ensureIdfInputs() {
 		
 		mod_fliesszeit_data.data.push(
 			getResultField(mf_23, 'Mod_Fliesszeit_Result')?.HQ
-				? Number(getResultField(mf_23, 'Mod_Fliesszeit_Result').HQ.toFixed(2))
+				? Number(getResultField(mf_23, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
 				: null
 		);
 		mod_fliesszeit_data.data.push(
 			getResultField(mf_20, 'Mod_Fliesszeit_Result')?.HQ
-				? Number(getResultField(mf_20, 'Mod_Fliesszeit_Result').HQ.toFixed(2))
+				? Number(getResultField(mf_20, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
 				: null
 		);
 		mod_fliesszeit_data.data.push(
 			getResultField(mf_100, 'Mod_Fliesszeit_Result')?.HQ
-				? Number(getResultField(mf_100, 'Mod_Fliesszeit_Result').HQ.toFixed(2))
+				? Number(getResultField(mf_100, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
 				: null
 		);
 		let koella_data: { name: string; color: string; data: (number | null)[] } = {
@@ -849,17 +849,17 @@ function ensureIdfInputs() {
 		
 		koella_data.data.push(
 			getResultField(k_23, 'Koella_Result')?.HQ
-				? Number(getResultField(k_23, 'Koella_Result').HQ.toFixed(2))
+				? Number(getResultField(k_23, 'Koella_Result').HQ.toFixed(1))
 				: null
 		);
 		koella_data.data.push(
 			getResultField(k_20, 'Koella_Result')?.HQ
-				? Number(getResultField(k_20, 'Koella_Result').HQ.toFixed(2))
+				? Number(getResultField(k_20, 'Koella_Result').HQ.toFixed(1))
 				: null
 		);
 		koella_data.data.push(
 			getResultField(k_100, 'Koella_Result')?.HQ
-				? Number(getResultField(k_100, 'Koella_Result').HQ.toFixed(2))
+				? Number(getResultField(k_100, 'Koella_Result').HQ.toFixed(1))
 				: null
 		);
 		let clark_wsl_data: { name: string; color: string; data: (number | null)[] } = {
@@ -873,17 +873,17 @@ function ensureIdfInputs() {
 		
 		clark_wsl_data.data.push(
 			getResultField(c_23, 'ClarkWSL_Result')?.Q
-				? Number(getResultField(c_23, 'ClarkWSL_Result').Q.toFixed(2))
+				? Number(getResultField(c_23, 'ClarkWSL_Result').Q.toFixed(1))
 				: null
 		);
 		clark_wsl_data.data.push(
 			getResultField(c_20, 'ClarkWSL_Result')?.Q
-				? Number(getResultField(c_20, 'ClarkWSL_Result').Q.toFixed(2))
+				? Number(getResultField(c_20, 'ClarkWSL_Result').Q.toFixed(1))
 				: null
 		);
 		clark_wsl_data.data.push(
 			getResultField(c_100, 'ClarkWSL_Result')?.Q
-				? Number(getResultField(c_100, 'ClarkWSL_Result').Q.toFixed(2))
+				? Number(getResultField(c_100, 'ClarkWSL_Result').Q.toFixed(1))
 				: null
 		);
 		let nam_data: { name: string; color: string; data: (number | null)[] } = {
@@ -897,17 +897,17 @@ function ensureIdfInputs() {
 		
 		nam_data.data.push(
 			getResultField(n_23, 'NAM_Result')?.HQ
-				? Number(getResultField(n_23, 'NAM_Result').HQ.toFixed(2))
+				? Number(getResultField(n_23, 'NAM_Result').HQ.toFixed(1))
 				: null
 		);
 		nam_data.data.push(
 			getResultField(n_20, 'NAM_Result')?.HQ
-				? Number(getResultField(n_20, 'NAM_Result').HQ.toFixed(2))
+				? Number(getResultField(n_20, 'NAM_Result').HQ.toFixed(1))
 				: null
 		);
 		nam_data.data.push(
 			getResultField(n_100, 'NAM_Result')?.HQ
-				? Number(getResultField(n_100, 'NAM_Result').HQ.toFixed(2))
+				? Number(getResultField(n_100, 'NAM_Result').HQ.toFixed(1))
 				: null
 		);
 		chartOneOptions.series = [mod_fliesszeit_data, koella_data, clark_wsl_data, nam_data];
@@ -2518,16 +2518,16 @@ function ensureIdfInputs() {
 																		{/if}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
-																		{mod_fz.Mod_Fliesszeit_Result?.HQ ? mod_fz.Mod_Fliesszeit_Result.HQ.toFixed(2) : '-'}
+																		{mod_fz.Mod_Fliesszeit_Result?.HQ ? mod_fz.Mod_Fliesszeit_Result.HQ.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
-																		{mod_fz.Mod_Fliesszeit_Result_1_5?.HQ ? mod_fz.Mod_Fliesszeit_Result_1_5.HQ.toFixed(2) : '-'}
+																		{mod_fz.Mod_Fliesszeit_Result_1_5?.HQ ? mod_fz.Mod_Fliesszeit_Result_1_5.HQ.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
-																		{mod_fz.Mod_Fliesszeit_Result_2?.HQ ? mod_fz.Mod_Fliesszeit_Result_2.HQ.toFixed(2) : '-'}
+																		{mod_fz.Mod_Fliesszeit_Result_2?.HQ ? mod_fz.Mod_Fliesszeit_Result_2.HQ.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
-																		{mod_fz.Mod_Fliesszeit_Result_3?.HQ ? mod_fz.Mod_Fliesszeit_Result_3.HQ.toFixed(2) : '-'}
+																		{mod_fz.Mod_Fliesszeit_Result_3?.HQ ? mod_fz.Mod_Fliesszeit_Result_3.HQ.toFixed(1) : '-'}
 																	</td>
 																</tr>
 															{/each}
@@ -2558,16 +2558,16 @@ function ensureIdfInputs() {
 																		{/if}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
-																		{k.Koella_Result?.HQ ? k.Koella_Result.HQ.toFixed(2) : '-'}
+																		{k.Koella_Result?.HQ ? k.Koella_Result.HQ.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
-																		{k.Koella_Result_1_5?.HQ ? k.Koella_Result_1_5.HQ.toFixed(2) : '-'}
+																		{k.Koella_Result_1_5?.HQ ? k.Koella_Result_1_5.HQ.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
-																		{k.Koella_Result_2?.HQ ? k.Koella_Result_2.HQ.toFixed(2) : '-'}
+																		{k.Koella_Result_2?.HQ ? k.Koella_Result_2.HQ.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
-																		{k.Koella_Result_3?.HQ ? k.Koella_Result_3.HQ.toFixed(2) : '-'}
+																		{k.Koella_Result_3?.HQ ? k.Koella_Result_3.HQ.toFixed(1) : '-'}
 																	</td>
 																</tr>
 															{/each}
@@ -2598,16 +2598,16 @@ function ensureIdfInputs() {
 																		{/if}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
-																		{k.ClarkWSL_Result?.Q ? k.ClarkWSL_Result.Q.toFixed(2) : '-'}
+																		{k.ClarkWSL_Result?.Q ? k.ClarkWSL_Result.Q.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
-																		{k.ClarkWSL_Result_1_5?.Q ? k.ClarkWSL_Result_1_5.Q.toFixed(2) : '-'}
+																		{k.ClarkWSL_Result_1_5?.Q ? k.ClarkWSL_Result_1_5.Q.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
-																		{k.ClarkWSL_Result_2?.Q ? k.ClarkWSL_Result_2.Q.toFixed(2) : '-'}
+																		{k.ClarkWSL_Result_2?.Q ? k.ClarkWSL_Result_2.Q.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
-																		{k.ClarkWSL_Result_3?.Q ? k.ClarkWSL_Result_3.Q.toFixed(2) : '-'}
+																		{k.ClarkWSL_Result_3?.Q ? k.ClarkWSL_Result_3.Q.toFixed(1) : '-'}
 																	</td>
 																</tr>
 															{/each}
@@ -2638,16 +2638,16 @@ function ensureIdfInputs() {
 																		{/if}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
-																		{n.NAM_Result?.HQ ? n.NAM_Result.HQ.toFixed(2) : '-'}
+																		{n.NAM_Result?.HQ ? n.NAM_Result.HQ.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
-																		{n.NAM_Result_1_5?.HQ ? n.NAM_Result_1_5.HQ.toFixed(2) : '-'}
+																		{n.NAM_Result_1_5?.HQ ? n.NAM_Result_1_5.HQ.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
-																		{n.NAM_Result_2?.HQ ? n.NAM_Result_2.HQ.toFixed(2) : '-'}
+																		{n.NAM_Result_2?.HQ ? n.NAM_Result_2.HQ.toFixed(1) : '-'}
 																	</td>
 																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
-																		{n.NAM_Result_3?.HQ ? n.NAM_Result_3.HQ.toFixed(2) : '-'}
+																		{n.NAM_Result_3?.HQ ? n.NAM_Result_3.HQ.toFixed(1) : '-'}
 																	</td>
 																</tr>
 															{/each}
