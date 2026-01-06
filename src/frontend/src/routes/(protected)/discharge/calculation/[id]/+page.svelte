@@ -1649,10 +1649,10 @@ function ensureIdfInputs() {
 			const data100y24h = precipitationData.data['100_years_24h'];
 			
 			// Fill in the form values using reactive state
-			pLow1h = Math.round(data30y60m.probability_levels['50%']*100)/100;
-			pHigh1h = Math.round(data100y60m.probability_levels['50%']*100)/100;
-			pLow24h = Math.round(data30y24h.probability_levels['50%']*100)/100;
-			pHigh24h = Math.round(data100y24h.probability_levels['50%']*100)/100;
+			pLow1h = Math.round(Math.round(data30y60m.probability_levels['50%']*100)/100);
+			pHigh1h = Math.round(Math.round(data100y60m.probability_levels['50%']*100)/100);
+			pLow24h = Math.round(Math.round(data30y24h.probability_levels['50%']*100)/100);
+			pHigh24h = Math.round(Math.round(data100y24h.probability_levels['50%']*100)/100);
 			
 			// Set return periods
 			rpLow = 30;
@@ -2024,6 +2024,14 @@ function ensureIdfInputs() {
                         <h4 class="text-muted">
                             {$_('page.discharge.calculation.inputsForPrecipitationIntensity')}
                         </h4>
+						<div class="d-flex align-items-center gap-2 mt-3 mb-3">
+                            <button type="button" class="btn btn-secondary" onclick={fetchHadesValues} disabled={isFetchingHades}>
+                                {#if isFetchingHades}
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                {/if}
+                                {$_('page.discharge.calculation.hadesValues')}
+                            </button>
+                        </div>
                         <div class="row g-2 py-2 align-items-end">
                             <div class="mb-3 col-md-6">
                                 <label for="P_low_1h" class="form-label">
@@ -2099,14 +2107,6 @@ function ensureIdfInputs() {
                                     {/each}
                                 </select>
                             </div>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <button type="button" class="btn btn-secondary" onclick={fetchHadesValues} disabled={isFetchingHades}>
-                                {#if isFetchingHades}
-                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                {/if}
-                                {$_('page.discharge.calculation.hadesValues')}
-                            </button>
                         </div>
                     </section>
 
