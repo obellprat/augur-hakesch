@@ -1992,34 +1992,6 @@ function ensureIdfInputs() {
                         <input type="hidden" name="payload" value={bulkPayload} />
                     </form>
 
-                    <div class="d-flex flex-wrap gap-2 mb-4">
-                        <button
-                            type="button"
-                            class="btn btn-primary d-flex align-items-center gap-2"
-                            onclick={() => bulkSaveForm?.requestSubmit()}
-                            disabled={isBulkSaving}
-                            title={$_('page.general.save')}
-                            aria-label={$_('page.general.save')}
-                        >
-                            {#if isBulkSaving}
-                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            {/if}
-                            <i class="ti ti-device-floppy fs-20"></i>
-                            <span>{$_('page.general.save')}</span>
-                        </button>
-                        <button
-                            type="button"
-                            class="btn btn-outline-primary d-flex align-items-center gap-2"
-                            onclick={() => calculateProject(data.project.id)}
-                            disabled={!couldCalculate || isBulkSaving}
-                            title={$_('page.general.calculate')}
-                            aria-label={$_('page.general.calculate')}
-                        >
-                            <i class="ti ti-calculator fs-20"></i>
-                            <span>{$_('page.general.calculate')}</span>
-                        </button>
-                    </div>
-
                     <section class="mb-5">
                         <h4 class="text-muted">
                             {$_('page.discharge.calculation.inputsForPrecipitationIntensity')}
@@ -2425,6 +2397,35 @@ function ensureIdfInputs() {
                             {/if}
                         </div>
                     {/if}
+
+					<div class="d-flex flex-wrap gap-2 mb-4">
+                        <button
+                            type="button"
+                            class="btn btn-primary d-flex align-items-center gap-2"
+                            onclick={() => bulkSaveForm?.requestSubmit()}
+                            disabled={isBulkSaving}
+                            title={$_('page.general.save')}
+                            aria-label={$_('page.general.save')}
+                        >
+                            {#if isBulkSaving}
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            {/if}
+                            <i class="ti ti-device-floppy fs-20"></i>
+                            <span>{$_('page.general.save')}</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-outline-primary d-flex align-items-center gap-2"
+                            onclick={() => calculateProject(data.project.id)}
+                            disabled={!couldCalculate || isBulkSaving}
+                            title={$_('page.general.calculate')}
+                            aria-label={$_('page.general.calculate')}
+                        >
+                            <i class="ti ti-calculator fs-20"></i>
+                            <span>{$_('page.general.calculate')}</span>
+                        </button>
+                    </div>
+
                 </div>
 				<!-- End of Input Part -->
 				<!-- Results Part -->
