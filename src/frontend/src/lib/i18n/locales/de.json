@@ -86,7 +86,7 @@
           "traveltime": "Pixelbasierte Zeitberechnung",
           "useOwnSoilData": "Eigene Bodendaten verwenden",
           "useOwnSoilDataHelp": "Es wurde ein eigenes Shapefile mit den Bodentypen (A, B, C und D) hochgeladen.",
-          "uploadZipFile": "ZIP-File (Shapefiles) hochladen",
+          "uploadZipFile": "CN-Number (Gezipptes Shapefiles) hochladen",
           "uploadZipFileHelp": "Es kann ein eigenes Shapefile mit den Bodentypen (A, B, C und D) erstellt und hier als ZIP-File hochgeladen werden.",
           "soilFileExists": "Es existiert eine eigene Bodenklassierung"
         },
@@ -113,7 +113,7 @@
           "upperReturnPeriod": "100-järige Wiederkehrperiode"
         },
         "modFZV": {
-          "peakFlow": "Abflussflusskoeffizient [psi]",
+          "peakFlow": "Abflussfluss- koeffizient [psi]",
           "wettingVolume": "Benetzungsvolumen für 20-jähriges Ereignis [mm]",
           "peakFlowTooltip": "Plausible Werte liegen zwischen 0.08 und 0.4",
           "wettingVolumeTooltip": "Plausible Werte liegen zwischen 20 mm - 45 mm"
@@ -132,7 +132,9 @@
         "hadesValuesSuccess": "HADES Werte erfolgreich geladen",
         "hadesValuesError": "Fehler beim Laden der HADES Werte",
         "hadesValuesNoCoordinates": "Keine Abflusspunkt-Koordinaten gefunden",
-        "climateScenario": "Klimaszenario"
+        "climateScenario": "Klimaszenario",
+        "hydrologicalCalculation": "Hydrologische Berechnungen",
+        "percentage": "Prozent (%)"
       }
     },
     "precipitation": {

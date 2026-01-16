@@ -22,32 +22,32 @@
 		ref?: ApexCharts;
 	};
 
-type ScenarioIdentifiers = {
-	ids: number[];
-	projectId: string;
-};
+	type ScenarioIdentifiers = {
+		ids: number[];
+		projectId: string;
+	};
 
-type ModScenarioForm = ScenarioIdentifiers & {
-	vo20: number;
-	psi: number;
-};
+	type ModScenarioForm = ScenarioIdentifiers & {
+		vo20: number;
+		psi: number;
+	};
 
-type KoellaScenarioForm = ScenarioIdentifiers & {
-	vo20: number;
-	glacier_area: number;
-};
+	type KoellaScenarioForm = ScenarioIdentifiers & {
+		vo20: number;
+		glacier_area: number;
+	};
 
-type ClarkScenarioForm = ScenarioIdentifiers & {
-	fractions: Record<string, number>;
-};
+	type ClarkScenarioForm = ScenarioIdentifiers & {
+		fractions: Record<string, number>;
+	};
 
-type NamScenarioForm = ScenarioIdentifiers & {
-	precipitation_factor: number;
-	readiness_to_drain: number;
-	water_balance_mode: string;
-	storm_center_mode: string;
-	routing_method: string;
-};
+	type NamScenarioForm = ScenarioIdentifiers & {
+		precipitation_factor: number;
+		readiness_to_drain: number;
+		water_balance_mode: string;
+		storm_center_mode: string;
+		routing_method: string;
+	};
 
 	function getPctForZone(zone: string, clarkwsl: any) {
 		if (clarkwsl.Fractions === undefined || clarkwsl.Fractions.length === 0) {
@@ -183,15 +183,17 @@ type NamScenarioForm = ScenarioIdentifiers & {
 
 		try {
 			// Sort by annuality number in ascending order
-			const sortedNamResults = namResults.slice().sort((a, b) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0));
-			
+			const sortedNamResults = namResults
+				.slice()
+				.sort((a, b) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0));
+
 			const series = [];
 			const colors = ['#1376ef', '#4a90e2', '#7bb3f0']; // Different shades of blue
 			let dischargeDataArray = [];
 			let globalStartIndex = Infinity;
 			let globalEndIndex = 0;
 			let dischargeDataIndex = 0;
-			
+
 			// First pass: collect all data and find the actual data range
 			for (let i = 0; i < sortedNamResults.length; i++) {
 				const nam = sortedNamResults[i];
@@ -199,11 +201,11 @@ type NamScenarioForm = ScenarioIdentifiers & {
 				if (namResult?.HQ_time) {
 					const dischargeData = JSON.parse(namResult.HQ_time);
 					dischargeDataArray.push(dischargeData);
-					
+
 					// Find the actual data range for this series
 					let startIndex = 0;
 					let endIndex = dischargeData.length;
-					
+
 					// Find first non-zero value
 					for (let j = 0; j < dischargeData.length; j++) {
 						if (dischargeData[j] > 0) {
@@ -211,7 +213,7 @@ type NamScenarioForm = ScenarioIdentifiers & {
 							break;
 						}
 					}
-					
+
 					// Find last non-zero value
 					for (let j = dischargeData.length - 1; j >= 0; j--) {
 						if (dischargeData[j] > 0) {
@@ -219,42 +221,45 @@ type NamScenarioForm = ScenarioIdentifiers & {
 							break;
 						}
 					}
-					
+
 					// Update global range
 					globalStartIndex = Math.min(globalStartIndex, startIndex);
 					globalEndIndex = Math.max(globalEndIndex, endIndex);
 				}
 			}
-			
+
 			// Create time scale only for the actual data range
 			const dataLength = globalEndIndex - globalStartIndex;
-			const timeSteps = Array.from({length: dataLength}, (_, index) => (globalStartIndex + index) * 10);
-			
+			const timeSteps = Array.from(
+				{ length: dataLength },
+				(_, index) => (globalStartIndex + index) * 10
+			);
+
 			// Process each annuality
 			for (let i = 0; i < sortedNamResults.length; i++) {
 				const nam = sortedNamResults[i];
 				const namResult = getResultField(nam, 'NAM_Result');
 				if (namResult?.HQ_time) {
 					const dischargeData = dischargeDataArray[dischargeDataIndex];
-					
+
 					// Extract only the relevant data range
 					const filteredData = dischargeData.slice(globalStartIndex, globalEndIndex);
-					
+
 					series.push({
 						name: nam.Annuality?.description || `Annuality ${i + 1}`,
 						data: filteredData,
 						color: colors[series.length % colors.length]
 					});
-					
+
 					dischargeDataIndex++;
 				}
 			}
-			
+
 			// Calculate overall data range for better scaling
 			const allSeriesData = series.flatMap((s: any) => s.data);
 			const maxDischarge = Math.max(...allSeriesData);
 			const minDischarge = Math.min(...allSeriesData);
-			
+
 			return {
 				options: {
 					series: series,
@@ -280,7 +285,7 @@ type NamScenarioForm = ScenarioIdentifiers & {
 							text: $_('page.discharge.calculation.chart.timeUnit')
 						},
 						labels: {
-							formatter: function(value: string) {
+							formatter: function (value: string) {
 								return parseInt(value).toString();
 							}
 						}
@@ -300,7 +305,9 @@ type NamScenarioForm = ScenarioIdentifiers & {
 					tooltip: {
 						y: {
 							formatter: function (val: number) {
-								return val.toFixed(1) + ' ' + $_('page.discharge.calculation.chart.dischargeTooltip');
+								return (
+									val.toFixed(1) + ' ' + $_('page.discharge.calculation.chart.dischargeTooltip')
+								);
 							}
 						},
 						x: {
@@ -311,7 +318,7 @@ type NamScenarioForm = ScenarioIdentifiers & {
 							}
 						}
 					},
-					
+
 					grid: {
 						show: true,
 						borderColor: '#e0e0e0'
@@ -361,11 +368,11 @@ type NamScenarioForm = ScenarioIdentifiers & {
 				min: Math.min(...dischargeData),
 				nonZeroCount: dischargeData.filter((x: number) => x > 0).length
 			});
-			
+
 			// Filter out leading and trailing zeros to focus on the actual discharge period
 			let startIndex = 0;
 			let endIndex = dischargeData.length;
-			
+
 			// Find first non-zero value
 			for (let i = 0; i < dischargeData.length; i++) {
 				if (dischargeData[i] > 0) {
@@ -373,7 +380,7 @@ type NamScenarioForm = ScenarioIdentifiers & {
 					break;
 				}
 			}
-			
+
 			// Find last non-zero value
 			for (let i = dischargeData.length - 1; i >= 0; i--) {
 				if (dischargeData[i] > 0) {
@@ -381,22 +388,24 @@ type NamScenarioForm = ScenarioIdentifiers & {
 					break;
 				}
 			}
-			
+
 			// Extract the relevant data range
 			const filteredData = dischargeData.slice(startIndex, endIndex);
 			const timeSteps = filteredData.map((_: any, index: number) => (startIndex + index) * 10); // 10-minute timesteps
-			
+
 			// Calculate data range for better scaling
 			const maxDischarge = Math.max(...filteredData);
 			const minDischarge = Math.min(...filteredData);
-			
+
 			return {
 				options: {
-					series: [{
-						name: $_('page.discharge.calculation.chart.discharge'),
-						data: filteredData,
-						color: '#1376ef'
-					}],
+					series: [
+						{
+							name: $_('page.discharge.calculation.chart.discharge'),
+							data: filteredData,
+							color: '#1376ef'
+						}
+					],
 					chart: {
 						type: 'line',
 						height: 200,
@@ -419,7 +428,7 @@ type NamScenarioForm = ScenarioIdentifiers & {
 							text: $_('page.discharge.calculation.chart.timeUnit')
 						},
 						labels: {
-							formatter: function(value: string) {
+							formatter: function (value: string) {
 								return parseInt(value).toString();
 							}
 						}
@@ -439,7 +448,9 @@ type NamScenarioForm = ScenarioIdentifiers & {
 					tooltip: {
 						y: {
 							formatter: function (val: number) {
-								return val.toFixed(1) + ' ' + $_('page.discharge.calculation.chart.dischargeTooltip');
+								return (
+									val.toFixed(1) + ' ' + $_('page.discharge.calculation.chart.dischargeTooltip')
+								);
 							}
 						},
 						x: {
@@ -483,44 +494,45 @@ type NamScenarioForm = ScenarioIdentifiers & {
 
 	currentProject.title = data.project.title;
 	currentProject.id = data.project.id;
-	let zones: { typ: string }[] = data.zones;
+	let zones: { typ: string; V0_20?: number; WSV?: number; psi?: number; alpha?: number }[] =
+		data.zones;
 
-const API_ERROR_KEY = 'page.discharge.overview.apiUnavailable';
-function getApiErrorFallback() {
-	return $_(API_ERROR_KEY);
-}
-let apiErrorMessage = $state(getApiErrorFallback());
-$effect(() => {
-	apiErrorMessage = getApiErrorFallback();
-});
-
-function showApiErrorModal(detail?: string) {
-	const fallback = getApiErrorFallback();
-	apiErrorMessage = detail ? `${fallback} (${detail})` : fallback;
-	(globalThis as any).$('#api-error-modal').modal('show');
-}
-
-function handleApiError(context: string, error: unknown) {
-	console.error(context, error);
-	const detail = error instanceof Error ? error.message : undefined;
-	showApiErrorModal(detail);
-}
-
-function hasValidIdfInputs() {
-	return pLow1h > 0 && pLow24h > 0 && pHigh1h > 0 && pHigh24h > 0;
-}
-
-function showMissingIdfModal() {
-	(globalThis as any).$('#missing-idf-modal').modal('show');
-}
-
-function ensureIdfInputs() {
-	if (hasValidIdfInputs()) {
-		return true;
+	const API_ERROR_KEY = 'page.discharge.overview.apiUnavailable';
+	function getApiErrorFallback() {
+		return $_(API_ERROR_KEY);
 	}
-	showMissingIdfModal();
-	return false;
-}
+	let apiErrorMessage = $state(getApiErrorFallback());
+	$effect(() => {
+		apiErrorMessage = getApiErrorFallback();
+	});
+
+	function showApiErrorModal(detail?: string) {
+		const fallback = getApiErrorFallback();
+		apiErrorMessage = detail ? `${fallback} (${detail})` : fallback;
+		(globalThis as any).$('#api-error-modal').modal('show');
+	}
+
+	function handleApiError(context: string, error: unknown) {
+		console.error(context, error);
+		const detail = error instanceof Error ? error.message : undefined;
+		showApiErrorModal(detail);
+	}
+
+	function hasValidIdfInputs() {
+		return pLow1h > 0 && pLow24h > 0 && pHigh1h > 0 && pHigh24h > 0;
+	}
+
+	function showMissingIdfModal() {
+		(globalThis as any).$('#missing-idf-modal').modal('show');
+	}
+
+	function ensureIdfInputs() {
+		if (hasValidIdfInputs()) {
+			return true;
+		}
+		showMissingIdfModal();
+		return false;
+	}
 
 	let isUploading = $state(false);
 	let couldCalculate = $state(false);
@@ -536,28 +548,34 @@ function ensureIdfInputs() {
 	let clarkScenarioForms = $state<ClarkScenarioForm[]>([]);
 	let namScenarioForms = $state<NamScenarioForm[]>([]);
 	let sharedVo20Values = $state<number[]>([]);
+	
+	// Track which values have been manually edited (so they don't get overwritten by calculations)
+	let manuallyEditedVo20 = $state<Set<number>>(new Set());
+	let manuallyEditedPsi = $state<Set<number>>(new Set());
+	let isInitialized = $state(false);
 
-	const createRange = (count: number): number[] => Array.from({ length: Math.max(count, 0) }, (_, index) => index);
+	const createRange = (count: number): number[] =>
+		Array.from({ length: Math.max(count, 0) }, (_, index) => index);
 	let combinedScenarioRange = $state<number[]>([]);
 	let clarkScenarioRange = $state<number[]>([]);
 	let namScenarioRange = $state<number[]>([]);
-	
+
 	// Climate scenario selection state
 	let selectedClimateScenario = $state<string>('current');
-	
+
 	// Climate scenario options
 	const climateScenarios = [
 		{ value: 'current', label: 'Current Climate' },
 		{ value: '1_5_degree', label: '+1.5°C' },
 		{ value: '2_degree', label: '+2.0°C' },
-		{ value: '3_degree', label: '+3.0°C' }	
+		{ value: '3_degree', label: '+3.0°C' }
 	];
-	
+
 	// Helper function to get the appropriate result field based on selected climate scenario
 	function getResultField(item: any, baseFieldName: string) {
 		if (!item) return undefined;
 		const fieldMap: Record<string, string> = {
-			'current': baseFieldName,
+			current: baseFieldName,
 			'1_5_degree': `${baseFieldName}_1_5`,
 			'2_degree': `${baseFieldName}_2`,
 			'3_degree': `${baseFieldName}_3`
@@ -614,12 +632,12 @@ function ensureIdfInputs() {
 		// Sort by ID to ensure consistent grouping
 		const sorted = [...calculations].sort((a, b) => a.id - b.id);
 		const scenarios = [];
-		
+
 		// Group every 3 consecutive entries as one scenario
 		for (let i = 0; i < sorted.length; i += 3) {
 			scenarios.push(sorted.slice(i, i + 3));
 		}
-		
+
 		return scenarios;
 	}
 
@@ -658,7 +676,7 @@ function ensureIdfInputs() {
 		const newClarkForms: ClarkScenarioForm[] = clark_wsl_scenarios.map((scenario) => {
 			const base = scenario[0];
 			const fractions: Record<string, number> = {};
-		(zones || []).forEach((zone: { typ: string }) => {
+			(zones || []).forEach((zone: { typ: string }) => {
 				const pct =
 					base?.Fractions?.find(
 						(fraction: { ZoneParameterTyp: string }) => fraction.ZoneParameterTyp === zone.typ
@@ -702,11 +720,44 @@ function ensureIdfInputs() {
 			}
 			return 0;
 		});
+		
+		// Check if database values differ from calculated values (indicating manual edits)
+		// Only do this on first initialization to avoid reactive loops
+		if (!isInitialized) {
+			const newManuallyEditedVo20 = new Set<number>();
+			const newManuallyEditedPsi = new Set<number>();
+			
+			// Compare database values with calculated values
+			for (let index = 0; index < Math.max(newModForms.length, newClarkForms.length); index++) {
+				if (newClarkForms[index] !== undefined) {
+					const calculatedVo20 = calculateSummaryV0_20(index);
+					const calculatedPsi = calculateSummaryPsi(index);
+					const dbVo20 = sharedVo20Values[index] ?? 0;
+					const dbPsi = newModForms[index]?.psi ?? 0;
+					
+					// If database value differs significantly from calculated, mark as manually edited
+					if (Math.abs(dbVo20 - calculatedVo20) > 0.01) {
+						newManuallyEditedVo20.add(index);
+					}
+					if (Math.abs(dbPsi - calculatedPsi) > 0.0001) {
+						newManuallyEditedPsi.add(index);
+					}
+				}
+			}
+			
+			manuallyEditedVo20 = newManuallyEditedVo20;
+			manuallyEditedPsi = newManuallyEditedPsi;
+			isInitialized = true;
+		}
 	}
 
 	function updateSharedVo20(index: number, value: number) {
 		const sanitized = sanitizeNumber(value);
-		sharedVo20Values = sharedVo20Values.map((current, idx) => (idx === index ? sanitized : current));
+		// Mark as manually edited
+		manuallyEditedVo20 = new Set([...manuallyEditedVo20, index]);
+		sharedVo20Values = sharedVo20Values.map((current, idx) =>
+			idx === index ? sanitized : current
+		);
 		modScenarioForms = modScenarioForms.map((scenario, idx) =>
 			idx === index ? { ...scenario, vo20: sanitized } : scenario
 		);
@@ -717,6 +768,8 @@ function ensureIdfInputs() {
 
 	function updateModPsi(index: number, value: number) {
 		const sanitized = sanitizeNumber(value);
+		// Mark as manually edited
+		manuallyEditedPsi = new Set([...manuallyEditedPsi, index]);
 		modScenarioForms = modScenarioForms.map((scenario, idx) =>
 			idx === index ? { ...scenario, psi: sanitized } : scenario
 		);
@@ -736,13 +789,86 @@ function ensureIdfInputs() {
 				? { ...scenario, fractions: { ...scenario.fractions, [zoneTyp]: sanitized } }
 				: scenario
 		);
+		
+		// Always recalculate and update psi and vo20 values when percentage changes
+		// This overwrites any previous manual edits when percentages are changed
+		// Assuming clark scenario index aligns with combined scenario index
+		const calculatedPsi = calculateSummaryPsi(index);
+		const calculatedVo20 = calculateSummaryV0_20(index);
+		
+		// Update psi in modScenarioForms if it exists
+		if (modScenarioForms[index] !== undefined) {
+			modScenarioForms = modScenarioForms.map((scenario, idx) =>
+				idx === index ? { ...scenario, psi: calculatedPsi } : scenario
+			);
+		}
+		
+		// Update vo20 in sharedVo20Values and both mod and koella forms
+		if (index < sharedVo20Values.length) {
+			sharedVo20Values = sharedVo20Values.map((current, idx) =>
+				idx === index ? calculatedVo20 : current
+			);
+		}
+		if (modScenarioForms[index] !== undefined) {
+			modScenarioForms = modScenarioForms.map((scenario, idx) =>
+				idx === index ? { ...scenario, vo20: calculatedVo20 } : scenario
+			);
+		}
+		if (koellaScenarioForms[index] !== undefined) {
+			koellaScenarioForms = koellaScenarioForms.map((scenario, idx) =>
+				idx === index ? { ...scenario, vo20: calculatedVo20 } : scenario
+			);
+		}
+		
+		// Remove from manually edited sets since we're overwriting with calculated values
+		manuallyEditedVo20.delete(index);
+		manuallyEditedPsi.delete(index);
+	}
+
+	function calculateSummaryV0_20(scenarioIndex: number): number {
+		const scenario = clarkScenarioForms[scenarioIndex];
+		if (!scenario || !scenario.fractions) return 0;
+
+		let sum = 0;
+		zones.forEach((zone: any) => {
+			const pct = scenario.fractions[zone.typ] ?? 0;
+			const v0_20 = zone.V0_20 ?? 0;
+			sum += (pct / 100) * v0_20;
+		});
+		return Math.round(sum * 100) / 100;
+	}
+
+	function calculateSummaryPsi(scenarioIndex: number): number {
+		const scenario = clarkScenarioForms[scenarioIndex];
+		if (!scenario || !scenario.fractions) return 0;
+
+		let sum = 0;
+		zones.forEach((zone: any) => {
+			const pct = scenario.fractions[zone.typ] ?? 0;
+			const psi = zone.psi ?? 0;
+			sum += (pct / 100) * psi;
+		});
+		return Math.round(sum * 100) / 100;
+	}
+
+	function calculatePercentageSum(scenarioIndex: number): number {
+		const scenario = clarkScenarioForms[scenarioIndex];
+		if (!scenario || !scenario.fractions) return 0;
+
+		let sum = 0;
+		zones.forEach((zone: any) => {
+			const pct = scenario.fractions[zone.typ] ?? 0;
+			sum += pct;
+		});
+		return Math.round(sum * 100) / 100;
 	}
 
 	type NamEditableKey = Exclude<keyof NamScenarioForm, 'ids' | 'projectId'>;
 
 	function updateNamScenario(index: number, key: NamEditableKey, value: number | string) {
 		const sanitized =
-			typeof value === 'string' && (key === 'water_balance_mode' || key === 'storm_center_mode' || key === 'routing_method')
+			typeof value === 'string' &&
+			(key === 'water_balance_mode' || key === 'storm_center_mode' || key === 'routing_method')
 				? value
 				: sanitizeNumber(value as number);
 
@@ -804,7 +930,9 @@ function ensureIdfInputs() {
 		koellaScenarioForms;
 		clarkScenarioForms;
 		namScenarioForms;
-		combinedScenarioRange = createRange(Math.max(modScenarioForms.length, koellaScenarioForms.length));
+		combinedScenarioRange = createRange(
+			Math.max(modScenarioForms.length, koellaScenarioForms.length)
+		);
 		clarkScenarioRange = createRange(clarkScenarioForms.length);
 		namScenarioRange = createRange(namScenarioForms.length);
 	});
@@ -819,10 +947,16 @@ function ensureIdfInputs() {
 			color: '#1376ef',
 			data: []
 		};
-		const mf_23 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 30);
-		const mf_20 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 100);
-		const mf_100 = mod_verfahren.find((mf: { Annuality: { number: number } }) => mf.Annuality?.number == 300);
-		
+		const mf_23 = mod_verfahren.find(
+			(mf: { Annuality: { number: number } }) => mf.Annuality?.number == 30
+		);
+		const mf_20 = mod_verfahren.find(
+			(mf: { Annuality: { number: number } }) => mf.Annuality?.number == 100
+		);
+		const mf_100 = mod_verfahren.find(
+			(mf: { Annuality: { number: number } }) => mf.Annuality?.number == 300
+		);
+
 		mod_fliesszeit_data.data.push(
 			getResultField(mf_23, 'Mod_Fliesszeit_Result')?.HQ
 				? Number(getResultField(mf_23, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
@@ -846,7 +980,7 @@ function ensureIdfInputs() {
 		const k_23 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 30);
 		const k_20 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 100);
 		const k_100 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 300);
-		
+
 		koella_data.data.push(
 			getResultField(k_23, 'Koella_Result')?.HQ
 				? Number(getResultField(k_23, 'Koella_Result').HQ.toFixed(1))
@@ -867,10 +1001,16 @@ function ensureIdfInputs() {
 			color: '#13e4ef',
 			data: []
 		};
-		const c_23 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 30);
-		const c_20 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 100);
-		const c_100 = clark_wsl.find((c: { Annuality: { number: number } }) => c.Annuality?.number == 300);
-		
+		const c_23 = clark_wsl.find(
+			(c: { Annuality: { number: number } }) => c.Annuality?.number == 30
+		);
+		const c_20 = clark_wsl.find(
+			(c: { Annuality: { number: number } }) => c.Annuality?.number == 100
+		);
+		const c_100 = clark_wsl.find(
+			(c: { Annuality: { number: number } }) => c.Annuality?.number == 300
+		);
+
 		clark_wsl_data.data.push(
 			getResultField(c_23, 'ClarkWSL_Result')?.Q
 				? Number(getResultField(c_23, 'ClarkWSL_Result').Q.toFixed(1))
@@ -891,10 +1031,10 @@ function ensureIdfInputs() {
 			color: '#ef1313',
 			data: []
 		};
-		const n_23 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 	30);
+		const n_23 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 30);
 		const n_20 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 100);
 		const n_100 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 300);
-		
+
 		nam_data.data.push(
 			getResultField(n_23, 'NAM_Result')?.HQ
 				? Number(getResultField(n_23, 'NAM_Result').HQ.toFixed(1))
@@ -965,48 +1105,48 @@ function ensureIdfInputs() {
 	}
 
 	async function calculateModFliess(scenario: any[]) {
-	if (!ensureIdfInputs()) {
-		return;
-	}
+		if (!ensureIdfInputs()) {
+			return;
+		}
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
-		
+
 		// Each annuality gets its own API call
 		// Each call returns a group task_id (for all climate scenarios of that annuality)
 		const groupTaskIds: string[] = [];
-		
-	for (const mod_fz of scenario) {
-		try {
-			const response = await fetch(
-				env.PUBLIC_HAKESCH_API_PATH +
-					'/discharge/modifizierte_fliesszeit?ProjectId=' +
-					mod_fz.project_id +
-					'&ModFliesszeitId=' +
-					mod_fz.id,
-				{
-					method: 'GET',
-					headers: {
-						Authorization: 'Bearer ' + data.session.access_token
+
+		for (const mod_fz of scenario) {
+			try {
+				const response = await fetch(
+					env.PUBLIC_HAKESCH_API_PATH +
+						'/discharge/modifizierte_fliesszeit?ProjectId=' +
+						mod_fz.project_id +
+						'&ModFliesszeitId=' +
+						mod_fz.id,
+					{
+						method: 'GET',
+						headers: {
+							Authorization: 'Bearer ' + data.session.access_token
+						}
 					}
+				);
+				if (!response.ok) {
+					throw new Error(`API returned status ${response.status}`);
 				}
-			);
-			if (!response.ok) {
-				throw new Error(`API returned status ${response.status}`);
+				const result = await response.json();
+				if (!result?.task_id) {
+					throw new Error('API response missing task_id');
+				}
+				// Each API call returns a group task_id for all climate scenarios
+				groupTaskIds.push(result.task_id);
+			} catch (error) {
+				handleApiError('Error calculating ModFliess', error);
+				toast.pop();
+				return;
 			}
-			const result = await response.json();
-			if (!result?.task_id) {
-				throw new Error('API response missing task_id');
-			}
-			// Each API call returns a group task_id for all climate scenarios
-			groupTaskIds.push(result.task_id);
-		} catch (error) {
-			handleApiError('Error calculating ModFliess', error);
-			toast.pop();
-			return;
 		}
-	}
-		
+
 		// Monitor all group tasks
 		if (groupTaskIds.length > 0) {
 			getMultipleGroupStatus(groupTaskIds);
@@ -1020,50 +1160,50 @@ function ensureIdfInputs() {
 			});
 		}
 	}
-	
+
 	async function calculateKoella(scenario: any[]) {
-	if (!ensureIdfInputs()) {
-		return;
-	}
+		if (!ensureIdfInputs()) {
+			return;
+		}
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
-		
+
 		// Each annuality gets its own API call
 		// Each call returns a group task_id (for all climate scenarios of that annuality)
 		const groupTaskIds: string[] = [];
-		
-	for (const k of scenario) {
-		try {
-			const response = await fetch(
-				env.PUBLIC_HAKESCH_API_PATH +
-					'/discharge/koella?ProjectId=' +
-					k.project_id +
-					'&KoellaId=' +
-					k.id,
-				{
-					method: 'GET',
-					headers: {
-						Authorization: 'Bearer ' + data.session.access_token
+
+		for (const k of scenario) {
+			try {
+				const response = await fetch(
+					env.PUBLIC_HAKESCH_API_PATH +
+						'/discharge/koella?ProjectId=' +
+						k.project_id +
+						'&KoellaId=' +
+						k.id,
+					{
+						method: 'GET',
+						headers: {
+							Authorization: 'Bearer ' + data.session.access_token
+						}
 					}
+				);
+				if (!response.ok) {
+					throw new Error(`API returned status ${response.status}`);
 				}
-			);
-			if (!response.ok) {
-				throw new Error(`API returned status ${response.status}`);
+				const result = await response.json();
+				if (!result?.task_id) {
+					throw new Error('API response missing task_id');
+				}
+				// Each API call returns a group task_id for all climate scenarios
+				groupTaskIds.push(result.task_id);
+			} catch (error) {
+				handleApiError('Error calculating Koella', error);
+				toast.pop();
+				return;
 			}
-			const result = await response.json();
-			if (!result?.task_id) {
-				throw new Error('API response missing task_id');
-			}
-			// Each API call returns a group task_id for all climate scenarios
-			groupTaskIds.push(result.task_id);
-		} catch (error) {
-			handleApiError('Error calculating Koella', error);
-			toast.pop();
-			return;
 		}
-	}
-		
+
 		// Monitor all group tasks
 		if (groupTaskIds.length > 0) {
 			getMultipleGroupStatus(groupTaskIds);
@@ -1077,50 +1217,50 @@ function ensureIdfInputs() {
 			});
 		}
 	}
-	
+
 	async function calculateClarkWSL(scenario: any[]) {
-	if (!ensureIdfInputs()) {
-		return;
-	}
+		if (!ensureIdfInputs()) {
+			return;
+		}
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
-		
+
 		// Each annuality gets its own API call
 		// Each call returns a group task_id (for all climate scenarios of that annuality)
 		const groupTaskIds: string[] = [];
-		
-	for (const k of scenario) {
-		try {
-			const response = await fetch(
-				env.PUBLIC_HAKESCH_API_PATH +
-					'/discharge/clark-wsl?ProjectId=' +
-					k.project_id +
-					'&ClarkWSLId=' +
-					k.id,
-				{
-					method: 'GET',
-					headers: {
-						Authorization: 'Bearer ' + data.session.access_token
+
+		for (const k of scenario) {
+			try {
+				const response = await fetch(
+					env.PUBLIC_HAKESCH_API_PATH +
+						'/discharge/clark-wsl?ProjectId=' +
+						k.project_id +
+						'&ClarkWSLId=' +
+						k.id,
+					{
+						method: 'GET',
+						headers: {
+							Authorization: 'Bearer ' + data.session.access_token
+						}
 					}
+				);
+				if (!response.ok) {
+					throw new Error(`API returned status ${response.status}`);
 				}
-			);
-			if (!response.ok) {
-				throw new Error(`API returned status ${response.status}`);
+				const result = await response.json();
+				if (!result?.task_id) {
+					throw new Error('API response missing task_id');
+				}
+				// Each API call returns a group task_id for all climate scenarios
+				groupTaskIds.push(result.task_id);
+			} catch (error) {
+				handleApiError('Error calculating ClarkWSL', error);
+				toast.pop();
+				return;
 			}
-			const result = await response.json();
-			if (!result?.task_id) {
-				throw new Error('API response missing task_id');
-			}
-			// Each API call returns a group task_id for all climate scenarios
-			groupTaskIds.push(result.task_id);
-		} catch (error) {
-			handleApiError('Error calculating ClarkWSL', error);
-			toast.pop();
-			return;
 		}
-	}
-		
+
 		// Monitor all group tasks
 		if (groupTaskIds.length > 0) {
 			getMultipleGroupStatus(groupTaskIds);
@@ -1134,50 +1274,50 @@ function ensureIdfInputs() {
 			});
 		}
 	}
-	
+
 	async function calculateNAM(scenario: any[]) {
-	if (!ensureIdfInputs()) {
-		return;
-	}
+		if (!ensureIdfInputs()) {
+			return;
+		}
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
-		
+
 		// Each annuality gets its own API call
 		// Each call returns a group task_id (for all climate scenarios of that annuality)
 		const groupTaskIds: string[] = [];
-		
-	for (const n of scenario) {
-		try {
-			const response = await fetch(
-				env.PUBLIC_HAKESCH_API_PATH +
-					'/discharge/nam?ProjectId=' +
-					n.project_id +
-					'&NAMId=' +
-					n.id,
-				{
-					method: 'GET',
-					headers: {
-						Authorization: 'Bearer ' + data.session.access_token
+
+		for (const n of scenario) {
+			try {
+				const response = await fetch(
+					env.PUBLIC_HAKESCH_API_PATH +
+						'/discharge/nam?ProjectId=' +
+						n.project_id +
+						'&NAMId=' +
+						n.id,
+					{
+						method: 'GET',
+						headers: {
+							Authorization: 'Bearer ' + data.session.access_token
+						}
 					}
+				);
+				if (!response.ok) {
+					throw new Error(`API returned status ${response.status}`);
 				}
-			);
-			if (!response.ok) {
-				throw new Error(`API returned status ${response.status}`);
+				const result = await response.json();
+				if (!result?.task_id) {
+					throw new Error('API response missing task_id');
+				}
+				// Each API call returns a group task_id for all climate scenarios
+				groupTaskIds.push(result.task_id);
+			} catch (error) {
+				handleApiError('Error calculating NAM', error);
+				toast.pop();
+				return;
 			}
-			const result = await response.json();
-			if (!result?.task_id) {
-				throw new Error('API response missing task_id');
-			}
-			// Each API call returns a group task_id for all climate scenarios
-			groupTaskIds.push(result.task_id);
-		} catch (error) {
-			handleApiError('Error calculating NAM', error);
-			toast.pop();
-			return;
 		}
-	}
-		
+
 		// Monitor all group tasks
 		if (groupTaskIds.length > 0) {
 			getMultipleGroupStatus(groupTaskIds);
@@ -1204,7 +1344,7 @@ function ensureIdfInputs() {
 					}
 				}
 			);
-			
+
 			if (response.ok) {
 				const result = await response.json();
 				soilFileExists = result.exists;
@@ -1221,23 +1361,20 @@ function ensureIdfInputs() {
 
 	async function uploadZipFile(project_id: Number, file: File) {
 		if (!file) return;
-		
+
 		isUploading = true;
 		const formData = new FormData();
 		formData.append('file', file);
-		
+
 		try {
-			const response = await fetch(
-				env.PUBLIC_HAKESCH_API_PATH + `/file/upload-zip/${project_id}`,
-				{
-					method: 'POST',
-					headers: {
-						Authorization: 'Bearer ' + data.session.access_token
-					},
-					body: formData
-				}
-			);
-			
+			const response = await fetch(env.PUBLIC_HAKESCH_API_PATH + `/file/upload-zip/${project_id}`, {
+				method: 'POST',
+				headers: {
+					Authorization: 'Bearer ' + data.session.access_token
+				},
+				body: formData
+			});
+
 			if (response.ok) {
 				toast.push($_('page.discharge.calculation.zipUploadSuccess'), {
 					theme: {
@@ -1337,13 +1474,13 @@ function ensureIdfInputs() {
 
 	async function getStatusMultiple(taskIDs: string[]) {
 		const taskStatuses = new Map<string, string>();
-		taskIDs.forEach(id => taskStatuses.set(id, 'PENDING'));
-		
+		taskIDs.forEach((id) => taskStatuses.set(id, 'PENDING'));
+
 		const checkAllTasks = async () => {
 			let allCompleted = true;
 			let anyFailed = false;
 			let failureMessages: string[] = [];
-			
+
 			for (const taskID of taskIDs) {
 				try {
 					const response = await fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/${taskID}`, {
@@ -1355,9 +1492,9 @@ function ensureIdfInputs() {
 					});
 					const res = await response.json();
 					const taskStatus = res.task_status;
-					
+
 					taskStatuses.set(taskID, taskStatus);
-					
+
 					if (taskStatus === 'FAILURE') {
 						anyFailed = true;
 						failureMessages.push(res.task_result || 'Unknown error');
@@ -1369,10 +1506,10 @@ function ensureIdfInputs() {
 					allCompleted = false;
 				}
 			}
-			
+
 			if (allCompleted || anyFailed) {
 				toast.pop();
-				
+
 				if (anyFailed) {
 					const errorMessage = failureMessages.join('<br>');
 					toast.push(
@@ -1397,30 +1534,32 @@ function ensureIdfInputs() {
 						}
 					});
 				}
-				
+
 				invalidateAll();
 			} else {
 				// Continue polling
 				setTimeout(checkAllTasks, 1000);
 			}
 		};
-		
+
 		checkAllTasks();
 	}
 
 	async function calculateProject(project_id: Number) {
-	if (!ensureIdfInputs()) {
-		return;
-	}
+		if (!ensureIdfInputs()) {
+			return;
+		}
 		// Show modal and initialize progress
 		(globalThis as any).$('#calculation-progress-modal').modal('show');
-		const progressBarEl = document.querySelector('#calculation-progress-modal .progress-bar') as HTMLElement;
+		const progressBarEl = document.querySelector(
+			'#calculation-progress-modal .progress-bar'
+		) as HTMLElement;
 
 		if (progressBarEl) {
 			progressBarEl.style.width = '0%';
 			progressBarEl.setAttribute('aria-valuenow', '0');
 		}
-		
+
 		try {
 			const response = await fetch(
 				env.PUBLIC_HAKESCH_API_PATH + '/discharge/calculate_project?ProjectId=' + project_id,
@@ -1457,20 +1596,22 @@ function ensureIdfInputs() {
 				const completed = res.completed;
 				const total = res.total;
 				const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-				
+
 				// Update progress bar
-				const progressBarEl = document.querySelector('#calculation-progress-modal .progress-bar') as HTMLElement;
+				const progressBarEl = document.querySelector(
+					'#calculation-progress-modal .progress-bar'
+				) as HTMLElement;
 				const progressTextEl = document.getElementById('calculation-progresstext');
-				
+
 				if (progressBarEl) {
 					progressBarEl.style.width = progress + '%';
 					progressBarEl.setAttribute('aria-valuenow', progress.toString());
 				}
-				
+
 				if (progressTextEl) {
 					progressTextEl.innerHTML = `${completed} / ${total} (${progress}%)`;
 				}
-				
+
 				if (completed === total) {
 					(globalThis as any).$('#calculation-progress-modal').modal('hide');
 					toast.push($_('page.discharge.calculation.calcsuccess'), {
@@ -1515,14 +1656,16 @@ function ensureIdfInputs() {
 	async function getMultipleGroupStatus(groupTaskIds: string[]) {
 		// Track status of all groups
 		const groupStatuses = new Map<string, { completed: number; total: number; status: string }>();
-		groupTaskIds.forEach(id => groupStatuses.set(id, { completed: 0, total: 0, status: 'PENDING' }));
-		
+		groupTaskIds.forEach((id) =>
+			groupStatuses.set(id, { completed: 0, total: 0, status: 'PENDING' })
+		);
+
 		const checkAllGroups = async () => {
 			let allCompleted = true;
 			let anyFailed = false;
 			let totalCompleted = 0;
 			let totalTasks = 0;
-			
+
 			for (const groupTaskId of groupTaskIds) {
 				try {
 					const response = await fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/group/${groupTaskId}`, {
@@ -1533,16 +1676,16 @@ function ensureIdfInputs() {
 						}
 					});
 					const res = await response.json();
-					
+
 					groupStatuses.set(groupTaskId, {
 						completed: res.completed,
 						total: res.total,
 						status: res.status
 					});
-					
+
 					totalCompleted += res.completed;
 					totalTasks += res.total;
-					
+
 					if (res.status === 'FAILURE') {
 						anyFailed = true;
 					} else if (res.completed !== res.total) {
@@ -1553,7 +1696,7 @@ function ensureIdfInputs() {
 					allCompleted = false;
 				}
 			}
-			
+
 			if (anyFailed) {
 				toast.pop();
 				toast.push($_('page.discharge.calculation.calcerror'), {
@@ -1565,7 +1708,7 @@ function ensureIdfInputs() {
 				invalidateAll();
 				return;
 			}
-			
+
 			if (allCompleted) {
 				toast.pop();
 				toast.push($_('page.discharge.calculation.calcsuccess'), {
@@ -1578,13 +1721,13 @@ function ensureIdfInputs() {
 				invalidateAll();
 				return;
 			}
-			
+
 			// Continue polling
 			setTimeout(() => {
 				checkAllGroups();
 			}, 1000);
 		};
-		
+
 		checkAllGroups();
 	}
 
@@ -1597,11 +1740,11 @@ function ensureIdfInputs() {
 				'+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs'
 			);
 		}
-		
+
 		// Convert from EPSG:2056 to WGS84 (EPSG:4326)
 		// proj4 returns [lon, lat] for EPSG:4326
 		const [lon, lat] = proj4('EPSG:2056', 'EPSG:4326', [easting, northing]);
-		
+
 		return { lat, lon };
 	}
 
@@ -1618,11 +1761,14 @@ function ensureIdfInputs() {
 		}
 
 		isFetchingHades = true;
-		
+
 		try {
 			// Convert coordinates from EPSG:2056 to lat/lon
-			const { lat, lon } = convertEPSG2056ToWGS84(data.project.Point.easting, data.project.Point.northing);
-			
+			const { lat, lon } = convertEPSG2056ToWGS84(
+				data.project.Point.easting,
+				data.project.Point.northing
+			);
+
 			// Fetch precipitation data from the API
 			const response = await fetch(
 				`${env.PUBLIC_HAKESCH_API_PATH}/netcdf/precipitation?lon=${lon}&lat=${lat}`,
@@ -1633,13 +1779,13 @@ function ensureIdfInputs() {
 					}
 				}
 			);
-			
+
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
-			
+
 			const precipitationData = await response.json();
-			
+
 			// Extract the 50% probability values (median) for the IDF parameters
 			const data10y60m = precipitationData.data['10_years_60_minutes'];
 			const data10y24h = precipitationData.data['10_years_24h'];
@@ -1647,17 +1793,17 @@ function ensureIdfInputs() {
 			const data30y24h = precipitationData.data['30_years_24h'];
 			const data100y60m = precipitationData.data['100_years_60_minutes'];
 			const data100y24h = precipitationData.data['100_years_24h'];
-			
+
 			// Fill in the form values using reactive state
-			pLow1h = Math.round(Math.round(data30y60m.probability_levels['50%']*100)/100);
-			pHigh1h = Math.round(Math.round(data100y60m.probability_levels['50%']*100)/100);
-			pLow24h = Math.round(Math.round(data30y24h.probability_levels['50%']*100)/100);
-			pHigh24h = Math.round(Math.round(data100y24h.probability_levels['50%']*100)/100);
-			
+			pLow1h = Math.round(Math.round(data30y60m.probability_levels['50%'] * 100) / 100);
+			pHigh1h = Math.round(Math.round(data100y60m.probability_levels['50%'] * 100) / 100);
+			pLow24h = Math.round(Math.round(data30y24h.probability_levels['50%'] * 100) / 100);
+			pHigh24h = Math.round(Math.round(data100y24h.probability_levels['50%'] * 100) / 100);
+
 			// Set return periods
 			rpLow = 30;
 			rpHigh = 100;
-			
+
 			toast.push($_('page.discharge.calculation.hadesValuesSuccess'), {
 				theme: {
 					'--toastColor': 'mintcream',
@@ -1665,12 +1811,13 @@ function ensureIdfInputs() {
 					'--toastBarBackground': '#2F855A'
 				}
 			});
-			
 		} catch (error) {
 			console.error('Error fetching HADES values:', error);
 			toast.push(
-				'<h3 style="padding:5;">' + $_('page.discharge.calculation.hadesValuesError') + '</h3>' +
-				(error instanceof Error ? error.message : String(error)),
+				'<h3 style="padding:5;">' +
+					$_('page.discharge.calculation.hadesValuesError') +
+					'</h3>' +
+					(error instanceof Error ? error.message : String(error)),
 				{
 					theme: {
 						'--toastColor': 'white',
@@ -1690,8 +1837,7 @@ function ensureIdfInputs() {
 
 		if (data.project.isozones_taskid === '' || data.project.isozones_running) {
 			(globalThis as any).$('#missinggeodata-modal').modal('show');
-		}
-		else {
+		} else {
 			couldCalculate = true;
 		}
 	});
@@ -1702,7 +1848,7 @@ function ensureIdfInputs() {
 </svelte:head>
 
 <!-- Missing geodata dialog -->
- <div
+<div
 	id="missinggeodata-modal"
 	class="modal fade"
 	tabindex="-1"
@@ -1727,11 +1873,8 @@ function ensureIdfInputs() {
 				<h5>{$_('page.discharge.calculation.missingGeodata')}</h5>
 			</div>
 			<div class="modal-footer">
-				<button
-					type="button"
-					class="btn btn-light"
-					data-bs-dismiss="modal"
-					onclick={addCalculation}>{$_('page.general.ok')}</button
+				<button type="button" class="btn btn-light" data-bs-dismiss="modal" onclick={addCalculation}
+					>{$_('page.general.ok')}</button
 				>
 			</div>
 		</div>
@@ -1765,10 +1908,8 @@ function ensureIdfInputs() {
 				<p>{$_('page.discharge.calculation.missingIdfMessage')}</p>
 			</div>
 			<div class="modal-footer">
-				<button
-					type="button"
-					class="btn btn-primary"
-					data-bs-dismiss="modal">{$_('page.general.ok')}</button
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal"
+					>{$_('page.general.ok')}</button
 				>
 			</div>
 		</div>
@@ -1800,10 +1941,8 @@ function ensureIdfInputs() {
 				<p>{apiErrorMessage}</p>
 			</div>
 			<div class="modal-footer border-0">
-				<button
-					type="button"
-					class="btn btn-danger"
-					data-bs-dismiss="modal">{$_('page.general.close')}</button
+				<button type="button" class="btn btn-danger" data-bs-dismiss="modal"
+					>{$_('page.general.close')}</button
 				>
 			</div>
 		</div>
@@ -1856,9 +1995,7 @@ function ensureIdfInputs() {
 	<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h4 class="modal-title" id="clarkwsl-help-modal-label">
-					ClarkWSL - Abflussprozesse
-				</h4>
+				<h4 class="modal-title" id="clarkwsl-help-modal-label">ClarkWSL - Abflussprozesse</h4>
 				<button
 					type="button"
 					class="btn-close"
@@ -1868,10 +2005,21 @@ function ensureIdfInputs() {
 			</div>
 			<div class="modal-body">
 				<p>
-					Bei der Hochwasserabflussbildung spielen neben der Dauer und der Intensität von Starkniederschlägen und der Grösse/Topographie des Einzugsgebiets die auftretenden Abflussprozesse eine entscheidende Rolle. Zu den wichtigsten bei Starkregen auftretenden Abflussprozessen zählen der Oberflächenabfluss aufgrund von Infiltrationshemmnissen (HOF), der gesättigte Oberflächenabfluss (SOF), der Abfluss im Boden (SSF) und die Tiefenversickerung (DP). Die Abflussprozesstypen können zusätzlich nach ihrer Reaktion in rasch beitragend (z.B. SSF1), verzögert beitragend (z.B. SSF2) und stark verzögert beitragend (z.B. SSF3) unterschieden werden. Methoden zur Bestimmung der im Einzugsgebiet auftretenden Abflussprozesse sind z.B. in [1], [2] oder [3] beschrieben.
+					Bei der Hochwasserabflussbildung spielen neben der Dauer und der Intensität von
+					Starkniederschlägen und der Grösse/Topographie des Einzugsgebiets die auftretenden
+					Abflussprozesse eine entscheidende Rolle. Zu den wichtigsten bei Starkregen auftretenden
+					Abflussprozessen zählen der Oberflächenabfluss aufgrund von Infiltrationshemmnissen (HOF),
+					der gesättigte Oberflächenabfluss (SOF), der Abfluss im Boden (SSF) und die
+					Tiefenversickerung (DP). Die Abflussprozesstypen können zusätzlich nach ihrer Reaktion in
+					rasch beitragend (z.B. SSF1), verzögert beitragend (z.B. SSF2) und stark verzögert
+					beitragend (z.B. SSF3) unterschieden werden. Methoden zur Bestimmung der im Einzugsgebiet
+					auftretenden Abflussprozesse sind z.B. in [1], [2] oder [3] beschrieben.
 				</p>
 				<p>
-					Eine flächendifferenzierte Ansprache der Abflusstypen mit Zuordnung der Reaktionsfreudigkeit erfordert einen hohen Arbeitsaufwand und ist mit Unschärfen verbunden. Stattdessen wird vorgeschlagen, die Abflussprozesse nach ihrer Abflussreaktion in Abflussklassen zu unterteilen:
+					Eine flächendifferenzierte Ansprache der Abflusstypen mit Zuordnung der
+					Reaktionsfreudigkeit erfordert einen hohen Arbeitsaufwand und ist mit Unschärfen
+					verbunden. Stattdessen wird vorgeschlagen, die Abflussprozesse nach ihrer Abflussreaktion
+					in Abflussklassen zu unterteilen:
 				</p>
 				<table class="table table-sm table-bordered">
 					<thead>
@@ -1914,22 +2062,23 @@ function ensureIdfInputs() {
 				</p>
 				<ol>
 					<li>
-						«Hochwasserabschätzung in schweizerischen Einzugsgebieten Praxishilfe Berichte des BWG, Serie Wasser Nr. 4, Bern 2003.
+						«Hochwasserabschätzung in schweizerischen Einzugsgebieten Praxishilfe Berichte des BWG,
+						Serie Wasser Nr. 4, Bern 2003.
 					</li>
 					<li>
-						«Automatisch hergeleitete Abflussprozesskarten – ein neues Werkzeug zur Abschätzung von Hochwasserabflüssen, Felix Naef et al., «Wasser Energie Luft» – 99. Jahrgang, 2007, Heft 3, CH-5401 Baden.
+						«Automatisch hergeleitete Abflussprozesskarten – ein neues Werkzeug zur Abschätzung von
+						Hochwasserabflüssen, Felix Naef et al., «Wasser Energie Luft» – 99. Jahrgang, 2007, Heft
+						3, CH-5401 Baden.
 					</li>
 					<li>
-						Scherrer, S. (2006): Bestimmungsschlüssel zur Identifikation von hochwasserrelevanten Flächen, Herausgeber: Landesamt für Umwelt, Wasserwirtschaft und Gewerbeaufsicht Rheinland-Pfalz (LUWG).
+						Scherrer, S. (2006): Bestimmungsschlüssel zur Identifikation von hochwasserrelevanten
+						Flächen, Herausgeber: Landesamt für Umwelt, Wasserwirtschaft und Gewerbeaufsicht
+						Rheinland-Pfalz (LUWG).
 					</li>
 				</ol>
 			</div>
 			<div class="modal-footer">
-				<button
-					type="button"
-					class="btn btn-primary"
-					data-bs-dismiss="modal"
-				>
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal">
 					{$_('page.general.close')}
 				</button>
 			</div>
@@ -1945,488 +2094,522 @@ function ensureIdfInputs() {
 					<h3 class="my-0 lh-base">
 						{data.project.title}
 					</h3>
-				</div> 	
+				</div>
 			</div>
-
 		</div>
 		<div class="card-body">
 			<div class="row">
 				<!-- Input Part -->
-                <div class="col-lg-4">
-                    <form
-                        class="d-none"
-                        method="post"
-                        action="?/bulkSave"
-                        bind:this={bulkSaveForm}
-                        use:enhance={() => {
-                            isBulkSaving = true;
-                            return async ({ result, update }) => {
-                                await update({ reset: false });
-                                isBulkSaving = false;
-                                if (result.type === 'success' && result.data) {
-                                    data.project = result.data;
-                                    toast.push($_('page.discharge.calculation.successfullsave'), {
-                                        theme: {
-                                            '--toastColor': 'mintcream',
-                                            '--toastBackground': 'rgba(72,187,120,0.9)',
-                                            '--toastBarBackground': '#2F855A'
-                                        }
-                                    });
-                                } else if (result.type === 'failure') {
-                                    const failure = (result.data as { message?: string })?.message || $_('page.discharge.calculation.calcerror');
-                                    toast.push(
-                                        '<h3 style="padding:5;">' + failure + '</h3>',
-                                        {
-                                            theme: {
-                                                '--toastColor': 'white',
-                                                '--toastBackground': 'darkred'
-                                            },
-                                            initial: 0
-                                        }
-                                    );
-                                }
-                            };
-                        }}
-                    >
-                        <input type="hidden" name="project_id" value={data.project.id} />
-                        <input type="hidden" name="payload" value={bulkPayload} />
-                    </form>
+				<div class="col-lg-4">
+					<form
+						class="d-none"
+						method="post"
+						action="?/bulkSave"
+						bind:this={bulkSaveForm}
+						use:enhance={() => {
+							isBulkSaving = true;
+							return async ({ result, update }) => {
+								await update({ reset: false });
+								isBulkSaving = false;
+								if (result.type === 'success' && result.data) {
+									data.project = result.data;
+									toast.push($_('page.discharge.calculation.successfullsave'), {
+										theme: {
+											'--toastColor': 'mintcream',
+											'--toastBackground': 'rgba(72,187,120,0.9)',
+											'--toastBarBackground': '#2F855A'
+										}
+									});
+								} else if (result.type === 'failure') {
+									const failure =
+										(result.data as { message?: string })?.message ||
+										$_('page.discharge.calculation.calcerror');
+									toast.push('<h3 style="padding:5;">' + failure + '</h3>', {
+										theme: {
+											'--toastColor': 'white',
+											'--toastBackground': 'darkred'
+										},
+										initial: 0
+									});
+								}
+							};
+						}}
+					>
+						<input type="hidden" name="project_id" value={data.project.id} />
+						<input type="hidden" name="payload" value={bulkPayload} />
+					</form>
 
-                    <section class="mb-5">
-                        <h4 class="text-muted">
-                            {$_('page.discharge.calculation.inputsForPrecipitationIntensity')}
-                        </h4>
+					<section class="mb-1">
+						<h4 class="text-muted">
+							{$_('page.discharge.calculation.inputsForPrecipitationIntensity')}
+						</h4>
 						<div class="d-flex align-items-center gap-2 mt-3 mb-3">
-                            <button type="button" class="btn btn-secondary" onclick={fetchHadesValues} disabled={isFetchingHades}>
-                                {#if isFetchingHades}
-                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                {/if}
-                                {$_('page.discharge.calculation.hadesValues')}
-                            </button>
-                        </div>
-                        <div class="row g-2 py-2 align-items-end">
-                            <div class="mb-3 col-md-6">
-                                <label for="P_low_1h" class="form-label">
-                                    {$_('page.discharge.calculation.idf.precipLowerPeriod1h')}
-                                </label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    class="form-control"
-                                    id="P_low_1h"
-                                    name="P_low_1h"
-                                    bind:value={pLow1h}
-                                />
-                            </div>
-                            <div class="mb-3 col-md-6">
-                                <label for="P_low_24h" class="form-label">
-                                    {$_('page.discharge.calculation.idf.precipLowerPeriod24h')}
-                                </label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    class="form-control"
-                                    id="P_low_24h"
-                                    name="P_low_24h"
-                                    bind:value={pLow24h}
-                                />
-                            </div>
-                            <div class="mb-3 col-md-4"  style="display:none;">
-                                <label for="rp_low" class="form-label">
-                                    {$_('page.discharge.calculation.idf.returnPeriod')}
-                                </label>
-                                <select id="rp_low" name="rp_low" class="form-select" bind:value={rpLow}>
-                                    {#each returnPeriod as rp}
-                                        <option value={rp.id}>{rp.text}</option>
-                                    {/each}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row g-2 align-items-end">
-                            <div class="mb-3 col-md-6">
-                                <label for="P_high_1h" class="form-label">
-                                    {$_('page.discharge.calculation.idf.precipUpperPeriod1h')}
-                                </label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    class="form-control"
-                                    id="P_high_1h"
-                                    name="P_high_1h"
-                                    bind:value={pHigh1h}
-                                />
-                            </div>
-                            <div class="mb-3 col-md-6">
-                                <label for="P_high_24h" class="form-label">
-                                    {$_('page.discharge.calculation.idf.precipUpperPeriod24h')}
-                                </label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    class="form-control"
-                                    id="P_high_24h"
-                                    name="P_high_24h"
-                                    bind:value={pHigh24h}
-                                />
-                            </div>
-                            <div class="mb-3 col-md-4" style="display:none;">
-                                <label for="rp_high" class="form-label">
-                                    {$_('page.discharge.calculation.idf.upperReturnPeriod')}
-                                </label>
-                                <select id="rp_high" name="rp_high" class="form-select" bind:value={rpHigh}>
-                                    {#each returnPeriod as rp}
-                                        <option value={rp.id}>{rp.text}</option>
-                                    {/each}
-                                </select>
-                            </div>
-                        </div>
-                    </section>
+							<button
+								type="button"
+								class="btn btn-secondary"
+								onclick={fetchHadesValues}
+								disabled={isFetchingHades}
+							>
+								{#if isFetchingHades}
+									<span
+										class="spinner-border spinner-border-sm me-2"
+										role="status"
+										aria-hidden="true"
+									></span>
+								{/if}
+								{$_('page.discharge.calculation.hadesValues')}
+							</button>
+						</div>
+						<div class="row g-2 py-2 align-items-end">
+							<div class="mb-3 col-md-6">
+								<label for="P_low_1h" class="form-label">
+									{$_('page.discharge.calculation.idf.precipLowerPeriod1h')}
+								</label>
+								<input
+									type="number"
+									step="any"
+									class="form-control"
+									id="P_low_1h"
+									name="P_low_1h"
+									bind:value={pLow1h}
+								/>
+							</div>
+							<div class="mb-3 col-md-6">
+								<label for="P_low_24h" class="form-label">
+									{$_('page.discharge.calculation.idf.precipLowerPeriod24h')}
+								</label>
+								<input
+									type="number"
+									step="any"
+									class="form-control"
+									id="P_low_24h"
+									name="P_low_24h"
+									bind:value={pLow24h}
+								/>
+							</div>
+							<div class="mb-3 col-md-4" style="display:none;">
+								<label for="rp_low" class="form-label">
+									{$_('page.discharge.calculation.idf.returnPeriod')}
+								</label>
+								<select id="rp_low" name="rp_low" class="form-select" bind:value={rpLow}>
+									{#each returnPeriod as rp}
+										<option value={rp.id}>{rp.text}</option>
+									{/each}
+								</select>
+							</div>
+						</div>
+						<div class="row g-2 align-items-end">
+							<div class="mb-3 col-md-6">
+								<label for="P_high_1h" class="form-label">
+									{$_('page.discharge.calculation.idf.precipUpperPeriod1h')}
+								</label>
+								<input
+									type="number"
+									step="any"
+									class="form-control"
+									id="P_high_1h"
+									name="P_high_1h"
+									bind:value={pHigh1h}
+								/>
+							</div>
+							<div class="mb-3 col-md-6">
+								<label for="P_high_24h" class="form-label">
+									{$_('page.discharge.calculation.idf.precipUpperPeriod24h')}
+								</label>
+								<input
+									type="number"
+									step="any"
+									class="form-control"
+									id="P_high_24h"
+									name="P_high_24h"
+									bind:value={pHigh24h}
+								/>
+							</div>
+							<div class="mb-3 col-md-4" style="display:none;">
+								<label for="rp_high" class="form-label">
+									{$_('page.discharge.calculation.idf.upperReturnPeriod')}
+								</label>
+								<select id="rp_high" name="rp_high" class="form-select" bind:value={rpHigh}>
+									{#each returnPeriod as rp}
+										<option value={rp.id}>{rp.text}</option>
+									{/each}
+								</select>
+							</div>
+						</div>
+					</section>
 
-                    {#if mod_verfahren.length > 0 || koella.length > 0}
-                        <section class="mb-5">
-                            <h4 class="text-muted mb-3">
-                                {$_('page.discharge.calculation.modFliesszeit')} &amp; {$_('page.discharge.calculation.koells')}
-                            </h4>
-                            {#each combinedScenarioRange as scenarioIndex}
-								<div class="row g-3 align-items-end">
-									<div class="col-md-4">
-										<label for={`shared-vo20-${scenarioIndex}`} class="form-label">
-											{$_('page.discharge.calculation.modFZV.wettingVolume')}
-											<span
-													class="badge badge-circle"
-													data-bs-toggle="tooltip"
-													data-bs-trigger="hover"
-													data-bs-placement="top"
-													data-bs-title={$_('page.discharge.calculation.modFZV.wettingVolumeTooltip')}
-													style="cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0;"
-													use:initTooltip
-												>
-													<i class="ri-question-line mb-1" style="font-weight: 100;"></i>
-												</span>
-										</label>
-										<input
-											id={`shared-vo20-${scenarioIndex}`}
-											type="number"
-											step="any"
-											class="form-control"
-											value={sharedVo20Values[scenarioIndex] ?? 0}
-											oninput={(event) => {
-												const target = event.currentTarget as HTMLInputElement;
-												updateSharedVo20(
-													scenarioIndex,
-													sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-												);
-											}}
-										/>
-									</div>
-									{#if modScenarioForms[scenarioIndex]}
+					<section class="">
+						<h4 class="text-muted mb-3">
+							{$_('page.discharge.calculation.hydrologicalCalculation')}
+							<button
+									type="button"
+									class="btn btn-sm btn-link p-0"
+									style="line-height: 1; color: var(--bs-info);"
+									data-bs-toggle="modal"
+									data-bs-target="#clarkwsl-help-modal"
+									aria-label="ClarkWSL Hilfe"
+									title="ClarkWSL Hilfe"
+								>
+									<i class="ti ti-info-circle fs-18"></i>
+								</button>
+						</h4>
+		
+						{#each clarkScenarioRange as scenarioIndex}
+							<div class="row g-2 py-2 align-items-start">
+								<div class="mb-3 col-md-12">
+									<table class="table table-sm table-bordered">
+										<thead>
+											<tr>
+												<th style="width: 30%;">Zone</th>
+												<th style="width: 20%;">{$_('page.discharge.calculation.percentage')}</th>
+												<th style="width: 15%;">{$_('page.discharge.calculation.modFZV.wettingVolume')}
+													<span
+														class="badge badge-circle"
+														data-bs-toggle="tooltip"
+														data-bs-trigger="hover"
+														data-bs-placement="top"
+														data-bs-title={$_('page.discharge.calculation.modFZV.wettingVolumeTooltip')}
+														style="cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0;"
+														use:initTooltip
+													>
+														<i class="ri-question-line mb-1" style="font-weight: 100;"></i>
+													</span></th>
+												<th style="width: 15%;">WSV</th>
+												<th style="width: 20%;">{$_('page.discharge.calculation.modFZV.peakFlow')}
+													<span
+														class="badge badge-circle"
+														data-bs-toggle="tooltip"
+														data-bs-trigger="hover"
+														data-bs-placement="top"
+														data-bs-title={$_('page.discharge.calculation.modFZV.peakFlowTooltip')}
+														style="cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0;"
+														use:initTooltip
+													>
+														<i class="ri-question-line mb-1" style="font-weight: 100;"></i>
+													</span></th>
+											</tr>
+										</thead>
+										<tbody>
+											{#each zones as z, i}
+												<tr>
+													<td>{z.typ}</td>
+													<td>
+														<input
+															type="number"
+															step="any"
+															class="form-control text-end"
+															style="-webkit-appearance: none; -moz-appearance: textfield;"
+															id={`zone_${i}-scenario${scenarioIndex}`}
+															name={`zone_${i}`}
+															value={clarkScenarioForms[scenarioIndex]?.fractions?.[
+																z.typ
+															] ?? 0}
+															oninput={(event) => {
+																const target = event.currentTarget as HTMLInputElement;
+																updateFractionValue(
+																	scenarioIndex,
+																	z.typ,
+																	sanitizeNumber(
+																		target.valueAsNumber ?? Number(target.value)
+																	)
+																);
+															}}
+														/>
+													</td>
+													<td class="text-end">{z.V0_20 ?? 0}</td>
+													<td class="text-end">{z.WSV ?? 0}</td>
+													<td class="text-end">{z.psi ?? 0}</td>
+												</tr>
+											{/each}
+											{#each combinedScenarioRange as combinedIndex}
+												<tr>
+													<td></td>
+													<td class="text-end fw-bold">{calculatePercentageSum(scenarioIndex)}%</td>
+													<td><input
+														id={`shared-vo20-${combinedIndex}`}
+														type="number"
+														step="any"
+														class="form-control"
+														value={manuallyEditedVo20.has(combinedIndex)
+															? (sharedVo20Values[combinedIndex] ?? 0)
+															: (clarkScenarioForms[combinedIndex] !== undefined 
+																? calculateSummaryV0_20(combinedIndex) 
+																: (sharedVo20Values[combinedIndex] ?? 0))}
+														oninput={(event) => {
+															const target = event.currentTarget as HTMLInputElement;
+															updateSharedVo20(
+																combinedIndex,
+																sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+															);
+														}}
+													/></td>	
+													<td></td>
+													<td><input
+														id={`psi-scenario${combinedIndex}`}
+														type="number"
+														step="any"
+														class="form-control"
+														value={manuallyEditedPsi.has(combinedIndex)
+															? (modScenarioForms[combinedIndex]?.psi ?? 0)
+															: (clarkScenarioForms[combinedIndex] !== undefined 
+																? calculateSummaryPsi(combinedIndex) 
+																: (modScenarioForms[combinedIndex]?.psi ?? 0))}
+														oninput={(event) => {
+															const target = event.currentTarget as HTMLInputElement;
+															updateModPsi(
+																combinedIndex,
+																sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+															);
+														}}
+													/></td>
+												</tr>
+										{/each}
+										</tbody>
+									</table>
+									<div class="row g-2 mt-2">
 										<div class="col-md-4">
-											<label for={`psi-scenario${scenarioIndex}`} class="form-label">
-												{$_('page.discharge.calculation.modFZV.peakFlow')}
-												<span
-													class="badge badge-circle"
-													data-bs-toggle="tooltip"
-													data-bs-trigger="hover"
-													data-bs-placement="top"
-													data-bs-title={$_('page.discharge.calculation.modFZV.peakFlowTooltip')}
-													style="cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0;"
-													use:initTooltip
-												>
-													<i class="ri-question-line mb-1" style="font-weight: 100;"></i>
-												</span>
-											</label>
-											<input
-												id={`psi-scenario${scenarioIndex}`}
-												type="number"
-												step="any"
-												class="form-control"
-												value={modScenarioForms[scenarioIndex].psi}
-												oninput={(event) => {
-													const target = event.currentTarget as HTMLInputElement;
-													updateModPsi(
-														scenarioIndex,
-														sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-													);
-												}}
-											/>
-										</div>
-									{/if}
-									{#if koellaScenarioForms[scenarioIndex]}
-										<div class="col-md-4">
-											<label for={`glacier_area-scenario${scenarioIndex}`} class="form-label">
-												{$_('page.discharge.calculation.koella.glacierArea')} km<sup>2</sup>
-												
-											</label>
-											<input
-												id={`glacier_area-scenario${scenarioIndex}`}
-												type="number"
-												step="1"
-												class="form-control"
-												value={koellaScenarioForms[scenarioIndex].glacier_area}
-												oninput={(event) => {
-													const target = event.currentTarget as HTMLInputElement;
-													updateGlacierArea(
-														scenarioIndex,
-														sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-													);
-												}}
-											/>
-										</div>
-									{/if}
-								</div>
-                            {/each}
-                        </section>
-                    {/if}
-
-                    {#if clark_wsl.length > 0 || nam.length > 0}
-                        <div class="row g-4">
-                            {#if clark_wsl.length > 0}
-                                <div class="col-12 col-xl-6">
-                                    <section class="mb-5 mb-xl-0 h-100">
-                                        <h4 class="text-muted mb-3 d-flex align-items-center gap-2">
-                                            {$_('page.discharge.calculation.clarkwslname')}
-                                            <button
-                                                type="button"
-                                                class="btn btn-sm btn-link p-0"
-                                                style="line-height: 1; color: var(--bs-info);"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#clarkwsl-help-modal"
-                                                aria-label="ClarkWSL Hilfe"
-                                                title="ClarkWSL Hilfe"
-                                            >
-                                                <i class="ti ti-info-circle fs-18"></i>
-                                            </button>
-                                        </h4>
-                                        {#each clarkScenarioRange as scenarioIndex}
-											<div class="row g-2 py-2 align-items-start">
-												<div class="mb-3 col-md-12 d-flex">
-													<div class="d-flex flex-column gap-2 w-100">
-														{#each zones as z, i}
-															<div class="d-flex align-items-center gap-2 flex-row">
-																<label for={`zone_${i}-scenario${scenarioIndex}`} class="flex-fill text-end" style="max-width:100px;">{z.typ}</label>
-																<div style="max-width:130px;">
-																	<input
-																		type="number"
-																		step="any"
-																		class="form-control text-end"
-																		style="-webkit-appearance: none; -moz-appearance: textfield;"
-																		id={`zone_${i}-scenario${scenarioIndex}`}
-																		name={`zone_${i}`}
-																		value={clarkScenarioForms[scenarioIndex]?.fractions?.[z.typ] ?? 0}
-																		oninput={(event) => {
-																			const target = event.currentTarget as HTMLInputElement;
-																			updateFractionValue(
-																				scenarioIndex,
-																				z.typ,
-																				sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-																			);
-																		}}
-																	/>
-																</div>
-																<div class="text-start">%</div>
-															</div>
-														{/each}
+											{#if koellaScenarioForms[scenarioIndex]}
+												<div class="row g-2 py-2 align-items-end">
+													<div class="col-md-12">
+														<label for={`glacier_area-scenario${scenarioIndex}`} class="form-label">
+															{$_('page.discharge.calculation.koella.glacierArea')} km<sup>2</sup>
+														</label>
+														<input
+															id={`glacier_area-scenario${scenarioIndex}`}
+															type="number"
+															step="1"
+															class="form-control"
+															value={koellaScenarioForms[scenarioIndex].glacier_area}
+															oninput={(event) => {
+																const target = event.currentTarget as HTMLInputElement;
+																updateGlacierArea(
+																	scenarioIndex,
+																	sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+																);
+															}}
+														/>
 													</div>
 												</div>
-											</div>
-                                        {/each}
-                                    </section>
-                                </div>
-                            {/if}
-                            {#if nam.length > 0}
-                                <div class="col-12 col-xl-6">
-                                    <section class="mb-5 mb-xl-0 h-100">
-                                        <h4 class="text-muted mb-3">{$_('page.discharge.calculation.nam')}</h4>
-                                        {#each namScenarioRange as scenarioIndex}
-								<div class="row g-2 py-2 align-items-end" style="display:none;">
-									<div class="mb-3 col-md-4">
-										<label for={`precipitation_factor-scenario${scenarioIndex}`} class="form-label">
-											{$_('page.discharge.calculation.namParams.precipitationFactor')}
-										</label>
-										<input
-											type="number"
-											step="any"
-											class="form-control"
-											id={`precipitation_factor-scenario${scenarioIndex}`}
-											name="precipitation_factor"
-											value={namScenarioForms[scenarioIndex]?.precipitation_factor ?? 0}
-											oninput={(event) => {
-												const target = event.currentTarget as HTMLInputElement;
-												updateNamScenario(
-													scenarioIndex,
-													'precipitation_factor',
-													sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-												);
-											}}
-										/>
-									</div>
-									<div class="mb-3 col-md-4">
-										<label for={`readiness_to_drain-scenario${scenarioIndex}`} class="form-label">
-											{$_('page.discharge.calculation.namParams.readinessToDrain')}
-										</label>
-										<input
-											type="number"
-											step="1"
-											class="form-control"
-											id={`readiness_to_drain-scenario${scenarioIndex}`}
-											name="readiness_to_drain"
-											value={namScenarioForms[scenarioIndex]?.readiness_to_drain ?? 0}
-											oninput={(event) => {
-												const target = event.currentTarget as HTMLInputElement;
-												updateNamScenario(
-													scenarioIndex,
-													'readiness_to_drain',
-													sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-												);
-											}}
-										/>
-									</div>
-								</div>
-								<div class="row g-2 py-2 align-items-end" style="display:none;">
-									<div class="mb-3 col-md-4">
-										<label for={`water_balance_mode-scenario${scenarioIndex}`} class="form-label">
-											{$_('page.discharge.calculation.namParams.waterBalanceMode')}
-										</label>
-										<select
-											id={`water_balance_mode-scenario${scenarioIndex}`}
-											name="water_balance_mode"
-											class="form-select"
-											value={namScenarioForms[scenarioIndex]?.water_balance_mode}
-											onchange={(event) => {
-												const target = event.currentTarget as HTMLSelectElement;
-												updateNamScenario(scenarioIndex, 'water_balance_mode', target.value);
-											}}
-										>
-											<option value="simple">{$_('page.discharge.calculation.namParams.simple')}</option>
-											<option value="cumulative">{$_('page.discharge.calculation.namParams.advanced')}</option>
-										</select>
-									</div>
-									<div class="mb-3 col-md-4">
-										<label for={`storm_center_mode-scenario${scenarioIndex}`} class="form-label">
-											{$_('page.discharge.calculation.namParams.stormCenterMode')}
-										</label>
-										<select
-											id={`storm_center_mode-scenario${scenarioIndex}`}
-											name="storm_center_mode"
-											class="form-select"
-											value={namScenarioForms[scenarioIndex]?.storm_center_mode}
-											onchange={(event) => {
-												const target = event.currentTarget as HTMLSelectElement;
-												updateNamScenario(scenarioIndex, 'storm_center_mode', target.value);
-											}}
-										>
-											<option value="centroid">{$_('page.discharge.calculation.namParams.centroid')}</option>
-											<option value="discharge_point">{$_('page.discharge.calculation.namParams.dischargePoint')}</option>
-										</select>
-									</div>
-									<div class="mb-3 col-md-4">
-										<label for={`routing_method-scenario${scenarioIndex}`} class="form-label">
-											{$_('page.discharge.calculation.namParams.routingMethod')}
-										</label>
-										<select
-											id={`routing_method-scenario${scenarioIndex}`}
-											name="routing_method"
-											class="form-select"
-											value={namScenarioForms[scenarioIndex]?.routing_method}
-											onchange={(event) => {
-												const target = event.currentTarget as HTMLSelectElement;
-												updateNamScenario(scenarioIndex, 'routing_method', target.value);
-											}}
-										>
-											<option value="time_values">{$_('page.discharge.calculation.namParams.timeValues')}</option>
-											<option value="travel_time">{$_('page.discharge.calculation.namParams.traveltime')}</option>
-											<option value="isozone">{$_('page.discharge.calculation.namParams.traveltime')}</option>
-										</select>
-									</div>
-								</div>
-								<div class="row g-2 py-2 align-items-end">
-									<div class="mb-3 col-md-12">
-										{#if soilFileExists}
-											<div class="mb-3">
-												<div class="form-check">
-													<input
-														class="form-check-input"
-														type="checkbox"
-														id="use_own_soil_data"
-														bind:checked={useOwnSoilData}
-													/>
-													<label class="form-check-label" for="use_own_soil_data">
-														{$_('page.discharge.calculation.namParams.useOwnSoilData')}
+												{/if}
+										</div>
+										<div class="col-md-8">
+											{#each namScenarioRange as scenarioIndex}
+											<div class="row g-2 py-2 align-items-end" style="display:none;">
+												<div class="mb-3 col-md-4">
+													<label
+														for={`precipitation_factor-scenario${scenarioIndex}`}
+														class="form-label"
+													>
+														{$_('page.discharge.calculation.namParams.precipitationFactor')}
 													</label>
+													<input
+														type="number"
+														step="any"
+														class="form-control"
+														id={`precipitation_factor-scenario${scenarioIndex}`}
+														name="precipitation_factor"
+														value={namScenarioForms[scenarioIndex]?.precipitation_factor ?? 0}
+														oninput={(event) => {
+															const target = event.currentTarget as HTMLInputElement;
+															updateNamScenario(
+																scenarioIndex,
+																'precipitation_factor',
+																sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+															);
+														}}
+													/>
 												</div>
-												<div class="form-text">
-													{$_('page.discharge.calculation.namParams.useOwnSoilDataHelp')}
+												<div class="mb-3 col-md-4">
+													<label
+														for={`readiness_to_drain-scenario${scenarioIndex}`}
+														class="form-label"
+													>
+														{$_('page.discharge.calculation.namParams.readinessToDrain')}
+													</label>
+													<input
+														type="number"
+														step="1"
+														class="form-control"
+														id={`readiness_to_drain-scenario${scenarioIndex}`}
+														name="readiness_to_drain"
+														value={namScenarioForms[scenarioIndex]?.readiness_to_drain ?? 0}
+														oninput={(event) => {
+															const target = event.currentTarget as HTMLInputElement;
+															updateNamScenario(
+																scenarioIndex,
+																'readiness_to_drain',
+																sanitizeNumber(target.valueAsNumber ?? Number(target.value))
+															);
+														}}
+													/>
 												</div>
 											</div>
-										{/if}
+											<div class="row g-2 py-2 align-items-end" style="display:none;">
+												<div class="mb-3 col-md-4">
+													<label
+														for={`water_balance_mode-scenario${scenarioIndex}`}
+														class="form-label"
+													>
+														{$_('page.discharge.calculation.namParams.waterBalanceMode')}
+													</label>
+													<select
+														id={`water_balance_mode-scenario${scenarioIndex}`}
+														name="water_balance_mode"
+														class="form-select"
+														value={namScenarioForms[scenarioIndex]?.water_balance_mode}
+														onchange={(event) => {
+															const target = event.currentTarget as HTMLSelectElement;
+															updateNamScenario(scenarioIndex, 'water_balance_mode', target.value);
+														}}
+													>
+														<option value="simple"
+															>{$_('page.discharge.calculation.namParams.simple')}</option
+														>
+														<option value="cumulative"
+															>{$_('page.discharge.calculation.namParams.advanced')}</option
+														>
+													</select>
+												</div>
+												<div class="mb-3 col-md-4">
+													<label
+														for={`storm_center_mode-scenario${scenarioIndex}`}
+														class="form-label"
+													>
+														{$_('page.discharge.calculation.namParams.stormCenterMode')}
+													</label>
+													<select
+														id={`storm_center_mode-scenario${scenarioIndex}`}
+														name="storm_center_mode"
+														class="form-select"
+														value={namScenarioForms[scenarioIndex]?.storm_center_mode}
+														onchange={(event) => {
+															const target = event.currentTarget as HTMLSelectElement;
+															updateNamScenario(scenarioIndex, 'storm_center_mode', target.value);
+														}}
+													>
+														<option value="centroid"
+															>{$_('page.discharge.calculation.namParams.centroid')}</option
+														>
+														<option value="discharge_point"
+															>{$_('page.discharge.calculation.namParams.dischargePoint')}</option
+														>
+													</select>
+												</div>
+												<div class="mb-3 col-md-4">
+													<label for={`routing_method-scenario${scenarioIndex}`} class="form-label">
+														{$_('page.discharge.calculation.namParams.routingMethod')}
+													</label>
+													<select
+														id={`routing_method-scenario${scenarioIndex}`}
+														name="routing_method"
+														class="form-select"
+														value={namScenarioForms[scenarioIndex]?.routing_method}
+														onchange={(event) => {
+															const target = event.currentTarget as HTMLSelectElement;
+															updateNamScenario(scenarioIndex, 'routing_method', target.value);
+														}}
+													>
+														<option value="time_values"
+															>{$_('page.discharge.calculation.namParams.timeValues')}</option
+														>
+														<option value="travel_time"
+															>{$_('page.discharge.calculation.namParams.traveltime')}</option
+														>
+														<option value="isozone"
+															>{$_('page.discharge.calculation.namParams.traveltime')}</option
+														>
+													</select>
+												</div>
+											</div>
+											<div class="row g-2 py-2 align-items-end">
+												<div class="mb-3 col-md-12">
+													{#if soilFileExists}
+														<div class="mb-3">
+															<div class="form-check">
+																<input
+																	class="form-check-input"
+																	type="checkbox"
+																	id="use_own_soil_data"
+																	bind:checked={useOwnSoilData}
+																/>
+																<label class="form-check-label" for="use_own_soil_data">
+																	{$_('page.discharge.calculation.namParams.useOwnSoilData')}
+																</label>
+															</div>
+															<div class="form-text">
+																{$_('page.discharge.calculation.namParams.useOwnSoilDataHelp')}
+															</div>
+														</div>
+													{/if}
 
-										{#if !soilFileExists || useOwnSoilData}
-											<label for={`zip_upload-scenario${scenarioIndex}`} class="form-label">
-												{$_('page.discharge.calculation.namParams.uploadZipFile')}
-											</label>
-											<input
-												type="file"
-												class="form-control"
-												id={`zip_upload-scenario${scenarioIndex}`}
-												accept=".zip"
-											onchange={(event) => {
-													const target = event.currentTarget as HTMLInputElement;
-													const file = target.files?.[0];
-													const projectId = nam_scenarios[scenarioIndex]?.[0]?.project_id;
-													if (file && projectId) {
-														uploadZipFile(projectId, file);
-													}
-												}}
-												disabled={isUploading || isCheckingSoilFile}
-											/>
-											<div class="form-text">
-												{$_('page.discharge.calculation.namParams.uploadZipFileHelp')}
+													{#if !soilFileExists || useOwnSoilData}
+														<label for={`zip_upload-scenario${scenarioIndex}`} class="form-label">
+															{$_('page.discharge.calculation.namParams.uploadZipFile')}
+														</label>
+														<input
+															type="file"
+															class="form-control"
+															id={`zip_upload-scenario${scenarioIndex}`}
+															accept=".zip"
+															onchange={(event) => {
+																const target = event.currentTarget as HTMLInputElement;
+																const file = target.files?.[0];
+																const projectId = nam_scenarios[scenarioIndex]?.[0]?.project_id;
+																if (file && projectId) {
+																	uploadZipFile(projectId, file);
+																}
+															}}
+															disabled={isUploading || isCheckingSoilFile}
+														/>
+														<div class="form-text">
+															{$_('page.discharge.calculation.namParams.uploadZipFileHelp')}
+														</div>
+													{:else}
+														<div class="alert alert-info">
+															<i class="ti ti-info-circle me-2"></i>
+															{$_('page.discharge.calculation.namParams.soilFileExists')}
+														</div>
+													{/if}
+												</div>
 											</div>
-										{:else}
-											<div class="alert alert-info">
-												<i class="ti ti-info-circle me-2"></i>
-												{$_('page.discharge.calculation.namParams.soilFileExists')}
-											</div>
-										{/if}
+										{/each}
+										</div>
+										
 									</div>
 								</div>
-                                        
-                                    {/each}
-                                    </section>
-                                </div>
-                            {/if}
-                        </div>
-                    {/if}
-
+							</div>
+						{/each}
+						
+					</section>
 					<div class="d-flex flex-wrap gap-2 mb-4">
-                        <button
-                            type="button"
-                            class="btn btn-primary d-flex align-items-center gap-2"
-                            onclick={() => bulkSaveForm?.requestSubmit()}
-                            disabled={isBulkSaving}
-                            title={$_('page.general.save')}
-                            aria-label={$_('page.general.save')}
-                        >
-                            {#if isBulkSaving}
-                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            {/if}
-                            <i class="ti ti-device-floppy fs-20"></i>
-                            <span>{$_('page.general.save')}</span>
-                        </button>
-                        <button
-                            type="button"
-                            class="btn btn-outline-primary d-flex align-items-center gap-2"
-                            onclick={() => calculateProject(data.project.id)}
-                            disabled={!couldCalculate || isBulkSaving}
-                            title={$_('page.general.calculate')}
-                            aria-label={$_('page.general.calculate')}
-                        >
-                            <i class="ti ti-calculator fs-20"></i>
-                            <span>{$_('page.general.calculate')}</span>
-                        </button>
-                    </div>
-
-                </div>
+						<button
+							type="button"
+							class="btn btn-primary d-flex align-items-center gap-2"
+							onclick={() => bulkSaveForm?.requestSubmit()}
+							disabled={isBulkSaving}
+							title={$_('page.general.save')}
+							aria-label={$_('page.general.save')}
+						>
+							{#if isBulkSaving}
+								<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"
+								></span>
+							{/if}
+							<i class="ti ti-device-floppy fs-20"></i>
+							<span>{$_('page.general.save')}</span>
+						</button>
+						<button
+							type="button"
+							class="btn btn-outline-primary d-flex align-items-center gap-2"
+							onclick={() => calculateProject(data.project.id)}
+							disabled={!couldCalculate || isBulkSaving}
+							title={$_('page.general.calculate')}
+							aria-label={$_('page.general.calculate')}
+						>
+							<i class="ti ti-calculator fs-20"></i>
+							<span>{$_('page.general.calculate')}</span>
+						</button>
+					</div>
+				</div>
 				<!-- End of Input Part -->
 				<!-- Results Part -->
 				<div class="col-lg-8">
@@ -2454,10 +2637,10 @@ function ensureIdfInputs() {
 									<!-- Climate Scenario Selector -->
 									<div class="mb-3">
 										<label for="climateScenario" class="form-label">
-											<strong>Klimaszenario (CH2025)</strong>
+											<strong>{$_('page.discharge.calculation.climateScenario')} (CH2025)</strong>
 										</label>
-										<select 
-											id="climateScenario" 
+										<select
+											id="climateScenario"
 											class="form-select"
 											bind:value={selectedClimateScenario}
 										>
@@ -2466,24 +2649,26 @@ function ensureIdfInputs() {
 											{/each}
 										</select>
 									</div>
-									
+
 									<div class="row">
 										<!-- Input Part -->
 										<div class="col-lg-6">
 											{#key selectedClimateScenario}
 												<div use:renderChart={chart}></div>
 											{/key}
-											
+
 											<!-- NAM Discharge Timesteps Graph -->
 											{#if nam.some((n: any) => getResultField(n, 'NAM_Result')?.HQ_time)}
 												<div class="mt-4">
-													<h5 class="text-muted">{$_('page.discharge.calculation.chart.dischargeTimeSeries')}</h5>
+													<h5 class="text-muted">
+														{$_('page.discharge.calculation.chart.dischargeTimeSeries')}
+													</h5>
 													<div class="card">
 														<div class="card-body">
 															{#key selectedClimateScenario}
 																<div class="mb-0">
-																	<div 
-																		class="discharge-chart" 
+																	<div
+																		class="discharge-chart"
 																		style=""
 																		use:renderChart={getMultiAnnualityDischargeChartOptions(nam, 0)}
 																	></div>
@@ -2503,31 +2688,69 @@ function ensureIdfInputs() {
 														<thead>
 															<tr>
 																<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-																<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
-																<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
-																<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
-																<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+																<th
+																	class:fw-bold={selectedClimateScenario === 'current'}
+																	class:text-primary={selectedClimateScenario === 'current'}
+																	>Current</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '1_5_degree'}
+																	class:text-primary={selectedClimateScenario === '1_5_degree'}
+																	>+1.5°C</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '2_degree'}
+																	class:text-primary={selectedClimateScenario === '2_degree'}
+																	>+2.0°C</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '3_degree'}
+																	class:text-primary={selectedClimateScenario === '3_degree'}
+																	>+3.0°C</th
+																>
 															</tr>
 														</thead>
 														<tbody>
-															{#each mod_verfahren.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as mod_fz}
+															{#each mod_verfahren
+																.slice()
+																.sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as mod_fz}
 																<tr>
 																	<td>
 																		{#if mod_fz.Annuality}
 																			{mod_fz.Annuality.description}
 																		{/if}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
-																		{mod_fz.Mod_Fliesszeit_Result?.HQ ? mod_fz.Mod_Fliesszeit_Result.HQ.toFixed(1) : '-'}
+																	<td
+																		class:fw-bold={selectedClimateScenario === 'current'}
+																		class:text-primary={selectedClimateScenario === 'current'}
+																	>
+																		{mod_fz.Mod_Fliesszeit_Result?.HQ
+																			? mod_fz.Mod_Fliesszeit_Result.HQ.toFixed(1)
+																			: '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
-																		{mod_fz.Mod_Fliesszeit_Result_1_5?.HQ ? mod_fz.Mod_Fliesszeit_Result_1_5.HQ.toFixed(1) : '-'}
+																	<td
+																		class:fw-bold={selectedClimateScenario === '1_5_degree'}
+																		class:text-primary={selectedClimateScenario === '1_5_degree'}
+																	>
+																		{mod_fz.Mod_Fliesszeit_Result_1_5?.HQ
+																			? mod_fz.Mod_Fliesszeit_Result_1_5.HQ.toFixed(1)
+																			: '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
-																		{mod_fz.Mod_Fliesszeit_Result_2?.HQ ? mod_fz.Mod_Fliesszeit_Result_2.HQ.toFixed(1) : '-'}
+																	<td
+																		class:fw-bold={selectedClimateScenario === '2_degree'}
+																		class:text-primary={selectedClimateScenario === '2_degree'}
+																	>
+																		{mod_fz.Mod_Fliesszeit_Result_2?.HQ
+																			? mod_fz.Mod_Fliesszeit_Result_2.HQ.toFixed(1)
+																			: '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
-																		{mod_fz.Mod_Fliesszeit_Result_3?.HQ ? mod_fz.Mod_Fliesszeit_Result_3.HQ.toFixed(1) : '-'}
+																	<td
+																		class:fw-bold={selectedClimateScenario === '3_degree'}
+																		class:text-primary={selectedClimateScenario === '3_degree'}
+																	>
+																		{mod_fz.Mod_Fliesszeit_Result_3?.HQ
+																			? mod_fz.Mod_Fliesszeit_Result_3.HQ.toFixed(1)
+																			: '-'}
 																	</td>
 																</tr>
 															{/each}
@@ -2543,30 +2766,62 @@ function ensureIdfInputs() {
 														<thead>
 															<tr>
 																<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-																<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
-																<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
-																<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
-																<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+																<th
+																	class:fw-bold={selectedClimateScenario === 'current'}
+																	class:text-primary={selectedClimateScenario === 'current'}
+																	>Current</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '1_5_degree'}
+																	class:text-primary={selectedClimateScenario === '1_5_degree'}
+																	>+1.5°C</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '2_degree'}
+																	class:text-primary={selectedClimateScenario === '2_degree'}
+																	>+2.0°C</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '3_degree'}
+																	class:text-primary={selectedClimateScenario === '3_degree'}
+																	>+3.0°C</th
+																>
 															</tr>
 														</thead>
 														<tbody>
-															{#each koella.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
+															{#each koella
+																.slice()
+																.sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
 																<tr>
 																	<td>
 																		{#if k.Annuality}
 																			{k.Annuality.description}
 																		{/if}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																	<td
+																		class:fw-bold={selectedClimateScenario === 'current'}
+																		class:text-primary={selectedClimateScenario === 'current'}
+																	>
 																		{k.Koella_Result?.HQ ? k.Koella_Result.HQ.toFixed(1) : '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
-																		{k.Koella_Result_1_5?.HQ ? k.Koella_Result_1_5.HQ.toFixed(1) : '-'}
+																	<td
+																		class:fw-bold={selectedClimateScenario === '1_5_degree'}
+																		class:text-primary={selectedClimateScenario === '1_5_degree'}
+																	>
+																		{k.Koella_Result_1_5?.HQ
+																			? k.Koella_Result_1_5.HQ.toFixed(1)
+																			: '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																	<td
+																		class:fw-bold={selectedClimateScenario === '2_degree'}
+																		class:text-primary={selectedClimateScenario === '2_degree'}
+																	>
 																		{k.Koella_Result_2?.HQ ? k.Koella_Result_2.HQ.toFixed(1) : '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																	<td
+																		class:fw-bold={selectedClimateScenario === '3_degree'}
+																		class:text-primary={selectedClimateScenario === '3_degree'}
+																	>
 																		{k.Koella_Result_3?.HQ ? k.Koella_Result_3.HQ.toFixed(1) : '-'}
 																	</td>
 																</tr>
@@ -2583,31 +2838,67 @@ function ensureIdfInputs() {
 														<thead>
 															<tr>
 																<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-																<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
-																<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
-																<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
-																<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+																<th
+																	class:fw-bold={selectedClimateScenario === 'current'}
+																	class:text-primary={selectedClimateScenario === 'current'}
+																	>Current</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '1_5_degree'}
+																	class:text-primary={selectedClimateScenario === '1_5_degree'}
+																	>+1.5°C</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '2_degree'}
+																	class:text-primary={selectedClimateScenario === '2_degree'}
+																	>+2.0°C</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '3_degree'}
+																	class:text-primary={selectedClimateScenario === '3_degree'}
+																	>+3.0°C</th
+																>
 															</tr>
 														</thead>
 														<tbody>
-															{#each clark_wsl.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
+															{#each clark_wsl
+																.slice()
+																.sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as k}
 																<tr>
 																	<td>
 																		{#if k.Annuality}
 																			{k.Annuality.description}
 																		{/if}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																	<td
+																		class:fw-bold={selectedClimateScenario === 'current'}
+																		class:text-primary={selectedClimateScenario === 'current'}
+																	>
 																		{k.ClarkWSL_Result?.Q ? k.ClarkWSL_Result.Q.toFixed(1) : '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
-																		{k.ClarkWSL_Result_1_5?.Q ? k.ClarkWSL_Result_1_5.Q.toFixed(1) : '-'}
+																	<td
+																		class:fw-bold={selectedClimateScenario === '1_5_degree'}
+																		class:text-primary={selectedClimateScenario === '1_5_degree'}
+																	>
+																		{k.ClarkWSL_Result_1_5?.Q
+																			? k.ClarkWSL_Result_1_5.Q.toFixed(1)
+																			: '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
-																		{k.ClarkWSL_Result_2?.Q ? k.ClarkWSL_Result_2.Q.toFixed(1) : '-'}
+																	<td
+																		class:fw-bold={selectedClimateScenario === '2_degree'}
+																		class:text-primary={selectedClimateScenario === '2_degree'}
+																	>
+																		{k.ClarkWSL_Result_2?.Q
+																			? k.ClarkWSL_Result_2.Q.toFixed(1)
+																			: '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
-																		{k.ClarkWSL_Result_3?.Q ? k.ClarkWSL_Result_3.Q.toFixed(1) : '-'}
+																	<td
+																		class:fw-bold={selectedClimateScenario === '3_degree'}
+																		class:text-primary={selectedClimateScenario === '3_degree'}
+																	>
+																		{k.ClarkWSL_Result_3?.Q
+																			? k.ClarkWSL_Result_3.Q.toFixed(1)
+																			: '-'}
 																	</td>
 																</tr>
 															{/each}
@@ -2623,30 +2914,60 @@ function ensureIdfInputs() {
 														<thead>
 															<tr>
 																<th>{$_('page.discharge.calculation.returnPeriod')}</th>
-																<th class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>Current</th>
-																<th class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>+1.5°C</th>
-																<th class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>+2.0°C</th>
-																<th class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>+3.0°C</th>
+																<th
+																	class:fw-bold={selectedClimateScenario === 'current'}
+																	class:text-primary={selectedClimateScenario === 'current'}
+																	>Current</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '1_5_degree'}
+																	class:text-primary={selectedClimateScenario === '1_5_degree'}
+																	>+1.5°C</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '2_degree'}
+																	class:text-primary={selectedClimateScenario === '2_degree'}
+																	>+2.0°C</th
+																>
+																<th
+																	class:fw-bold={selectedClimateScenario === '3_degree'}
+																	class:text-primary={selectedClimateScenario === '3_degree'}
+																	>+3.0°C</th
+																>
 															</tr>
 														</thead>
 														<tbody>
-															{#each nam.slice().sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as n}
+															{#each nam
+																.slice()
+																.sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0)) as n}
 																<tr>
 																	<td>
 																		{#if n.Annuality}
 																			{n.Annuality.description}
 																		{/if}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === 'current'} class:text-primary={selectedClimateScenario === 'current'}>
+																	<td
+																		class:fw-bold={selectedClimateScenario === 'current'}
+																		class:text-primary={selectedClimateScenario === 'current'}
+																	>
 																		{n.NAM_Result?.HQ ? n.NAM_Result.HQ.toFixed(1) : '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '1_5_degree'} class:text-primary={selectedClimateScenario === '1_5_degree'}>
+																	<td
+																		class:fw-bold={selectedClimateScenario === '1_5_degree'}
+																		class:text-primary={selectedClimateScenario === '1_5_degree'}
+																	>
 																		{n.NAM_Result_1_5?.HQ ? n.NAM_Result_1_5.HQ.toFixed(1) : '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '2_degree'} class:text-primary={selectedClimateScenario === '2_degree'}>
+																	<td
+																		class:fw-bold={selectedClimateScenario === '2_degree'}
+																		class:text-primary={selectedClimateScenario === '2_degree'}
+																	>
 																		{n.NAM_Result_2?.HQ ? n.NAM_Result_2.HQ.toFixed(1) : '-'}
 																	</td>
-																	<td class:fw-bold={selectedClimateScenario === '3_degree'} class:text-primary={selectedClimateScenario === '3_degree'}>
+																	<td
+																		class:fw-bold={selectedClimateScenario === '3_degree'}
+																		class:text-primary={selectedClimateScenario === '3_degree'}
+																	>
 																		{n.NAM_Result_3?.HQ ? n.NAM_Result_3.HQ.toFixed(1) : '-'}
 																	</td>
 																</tr>

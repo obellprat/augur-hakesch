@@ -132,7 +132,9 @@
         "hadesValuesSuccess": "HADES values loaded successfully",
         "hadesValuesError": "Error loading HADES values",
         "hadesValuesNoCoordinates": "No discharge point coordinates found",
-        "climateScenario": "Climate scenario"
+        "climateScenario": "Climate scenario",
+        "hydrologicalCalculation": "Hydrological calculations",
+        "percentage": "Percentage (%)"
       }
     },
     "precipitation": {

@@ -132,7 +132,9 @@
         "hadesValuesSuccess": "Valeurs HADES chargées avec succès",
         "hadesValuesError": "Erreur lors du chargement des valeurs HADES",
         "hadesValuesNoCoordinates": "Aucune coordonnée du point de décharge trouvée",
-        "climateScenario": "Scénario climatique"
+        "climateScenario": "Scénario climatique",
+        "hydrologicalCalculation": "Calculs hydrologiques",
+        "percentage": "Pour cent"
       }
     },
     "precipitation": {
