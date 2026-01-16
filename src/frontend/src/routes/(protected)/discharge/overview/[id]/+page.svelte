@@ -93,7 +93,7 @@
 			}
 			const payload = await response.json();
 			if (!payload?.task_id) {
-				throw new Error('API Antwort ohne task_id');
+				throw new Error($_('page.discharge.overview.api-without-task_id'));
 			}
 			const actTime = new Date();
 			const progressTextEl = document.getElementById('progresstext');
@@ -155,14 +155,14 @@
 								.attr('aria-valuenow', obj.progress);
 						}
 					} else if (res.task_status == 'PENDING') {
-						html = 'Der Prozess wird intialisiert. Bitte warten...';
+						html = $_('page.discharge.overview.recalculating');
 					} else if (res.task_status == 'FAILURE') {
 						html =
-							'Die Geodaten konnten nicht berechnet werden. Bitte versuchen Sie es später erneut.<br> ' +
+							$_('page.discharge.overview.errorrecalculating') +
 							'Fehler: ' +
 							obj.text;
 					} else if (res.task_status == 'SUCCESS') {
-						html = 'Die Geodaten wurden erfolgrech berechnet.';
+						html = $_('page.discharge.overview.geodatasuccess');
 
 						const jq = (globalThis as any).$;
 						if (jq) {
@@ -395,7 +395,7 @@
 				}
 			});
 			if (!response.ok) {
-				throw new Error('Download failed');
+				throw new Error($_('page.discharge.overview.download-failed'));
 			}
 			const blob = await response.blob();
 			const link = document.createElement('a');
@@ -564,14 +564,13 @@ onMount(async () => {
 						<div class="modal-dialog">
 							<div class="modal-content">
 								<div class="modal-header">
-									<h4 class="modal-title" id="standard-modalLabel">Berechnung der Geodaten</h4>
-									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+									<h4 class="modal-title" id="standard-modalLabel">{$_('page.discharge.overview.calculation')}</h4>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="$_('page.general.close')"
 									></button>
 								</div>
 								<div class="modal-body">
 									<h5>
-										Die Geodaten werden berechnet. Dieser Prozess dauert je nach
-										Einzugsgebietsgrösse einige Minuten
+										{$_('page.discharge.overview.recalculationDialogText')}
 									</h5>
 									<hr />
 									<p class="text-muted" id="progresstext"></p>
@@ -588,7 +587,7 @@ onMount(async () => {
 								</div>
 								<div class="modal-footer">
 									<button type="button" class="btn btn-light" data-bs-dismiss="modal"
-										>Im Hintergrund berechnen lassen</button
+										>{$_('page.discharge.overview.background-calculation')}</button
 									>
 								</div>
 							</div>
@@ -609,15 +608,14 @@ onMount(async () => {
 							<div class="modal-content">
 								<div class="modal-header">
 									<h4 class="modal-title" id="standard-modalLabel">
-										Sollen die Geodaten neu berechnet werden?
+										{$_('page.discharge.overview.shouldgeodatabecalculated')}
 									</h4>
-									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label={$_('page.general.close')}
 									></button>
 								</div>
 								<div class="modal-body">
 									<h5>
-										Der Abflusspunkt wurde neuerstellt. Soll das Projekt gespeichert und die
-										Geodaten neu berechnet werden?
+										{$_('page.discharge.overview.shouldrecalcbecausenewpoint')}
 									</h5>
 									<hr />
 								</div>
@@ -628,8 +626,8 @@ onMount(async () => {
 										data-bs-dismiss="modal"
 										data-bs-toggle="modal"
 										data-bs-target="#generate-modal"
-										onclick={calculateGeodatas}>Ja</button
-									><button type="button" class="btn btn-light" data-bs-dismiss="modal">Nein</button>
+										onclick={calculateGeodatas}>{$_('page.general.yes')}</button
+									><button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.no')}</button>
 								</div>
 							</div>
 							<!-- /.modal-content -->
@@ -687,15 +685,15 @@ onMount(async () => {
 						<div class="modal-dialog modal-dialog-centered">
 							<div class="modal-content">
 								<div class="modal-header text-bg-danger border-0">
-									<h4 class="modal-title" id="api-error-modal-label">Verbindungsfehler</h4>
-									<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"
+									<h4 class="modal-title" id="api-error-modal-label">{$_('page.general.connectionerror')}</h4>
+									<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="${'page.general.close'}"
 									></button>
 								</div>
 								<div class="modal-body">
 									<p>{apiErrorMessage}</p>
 								</div>
 								<div class="modal-footer border-0">
-									<button type="button" class="btn btn-danger" data-bs-dismiss="modal">Schliessen</button>
+									<button type="button" class="btn btn-danger" data-bs-dismiss="modal">{$_('page.general.close')}</button>
 								</div>
 							</div>
 						</div>
@@ -758,11 +756,11 @@ onMount(async () => {
 								class="dropdown-item"
 								data-bs-toggle="modal"
 								data-bs-target="#delete-project-modal"
-								title="Export"
-								aria-label="Export"
+								title="$_('page.general.export')"
+								aria-label="$_('page.general.export')"
 							>
 								<i class="ti ti-share me-1 fs-24 align-middle"></i>
-								<span class="align-middle">Export</span>
+								<span class="align-middle">{$_}</span>
 							</button>
 							<div class="dropdown-divider"></div>
 							<a
@@ -800,8 +798,8 @@ onMount(async () => {
 						<span
 							class="btn btn-sm btn-icon btn-ghost-danger d-flex"
 							data-bs-placement="top"
-							title="Delete"
-							aria-label="delete"
+							title={$_('page.general.delete')}
+							aria-label={$_('page.general.delete')}
 							data-bs-toggle="modal"
 							data-bs-target="#delete-project-modal"
 						>
@@ -813,8 +811,8 @@ onMount(async () => {
 							data-bs-toggle="modal"
 							data-bs-target="#userVideoCall"
 							data-bs-placement="top"
-							title="Export"
-							aria-label="export"
+							title="${'page.general.export'}"
+							aria-label="${'page.general.export'}"
 						>
 							<i class="ti ti-share fs-20"></i>
 						</a>
@@ -882,29 +880,29 @@ onMount(async () => {
 					<div class="col-lg-12">
 						<div class="card border-secondary border mt-3">
 							<div class="card-body">
-								<h3 class="card-title">Geodaten</h3>
+								<h3 class="card-title">{$_('page.discharge.geodata')}</h3>
 								{#if data.project.isozones_taskid === ''}
-									<p>Geodaten noch nicht berechnen. Neu berechnen?</p>
+									<p>{$_('page.discharge.overview.missingGeodata')}</p>
 								{:else if data.project.isozones_running}
-									<p>Daten werden aktuell neu berechnet. Bitte warten</p>
+									<p>{$_('page.discharge.overview.isozonesRunning')}</p>
 								{:else}
 									<div class="table-responsive-sm">
 										<table class="table table-striped mb-0">
 											<thead>
 												<tr>
-													<th>Einzugsgebietsgrösse [km<sup>2</sup>]</th>
-													<th>Max Fliesslänge [m]</th>
-													<th>Kumulativ Fliesslänge [m]</th>
-													<th>Höhendifferenz (delta_h) [m]</th>
-													<th>Isozonen</th>
-													<th>Einzugsgebiet</th>
-													<th>Gerinne</th>
+													<th>{$_('page.discharge.overview.catchmentArea')} [km<sup>2</sup>]</th>
+													<th>{$_('page.discharge.overview.maxFlowLength')} [m]</th>
+													<th>{$_('page.discharge.overview.cumulativeFlowLength')} [m]</th>
+													<th>{$_('page.discharge.overview.heightDifference')} [m]</th>
+													<th>{$_('page.discharge.overview.isozones')}</th>
+													<th>{$_('page.discharge.overview.catchmentArea')}</th>
+													<th>{$_('page.discharge.overview.channel')}</th>
 												</tr>
 											</thead>
 											<tbody>
 												<tr>
 													<td>
-														{data.project.catchment_area} km<sup>2</sup>
+														{Math.round(data.project.catchment_area*10)/10} km<sup>2</sup>
 													</td>
 													<td>{data.project.channel_length} m</td>
 													<td>{Math.round(data.project.cummulative_channel_length)} m</td>
@@ -915,7 +913,7 @@ onMount(async () => {
 															class="link-reset fs-20 p-1"
 															onclick={downloadIsozones}
 														>
-															Herunterladen</a
+															{$_('page.discharge.overview.download')}</a
 														>
 													</td>
 													<td class="text-muted">
@@ -924,7 +922,7 @@ onMount(async () => {
 															class="link-reset fs-20 p-1"
 															onclick={downloadCatchment}
 														>
-															Herunterladen</a
+															{$_('page.discharge.overview.download')}</a
 														>
 													</td>
 													<td class="text-muted">
@@ -933,7 +931,7 @@ onMount(async () => {
 															class="link-reset fs-20 p-1"
 															onclick={downloadBranches}
 														>
-															Herunterladen</a
+															{$_('page.discharge.overview.download')}</a
 														>
 													</td>
 												</tr>
@@ -969,7 +967,7 @@ onMount(async () => {
 						type="button"
 						class="btn-close btn-close-white"
 						data-bs-dismiss="modal"
-						aria-label="Close"
+						aria-label="${'page.general.close'}"
 					></button>
 				</div>
 				<div class="modal-body">

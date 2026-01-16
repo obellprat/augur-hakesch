@@ -162,6 +162,8 @@
 					>
 						{$locale?.toLocaleLowerCase() === 'de-de' || $locale?.toLocaleLowerCase() === 'de'
 							? 'DE'
+							: $locale?.toLocaleLowerCase() === 'fr-fr' || $locale?.toLocaleLowerCase() === 'fr'
+							? 'FR'
 							: 'EN'}
 					</span>
 
@@ -190,6 +192,17 @@
 								height="18"
 							/>
 							<span class="align-middle">{$_('page.nav.german')}</span>
+						</button>
+
+						<!-- item-->
+						<button onclick={() => changeLanguage('fr')} class="dropdown-item">
+							<img
+								src="{base}/assets/images/flags/fr.svg"
+								alt="user-image"
+								class="me-1 rounded"
+								height="18"
+							/>
+							<span class="align-middle">{$_('page.nav.french')}</span>
 						</button>
 					</div>
 				</div>

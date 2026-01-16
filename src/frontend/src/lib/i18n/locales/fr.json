@@ -1,0 +1,235 @@
+{
+  "page": {
+    "dashboard": {
+      "title": "Tableau de bord",
+      "nav": "Tableau de bord",
+      "welcome": "Bienvenue sur AUGUR",
+      "welcome_text": "Ensemble de méthodes pour l’estimation des crues de petits bassins versants sous changement climatique.",
+      "precipitation_card": "Valeurs de précipitations à l’échelle mondiale, tenant compte des scénarios climatiques du GIEC",
+      "precipitationtool": "Outil de précipitations",
+      "precipitation": "Précipitations",
+      "dischargedesc": "Calcul du ruissellement intégrant les scénarios climatiques du GIEC pour les petits bassins versants"
+    },
+    "discharge": {
+      "title": "Débit",
+      "nav": "Débit",
+      "projects": "Projets",
+      "geodata": "Géodonnées",
+      "calculate": "Hydrologie",
+      "overviewText": "Aperçu",
+      "overview": {
+        "deleteProject": "Supprimer le projet",
+        "description": "Description",
+        "discharge-projekt": "Débit – Projet",
+        "pourpoint": "Point d’exutoire",
+        "projectTitle": "Titre du projet",
+        "missinggeodataTitle": "Géodonnées non encore calculées",
+        "missingGeodata": "Les géodonnées n’ont pas encore été calculées. Souhaitez-vous lancer le calcul maintenant ?",
+        "shoulddeleteproject": "Voulez-vous supprimer le projet {title} ?",
+        "changePoutPoint": "Sélectionner en cliquant sur la carte",
+        "easting": "Coordonnée est",
+        "northing": "Coordonnée nord",
+        "calculateGeodata": "Recalculer les géodonnées",
+        "apiUnavailable": "Le service AUGUR n’a pas pu être atteint. Veuillez réessayer plus tard.",
+        "isozonesRunning": "Les géodonnées sont en cours de recalcul, veuillez patienter",
+        "recalculating": "Le processus est en cours d’initialisation. Veuillez patienter…",
+        "errorrecalculating": "Les géodonnées n’ont pas pu être calculées. Veuillez réessayer plus tard.<br>",
+        "api-without-task_id": "Réponse de l’API sans task_id",
+        "download-failed": "Échec du téléchargement",
+        "calculation": "Calcul des géodonnées",
+        "recalculationDialogText": "Les géodonnées sont en cours de calcul. Selon la taille du bassin versant, ce processus peut prendre plusieurs minutes.",
+        "background-calculation": "Calculer en arrière-plan",
+        "shouldgeodatabecalculated": "Les géodonnées doivent-elles être recalculées ?",
+        "shouldrecalcbecausenewpoint": "Le point d’exutoire a été recréé. Souhaitez-vous enregistrer le projet et recalculer les géodonnées ?",
+        "geodaten": "Géodonnées",
+        "catchmentArea": "Surface du bassin versant",
+        "maxFlowLength": "Longueur maximale d’écoulement",
+        "cumulativeFlowLength": "Longueur cumulée d’écoulement",
+        "heightDifference": "Différence d’altitude",
+        "isozones": "Isozones",
+        "download": "Télécharger",
+        "channel": "Chenal",
+        "geodatasuccess": "Les géodonnées ont été calculées avec succès"
+      },
+      "project": "Projet",
+      "create": {
+        "createproject": "Créer un projet"
+      },
+      "calculation": {
+        "idf": {
+          "precipLowerPeriod1h": "Précipitations [mm] pour une période de retour de 30 ans, durée 1 heure",
+          "precipLowerPeriod24h": "Précipitations [mm] pour une période de retour de 30 ans, durée 24 heures",
+          "returnPeriod": "Période de retour de 30 ans",
+          "precipUpperPeriod1h": "Précipitations [mm] pour une période de retour de 100 ans, durée 1 heure",
+          "precipUpperPeriod24h": "Précipitations [mm] pour une période de retour de 100 ans, durée 24 heures",
+          "upperReturnPeriod": "Période de retour de 100 ans"
+        },
+        "szenario": "Scénario",
+        "modFZV": {
+          "wettingVolume": "Volume de mouillage pour un événement de 20 ans [mm]",
+          "peakFlow": "Coefficient de débit de pointe [psi]",
+          "peakFlowTooltip": "Les valeurs plausibles se situent entre 0,08 et 0,4",
+          "wettingVolumeTooltip": "Les valeurs plausibles se situent entre 20 mm et 45 mm"
+        },
+        "calculate": "Calculer l’hydrologie",
+        "deleteCalculation": "Supprimer le calcul",
+        "deleteCalculationQuestion": "Souhaitez-vous supprimer le calcul ?",
+        "successfullsave": "Enregistré avec succès !",
+        "returnPeriod": "Période de retour",
+        "koella": {
+          "glacierArea": "Surface glaciaire"
+        },
+        "results": "Résultats",
+        "hq": "HQ",
+        "addcalculation": "Ajouter un calcul hydrologique",
+        "calcrunning": "Le calcul est en cours…",
+        "calcsuccess": "Calcul effectué avec succès !",
+        "missingIdfTitle": "Entrées de précipitations requises",
+        "missingIdfMessage": "Veuillez saisir les valeurs d’intensité de précipitation (P_bas 1h, P_bas 24h, P_haut 1h et P_haut 24h) avant de lancer le calcul.",
+        "calculationTitle": "- Calcul | AUGUR",
+        "clarkwsl": "Clark WSL",
+        "nam": "NAM",
+        "namParams": {
+          "precipitationFactor": "Facteur de précipitation [-]",
+          "readinessToDrain": "Capacité de drainage [mm]",
+          "waterBalanceMode": "Mode du bilan hydrique",
+          "stormCenterMode": "Mode du centre de la tempête",
+          "routingMethod": "Méthode de routage",
+          "simple": "Simple",
+          "advanced": "Avancé",
+          "centroid": "Centroïde",
+          "random": "Aléatoire",
+          "timeValues": "Valeurs temporelles",
+          "kinematicWave": "Onde cinématique",
+          "dischargePoint": "Point de décharge",
+          "traveltime": "Calcul du temps basé sur les pixels",
+          "useOwnSoilData": "Utiliser ses propres données de sol",
+          "useOwnSoilDataHelp": "Un shapefile séparé avec les types de sol (A, B, C et D) a été téléchargé.",
+          "uploadZipFile": "Télécharger un fichier ZIP (shapefiles)",
+          "uploadZipFileHelp": "Vous pouvez créer votre propre shapefile avec les types de sol (A, B, C et D) et le télécharger ici sous forme de fichier ZIP.",
+          "soilFileExists": "Un système de classification des sols distinct existe."
+        },
+        "chart": {
+          "discharge": "Débit",
+          "dischargeUnit": "Débit [m³/s]",
+          "timeUnit": "Temps [min]",
+          "dischargeTimeSeries": "Série temporelle du débit",
+          "dischargeTooltip": "m³/s"
+        },
+        "generalInput": "Général",
+        "inputsForPrecipitationIntensity": "Informations sur le calcul de l’intensité des précipitations",
+        "modFliesszeit": "Méthode du temps d’écoulement modifié",
+        "koells": "Koella",
+        "typeOfCalculation": "Quel processus doit être ajouté au projet ?",
+        "missinggeodataTitle": "Géodonnées manquantes",
+        "missingGeodata": "Les géodonnées n’ont pas encore été calculées. Veuillez calculer les données dans l’aperçu du projet afin de pouvoir effectuer les calculs hydrologiques.",
+        "zipUploadSuccess": "Téléchargement réussi",
+        "zipUploadError": "Erreur lors du téléchargement",
+        "calcerror": "Erreur",
+        "clarkwslname": "Clark-WSL",
+        "hadesValues": "Valeurs HADES",
+        "hadesValuesLoading": "Chargement des valeurs HADES…",
+        "hadesValuesSuccess": "Valeurs HADES chargées avec succès",
+        "hadesValuesError": "Erreur lors du chargement des valeurs HADES",
+        "hadesValuesNoCoordinates": "Aucune coordonnée du point de décharge trouvée",
+        "climateScenario": "Scénario climatique"
+      }
+    },
+    "precipitation": {
+      "title": "Précipitations",
+      "nav": "Précipitations"
+    },
+    "science": {
+      "title": "Science",
+      "heading": "Précipitations globales",
+      "p1": "AUGUR estime les événements de précipitations extrêmes à une résolution de 5 kilomètres à partir du produit satellitaire CHIRPS. Les événements proviennent des maxima annuels des sommes journalières de précipitations [mm/j], ajustées par une distribution statistique des événements extrêmes. Les événements estimés sont corrigés à l’aide d’observations de précipitations au sol provenant de GHCN. Cette correction permet de tenir compte de la sous-estimation des précipitations satellitaires, en particulier dans les régions tropicales. Les signaux du changement climatique sont calculés à partir du sixième rapport d’évaluation (AR6) du Groupe d’experts intergouvernemental sur l’évolution du climat (GIEC). Les données présentées concernent uniquement le scénario SS5-8.5.",
+      "p2": ""
+    },
+    "nav": {
+      "tools": "Outils",
+      "about": "À propos",
+      "aboutAugur": "À propos d’AUGUR",
+      "science": "Science",
+      "donate": "Faire un don",
+      "helpSupportUs": "Aidez-nous à nous soutenir. Faites un don !",
+      "donateNow": "Faire un don maintenant",
+      "welcome": "Bienvenue !",
+      "my-account": "Mon compte",
+      "settings": "Paramètres",
+      "support": "Support",
+      "sign-out": "Se déconnecter",
+      "login": "Connexion",
+      "signup": "Inscription",
+      "english": "Anglais",
+      "german": "Allemand",
+      "contact": "Contact",
+      "version": "Version",
+      "backend": "Backend",
+      "frontend": "Frontend",
+      "french": "Français"
+    },
+    "about": {
+      "title": "À propos d’AUGUR",
+      "intro": {
+        "heading": "Qu’est-ce qu’AUGUR ?",
+        "p1": "AUGUR aide à estimer les précipitations et les débits des rivières pour des bassins versants du monde entier afin de tenir compte du changement climatique.",
+        "p2": "Cela permet de planifier des évaluations locales des crues et des mesures d’adaptation au changement climatique, même lorsque seules des données limitées sont disponibles."
+      },
+      "idea": {
+        "heading": "L’idée",
+        "p1": "AUGUR combine des informations climatiques avec des méthodes hydrologiques et fournit rapidement des résultats comparables.",
+        "p2": "Les scénarios et les méthodes peuvent être comparés côte à côte, rendant visibles les sensibilités et les incertitudes."
+      },
+      "technology": {
+        "heading": "Comment ça marche (simplement)",
+        "p1": "AUGUR rend des méthodes scientifiques éprouvées accessibles dans une application web facile à utiliser.",
+        "p2": "Les données d’observation et les modèles sont combinés pour estimer les précipitations et le ruissellement.",
+        "p3": "En arrière-plan, une API robuste garantit que les calculs peuvent être effectués simultanément.",
+        "list": {
+          "svelte": "Interface SvelteKit pour les cartes, graphiques et projets.",
+          "fastapi": "FastAPI fournit l’API et l’authentification (Keycloak).",
+          "prisma": "Prisma gère l’accès à la base de données pour les projets et les résultats.",
+          "celery": "Celery exécute les modèles hydrologiques en tant que tâches en arrière-plan.",
+          "redis": "Redis coordonne les tâches et les résultats de courte durée.",
+          "docker": "Docker Compose exécute la pile localement et dans le cloud."
+        }
+      },
+      "getting_started": {
+        "heading": "Commencer",
+        "p1": "Essayez l’outil de précipitations ou créez un projet de débit. Ajustez les paramètres et relancez pour comparer les résultats.",
+        "open_precip": "Ouvrir Précipitations",
+        "open_discharge": "Ouvrir Débit"
+      },
+      "credits": {
+        "heading": "Crédits et données",
+        "p1": "AUGUR est open source et a été lancé pour une utilisation mondiale avec le soutien de l’« Innovation Meets Practice Accelerator » 2022 de l’Aide humanitaire de l’Agence suisse pour le développement et la coopération (DDC).",
+        "p2": "Grâce au financement du canton de Berne, AUGUR a été développé avec les méthodes de HAKESCH et un modèle pluie-débit (NAM) en collaboration avec Hunziker, Zarn und Partner (HZP) et Scherrer Hydrologie."
+      }
+    },
+    "login": {
+      "title": "Se connecter à AUGUR",
+      "why_heading": "Pourquoi ai-je besoin d’un compte ?",
+      "why_p1": "La connexion vous permet d’enregistrer des projets, de consulter les résultats ultérieurement et de conserver vos données privées.",
+      "why_p2": "Elle nous aide également à exécuter de longs calculs hydrologiques de manière fiable en arrière-plan.",
+      "free_heading": "Gratuit et simple",
+      "free_p1": "L’inscription est gratuite. Vous pouvez supprimer vos projets à tout moment.",
+      "btn_login": "Se connecter",
+      "btn_register": "Créer un compte gratuit",
+      "privacy_note": "Nous utilisons uniquement vos informations pour fournir ce service."
+    },
+    "general": {
+      "close": "Fermer",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "save": "Enregistrer",
+      "calculate": "Calculer",
+      "add": "Ajouter",
+      "start": "Démarrer",
+      "ok": "OK",
+      "yes": "Oui",
+      "no": "Non",
+      "connectionerror": "Erreur de connexion",
+      "export": "Exporter"
+    }
+  }
+}

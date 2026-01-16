@@ -30,7 +30,26 @@
         "easting": "Easting",
         "northing": "Northing",
         "calculateGeodata": "Geodaten neu berechnen",
-        "apiUnavailable": "Die Verbindung zum AUGUR Dienst konnte nicht hergestellt werden. Bitte versuchen Sie es später erneut."
+        "apiUnavailable": "Die Verbindung zum AUGUR Dienst konnte nicht hergestellt werden. Bitte versuchen Sie es später erneut.",
+        "isozonesRunning": "Die Geodaten werden aktuell neu berechnet, bitte warten",
+        "geodatasuccess": "Die Geodaten wurden erfolgreich berechnet",
+        "download-failed": "Fehler beim Herunterladen",
+        "background-calculation": "Im Hintergrund berechnen lassen",
+        "shouldgeodatabecalculated": "Sollen die Geodaten neu berechnet werden?",
+        "shouldrecalcbecausenewpoint": "Der Abflusspunkt wurde neuerstellt. Soll das Projekt gespeichert und die Geodaten neu berechnet werden?",
+        "geodaten": "Geodaten",
+        "catchmentArea": "Einzugsgebietsgrösse",
+        "maxFlowLength": "Max Fliesslänge",
+        "cumulativeFlowLength": "Kumulativ Fliesslänge",
+        "heightDifference": "Höhendifferenz",
+        "isozones": "Isozonen",
+        "download": "Herunterladen",
+        "channel": "Gerinne",
+        "api-without-task_id": "API Antwort ohne task_id",
+        "calculation": "Berechnung der Geodaten",
+        "errorrecalculating": "Die Geodaten konnten nicht berechnet werden. Bitte versuchen Sie es später erneut.<br>",
+        "recalculating": "Der Prozess wird intialisiert. Bitte warten...",
+        "recalculationDialogText": "Die Geodaten werden berechnet. Dieser Prozess dauert je nach Einzugsgebietsgrösse einige Minuten"
       },
       "project": "Projekt",
       "create": {
@@ -112,7 +131,8 @@
         "hadesValuesLoading": "HADES Werte werden geladen...",
         "hadesValuesSuccess": "HADES Werte erfolgreich geladen",
         "hadesValuesError": "Fehler beim Laden der HADES Werte",
-        "hadesValuesNoCoordinates": "Keine Abflusspunkt-Koordinaten gefunden"
+        "hadesValuesNoCoordinates": "Keine Abflusspunkt-Koordinaten gefunden",
+        "climateScenario": "Klimaszenario"
       }
     },
     "precipitation": {
@@ -145,7 +165,8 @@
       "contact": "Kontakt",
       "version": "Version",
       "frontend": "Frontend",
-      "backend": "Backend"
+      "backend": "Backend",
+      "french": "Französisch"
     },
     "about": {
       "title": " ",
@@ -204,7 +225,11 @@
       "add": "Hinzufügen",
       "calculate": "Berechnen",
       "start": "Start",
-      "ok": "OK"
+      "ok": "OK",
+      "no": "Nein",
+      "yes": "Ja",
+      "connectionerror": "Verbindungsfehler",
+      "export": "Export"
     }
   }
 }

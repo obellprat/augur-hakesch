@@ -15,13 +15,13 @@
       "nav": "Discharge",
       "projects": "Projects",
       "geodata": "Geodata",
-      "calculate": "Hydrologie",
+      "calculate": "Hydrology",
       "overviewText": "Overview",
       "overview": {
         "deleteProject": "Delete project",
         "description": "Description",
         "discharge-projekt": "Discharge - Project",
-        "pourpoint": "Poutpoint",
+        "pourpoint": "Pourpoint",
         "projectTitle": "Project title",
         "missinggeodataTitle": "Geodata not yet calculated",
         "missingGeodata": "The geodata has not yet been calculated. Would you like to perform the calculation now?",
@@ -30,7 +30,26 @@
         "easting": "Easting",
         "northing": "Northing",
         "calculateGeodata": "Recalculate geodata",
-        "apiUnavailable": "We could not reach the AUGUR service. Please try again later."
+        "apiUnavailable": "We could not reach the AUGUR service. Please try again later.",
+        "isozonesRunning": "The geodata is currently being recalculated, please wait",
+        "recalculating": "The process is initializing. Please wait...",
+        "errorrecalculating": "The geodata could not be calculated. Please try again later.<br>",
+        "api-without-task_id": "API response without task_id",
+        "download-failed": "Download failed",
+        "calculation": "Calculation of geodata",
+        "recalculationDialogText": "The geodata is being calculated. Depending on the size of the catchment area, this process may take several minutes.",
+        "background-calculation": "Calculate in the background",
+        "shouldgeodatabecalculated": "Should the geodata be recalculated?",
+        "shouldrecalcbecausenewpoint": "The drainage point has been recreated. Would you like to save the project and recalculate the geodata?",
+        "geodaten": "Geodata",
+        "catchmentArea": "Catchment area",
+        "maxFlowLength": "Max flow length",
+        "cumulativeFlowLength": "Cumulative flow length ",
+        "heightDifference": "Height difference",
+        "isozones": "Isozones",
+        "download": "Download",
+        "channel": "Channel",
+        "geodatasuccess": "The geodata has been successfully calculated"
       },
       "project": "Project",
       "create": {
@@ -112,7 +131,8 @@
         "hadesValuesLoading": "Loading HADES values...",
         "hadesValuesSuccess": "HADES values loaded successfully",
         "hadesValuesError": "Error loading HADES values",
-        "hadesValuesNoCoordinates": "No discharge point coordinates found"
+        "hadesValuesNoCoordinates": "No discharge point coordinates found",
+        "climateScenario": "Climate scenario"
       }
     },
     "precipitation": {
@@ -145,7 +165,8 @@
       "contact": "Contact Us",
       "version": "Version",
       "backend": "Backend",
-      "frontend": "Frontend"
+      "frontend": "Frontend",
+      "french": "French"
     },
     "about": {
       "title": "About AUGUR",
@@ -204,7 +225,11 @@
       "calculate": "Calculate",
       "add": "Add",
       "start": "Start",
-      "ok": "OK"
+      "ok": "OK",
+      "yes": "Yes",
+      "no": "No",
+      "connectionerror": "Connection error",
+      "export": "Export"
     }
   }
 }

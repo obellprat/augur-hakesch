@@ -5,6 +5,7 @@ const defaultLocale = 'en';
 
 register('en', () => import('./locales/en.json'));
 register('de', () => import('./locales/de.json'));
+register('fr', () => import('./locales/fr.json'));
 init({
 	fallbackLocale: defaultLocale,
 	initialLocale: browser ? window.navigator.language : defaultLocale

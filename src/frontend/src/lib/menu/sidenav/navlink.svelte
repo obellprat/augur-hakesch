@@ -31,7 +31,7 @@
 			<ul class="sub-menu">
 				<li class="side-nav-item">
 					<a href={url} class="side-nav-link">
-						<span class="menu-text">Projekte</span>
+						<span class="menu-text">{$_('page.discharge.projects')}</span>
 						<span class="badge bg-danger rounded-pill">{projectcount}</span>
 					</a>
 				</li>
