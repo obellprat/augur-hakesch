@@ -205,7 +205,8 @@
       "credits": {
         "heading": "Credits & data",
         "p1": "AUGUR is open source and was launched for global use with the support of the 'Innovation Meets Practice Accelerator' 2022 of the Humanitarian Aid of the Swiss Agency for Development and Cooperation (SDC).",
-        "p2": "With funding from the Canton of Bern, AUGUR was further developed with the methods of HAKESCH and a rainfall-runoff model (NAM) in collaboration with Hunziker, Zarn und Partner (HZP) and Scherrer Hydrologie."
+        "p2": "With funding from the Canton of Bern, AUGUR was further developed with the methods of HAKESCH and a rainfall-runoff model (NAM) in collaboration with Hunziker, Zarn und Partner (HZP) and Scherrer Hydrologie.",
+        "p3": "The entire tool was developed and conceptualized by GeoTools Suter and Bellprat climate consulting. It is available at https://github.com/obellprat/augur-hakesch and published as Open Source under the MIT License."
       }
     },
     "login": {

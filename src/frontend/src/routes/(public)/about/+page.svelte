@@ -98,6 +98,26 @@
 							/>
 						</div>
 					</div>
+					
+					<p class="card-text">{$_('page.about.credits.p3')}</p>
+					<div class="my-4 p-0" style="margin: 0;">
+						<div 
+							class="d-flex justify-content-center align-items-center gap-4"
+						    style="background: {isDark ? 'rgba(255,255,255,0.85)' : 'none'}; border-radius: 0.5rem; padding: 0.5rem;">
+							<a href="https://www.geotools.ch" style="max-width: 20%; height: auto; border: none; padding: 0;" target="_blank"><img
+								src="{base}/assets/images/geotools_logo_small.png"
+								alt="DEZA logo"
+								class="img-fluid"
+								
+							/></a>
+							<a href="https://climate.expert" style="max-width: 20%; height: auto; border: none; padding: 0;" target="_blank"><img
+							<img
+								src="{base}/assets/images/bellprat_logo.png"
+								alt="Bern logo"
+								class="img-fluid"
+							/>
+						</div>
+					</div>
 				</div>
 				<!-- end card-body-->
 			</div>
