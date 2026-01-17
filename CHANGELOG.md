@@ -1,3 +1,18 @@
+## 1.1.0-alpha.0 (2026-01-17)
+
+### Feat
+
+- **frontend,-precipitation**: Autocomplete location box, share link
+- **frontend,-precipitation**: get data from db, adjust graph and css style fixes
+- **frontend**: Table style vo_20 and psi entry
+- **frontend**: Translation fix and new language french
+
+### Fix
+
+- **frontend**: Rounding the results to one decimal place
+- **frontend**: Moving the Save and Calculate button
+- **frontend**: Hades values without decimal places. Move the button
+
 ## 1.0.0 (2025-12-15)
 
 ### Feat
