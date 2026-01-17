@@ -31,3 +31,4 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+src/frontend/static/assets/precip_db/augur.sqlite

@@ -25,10 +25,17 @@
 		import('apexcharts')
 			.then((module) => module.default)
 			.then((ApexCharts) => {
-				const chart = new ApexCharts(node, parameter.options);
-				parameter.node = node;
-				parameter.ref = chart;
-				chart.render();
+				// If chart already exists, update it instead of creating a new one
+				if (parameter.ref) {
+					parameter.ref.updateOptions(parameter.options, false, false, false);
+					parameter.ref.updateSeries(parameter.options.series || []);
+				} else {
+					// Create new chart instance
+					const chart = new ApexCharts(node, parameter.options);
+					parameter.node = node;
+					parameter.ref = chart;
+					chart.render();
+				}
 			});
 		return {
 			destroy: () => {
@@ -342,14 +349,17 @@
 				bar: {
 					horizontal: false,
 					columnWidth: '70%',
-					endingShape: 'rounded'
+					borderRadius: 4
 				}
 			},
 			dataLabels: {
 				enabled: false
 			},
 			legend: {
-				position: 'top'
+				position: 'top',
+				labels: {
+					colors: ['#000000', '#000000']
+				}
 			},
 			tooltip: {
 				y: {
@@ -360,9 +370,18 @@
 			}
 		};
 
-		precipitationChart = {
-			options: chartOptions
-		};
+		// Always update the options property
+		if (!precipitationChart) {
+			precipitationChart = { options: chartOptions };
+		} else {
+			precipitationChart.options = chartOptions;
+		}
+
+		// If chart already exists, update it directly
+		if (precipitationChart.ref) {
+			precipitationChart.ref.updateOptions(chartOptions, false, false, false);
+			precipitationChart.ref.updateSeries(chartOptions.series || []);
+		}
 	}
 
 	function getCurrentLocation() {
@@ -522,7 +541,7 @@
 			<div class="settings-section">
 				<div class="setting-item">
 					<label>
-						<span>Climate Change Period</span>
+						<span style="margin-right:10px;">Climate Change Period</span>
 						<select bind:this={climatePeriodSelect}>
 							<option value="2030">2030</option>
 							<option value="2050">2050</option>
@@ -821,6 +840,10 @@
 		margin-bottom: 20px;
 		position: relative;
 		min-height: 200px;
+
+		:global(.apexcharts-legend-text) {
+			color: #000000 !important;
+		}
 	}
 
 	.loading-spinner {
@@ -850,6 +873,8 @@
 
 	.settings-section {
 		margin-bottom: 20px;
+		width: fit-content;
+		margin-left: auto;
 
 		.setting-item {
 			margin-bottom: 16px;
@@ -871,10 +896,16 @@
 					padding: 8px 12px;
 					font-size: 14px;
 					background: white;
+					color: #000000;
 					outline: none;
 
 					&:focus {
 						border-color: #3b82f6;
+					}
+
+					option {
+						color: #000000;
+						background: white;
 					}
 				}
 

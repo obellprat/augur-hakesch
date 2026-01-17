@@ -1,4 +1,8 @@
 import { json } from '@sveltejs/kit';
+import Database from 'better-sqlite3';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
 
 export async function GET({ url }) {
 	const lat = Number(url.searchParams.get('lat') ?? '0');
@@ -12,37 +16,82 @@ export async function GET({ url }) {
 
 /**
  * Select location entry from local database
- * @param  {String} lat latitude of location
- * @param  {String} lng longitude of location
+ * @param  {number} lat latitude of location
+ * @param  {number} lng longitude of location
  */
 async function selectLocation(lat: number, lng: number) {
 	try {
-		/*const result = await prisma.$queryRaw`SELECT * FROM "Precipitation" WHERE lat in (SELECT lat FROM latitude ORDER BY ABS(lat - ${lat}) LIMIT 1) AND lon in (SELECT lon FROM longitude ORDER BY ABS(lon - ${lng}) LIMIT 1);`;
+		// Construct path to SQLite database
+		// Path is relative to the project root: src/frontend/static/assets/precip_db/augur.sqlite
+		// Try multiple possible paths to handle different execution contexts
+		const possiblePaths = [
+			join(process.cwd(), 'src/frontend/static/assets/precip_db/augur.sqlite'), // From project root
+			join(process.cwd(), 'static/assets/precip_db/augur.sqlite'), // If cwd is src/frontend
+			join(dirname(fileURLToPath(import.meta.url)), '../../../../static/assets/precip_db/augur.sqlite') // Relative to this file
+		];
 
+		let dbPath: string | null = null;
+		for (const path of possiblePaths) {
+			if (existsSync(path)) {
+				dbPath = path;
+				break;
+			}
+		}
 
-    const years: number[] = [2030, 2050, 2090];
-    const periods: number[] = [10, 20, 30, 50, 100];
+		if (!dbPath) {
+			throw new Error(
+				`Database file not found. Tried paths: ${possiblePaths.join(', ')}. Current working directory: ${process.cwd()}`
+			);
+		}
 
-    const data = { period:
-      years.reduce((acc: Record<number, unknown>, year) => {
-        acc[year] = {
-          years: periods.reduce((pAcc: Record<number, unknown>, period) => {
-            pAcc[period] = {
-              present: result[`year${period}`],
-              climate_change: result[`year${period}_cchange${year}`]
-            };
-            return pAcc;
-          }, {})
-        };
-        return acc;
-      }, {})
-    };*/
-		// Simulated data for demonstration purposes
-		const jsonstring =
-			'{"period":{"2030":{"years":{"10":{"present":58,"climate_change":70},"20":{"present":66,"climate_change":80},"30":{"present":70,"climate_change":85},"50":{"present":76,"climate_change":92},"100":{"present":84,"climate_change":102}}},"2050":{"years":{"10":{"present":58,"climate_change":80},"20":{"present":66,"climate_change":91},"30":{"present":70,"climate_change":97},"50":{"present":76,"climate_change":105},"100":{"present":84,"climate_change":116}}},"2090":{"years":{"10":{"present":58,"climate_change":103},"20":{"present":66,"climate_change":117},"30":{"present":70,"climate_change":125},"50":{"present":76,"climate_change":135},"100":{"present":84,"climate_change":150}}}}}';
-		return JSON.parse(jsonstring);
-		//return data;
+		const db = new Database(dbPath, { readonly: true });
+
+		// Find closest latitude and longitude
+		const closestLat = db
+			.prepare('SELECT lat FROM latitude ORDER BY ABS(lat - ?) LIMIT 1')
+			.get(lat) as { lat: number } | undefined;
+
+		const closestLng = db
+			.prepare('SELECT lon FROM longitude ORDER BY ABS(lon - ?) LIMIT 1')
+			.get(lng) as { lon: number } | undefined;
+
+		if (!closestLat || !closestLng) {
+			db.close();
+			throw new Error('Could not find closest location in database');
+		}
+
+		// Query precipitation data for the closest location
+		const result = db
+			.prepare('SELECT * FROM data WHERE lat = ? AND lon = ?')
+			.get(closestLat.lat, closestLng.lon) as Record<string, unknown>;
+
+		db.close();
+
+		if (!result) {
+			throw new Error('No precipitation data found for the closest location');
+		}
+
+		const years: number[] = [2030, 2050, 2090];
+		const periods: number[] = [10, 20, 30, 50, 100];
+
+		const data = {
+			period: years.reduce((acc: Record<number, unknown>, year) => {
+				acc[year] = {
+					years: periods.reduce((pAcc: Record<number, unknown>, period) => {
+						pAcc[period] = {
+							present: result[`year${period}`],
+							climate_change: result[`year${period}_cchange${year}`]
+						};
+						return pAcc;
+					}, {})
+				};
+				return acc;
+			}, {})
+		};
+
+		return data;
 	} catch (error) {
-		console.log(error);
+		console.error('Error selecting location from database:', error);
+		throw error;
 	}
 }
