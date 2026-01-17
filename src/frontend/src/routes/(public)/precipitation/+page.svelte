@@ -7,6 +7,7 @@
 	import type { ApexOptions } from 'apexcharts';
 	import type { PageData } from './$types';
 	import type { Action } from 'svelte/action';
+	import { base } from '$app/paths';
 
 	import 'leaflet/dist/leaflet.css';
 
@@ -579,7 +580,7 @@
 	async function shareLocation() {
 		if (!selectedLocation) return;
 
-		const url = `${window.location.origin}/precipitation?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}&climate=${climateChangePeriod}`;
+		const url = `${window.location.origin}/${base}/precipitation?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}&climate=${climateChangePeriod}`;
 		shareUrl = url;
 
 		// Try to copy to clipboard

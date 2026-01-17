@@ -27,6 +27,7 @@ async function selectLocation(lat: number, lng: number) {
 		const possiblePaths = [
 			join(process.cwd(), 'src/frontend/static/assets/precip_db/augur.sqlite'), // From project root
 			join(process.cwd(), 'static/assets/precip_db/augur.sqlite'), // If cwd is src/frontend
+			join(process.cwd(), '/build/client/abfluss/assets/precip_db/augur.sqlite'), 
 			join(dirname(fileURLToPath(import.meta.url)), '../../../../static/assets/precip_db/augur.sqlite') // Relative to this file
 		];
 
