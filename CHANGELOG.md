@@ -1,3 +1,9 @@
+## 1.1.0-alpha.1 (2026-01-17)
+
+### Feat
+
+- **frontend**: added geotools suter and bellprat climate consulting under the credits. and a link to github
+
 ## 1.1.0-alpha.0 (2026-01-17)
 
 ### Feat
