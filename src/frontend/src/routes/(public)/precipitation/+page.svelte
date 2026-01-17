@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { tick } from 'svelte';
 	import pageTitle from '$lib/page/pageTitle';
 	import { _ } from 'svelte-i18n';
 	import type ApexCharts from 'apexcharts';
@@ -54,6 +55,21 @@
 	let climateChangePeriod = '2030';
 	let showUncertainty = false;
 	let clickMarker: L.Marker | null = null;
+	let autocompleteSuggestions: Array<{ display_name: string; lat: string; lon: string }> = [];
+	let showAutocomplete = false;
+	let searchQuery = '';
+	let autocompleteTimeout: ReturnType<typeof setTimeout> | null = null;
+	let showShareModal = false;
+	let shareUrl = '';
+	let shareUrlInput: HTMLInputElement;
+
+	// Focus the URL input when modal opens
+	$: if (showShareModal && shareUrlInput) {
+		tick().then(() => {
+			shareUrlInput?.focus();
+			shareUrlInput?.select();
+		});
+	}
 
 	// Bottom sheet state
 	let isBottomSheetOpen = false;
@@ -121,27 +137,45 @@
 		// Add mouse event listeners for desktop
 		sheetHandle.addEventListener('mousedown', handleMouseStart);
 
+		// orange pin icon (SVG data URL)
+		const orangePinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41"><path d="M12.5 0C7 0 2.7 4.3 2.7 9.8c0 7.1 9.8 21 9.8 21s9.8-13.9 9.8-21C22.3 4.3 18 0 12.5 0z" fill="#ff7f00"/><circle cx="12.5" cy="9.8" r="3.5" fill="#ffffff"/></svg>`;
+		const orangeIcon = L.icon({
+			iconUrl: 'data:image/svg+xml;utf8,' + encodeURIComponent(orangePinSvg),
+			iconSize: [25, 41],
+			iconAnchor: [12, 41],
+			popupAnchor: [1, -34]
+		});
+
 		// Handle initial location from URL parameters
 		if (data.initialLocation) {
 			selectedLocation = data.initialLocation;
+			
+			// Set climate period from URL if provided
+			if (data.initialClimatePeriod) {
+				climateChangePeriod = data.initialClimatePeriod;
+				if (climatePeriodSelect) {
+					climatePeriodSelect.value = climateChangePeriod;
+				}
+			}
+			
+			// Place marker at the location
+			const latlng = L.latLng(data.initialLocation.lat, data.initialLocation.lng);
+			if (clickMarker) {
+				clickMarker.setLatLng(latlng);
+				clickMarker.setIcon(orangeIcon);
+			} else {
+				clickMarker = L.marker(latlng, { icon: orangeIcon, riseOnHover: true }).addTo(map);
+			}
+			
 			map.setView([data.initialLocation.lat, data.initialLocation.lng], 6);
-			await fetchPrecipitationData(data.initialLocation.lat, data.initialLocation.lng);
-			// Reset any inline transform styles and open the sheet
+			// Set loading state and open bottom sheet immediately to show spinner
+			isLoading = true;
 			if (bottomSheet) {
 				bottomSheet.style.transform = '';
 			}
 			isBottomSheetOpen = true;
+			await fetchPrecipitationData(data.initialLocation.lat, data.initialLocation.lng);
 		}
-
-
-	    // orange pin icon (SVG data URL)
-    	const orangePinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41"><path d="M12.5 0C7 0 2.7 4.3 2.7 9.8c0 7.1 9.8 21 9.8 21s9.8-13.9 9.8-21C22.3 4.3 18 0 12.5 0z" fill="#ff7f00"/><circle cx="12.5" cy="9.8" r="3.5" fill="#ffffff"/></svg>`;
-    	const orangeIcon = L.icon({
-        	iconUrl: 'data:image/svg+xml;utf8,' + encodeURIComponent(orangePinSvg),
-        	iconSize: [25, 41],
-        	iconAnchor: [12, 41],
-        	popupAnchor: [1, -34]
-    	});
 
 		// Map click handler
 		map.on('click', async (e: any) => {
@@ -156,12 +190,15 @@
             	clickMarker = L.marker(latlng, { icon: orangeIcon, riseOnHover: true }).addTo(map);
             }
 
-            await fetchPrecipitationData(lat, lng);
-            // Reset any inline transform styles and open the sheet
+            // Set loading state and open bottom sheet immediately to show spinner
+            isLoading = true;
             if (bottomSheet) {
                 bottomSheet.style.transform = '';
             }
             isBottomSheetOpen = true;
+            
+            // Fetch data (this will update isLoading when done)
+            await fetchPrecipitationData(lat, lng);
 		});
 
 		// Event listeners for controls
@@ -192,8 +229,43 @@
 			if (e.key === 'Enter') {
 				const query = searchInput.value.trim();
 				if (query) {
+					showAutocomplete = false;
 					await searchLocation(query);
 				}
+			}
+		});
+
+		// Initialize autocomplete on input
+		searchInput.addEventListener('input', (e) => {
+			const query = (e.target as HTMLInputElement).value.trim();
+			searchQuery = query;
+			if (query.length >= 2) {
+				debounceAutocomplete(query);
+			} else {
+				autocompleteSuggestions = [];
+				showAutocomplete = false;
+			}
+		});
+
+		// Close autocomplete when clicking outside
+		const handleClickOutside = (e: MouseEvent) => {
+			const target = e.target as Node;
+			const dropdown = document.querySelector('.autocomplete-dropdown');
+			if (
+				searchInput &&
+				!searchInput.contains(target) &&
+				dropdown &&
+				!dropdown.contains(target)
+			) {
+				showAutocomplete = false;
+			}
+		};
+		document.addEventListener('click', handleClickOutside);
+
+		// Handle Escape key to close autocomplete
+		searchInput.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') {
+				showAutocomplete = false;
 			}
 		});
 	});
@@ -387,16 +459,17 @@
 	function getCurrentLocation() {
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(
-				(position) => {
+				async (position) => {
 					const { latitude, longitude } = position.coords;
 					map.setView([latitude, longitude], 6);
 					selectedLocation = { lat: latitude, lng: longitude };
-					fetchPrecipitationData(latitude, longitude);
-					// Reset any inline transform styles and open the sheet
+					// Set loading state and open bottom sheet immediately to show spinner
+					isLoading = true;
 					if (bottomSheet) {
 						bottomSheet.style.transform = '';
 					}
 					isBottomSheetOpen = true;
+					await fetchPrecipitationData(latitude, longitude);
 				},
 				(error) => {
 					alert('Unable to get your location. Please click on the map to select a location.');
@@ -420,6 +493,70 @@
 		URL.revokeObjectURL(url);
 	}
 
+	function debounceAutocomplete(query: string) {
+		if (autocompleteTimeout) {
+			clearTimeout(autocompleteTimeout);
+		}
+		autocompleteTimeout = setTimeout(() => {
+			fetchAutocompleteSuggestions(query);
+		}, 300);
+	}
+
+	async function fetchAutocompleteSuggestions(query: string) {
+		try {
+			// Use OpenStreetMap Nominatim for autocomplete
+			const response = await fetch(
+				`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+			);
+			const results = await response.json();
+			autocompleteSuggestions = results;
+			showAutocomplete = results.length > 0;
+		} catch (error) {
+			// Error handled silently
+			autocompleteSuggestions = [];
+			showAutocomplete = false;
+		}
+	}
+
+	async function selectLocationFromAutocomplete(location: { lat: string; lon: string; display_name: string }) {
+		const lat = parseFloat(location.lat);
+		const lng = parseFloat(location.lon);
+
+		// Get Leaflet instance
+		const L = (await import('leaflet')).default;
+
+		// Create orange pin icon (SVG data URL)
+		const orangePinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41"><path d="M12.5 0C7 0 2.7 4.3 2.7 9.8c0 7.1 9.8 21 9.8 21s9.8-13.9 9.8-21C22.3 4.3 18 0 12.5 0z" fill="#ff7f00"/><circle cx="12.5" cy="9.8" r="3.5" fill="#ffffff"/></svg>`;
+		const orangeIcon = L.icon({
+			iconUrl: 'data:image/svg+xml;utf8,' + encodeURIComponent(orangePinSvg),
+			iconSize: [25, 41],
+			iconAnchor: [12, 41],
+			popupAnchor: [1, -34]
+		});
+
+		// Create or update marker
+		const latlng = L.latLng(lat, lng);
+		if (clickMarker) {
+			clickMarker.setLatLng(latlng);
+			clickMarker.setIcon(orangeIcon);
+		} else {
+			clickMarker = L.marker(latlng, { icon: orangeIcon, riseOnHover: true }).addTo(map);
+		}
+
+		map.setView([lat, lng], 6);
+		selectedLocation = { lat, lng };
+		// Set loading state and open bottom sheet immediately to show spinner
+		isLoading = true;
+		if (bottomSheet) {
+			bottomSheet.style.transform = '';
+		}
+		isBottomSheetOpen = true;
+		await fetchPrecipitationData(lat, lng);
+		searchInput.value = '';
+		autocompleteSuggestions = [];
+		showAutocomplete = false;
+	}
+
 	async function searchLocation(query: string) {
 		try {
 			// Use OpenStreetMap Nominatim for geocoding
@@ -430,18 +567,7 @@
 
 			if (results.length > 0) {
 				const location = results[0];
-				const lat = parseFloat(location.lat);
-				const lng = parseFloat(location.lon);
-
-				map.setView([lat, lng], 6);
-				selectedLocation = { lat, lng };
-				await fetchPrecipitationData(lat, lng);
-				// Reset any inline transform styles and open the sheet
-				if (bottomSheet) {
-					bottomSheet.style.transform = '';
-				}
-				isBottomSheetOpen = true;
-				searchInput.value = '';
+				await selectLocationFromAutocomplete(location);
 			} else {
 				alert('Location not found. Please try a different search term.');
 			}
@@ -450,28 +576,33 @@
 		}
 	}
 
-	function shareLocation() {
+	async function shareLocation() {
 		if (!selectedLocation) return;
 
-		const url = `${window.location.origin}/precipitation?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}`;
+		const url = `${window.location.origin}/precipitation?lat=${selectedLocation.lat}&lng=${selectedLocation.lng}&climate=${climateChangePeriod}`;
+		shareUrl = url;
 
-		if (navigator.share) {
-			navigator.share({
-				title: 'AUGUR Precipitation Data',
-				text: 'Check out this precipitation data from AUGUR',
-				url: url
-			});
-		} else {
-			navigator.clipboard.writeText(url).then(() => {
-				// Show tooltip or notification
-				const tooltip = document.querySelector('.tooltiptext') as HTMLElement;
-				if (tooltip) {
-					tooltip.style.visibility = 'visible';
-					setTimeout(() => {
-						tooltip.style.visibility = 'hidden';
-					}, 2000);
-				}
-			});
+		// Try to copy to clipboard
+		try {
+			await navigator.clipboard.writeText(url);
+		} catch (error) {
+			// Clipboard API might not be available, but we'll still show the modal
+			console.error('Failed to copy to clipboard:', error);
+		}
+
+		// Show the modal dialog
+		showShareModal = true;
+	}
+
+	function closeShareModal() {
+		showShareModal = false;
+	}
+
+	async function copyUrlToClipboard() {
+		try {
+			await navigator.clipboard.writeText(shareUrl);
+		} catch (error) {
+			console.error('Failed to copy to clipboard:', error);
 		}
 	}
 </script>
@@ -490,8 +621,8 @@
 					d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
 				/>
 			</svg>
-			<button type="button" class="location-btn" id="getLocation">
-				<svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+			<button type="button" class="location-btn" id="getLocation" aria-label="Get current location">
+				<svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 					<path
 						d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
 					/>
@@ -510,6 +641,26 @@
 				</label>
 			</div>
 		</div>
+		<!-- Autocomplete Dropdown -->
+		{#if showAutocomplete && autocompleteSuggestions.length > 0}
+			<div class="autocomplete-dropdown">
+				{#each autocompleteSuggestions as suggestion}
+					<button
+						type="button"
+						class="autocomplete-item"
+						aria-label="Select location: {suggestion.display_name}"
+						on:click={() => selectLocationFromAutocomplete(suggestion)}
+					>
+						<svg class="location-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+							<path
+								d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+							/>
+						</svg>
+						<span class="autocomplete-text">{suggestion.display_name}</span>
+					</button>
+				{/each}
+			</div>
+		{/if}
 	</div>
 
 	<!-- Map Container -->
@@ -579,6 +730,55 @@
 			</div>
 		</div>
 	</div>
+
+	<!-- Share Modal -->
+	{#if showShareModal}
+		<div
+			class="modal-overlay"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="modal-title"
+			tabindex="-1"
+			on:click={closeShareModal}
+			on:keydown={(e) => {
+				if (e.key === 'Escape') {
+					closeShareModal();
+				}
+			}}
+		>
+			<div class="modal-content" on:click|stopPropagation>
+				<div class="modal-header">
+					<h3 id="modal-title">Share Link</h3>
+					<button type="button" class="modal-close" on:click={closeShareModal} aria-label="Close modal">
+						<svg viewBox="0 0 24 24" fill="currentColor">
+							<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+						</svg>
+					</button>
+				</div>
+				<div class="modal-body">
+					<p class="modal-message">Link copied to clipboard!</p>
+					<div class="url-container">
+						<input
+							type="text"
+							readonly
+							value={shareUrl}
+							class="url-input"
+							id="share-url-input"
+							bind:this={shareUrlInput}
+						/>
+						<button type="button" class="copy-button" on:click={copyUrlToClipboard} aria-label="Copy URL">
+							<svg viewBox="0 0 24 24" fill="currentColor">
+								<path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="modal-button" on:click={closeShareModal}>Close</button>
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style lang="scss">
@@ -677,6 +877,7 @@
 		align-items: center;
 		gap: 12px;
 		position: relative;
+		z-index: 1;
 
 		input {
 			flex: 1;
@@ -756,6 +957,67 @@
 					color: #000;
 					min-width: 50px;
 				}
+			}
+		}
+	}
+
+	.autocomplete-dropdown {
+		position: absolute;
+		top: calc(100% + 8px);
+		left: 0;
+		right: 0;
+		background: rgba(255, 255, 255, 0.95);
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(0, 0, 0, 0.1);
+		border-radius: 12px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		max-height: 300px;
+		overflow-y: auto;
+		z-index: 1002;
+		margin-top: 4px;
+
+		.autocomplete-item {
+			width: 100%;
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 12px 16px;
+			border: none;
+			background: transparent;
+			cursor: pointer;
+			text-align: left;
+			transition: all 0.2s ease;
+			border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+			&:last-child {
+				border-bottom: none;
+			}
+
+			&:hover {
+				background: rgba(0, 0, 0, 0.05);
+			}
+
+			&:active {
+				background: rgba(0, 0, 0, 0.1);
+			}
+
+			.location-icon {
+				width: 18px;
+				height: 18px;
+				color: #3b82f6;
+				flex-shrink: 0;
+			}
+
+			.autocomplete-text {
+				font-size: 14px;
+				color: #1f2937;
+				line-height: 1.4;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				display: -webkit-box;
+				-webkit-line-clamp: 2;
+				line-clamp: 2;
+				-webkit-box-orient: vertical;
 			}
 		}
 	}
@@ -1009,6 +1271,27 @@
 			}
 		}
 
+		.autocomplete-dropdown {
+			background: rgba(31, 41, 55, 0.95);
+			border-color: rgba(255, 255, 255, 0.1);
+
+			.autocomplete-item {
+				border-bottom-color: rgba(255, 255, 255, 0.1);
+
+				&:hover {
+					background: rgba(255, 255, 255, 0.1);
+				}
+
+				&:active {
+					background: rgba(255, 255, 255, 0.15);
+				}
+
+				.autocomplete-text {
+					color: #d1d5db;
+				}
+			}
+		}
+
 		.details-pane {
 			background: rgba(31, 41, 55, 0.95);
 			color: white;
@@ -1161,6 +1444,272 @@
 			.search-icon {
 				width: 14px;
 				height: 14px;
+			}
+		}
+	}
+
+	// Share Modal Styles
+	.modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(4px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 10000;
+		padding: 20px;
+		animation: fadeIn 0.2s ease;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	.modal-content {
+		background: white;
+		border-radius: 16px;
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+		max-width: 500px;
+		width: 100%;
+		max-height: 90vh;
+		overflow-y: auto;
+		animation: slideUp 0.3s ease;
+		display: flex;
+		flex-direction: column;
+	}
+
+	@keyframes slideUp {
+		from {
+			transform: translateY(20px);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+
+	.modal-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 20px 24px;
+		border-bottom: 1px solid #e5e7eb;
+
+		h3 {
+			margin: 0;
+			font-size: 20px;
+			font-weight: 600;
+			color: #1f2937;
+		}
+
+		.modal-close {
+			background: none;
+			border: none;
+			padding: 8px;
+			border-radius: 8px;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #6b7280;
+			transition: all 0.2s ease;
+
+			&:hover {
+				background: #f3f4f6;
+				color: #1f2937;
+			}
+
+			svg {
+				width: 24px;
+				height: 24px;
+			}
+		}
+	}
+
+	.modal-body {
+		padding: 24px;
+		flex: 1;
+
+		.modal-message {
+			margin: 0 0 16px 0;
+			font-size: 14px;
+			color: #10b981;
+			font-weight: 500;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+
+			&::before {
+				content: '✓';
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				width: 20px;
+				height: 20px;
+				background: #10b981;
+				color: white;
+				border-radius: 50%;
+				font-size: 12px;
+				font-weight: bold;
+			}
+		}
+
+		.url-container {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+
+			.url-input {
+				flex: 1;
+				padding: 12px 16px;
+				border: 1px solid #d1d5db;
+				border-radius: 8px;
+				font-size: 14px;
+				font-family: monospace;
+				background: #f9fafb;
+				color: #1f2937;
+				outline: none;
+				transition: all 0.2s ease;
+
+				&:focus {
+					border-color: #3b82f6;
+					background: white;
+				}
+			}
+
+			.copy-button {
+				background: #3b82f6;
+				border: none;
+				padding: 12px 16px;
+				border-radius: 8px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: white;
+				transition: all 0.2s ease;
+				flex-shrink: 0;
+
+				&:hover {
+					background: #2563eb;
+				}
+
+				&:active {
+					transform: scale(0.95);
+				}
+
+				svg {
+					width: 20px;
+					height: 20px;
+				}
+			}
+		}
+	}
+
+	.modal-footer {
+		padding: 16px 24px;
+		border-top: 1px solid #e5e7eb;
+		display: flex;
+		justify-content: flex-end;
+
+		.modal-button {
+			background: #3b82f6;
+			color: white;
+			border: none;
+			padding: 10px 20px;
+			border-radius: 8px;
+			font-size: 14px;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.2s ease;
+
+			&:hover {
+				background: #2563eb;
+			}
+		}
+	}
+
+	// Dark mode support for modal
+	@media (prefers-color-scheme: dark) {
+		.modal-content {
+			background: #1f2937;
+			color: white;
+		}
+
+		.modal-header {
+			border-bottom-color: #374151;
+
+			h3 {
+				color: white;
+			}
+
+			.modal-close {
+				color: #9ca3af;
+
+				&:hover {
+					background: #374151;
+					color: white;
+				}
+			}
+		}
+
+		.modal-body {
+			.url-container {
+				.url-input {
+					background: #374151;
+					border-color: #4b5563;
+					color: white;
+
+					&:focus {
+						border-color: #3b82f6;
+						background: #4b5563;
+					}
+				}
+			}
+		}
+
+		.modal-footer {
+			border-top-color: #374151;
+		}
+	}
+
+	// Responsive design for modal
+	@media (max-width: 768px) {
+		.modal-overlay {
+			padding: 16px;
+		}
+
+		.modal-content {
+			max-width: 100%;
+		}
+
+		.modal-header,
+		.modal-body,
+		.modal-footer {
+			padding: 16px;
+		}
+
+		.modal-body {
+			.url-container {
+				flex-direction: column;
+
+				.url-input {
+					width: 100%;
+				}
+
+				.copy-button {
+					width: 100%;
+				}
 			}
 		}
 	}
