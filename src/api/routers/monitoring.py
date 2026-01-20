@@ -49,32 +49,44 @@ async def get_system_info(user: User = Depends(get_user)):
 async def get_cpu_info(user: User = Depends(get_user)):
     """Get CPU usage information"""
     try:
-        cpu_percent = psutil.cpu_percent(interval=1, percpu=True)
-        cpu_percent_overall = psutil.cpu_percent(interval=1)
+        # Use a shorter interval (0.1s) to avoid blocking too long
+        # Call once with percpu=True to get both overall and per-core stats
+        cpu_percent_per_core = psutil.cpu_percent(interval=0.1, percpu=True)
+        # Calculate overall from per-core average (more accurate than separate call)
+        cpu_percent_overall = sum(cpu_percent_per_core) / len(cpu_percent_per_core) if cpu_percent_per_core else 0
+        
+        # Get CPU times (non-blocking)
+        cpu_times = psutil.cpu_times()
+        
+        # Get CPU times percent (single call with short interval)
+        cpu_times_percent_obj = psutil.cpu_times_percent(interval=0.1)
+        
+        # Get CPU frequency (non-blocking)
+        cpu_freq_obj = psutil.cpu_freq()
         
         return JSONResponse({
-            "cpu_percent_overall": cpu_percent_overall,
-            "cpu_percent_per_core": cpu_percent,
+            "cpu_percent_overall": round(cpu_percent_overall, 1),
+            "cpu_percent_per_core": [round(core, 1) for core in cpu_percent_per_core],
             "cpu_freq": {
-                "current": psutil.cpu_freq().current if psutil.cpu_freq() else None,
-                "min": psutil.cpu_freq().min if psutil.cpu_freq() else None,
-                "max": psutil.cpu_freq().max if psutil.cpu_freq() else None
+                "current": round(cpu_freq_obj.current, 0) if cpu_freq_obj else None,
+                "min": round(cpu_freq_obj.min, 0) if cpu_freq_obj else None,
+                "max": round(cpu_freq_obj.max, 0) if cpu_freq_obj else None
             },
             "cpu_times": {
-                "user": psutil.cpu_times().user,
-                "system": psutil.cpu_times().system,
-                "idle": psutil.cpu_times().idle,
-                "nice": getattr(psutil.cpu_times(), 'nice', None),
-                "iowait": getattr(psutil.cpu_times(), 'iowait', None),
-                "irq": getattr(psutil.cpu_times(), 'irq', None),
-                "softirq": getattr(psutil.cpu_times(), 'softirq', None)
+                "user": cpu_times.user,
+                "system": cpu_times.system,
+                "idle": cpu_times.idle,
+                "nice": getattr(cpu_times, 'nice', None),
+                "iowait": getattr(cpu_times, 'iowait', None),
+                "irq": getattr(cpu_times, 'irq', None),
+                "softirq": getattr(cpu_times, 'softirq', None)
             },
             "cpu_times_percent": {
-                "user": psutil.cpu_times_percent(interval=1).user,
-                "system": psutil.cpu_times_percent(interval=1).system,
-                "idle": psutil.cpu_times_percent(interval=1).idle
+                "user": round(cpu_times_percent_obj.user, 1),
+                "system": round(cpu_times_percent_obj.system, 1),
+                "idle": round(cpu_times_percent_obj.idle, 1)
             },
-            "load_average": os.getloadavg() if hasattr(os, 'getloadavg') else None
+            "load_average": [round(load, 2) for load in os.getloadavg()] if hasattr(os, 'getloadavg') else None
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting CPU info: {str(e)}")
@@ -266,11 +278,31 @@ async def get_logs(
 ):
     """Get application logs"""
     try:
-        logs_dir = Path("logs")
-        if not logs_dir.exists():
+        # Check for logs directory in production path first, then fall back to relative path
+        logs_dir = None
+        possible_paths = []
+        
+        # Add environment variable path if set
+        env_logs_dir = os.getenv("LOGS_DIR")
+        if env_logs_dir:
+            possible_paths.append(Path(env_logs_dir))
+        
+        # Add production path
+        possible_paths.append(Path("/usr/src/app/logs"))
+        
+        # Add development path (relative)
+        possible_paths.append(Path("logs"))
+        
+        for path in possible_paths:
+            if path.exists() and path.is_dir():
+                logs_dir = path
+                break
+        
+        if logs_dir is None:
             return JSONResponse({
                 "logs": [],
-                "message": "Logs directory does not exist"
+                "message": "Logs directory does not exist",
+                "checked_paths": [str(p) for p in possible_paths]
             })
         
         # Default to celery.log if no file specified
@@ -306,8 +338,9 @@ async def get_logs(
 async def get_monitoring_summary(user: User = Depends(get_user)):
     """Get a summary of all monitoring metrics"""
     try:
-        # Get all metrics
-        cpu_percent = psutil.cpu_percent(interval=0.1)
+        # Get all metrics - use short interval to avoid blocking
+        # Call cpu_percent once with percpu=False for overall usage
+        cpu_percent = psutil.cpu_percent(interval=0.1, percpu=False)
         mem = psutil.virtual_memory()
         disk = psutil.disk_usage('/')
         boot_time = datetime.fromtimestamp(psutil.boot_time())
@@ -316,19 +349,19 @@ async def get_monitoring_summary(user: User = Depends(get_user)):
         return JSONResponse({
             "timestamp": datetime.now().isoformat(),
             "cpu": {
-                "percent": cpu_percent,
-                "free_percent": 100 - cpu_percent
+                "percent": round(cpu_percent, 1),
+                "free_percent": round(100 - cpu_percent, 1)
             },
             "memory": {
-                "used_percent": mem.percent,
-                "free_percent": 100 - mem.percent,
+                "used_percent": round(mem.percent, 1),
+                "free_percent": round(100 - mem.percent, 1),
                 "used_gb": round(mem.used / (1024**3), 2),
                 "free_gb": round(mem.available / (1024**3), 2),
                 "total_gb": round(mem.total / (1024**3), 2)
             },
             "disk": {
-                "used_percent": disk.percent,
-                "free_percent": 100 - disk.percent,
+                "used_percent": round(disk.percent, 1),
+                "free_percent": round(100 - disk.percent, 1),
                 "used_gb": round(disk.used / (1024**3), 2),
                 "free_gb": round(disk.free / (1024**3), 2),
                 "total_gb": round(disk.total / (1024**3), 2)
