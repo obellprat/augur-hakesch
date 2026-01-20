@@ -5,6 +5,7 @@
 	import { currentProject } from '$lib/state.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { base } from '$app/paths';
 	import { toast } from '@zerodevx/svelte-toast';
 	import { _ } from 'svelte-i18n';
 	import type ApexCharts from 'apexcharts';
@@ -2095,6 +2096,17 @@
 						{data.project.title}
 					</h3>
 				</div>
+				<a
+					href="{base}/assets/documents/Be01_HydrologieBE_20240715_VersionPDF.pdf"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2"
+					title="Arbeitshilfe Hochwasserabschätzung"
+					aria-label="Arbeitshilfe Hochwasserabschätzung"
+				>
+					<i class="ti ti-info-circle"></i>
+					<span>Arbeitshilfe Hochwasserabschätzung</span>
+				</a>
 			</div>
 		</div>
 		<div class="card-body">
