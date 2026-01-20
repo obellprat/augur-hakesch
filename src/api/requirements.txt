@@ -17,3 +17,4 @@ geopandas==1.1.1
 prisma==0.15.0
 xarray==2025.6.1
 netCDF4==1.7.2
+psutil==6.1.1
