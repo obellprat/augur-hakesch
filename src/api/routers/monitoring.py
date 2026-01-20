@@ -10,8 +10,20 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 import logging
+import time
+from threading import Lock
 
 router = APIRouter(prefix="/monitoring", tags=["monitoring"])
+
+# Cache for CPU stats to avoid blocking on every request
+_cpu_cache = {
+    "last_update": 0,
+    "cpu_percent_overall": 0.0,
+    "cpu_percent_per_core": [],
+    "cpu_times_percent": {},
+    "cache_interval": 1.0  # Update cache every 1 second
+}
+_cpu_cache_lock = Lock()
 
 
 @router.get("/system")
@@ -45,21 +57,77 @@ async def get_system_info(user: User = Depends(get_user)):
         raise HTTPException(status_code=500, detail=f"Error getting system info: {str(e)}")
 
 
+def _update_cpu_cache():
+    """Update CPU cache if needed. Uses minimal blocking to avoid skewing CPU readings"""
+    global _cpu_cache
+    current_time = time.time()
+    
+    with _cpu_cache_lock:
+        # Check if cache needs updating
+        if current_time - _cpu_cache["last_update"] >= _cpu_cache["cache_interval"]:
+            try:
+                # Establish baseline if this is the first call
+                if _cpu_cache["last_update"] == 0:
+                    psutil.cpu_percent(interval=None, percpu=True)
+                    psutil.cpu_percent(interval=None, percpu=False)
+                    psutil.cpu_times_percent(interval=None)
+                    time.sleep(0.05)  # Very short sleep to establish baseline
+                
+                # Use non-blocking cpu_percent (requires previous call for baseline)
+                cpu_percent_per_core = psutil.cpu_percent(interval=None, percpu=True)
+                cpu_percent_overall = psutil.cpu_percent(interval=None, percpu=False)
+                
+                # Get CPU times percent (non-blocking)
+                cpu_times_percent_obj = psutil.cpu_times_percent(interval=None)
+                
+                # Validate results (non-blocking can return 0.0 if called too soon)
+                if cpu_percent_overall == 0.0 and _cpu_cache["last_update"] > 0:
+                    # If we got 0.0 but cache was already initialized, use cached value
+                    # This happens if called too soon after last update
+                    return
+                
+                # Update cache
+                _cpu_cache["cpu_percent_overall"] = cpu_percent_overall
+                _cpu_cache["cpu_percent_per_core"] = cpu_percent_per_core
+                _cpu_cache["cpu_times_percent"] = {
+                    "user": cpu_times_percent_obj.user,
+                    "system": cpu_times_percent_obj.system,
+                    "idle": cpu_times_percent_obj.idle
+                }
+                _cpu_cache["last_update"] = current_time
+            except Exception as e:
+                # If non-blocking fails, use minimal blocking with very short interval
+                # This should rarely happen, but provides a fallback
+                logging.warning(f"CPU cache update failed, using blocking method: {e}")
+                cpu_percent_per_core = psutil.cpu_percent(interval=0.05, percpu=True)
+                cpu_percent_overall = sum(cpu_percent_per_core) / len(cpu_percent_per_core) if cpu_percent_per_core else 0
+                cpu_times_percent_obj = psutil.cpu_times_percent(interval=0.05)
+                
+                _cpu_cache["cpu_percent_overall"] = cpu_percent_overall
+                _cpu_cache["cpu_percent_per_core"] = cpu_percent_per_core
+                _cpu_cache["cpu_times_percent"] = {
+                    "user": cpu_times_percent_obj.user,
+                    "system": cpu_times_percent_obj.system,
+                    "idle": cpu_times_percent_obj.idle
+                }
+                _cpu_cache["last_update"] = current_time
+
+
 @router.get("/cpu")
 async def get_cpu_info(user: User = Depends(get_user)):
     """Get CPU usage information"""
     try:
-        # Use a shorter interval (0.1s) to avoid blocking too long
-        # Call once with percpu=True to get both overall and per-core stats
-        cpu_percent_per_core = psutil.cpu_percent(interval=0.1, percpu=True)
-        # Calculate overall from per-core average (more accurate than separate call)
-        cpu_percent_overall = sum(cpu_percent_per_core) / len(cpu_percent_per_core) if cpu_percent_per_core else 0
+        # Update cache if needed (non-blocking)
+        _update_cpu_cache()
+        
+        # Get cached values (non-blocking reads)
+        with _cpu_cache_lock:
+            cpu_percent_overall = _cpu_cache["cpu_percent_overall"]
+            cpu_percent_per_core = _cpu_cache["cpu_percent_per_core"]
+            cpu_times_percent = _cpu_cache["cpu_times_percent"]
         
         # Get CPU times (non-blocking)
         cpu_times = psutil.cpu_times()
-        
-        # Get CPU times percent (single call with short interval)
-        cpu_times_percent_obj = psutil.cpu_times_percent(interval=0.1)
         
         # Get CPU frequency (non-blocking)
         cpu_freq_obj = psutil.cpu_freq()
@@ -82,9 +150,9 @@ async def get_cpu_info(user: User = Depends(get_user)):
                 "softirq": getattr(cpu_times, 'softirq', None)
             },
             "cpu_times_percent": {
-                "user": round(cpu_times_percent_obj.user, 1),
-                "system": round(cpu_times_percent_obj.system, 1),
-                "idle": round(cpu_times_percent_obj.idle, 1)
+                "user": round(cpu_times_percent.get("user", 0), 1),
+                "system": round(cpu_times_percent.get("system", 0), 1),
+                "idle": round(cpu_times_percent.get("idle", 0), 1)
             },
             "load_average": [round(load, 2) for load in os.getloadavg()] if hasattr(os, 'getloadavg') else None
         })
@@ -338,9 +406,14 @@ async def get_logs(
 async def get_monitoring_summary(user: User = Depends(get_user)):
     """Get a summary of all monitoring metrics"""
     try:
-        # Get all metrics - use short interval to avoid blocking
-        # Call cpu_percent once with percpu=False for overall usage
-        cpu_percent = psutil.cpu_percent(interval=0.1, percpu=False)
+        # Update CPU cache if needed (non-blocking)
+        _update_cpu_cache()
+        
+        # Get cached CPU value (non-blocking read)
+        with _cpu_cache_lock:
+            cpu_percent = _cpu_cache["cpu_percent_overall"]
+        
+        # Get other metrics (all non-blocking)
         mem = psutil.virtual_memory()
         disk = psutil.disk_usage('/')
         boot_time = datetime.fromtimestamp(psutil.boot_time())
