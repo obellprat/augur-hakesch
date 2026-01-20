@@ -8,10 +8,12 @@ import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, List
 import logging
 import time
-from threading import Lock
+from threading import Lock, Thread
+import atexit
+import subprocess
 
 router = APIRouter(prefix="/monitoring", tags=["monitoring"])
 
@@ -21,9 +23,11 @@ _cpu_cache = {
     "cpu_percent_overall": 0.0,
     "cpu_percent_per_core": [],
     "cpu_times_percent": {},
-    "cache_interval": 1.0  # Update cache every 1 second
+    "initialized": False
 }
 _cpu_cache_lock = Lock()
+_cpu_thread_running = False
+_cpu_thread = None
 
 
 @router.get("/system")
@@ -57,71 +61,143 @@ async def get_system_info(user: User = Depends(get_user)):
         raise HTTPException(status_code=500, detail=f"Error getting system info: {str(e)}")
 
 
-def _update_cpu_cache():
-    """Update CPU cache if needed. Uses minimal blocking to avoid skewing CPU readings"""
-    global _cpu_cache
-    current_time = time.time()
+def _cpu_monitor_thread():
+    """Background thread that continuously monitors CPU usage"""
+    global _cpu_cache, _cpu_thread_running
     
-    with _cpu_cache_lock:
-        # Check if cache needs updating
-        if current_time - _cpu_cache["last_update"] >= _cpu_cache["cache_interval"]:
-            try:
-                # Establish baseline if this is the first call
-                if _cpu_cache["last_update"] == 0:
-                    psutil.cpu_percent(interval=None, percpu=True)
-                    psutil.cpu_percent(interval=None, percpu=False)
-                    psutil.cpu_times_percent(interval=None)
-                    time.sleep(0.05)  # Very short sleep to establish baseline
-                
-                # Use non-blocking cpu_percent (requires previous call for baseline)
-                cpu_percent_per_core = psutil.cpu_percent(interval=None, percpu=True)
-                cpu_percent_overall = psutil.cpu_percent(interval=None, percpu=False)
-                
-                # Get CPU times percent (non-blocking)
-                cpu_times_percent_obj = psutil.cpu_times_percent(interval=None)
-                
-                # Validate results (non-blocking can return 0.0 if called too soon)
-                if cpu_percent_overall == 0.0 and _cpu_cache["last_update"] > 0:
-                    # If we got 0.0 but cache was already initialized, use cached value
-                    # This happens if called too soon after last update
-                    return
+    # Establish baseline first - use blocking method initially
+    logging.info("CPU monitor: Establishing baseline...")
+    psutil.cpu_percent(interval=0.1, percpu=True)
+    psutil.cpu_percent(interval=0.1, percpu=False)
+    psutil.cpu_times_percent(interval=0.1)
+    time.sleep(0.5)  # Wait a bit after baseline
+    
+    consecutive_errors = 0
+    last_valid_reading = None
+    
+    while _cpu_thread_running:
+        try:
+            # Use non-blocking cpu_percent (baseline already established)
+            cpu_percent_per_core = psutil.cpu_percent(interval=None, percpu=True)
+            cpu_percent_overall = psutil.cpu_percent(interval=None, percpu=False)
+            cpu_times_percent_obj = psutil.cpu_times_percent(interval=None)
+            
+            # Validate readings - if all cores show 100%, something is wrong
+            # Also check if overall is suspiciously high
+            is_valid = True
+            if cpu_percent_overall >= 99.0:
+                # If we get 99%+, it might be incorrect - check if all cores are also high
+                if all(core >= 99.0 for core in cpu_percent_per_core):
+                    is_valid = False
+                    consecutive_errors += 1
+                    logging.warning(f"CPU monitor: Suspicious reading detected (all cores at 100%), error count: {consecutive_errors}")
+                else:
+                    consecutive_errors = 0
+            
+            # If we have too many consecutive errors, re-establish baseline
+            if consecutive_errors >= 3:
+                logging.warning("CPU monitor: Too many errors, re-establishing baseline...")
+                psutil.cpu_percent(interval=0.1, percpu=True)
+                psutil.cpu_percent(interval=0.1, percpu=False)
+                psutil.cpu_times_percent(interval=0.1)
+                time.sleep(0.5)
+                consecutive_errors = 0
+                continue  # Skip this iteration
+            
+            if is_valid:
+                consecutive_errors = 0
+                last_valid_reading = {
+                    "overall": cpu_percent_overall,
+                    "per_core": cpu_percent_per_core,
+                    "times_percent": cpu_times_percent_obj
+                }
                 
                 # Update cache
-                _cpu_cache["cpu_percent_overall"] = cpu_percent_overall
-                _cpu_cache["cpu_percent_per_core"] = cpu_percent_per_core
-                _cpu_cache["cpu_times_percent"] = {
-                    "user": cpu_times_percent_obj.user,
-                    "system": cpu_times_percent_obj.system,
-                    "idle": cpu_times_percent_obj.idle
-                }
-                _cpu_cache["last_update"] = current_time
-            except Exception as e:
-                # If non-blocking fails, use minimal blocking with very short interval
-                # This should rarely happen, but provides a fallback
-                logging.warning(f"CPU cache update failed, using blocking method: {e}")
-                cpu_percent_per_core = psutil.cpu_percent(interval=0.05, percpu=True)
-                cpu_percent_overall = sum(cpu_percent_per_core) / len(cpu_percent_per_core) if cpu_percent_per_core else 0
-                cpu_times_percent_obj = psutil.cpu_times_percent(interval=0.05)
-                
-                _cpu_cache["cpu_percent_overall"] = cpu_percent_overall
-                _cpu_cache["cpu_percent_per_core"] = cpu_percent_per_core
-                _cpu_cache["cpu_times_percent"] = {
-                    "user": cpu_times_percent_obj.user,
-                    "system": cpu_times_percent_obj.system,
-                    "idle": cpu_times_percent_obj.idle
-                }
-                _cpu_cache["last_update"] = current_time
+                with _cpu_cache_lock:
+                    _cpu_cache["cpu_percent_overall"] = cpu_percent_overall
+                    _cpu_cache["cpu_percent_per_core"] = cpu_percent_per_core
+                    _cpu_cache["cpu_times_percent"] = {
+                        "user": cpu_times_percent_obj.user,
+                        "system": cpu_times_percent_obj.system,
+                        "idle": cpu_times_percent_obj.idle
+                    }
+                    _cpu_cache["last_update"] = time.time()
+                    _cpu_cache["initialized"] = True
+            else:
+                # Use last valid reading if available
+                if last_valid_reading:
+                    with _cpu_cache_lock:
+                        _cpu_cache["cpu_percent_overall"] = last_valid_reading["overall"]
+                        _cpu_cache["cpu_percent_per_core"] = last_valid_reading["per_core"]
+                        _cpu_cache["cpu_times_percent"] = {
+                            "user": last_valid_reading["times_percent"].user,
+                            "system": last_valid_reading["times_percent"].system,
+                            "idle": last_valid_reading["times_percent"].idle
+                        }
+                        _cpu_cache["last_update"] = time.time()
+            
+            # Sleep for 1 second before next update
+            time.sleep(1.0)
+        except Exception as e:
+            consecutive_errors += 1
+            logging.error(f"Error in CPU monitor thread: {e}")
+            time.sleep(1.0)
+
+
+def _start_cpu_monitor():
+    """Start the background CPU monitoring thread"""
+    global _cpu_thread_running, _cpu_thread
+    
+    if not _cpu_thread_running:
+        _cpu_thread_running = True
+        _cpu_thread = Thread(target=_cpu_monitor_thread, daemon=True)
+        _cpu_thread.start()
+        logging.info("CPU monitoring thread started")
+
+
+def _stop_cpu_monitor():
+    """Stop the background CPU monitoring thread"""
+    global _cpu_thread_running
+    _cpu_thread_running = False
+
+
+# Start CPU monitor thread when module is imported
+_start_cpu_monitor()
+
+# Register cleanup on exit
+atexit.register(_stop_cpu_monitor)
 
 
 @router.get("/cpu")
 async def get_cpu_info(user: User = Depends(get_user)):
     """Get CPU usage information"""
     try:
-        # Update cache if needed (non-blocking)
-        _update_cpu_cache()
+        # Ensure CPU monitor is running
+        if not _cpu_thread_running:
+            _start_cpu_monitor()
         
         # Get cached values (non-blocking reads)
         with _cpu_cache_lock:
+            # If not initialized yet, return zeros to avoid showing 100%
+            if not _cpu_cache["initialized"]:
+                return JSONResponse({
+                    "cpu_percent_overall": 0.0,
+                    "cpu_percent_per_core": [0.0] * psutil.cpu_count(logical=True),
+                    "cpu_freq": {
+                        "current": None,
+                        "min": None,
+                        "max": None
+                    },
+                    "cpu_times": {},
+                    "cpu_times_percent": {
+                        "user": 0.0,
+                        "system": 0.0,
+                        "idle": 0.0
+                    },
+                    "load_average": None,
+                    "message": "CPU monitoring initializing..."
+                })
+            
             cpu_percent_overall = _cpu_cache["cpu_percent_overall"]
             cpu_percent_per_core = _cpu_cache["cpu_percent_per_core"]
             cpu_times_percent = _cpu_cache["cpu_times_percent"]
@@ -193,6 +269,56 @@ async def get_memory_info(user: User = Depends(get_user)):
         raise HTTPException(status_code=500, detail=f"Error getting memory info: {str(e)}")
 
 
+def _get_directory_size(path: Path) -> Optional[Dict]:
+    """Get directory size using du command (more efficient than recursive walk)"""
+    try:
+        if not path.exists() or not path.is_dir():
+            return None
+        
+        # Use du command for efficiency (works on Linux/Unix)
+        try:
+            result = subprocess.run(
+                ['du', '-sb', str(path)],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False
+            )
+            if result.returncode == 0:
+                size_bytes = int(result.stdout.split()[0])
+                return {
+                    "path": str(path),
+                    "size_bytes": size_bytes,
+                    "size_gb": round(size_bytes / (1024**3), 2),
+                    "size_mb": round(size_bytes / (1024**2), 2)
+                }
+        except (subprocess.TimeoutExpired, FileNotFoundError, ValueError):
+            # Fallback to recursive walk if du is not available
+            pass
+        
+        # Fallback: recursive directory size calculation
+        total_size = 0
+        try:
+            for dirpath, dirnames, filenames in os.walk(path):
+                for filename in filenames:
+                    filepath = os.path.join(dirpath, filename)
+                    try:
+                        total_size += os.path.getsize(filepath)
+                    except (OSError, FileNotFoundError):
+                        continue
+        except (OSError, PermissionError):
+            return None
+        
+        return {
+            "path": str(path),
+            "size_bytes": total_size,
+            "size_gb": round(total_size / (1024**3), 2),
+            "size_mb": round(total_size / (1024**2), 2)
+        }
+    except Exception:
+        return None
+
+
 @router.get("/disk")
 async def get_disk_info(user: User = Depends(get_user)):
     """Get disk usage information"""
@@ -234,6 +360,48 @@ async def get_disk_info(user: User = Depends(get_user)):
                 "write_bytes_gb": round(disk_io.write_bytes / (1024**3), 2)
             }
         
+        # Get data directory usage
+        data_directories = []
+        possible_data_paths = [
+            Path("/usr/src/app/data"),  # Production path
+            Path("data"),  # Development path
+            Path(os.getenv("DATA_DIR", "data"))  # Environment variable override
+        ]
+        
+        data_path = None
+        for path in possible_data_paths:
+            if path.exists() and path.is_dir():
+                data_path = path
+                break
+        
+        if data_path:
+            # Get size of main data directory
+            data_dir_info = _get_directory_size(data_path)
+            if data_dir_info:
+                data_directories.append({
+                    "name": "data",
+                    "path": str(data_path),
+                    "size_gb": data_dir_info["size_gb"],
+                    "size_mb": data_dir_info["size_mb"],
+                    "size_bytes": data_dir_info["size_bytes"]
+                })
+            
+            # Get sizes of numbered subdirectories (1, 2, 3, ...)
+            try:
+                for item in sorted(data_path.iterdir()):
+                    if item.is_dir() and item.name.isdigit():
+                        subdir_info = _get_directory_size(item)
+                        if subdir_info:
+                            data_directories.append({
+                                "name": item.name,
+                                "path": str(item),
+                                "size_gb": subdir_info["size_gb"],
+                                "size_mb": subdir_info["size_mb"],
+                                "size_bytes": subdir_info["size_bytes"]
+                            })
+            except (PermissionError, OSError) as e:
+                logging.warning(f"Could not read subdirectories in {data_path}: {e}")
+        
         return JSONResponse({
             "root": {
                 "total": disk_usage.total,
@@ -245,7 +413,8 @@ async def get_disk_info(user: User = Depends(get_user)):
                 "free_gb": round(disk_usage.free / (1024**3), 2)
             },
             "partitions": disk_partitions,
-            "io_counters": disk_io_dict
+            "io_counters": disk_io_dict,
+            "data_directories": data_directories
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting disk info: {str(e)}")
@@ -406,12 +575,16 @@ async def get_logs(
 async def get_monitoring_summary(user: User = Depends(get_user)):
     """Get a summary of all monitoring metrics"""
     try:
-        # Update CPU cache if needed (non-blocking)
-        _update_cpu_cache()
+        # Ensure CPU monitor is running
+        if not _cpu_thread_running:
+            _start_cpu_monitor()
         
         # Get cached CPU value (non-blocking read)
         with _cpu_cache_lock:
-            cpu_percent = _cpu_cache["cpu_percent_overall"]
+            if not _cpu_cache["initialized"]:
+                cpu_percent = 0.0
+            else:
+                cpu_percent = _cpu_cache["cpu_percent_overall"]
         
         # Get other metrics (all non-blocking)
         mem = psutil.virtual_memory()

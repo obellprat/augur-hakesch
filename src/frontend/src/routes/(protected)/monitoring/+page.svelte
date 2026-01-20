@@ -90,6 +90,13 @@
 			free_gb: number;
 			percent: number;
 		}>;
+		data_directories?: Array<{
+			name: string;
+			path: string;
+			size_gb: number;
+			size_mb: number;
+			size_bytes: number;
+		}>;
 	}
 
 	interface NetworkInfo {
@@ -694,6 +701,34 @@
 						<p><strong>Total:</strong> {diskInfo.root.total_gb.toFixed(2)} GB</p>
 					</div>
 				</div>
+				{#if diskInfo.data_directories && diskInfo.data_directories.length > 0}
+					<div class="card mb-3">
+						<div class="card-header">Data Directories</div>
+						<div class="card-body">
+							<table class="table table-striped">
+								<thead>
+									<tr>
+										<th>Directory</th>
+										<th>Path</th>
+										<th>Size</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each diskInfo.data_directories as dir}
+										<tr>
+											<td><strong>{dir.name}</strong></td>
+											<td><code>{dir.path}</code></td>
+											<td>
+												{dir.size_gb.toFixed(2)} GB
+												<span class="text-muted">({dir.size_mb.toFixed(0)} MB)</span>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				{/if}
 				{#if diskInfo.partitions && diskInfo.partitions.length > 0}
 					<div class="card">
 						<div class="card-header">All Partitions</div>
