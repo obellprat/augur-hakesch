@@ -1,3 +1,13 @@
+## 1.1.0-alpha.2 (2026-01-20)
+
+### Feat
+
+- **frontend**: included the Arbeitshilfe
+
+### Fix
+
+- **frontend**: bigger map for projects (creating and editing)
+
 ## 1.1.0-alpha.1 (2026-01-17)
 
 ### Feat
