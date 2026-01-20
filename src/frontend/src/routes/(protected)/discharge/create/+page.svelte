@@ -112,7 +112,7 @@
 		</div>
 		<div class="card-body">
 			<div class="row">
-				<div class="col-lg-6">
+				<div class="col-lg-3">
 					<form method="post">
 						<div class="mb-3">
 							<label for="title" class="form-label"
@@ -125,7 +125,7 @@
 							<label for="description" class="form-label"
 								>{$_('page.discharge.overview.description')}</label
 							>
-							<textarea class="form-control" name="description" rows="5"></textarea>
+							<textarea class="form-control" name="description" rows="2"></textarea>
 						</div>
 
 						<div class="mb-3">
@@ -158,12 +158,12 @@
 					</form>
 				</div>
 				<!-- end col -->
-				<div class="col-lg-6">
+				<div class="col-lg-9">
 					<div class="py-2">
 						{$_('page.discharge.overview.pourpoint')}
 						<span class="text-muted">({$_('page.discharge.overview.changePoutPoint')})</span>
 					</div>
-					<div class="d-flex flex-grow-1" style="height:500px;" id="map"></div>
+					<div class="d-flex flex-grow-1" style="height:700px;" id="map"></div>
 				</div>
 			</div>
 			<!-- end row-->

@@ -235,6 +235,15 @@
 			});
 
 			map.addLayer(catchmentLayer);
+			
+			// Fit the map view to show the entire catchment with padding
+			const extent = catchmentSource.getExtent();
+			if (extent && extent[0] !== Infinity && extent[1] !== Infinity) {
+				map.getView().fit(extent, {
+					padding: [50, 50, 50, 50],
+					duration: 500
+				});
+			}
 		} catch (error) {
 			// GeoJSON might be empty or invalid, just log and continue
 			console.debug('Failed to add catchment layer:', error);
@@ -751,17 +760,7 @@ onMount(async () => {
 								<i class="ti ti-trash me-1 fs-24 align-middle"></i>
 								<span class="align-middle">{$_('page.general.delete')}</span>
 							</button>
-							<button
-								type="button"
-								class="dropdown-item"
-								data-bs-toggle="modal"
-								data-bs-target="#delete-project-modal"
-								title="$_('page.general.export')"
-								aria-label="$_('page.general.export')"
-							>
-								<i class="ti ti-share me-1 fs-24 align-middle"></i>
-								<span class="align-middle">{$_}</span>
-							</button>
+
 							<div class="dropdown-divider"></div>
 							<a
 								href="{base}/discharge/calculation/{data.project.id}"
@@ -805,17 +804,7 @@ onMount(async () => {
 						>
 							<i class="ti ti-trash fs-20"></i>
 						</span>
-						<a
-							href="javascript: void(0);"
-							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
-							data-bs-toggle="modal"
-							data-bs-target="#userVideoCall"
-							data-bs-placement="top"
-							title="${'page.general.export'}"
-							aria-label="${'page.general.export'}"
-						>
-							<i class="ti ti-share fs-20"></i>
-						</a>
+
 						|
 						<a
 							href="{base}/discharge/calculation/{data.project.id}"
@@ -839,8 +828,8 @@ onMount(async () => {
 			</div>
 			<div class="card-body">
 				<div class="row">
-					<div class="col-lg-12">
-						<input type="hidden" name="id" value={data.project.id} />
+					<input type="hidden" name="id" value={data.project.id} />
+					<div class="col-sm-3">
 						<div class="mb-3">
 							<label for="title" class="form-label"
 								>{$_('page.discharge.overview.projectTitle')}</label
@@ -854,9 +843,86 @@ onMount(async () => {
 							>
 							<textarea class="form-control" name="description" rows="2">{description}</textarea>
 						</div>
-					</div>
 
-					<div class="col-lg-12">
+						<div class="card border-secondary border mt-3">
+							<div class="card-body">
+								<h3 class="card-title">{$_('page.discharge.geodata')}</h3>
+								{#if data.project.isozones_taskid === ''}
+									<p>{$_('page.discharge.overview.missingGeodata')}</p>
+								{:else if data.project.isozones_running}
+									<p>{$_('page.discharge.overview.isozonesRunning')}</p>
+								{:else}
+									<div class="row g-2">
+										<div class="col-5 fw-semibold">
+											{$_('page.discharge.overview.catchmentArea')} [km<sup>2</sup>]:
+										</div>
+										<div class="col-7">
+											{Math.round(data.project.catchment_area*10)/10} km<sup>2</sup>
+										</div>
+										<div class="col-5 fw-semibold">
+											{$_('page.discharge.overview.maxFlowLength')} [m]:
+										</div>
+										<div class="col-7">
+											{data.project.channel_length} m
+										</div>
+										<div class="col-5 fw-semibold">
+											{$_('page.discharge.overview.cumulativeFlowLength')} [m]:
+										</div>
+										<div class="col-7">
+											{Math.round(data.project.cummulative_channel_length)} m
+										</div>
+										<div class="col-5 fw-semibold">
+											{$_('page.discharge.overview.heightDifference')} [m]:
+										</div>
+										<div class="col-7">
+											{Math.round(data.project.delta_h)} m
+										</div>
+										<div class="col-5 fw-semibold">
+											{$_('page.discharge.overview.isozones')}:
+										</div>
+										<div class="col-7">
+											<button
+												type="button"
+												class="btn btn-sm btn-outline-primary"
+												onclick={downloadIsozones}
+											>
+												<i class="ti ti-download me-1"></i>
+												{$_('page.discharge.overview.download')}
+											</button>
+										</div>
+										<div class="col-5 fw-semibold">
+											{$_('page.discharge.overview.catchmentArea')}:
+										</div>
+										<div class="col-7">
+											<button
+												type="button"
+												class="btn btn-sm btn-outline-primary"
+												onclick={downloadCatchment}
+											>
+												<i class="ti ti-download me-1"></i>
+												{$_('page.discharge.overview.download')}
+											</button>
+										</div>
+										<div class="col-5 fw-semibold">
+											{$_('page.discharge.overview.channel')}:
+										</div>
+										<div class="col-7">
+											<button
+												type="button"
+												class="btn btn-sm btn-outline-primary"
+												onclick={downloadBranches}
+											>
+												<i class="ti ti-download me-1"></i>
+												{$_('page.discharge.overview.download')}
+											</button>
+										</div>
+									</div>
+								{/if}
+							</div>
+							<!-- end card-body-->
+						</div>
+					</div>
+					<div class="col-sm-9">
 						<div class="py-2">
 							{$_('page.discharge.overview.pourpoint')}: {northing} // {easting}
 							<input
@@ -875,73 +941,7 @@ onMount(async () => {
 							/>
 							<span class="text-muted">({$_('page.discharge.overview.changePoutPoint')})</span>
 						</div>
-						<div class="d-flex flex-grow-1" style="height:500px;" id="map"></div>
-					</div>
-					<div class="col-lg-12">
-						<div class="card border-secondary border mt-3">
-							<div class="card-body">
-								<h3 class="card-title">{$_('page.discharge.geodata')}</h3>
-								{#if data.project.isozones_taskid === ''}
-									<p>{$_('page.discharge.overview.missingGeodata')}</p>
-								{:else if data.project.isozones_running}
-									<p>{$_('page.discharge.overview.isozonesRunning')}</p>
-								{:else}
-									<div class="table-responsive-sm">
-										<table class="table table-striped mb-0">
-											<thead>
-												<tr>
-													<th>{$_('page.discharge.overview.catchmentArea')} [km<sup>2</sup>]</th>
-													<th>{$_('page.discharge.overview.maxFlowLength')} [m]</th>
-													<th>{$_('page.discharge.overview.cumulativeFlowLength')} [m]</th>
-													<th>{$_('page.discharge.overview.heightDifference')} [m]</th>
-													<th>{$_('page.discharge.overview.isozones')}</th>
-													<th>{$_('page.discharge.overview.catchmentArea')}</th>
-													<th>{$_('page.discharge.overview.channel')}</th>
-												</tr>
-											</thead>
-											<tbody>
-												<tr>
-													<td>
-														{Math.round(data.project.catchment_area*10)/10} km<sup>2</sup>
-													</td>
-													<td>{data.project.channel_length} m</td>
-													<td>{Math.round(data.project.cummulative_channel_length)} m</td>
-													<td>{Math.round(data.project.delta_h)} m</td>
-													<td class="text-muted">
-														<a
-															href="javascript: void(0);"
-															class="link-reset fs-20 p-1"
-															onclick={downloadIsozones}
-														>
-															{$_('page.discharge.overview.download')}</a
-														>
-													</td>
-													<td class="text-muted">
-														<a
-															href="javascript: void(0);"
-															class="link-reset fs-20 p-1"
-															onclick={downloadCatchment}
-														>
-															{$_('page.discharge.overview.download')}</a
-														>
-													</td>
-													<td class="text-muted">
-														<a
-															href="javascript: void(0);"
-															class="link-reset fs-20 p-1"
-															onclick={downloadBranches}
-														>
-															{$_('page.discharge.overview.download')}</a
-														>
-													</td>
-												</tr>
-											</tbody>
-										</table>
-									</div>
-								{/if}
-							</div>
-							<!-- end card-body-->
-						</div>
+						<div class="d-flex flex-grow-1" style="height:700px;" id="map"></div>
 					</div>
 				</div>
 				<!-- end row-->
