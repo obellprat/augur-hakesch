@@ -134,7 +134,9 @@
         "hadesValuesNoCoordinates": "Aucune coordonnée du point de décharge trouvée",
         "climateScenario": "Scénario climatique",
         "hydrologicalCalculation": "Calculs hydrologiques",
-        "percentage": "Pour cent"
+        "percentage": "Pour cent",
+        "psiValidationError": "La valeur doit être inférieure à 1",
+        "vo20ValidationError": "La valeur doit être inférieure à 100"
       }
     },
     "precipitation": {

@@ -2341,7 +2341,16 @@
 														id={`shared-vo20-${combinedIndex}`}
 														type="number"
 														step="any"
+														max="99.999"
 														class="form-control"
+														class:is-invalid={(() => {
+															const val = manuallyEditedVo20.has(combinedIndex)
+																? (sharedVo20Values[combinedIndex] ?? 0)
+																: (clarkScenarioForms[combinedIndex] !== undefined 
+																	? calculateSummaryV0_20(combinedIndex) 
+																	: (sharedVo20Values[combinedIndex] ?? 0));
+															return val >= 100;
+														})()}
 														value={manuallyEditedVo20.has(combinedIndex)
 															? (sharedVo20Values[combinedIndex] ?? 0)
 															: (clarkScenarioForms[combinedIndex] !== undefined 
@@ -2349,10 +2358,22 @@
 																: (sharedVo20Values[combinedIndex] ?? 0))}
 														oninput={(event) => {
 															const target = event.currentTarget as HTMLInputElement;
-															updateSharedVo20(
-																combinedIndex,
-																sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-															);
+															const inputValue = sanitizeNumber(target.valueAsNumber ?? Number(target.value));
+															if (inputValue >= 100) {
+																target.classList.add('is-invalid');
+																toast.push($_('page.discharge.calculation.vo20ValidationError') || 'Vo20 value must be less than 100', {
+																	theme: {
+																		'--toastColor': 'white',
+																		'--toastBackground': 'darkorange'
+																	}
+																});
+															} else {
+																target.classList.remove('is-invalid');
+																updateSharedVo20(
+																	combinedIndex,
+																	inputValue
+																);
+															}
 														}}
 													/></td>	
 													<td></td>
@@ -2360,7 +2381,16 @@
 														id={`psi-scenario${combinedIndex}`}
 														type="number"
 														step="any"
+														max="0.999"
 														class="form-control"
+														class:is-invalid={(() => {
+															const val = manuallyEditedPsi.has(combinedIndex)
+																? (modScenarioForms[combinedIndex]?.psi ?? 0)
+																: (clarkScenarioForms[combinedIndex] !== undefined 
+																	? calculateSummaryPsi(combinedIndex) 
+																	: (modScenarioForms[combinedIndex]?.psi ?? 0));
+															return val >= 1;
+														})()}
 														value={manuallyEditedPsi.has(combinedIndex)
 															? (modScenarioForms[combinedIndex]?.psi ?? 0)
 															: (clarkScenarioForms[combinedIndex] !== undefined 
@@ -2368,10 +2398,22 @@
 																: (modScenarioForms[combinedIndex]?.psi ?? 0))}
 														oninput={(event) => {
 															const target = event.currentTarget as HTMLInputElement;
-															updateModPsi(
-																combinedIndex,
-																sanitizeNumber(target.valueAsNumber ?? Number(target.value))
-															);
+															const inputValue = sanitizeNumber(target.valueAsNumber ?? Number(target.value));
+															if (inputValue >= 1) {
+																target.classList.add('is-invalid');
+																toast.push($_('page.discharge.calculation.psiValidationError') || 'Psi value must be less than 1', {
+																	theme: {
+																		'--toastColor': 'white',
+																		'--toastBackground': 'darkorange'
+																	}
+																});
+															} else {
+																target.classList.remove('is-invalid');
+																updateModPsi(
+																	combinedIndex,
+																	inputValue
+																);
+															}
 														}}
 													/></td>
 												</tr>

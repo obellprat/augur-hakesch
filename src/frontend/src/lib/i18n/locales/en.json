@@ -134,7 +134,9 @@
         "hadesValuesNoCoordinates": "No discharge point coordinates found",
         "climateScenario": "Climate scenario",
         "hydrologicalCalculation": "Hydrological calculations",
-        "percentage": "Percentage (%)"
+        "percentage": "Percentage (%)",
+        "psiValidationError": "The value must be less than 1",
+        "vo20ValidationError": "The value must be less than 100"
       }
     },
     "precipitation": {

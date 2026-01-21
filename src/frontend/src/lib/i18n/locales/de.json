@@ -134,7 +134,9 @@
         "hadesValuesNoCoordinates": "Keine Abflusspunkt-Koordinaten gefunden",
         "climateScenario": "Klimaszenario",
         "hydrologicalCalculation": "Hydrologische Berechnungen",
-        "percentage": "Prozent (%)"
+        "percentage": "Prozent (%)",
+        "psiValidationError": "Der Wert muss kleiner als 1 sein",
+        "vo20ValidationError": "Der Wert muss kleiner als 100 sein"
       }
     },
     "precipitation": {
