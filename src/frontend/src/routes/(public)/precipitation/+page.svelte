@@ -3,13 +3,66 @@
 	import { tick } from 'svelte';
 	import pageTitle from '$lib/page/pageTitle';
 	import { _ } from 'svelte-i18n';
-	import type ApexCharts from 'apexcharts';
-	import type { ApexOptions } from 'apexcharts';
 	import type { PageData } from './$types';
 	import type { Action } from 'svelte/action';
 	import { base } from '$app/paths';
 
 	import 'leaflet/dist/leaflet.css';
+
+	// Plotly types
+	type PlotlyData = {
+		x?: string[] | number[];
+		y?: number[];
+		name?: string;
+		type?: string;
+		marker?: {
+			color?: string;
+			line?: {
+				color?: string;
+				width?: number;
+			};
+			pattern?: {
+				fillmode?: string;
+				fgcolor?: string;
+				fgopacity?: number;
+			};
+		};
+		offset?: number;
+		width?: number;
+		error_y?: {
+			type?: string;
+			array?: number[];
+			arrayminus?: number[];
+			visible?: boolean;
+			color?: string;
+			thickness?: number;
+			width?: number;
+		};
+		[key: string]: any;
+	};
+
+	type PlotlyLayout = {
+		height?: number;
+		margin?: { l?: number; r?: number; t?: number; b?: number };
+		xaxis?: { title?: { text?: string } };
+		yaxis?: { title?: { text?: string } };
+		legend?: {
+			orientation?: string;
+			yanchor?: string;
+			y?: number;
+			xanchor?: string;
+			x?: number;
+		};
+		barmode?: string;
+		hovermode?: string;
+		[key: string]: any;
+	};
+
+	type PlotlyConfig = {
+		responsive?: boolean;
+		displayModeBar?: boolean;
+		[key: string]: any;
+	};
 
 	export let data: PageData;
 
@@ -17,31 +70,32 @@
 
 	// Chart type definition
 	type Chart = {
-		options: ApexOptions;
+		data: PlotlyData[];
+		layout: Partial<PlotlyLayout>;
+		config?: Partial<PlotlyConfig>;
 		node?: HTMLDivElement;
-		ref?: ApexCharts;
+		ref?: any; // Plotly instance
 	};
 
 	// Chart render action
 	const renderChart: Action<HTMLDivElement, Chart> = (node, parameter) => {
-		import('apexcharts')
-			.then((module) => module.default)
-			.then((ApexCharts) => {
+		import('plotly.js-dist-min')
+			.then((Plotly) => {
 				// If chart already exists, update it instead of creating a new one
-				if (parameter.ref) {
-					parameter.ref.updateOptions(parameter.options, false, false, false);
-					parameter.ref.updateSeries(parameter.options.series || []);
+				if (parameter.ref && parameter.node === node) {
+					Plotly.react(node, parameter.data, parameter.layout, parameter.config || { responsive: true });
 				} else {
 					// Create new chart instance
-					const chart = new ApexCharts(node, parameter.options);
 					parameter.node = node;
-					parameter.ref = chart;
-					chart.render();
+					Plotly.newPlot(node, parameter.data, parameter.layout, parameter.config || { responsive: true });
+					parameter.ref = true; // Mark as initialized
 				}
 			});
 		return {
+			update: (newParameter) => {
+			},
 			destroy: () => {
-				parameter.ref?.destroy();
+				// Plotly will clean up automatically
 			}
 		};
 	};
@@ -380,6 +434,7 @@
 		if (!precipitationData) return;
 
 		const periods = Object.keys(precipitationData.period[climateChangePeriod].years);
+		const periodLabels = periods.map((p: string) => `${p}-year`);
 		const presentValues = periods.map(
 			(period: string) => precipitationData.period[climateChangePeriod].years[period].present
 		);
@@ -387,27 +442,70 @@
 			(period: string) => precipitationData.period[climateChangePeriod].years[period].climate_change
 		);
 
-		const chartOptions: ApexOptions = {
-			chart: {
+		// Calculate uncertainty (±30% of present values)
+		const uncertaintyValues = presentValues.map((val: number) => val * 0.3);
+
+		// Build Plotly data traces
+		// Order matters: last trace is rendered on top (in front)
+		const traces: PlotlyData[] = [
+			{
+				x: periodLabels,
+				y: climateChangeValues,
+				name: `Climate Change (${climateChangePeriod}) (mm/day)`,
 				type: 'bar',
-				height: 200,
-				animations: {
-					enabled: false
+				marker: {
+					color: '#87CEEB',
+					line: {
+						color: '#6BB3D4',
+						width: 1
+					},
+					pattern: {
+						fillmode: 'overlay',
+						fgcolor: '#A8DDF0',
+						fgopacity: 0.3
+					}
 				},
-				stacked: false
+				offset: -0.05, // Shifted left to center bars under labels
+				width: 0.35, // Make bars smaller
+				// Add error bars for uncertainty if enabled
+				...(showUncertainty && {
+					error_y: {
+						type: 'data',
+						array: uncertaintyValues,
+						arrayminus: uncertaintyValues,
+						visible: true,
+						color: '#000000',
+						thickness: 2,
+						width: 4
+					}
+				})
 			},
-			series: [
-				{
-					name: 'Present',
-					data: presentValues
+			{
+				x: periodLabels,
+				y: presentValues,
+				name: 'Present (mm/day)',
+				type: 'bar',
+				marker: {
+					color: '#3B82F6',
+					line: {
+						color: '#2563EB',
+						width: 1
+					},
+					pattern: {
+						fillmode: 'overlay',
+						fgcolor: '#60A5FA',
+						fgopacity: 0.3
+					}
 				},
-				{
-					name: `Climate Change (${climateChangePeriod})`,
-					data: climateChangeValues
-				}
-			],
+				offset: -0.25, // Shifted left to center bars under labels
+				width: 0.35 // Make bars smaller
+			}
+		];
+
+		const layout: Partial<PlotlyLayout> = {
+			height: 200,
+			margin: { l: 50, r: 20, t: 20, b: 50 },
 			xaxis: {
-				categories: periods.map((p: string) => `${p}-year`),
 				title: {
 					text: 'Return Period (years)'
 				}
@@ -417,43 +515,38 @@
 					text: 'Precipitation (mm/day)'
 				}
 			},
-			colors: ['#3B82F6', '#87CEEB'], // Darker blue for present, light blue for climate change
-			plotOptions: {
-				bar: {
-					horizontal: false,
-					columnWidth: '70%',
-					borderRadius: 4
-				}
-			},
-			dataLabels: {
-				enabled: false
-			},
 			legend: {
-				position: 'top',
-				labels: {
-					colors: ['#000000', '#000000']
-				}
+				orientation: 'h',
+				yanchor: 'bottom',
+				y: 1.02,
+				xanchor: 'right',
+				x: 1
 			},
-			tooltip: {
-				y: {
-					formatter: function (val: number) {
-						return val + ' mm/day';
-					}
-				}
-			}
+			barmode: 'overlay',
+			hovermode: 'x unified'
 		};
 
-		// Always update the options property
+		const config: Partial<PlotlyConfig> = {
+			responsive: true,
+			displayModeBar: false
+		};
+
+		// Always update the chart property
 		if (!precipitationChart) {
-			precipitationChart = { options: chartOptions };
+			precipitationChart = { data: traces, layout, config };
 		} else {
-			precipitationChart.options = chartOptions;
+			precipitationChart.data = traces;
+			precipitationChart.layout = layout;
+			precipitationChart.config = config;
 		}
 
 		// If chart already exists, update it directly
-		if (precipitationChart.ref) {
-			precipitationChart.ref.updateOptions(chartOptions, false, false, false);
-			precipitationChart.ref.updateSeries(chartOptions.series || []);
+		if (precipitationChart && precipitationChart.ref && precipitationChart.node) {
+			import('plotly.js-dist-min').then((Plotly) => {
+				if (precipitationChart && precipitationChart.node) {
+					Plotly.react(precipitationChart.node, precipitationChart.data, precipitationChart.layout, precipitationChart.config);
+				}
+			});
 		}
 	}
 
@@ -1104,8 +1197,19 @@
 		position: relative;
 		min-height: 200px;
 
-		:global(.apexcharts-legend-text) {
-			color: #000000 !important;
+		:global(.js-plotly-plot) {
+			filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+		}
+
+		:global(.barlayer path) {
+			filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3)) 
+			        drop-shadow(-1px -1px 2px rgba(255, 255, 255, 0.1));
+			transition: filter 0.2s ease;
+		}
+
+		:global(.barlayer path:hover) {
+			filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.4)) 
+			        drop-shadow(-1px -1px 2px rgba(255, 255, 255, 0.15));
 		}
 	}
 
