@@ -1,3 +1,16 @@
+## 1.1.0-alpha.3 (2026-01-31)
+
+### Feat
+
+- **frontend**: vo_20 and psi validation with error message
+- **frontend,-precipitation**: Change chart library and show uncertainity
+- **external-monitoring**: new tool for external monitoring service
+- **backend,-frontend**: monitoring page and statistics
+
+### Fix
+
+- **frontend,-api**: updated zone_parameters with calibrated values
+
 ## 1.1.0-alpha.2 (2026-01-20)
 
 ### Feat
