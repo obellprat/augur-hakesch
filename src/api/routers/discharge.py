@@ -125,15 +125,15 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                 ))
 
                 # TODO: get zone parameters from DB
-        zone_parameters = {
-                "Atyp 1": {'V0_20': 22.5, 'WSV': 12.5, 'psi': 0.475, 'alpha': 82},
-                "Atyp 2": {'V0_20': 27.5, 'WSV': 22.5, 'psi': 0.375, 'alpha': 76},
-                "Atyp 3": {'V0_20': 37.5, 'WSV': 37.5, 'psi': 0.15,  'alpha': 63.5},
-                "Atyp 4": {'V0_20': 40,   'WSV': 42.5, 'psi': 0.1,   'alpha': 54},
-                "Atyp 5": {'V0_20': 42.5, 'WSV': 52.5, 'psi': 0.075, 'alpha': 42},
-                "Siedl.typ 1": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
-                "Siedl.typ 2": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
-                "Siedl.typ 3": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
+                zone_parameters = {
+                "Atyp 1": {'V0_20': 20, 'WSV': 10, 'psi': 0.45, 'alpha': 82},
+                "Atyp 2": {'V0_20': 25, 'WSV': 20, 'psi': 0.35, 'alpha': 76},
+                "Atyp 3": {'V0_20': 35, 'WSV': 30, 'psi': 0.15,  'alpha': 63.5},
+                "Atyp 4": {'V0_20': 45,   'WSV': 45, 'psi': 0.1,   'alpha': 54},
+                "Atyp 5": {'V0_20': 50, 'WSV': 60, 'psi': 0.05, 'alpha': 42},
+                "Siedl.typ 1": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
+                "Siedl.typ 2": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
+                "Siedl.typ 3": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
             }
 
         for clark_wsl_obj in project.ClarkWSL:
@@ -350,14 +350,14 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
 
         # TODO: get zone parameters from DB
         zone_parameters = {
-                "Atyp 1": {'V0_20': 22.5, 'WSV': 12.5, 'psi': 0.475, 'alpha': 82},
-                "Atyp 2": {'V0_20': 27.5, 'WSV': 22.5, 'psi': 0.375, 'alpha': 76},
-                "Atyp 3": {'V0_20': 37.5, 'WSV': 37.5, 'psi': 0.15,  'alpha': 63.5},
-                "Atyp 4": {'V0_20': 40,   'WSV': 42.5, 'psi': 0.1,   'alpha': 54},
-                "Atyp 5": {'V0_20': 42.5, 'WSV': 52.5, 'psi': 0.075, 'alpha': 42},
-                "Siedl.typ 1": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
-                "Siedl.typ 2": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
-                "Siedl.typ 3": {'V0_20': 20, 'WSV': 20, 'psi': 0.4, 'alpha': 80},
+                "Atyp 1": {'V0_20': 20, 'WSV': 10, 'psi': 0.45, 'alpha': 82},
+                "Atyp 2": {'V0_20': 25, 'WSV': 20, 'psi': 0.35, 'alpha': 76},
+                "Atyp 3": {'V0_20': 35, 'WSV': 30, 'psi': 0.15,  'alpha': 63.5},
+                "Atyp 4": {'V0_20': 45,   'WSV': 45, 'psi': 0.1,   'alpha': 54},
+                "Atyp 5": {'V0_20': 50, 'WSV': 60, 'psi': 0.05, 'alpha': 42},
+                "Siedl.typ 1": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
+                "Siedl.typ 2": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
+                "Siedl.typ 3": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
             }
 
         clark_wsl_obj = next((x for x in project.ClarkWSL if x.id == ClarkWSLId), None)
