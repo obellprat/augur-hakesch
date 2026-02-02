@@ -296,7 +296,7 @@ def modifizierte_fliesszeit_standardVo(self,
     
     # 2. Flow time according to Kirpich
     J = delta_H / L
-    TFl = 0.0245 * (L ** 0.77) * (J ** -0.385)
+    TFl = 0.0195 * (L ** 0.77) * (J ** -0.385)
 
     # 3. Iteration to determine TB
     TB = TB_start
@@ -508,7 +508,7 @@ def koella_standardVo(self,
     )
     
     # Effective contributing area in km²
-    FLeff = 0.13 * (Lg ** 1.02)  
+    FLeff = 0.12 * (Lg ** 1.07)  
 
     if x == 2.3:
         Vox = 0.5 * Vo20
@@ -762,7 +762,7 @@ def clark_wsl_modified(self,
     WSV_mean = WSV_weighted_sum / total_area
     WSV_corr_mean = WSV_corr_weighted_sum / total_area
 
-    K = 2.0 * WSV_mean - 18.5  # in minutes
+    K = 2.25 * WSV_mean - 18.5  # in minutes
     K_sec = K * 60 
 
     # Muskingum routing
