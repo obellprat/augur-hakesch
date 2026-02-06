@@ -206,9 +206,9 @@
       },
       "credits": {
         "heading": "Credits",
-        "p1": "AUGUR ist Open Source und wurde durch die Untersütztung vom 'Innovation Meets Practice Accelartor' 2022 der Humanitären Hilfe der DEZA lanciert für eine globale Anwendung.",
+        "p1": "AUGUR ist Open Source und wurde durch die Untersütztung vom 'Innovation Meets Practice Accelartor' 2022 der Humanitären Hilfe der DEZA von Omar Bellprat lanciert für eine globale Anwendung.",
         "p2": "Durch eine  Förderung des Kantons Bern wurde AUGUR mit den Methoden von HAKESCH und einem Niederschlag Abfluss-Model (NAM) weiterentwickelt in Zusammenarbeit mit Hunziker, Zarn und Partner (HZP) und Scherrer Hydrologie.",
-        "p3": "Das gesamte Tool wurde von GeoTools Suter und Bellprat climate consulting entwickelt und konzipiert. Es ist verfügbar unter https://github.com/obellprat/augur-hakesch und als Open Source unter der MIT-Lizenz veröffentlicht."
+        "p3": "Das gesamte Tool wurde von GeoTools Suter und Bellprat Climate Consulting entwickelt und konzipiert. Es ist verfügbar unter https://github.com/obellprat/augur-hakesch und als Open Source unter der MIT-Lizenz veröffentlicht."
       }
     },
     "login": {
