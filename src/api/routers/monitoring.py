@@ -62,45 +62,41 @@ async def get_system_info(user: User = Depends(get_user)):
 
 
 def _cpu_monitor_thread():
-    """Background thread that continuously monitors CPU usage"""
+    """Background thread that monitors CPU usage on-demand (not continuously)"""
     global _cpu_cache, _cpu_thread_running
     
     # Establish baseline first - use blocking method initially
     logging.info("CPU monitor: Establishing baseline...")
-    psutil.cpu_percent(interval=0.1, percpu=True)
-    psutil.cpu_percent(interval=0.1, percpu=False)
-    psutil.cpu_times_percent(interval=0.1)
-    time.sleep(0.5)  # Wait a bit after baseline
+    psutil.cpu_percent(interval=0.5, percpu=True)
+    psutil.cpu_percent(interval=0.5, percpu=False)
+    psutil.cpu_times_percent(interval=0.5)
     
     consecutive_errors = 0
     last_valid_reading = None
     
     while _cpu_thread_running:
         try:
-            # Use non-blocking cpu_percent (baseline already established)
-            cpu_percent_per_core = psutil.cpu_percent(interval=None, percpu=True)
+            # Use blocking cpu_percent with a short interval for more accurate readings
+            # This is more reliable than interval=None especially in containers/WSL
+            cpu_percent_per_core = psutil.cpu_percent(interval=1.0, percpu=True)
             cpu_percent_overall = psutil.cpu_percent(interval=None, percpu=False)
             cpu_times_percent_obj = psutil.cpu_times_percent(interval=None)
             
-            # Validate readings - if all cores show 100%, something is wrong
-            # Also check if overall is suspiciously high
+            # Validate readings - if all cores show 100%, it might be a measurement artifact
             is_valid = True
-            if cpu_percent_overall >= 99.0:
-                # If we get 99%+, it might be incorrect - check if all cores are also high
-                if all(core >= 99.0 for core in cpu_percent_per_core):
-                    is_valid = False
-                    consecutive_errors += 1
-                    logging.warning(f"CPU monitor: Suspicious reading detected (all cores at 100%), error count: {consecutive_errors}")
-                else:
-                    consecutive_errors = 0
+            if cpu_percent_overall >= 99.0 and all(core >= 99.0 for core in cpu_percent_per_core):
+                is_valid = False
+                consecutive_errors += 1
+                # Only log every 10th occurrence to avoid log spam
+                if consecutive_errors <= 3 or consecutive_errors % 10 == 0:
+                    logging.debug(f"CPU monitor: Skipping suspicious reading (all cores at 100%), count: {consecutive_errors}")
             
             # If we have too many consecutive errors, re-establish baseline
-            if consecutive_errors >= 3:
-                logging.warning("CPU monitor: Too many errors, re-establishing baseline...")
-                psutil.cpu_percent(interval=0.1, percpu=True)
-                psutil.cpu_percent(interval=0.1, percpu=False)
-                psutil.cpu_times_percent(interval=0.1)
-                time.sleep(0.5)
+            if consecutive_errors >= 10:
+                logging.info("CPU monitor: Re-establishing baseline after repeated suspicious readings...")
+                psutil.cpu_percent(interval=1.0, percpu=True)
+                psutil.cpu_percent(interval=1.0, percpu=False)
+                psutil.cpu_times_percent(interval=1.0)
                 consecutive_errors = 0
                 continue  # Skip this iteration
             
@@ -135,13 +131,14 @@ def _cpu_monitor_thread():
                             "idle": last_valid_reading["times_percent"].idle
                         }
                         _cpu_cache["last_update"] = time.time()
+                        _cpu_cache["initialized"] = True
             
-            # Sleep for 1 second before next update
-            time.sleep(1.0)
+            # Sleep for 5 seconds before next update (reduced frequency)
+            time.sleep(5.0)
         except Exception as e:
             consecutive_errors += 1
             logging.error(f"Error in CPU monitor thread: {e}")
-            time.sleep(1.0)
+            time.sleep(5.0)
 
 
 def _start_cpu_monitor():
@@ -161,10 +158,7 @@ def _stop_cpu_monitor():
     _cpu_thread_running = False
 
 
-# Start CPU monitor thread when module is imported
-_start_cpu_monitor()
-
-# Register cleanup on exit
+# Register cleanup on exit (thread starts lazily on first CPU endpoint call)
 atexit.register(_stop_cpu_monitor)
 
 
