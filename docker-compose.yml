@@ -47,13 +47,27 @@ services:
   worker:
     image: stumpisuter/augur-hakesch-api:dev
     build: ./src/api
-    command: celery -A calculations.calculations.app worker --pool solo --concurrency 4 --loglevel=info --logfile=./logs/celery.log
+    # solo pool: sequential task execution in main process, avoids fork() issues
+    # with GDAL/numpy/scipy C extensions that are incompatible with prefork pool
+    # restart: unless-stopped ensures the worker comes back after graceful shutdown
+    # (the heavy raster task triggers a shutdown after completion to reclaim C memory)
+    command: celery -A calculations.calculations.app worker --pool solo --loglevel=info --logfile=./logs/celery.log
+    restart: unless-stopped
     volumes:
       - ./src/api:/usr/src/app
     env_file: ".env"
+    environment:
+      # Use jemalloc to prevent "double free or corruption" from GDAL/numpy C extensions
+      - LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2
     depends_on:
       - api
       - redis
+    deploy:
+      resources:
+        limits:
+          memory: 16g
+        reservations:
+          memory: 8g
     networks:
       # Use the public network created to be shared between Traefik and
       # any other service that needs to be publicly available with HTTPS

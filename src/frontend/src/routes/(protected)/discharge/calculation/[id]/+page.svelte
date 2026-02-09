@@ -126,7 +126,7 @@
 			}
 		],
 		chart: {
-			type: 'bar',
+			type: 'line',
 			height: 350
 		},
 		plotOptions: {
@@ -943,7 +943,7 @@
 	});
 
 	function showResults() {
-		let mod_fliesszeit_data: { name: string; color: string; data: (number | null)[] } = {
+		let mod_fliesszeit_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'Mod. Fliesszeitverfahren',
 			color: '#1376ef',
 			data: []
@@ -958,22 +958,21 @@
 			(mf: { Annuality: { number: number } }) => mf.Annuality?.number == 300
 		);
 
-		mod_fliesszeit_data.data.push(
-			getResultField(mf_23, 'Mod_Fliesszeit_Result')?.HQ
-				? Number(getResultField(mf_23, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
-				: null
-		);
-		mod_fliesszeit_data.data.push(
-			getResultField(mf_20, 'Mod_Fliesszeit_Result')?.HQ
-				? Number(getResultField(mf_20, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
-				: null
-		);
-		mod_fliesszeit_data.data.push(
-			getResultField(mf_100, 'Mod_Fliesszeit_Result')?.HQ
-				? Number(getResultField(mf_100, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
-				: null
-		);
-		let koella_data: { name: string; color: string; data: (number | null)[] } = {
+		const mf_30_value = getResultField(mf_23, 'Mod_Fliesszeit_Result')?.HQ
+			? Number(getResultField(mf_23, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
+			: null;
+		const mf_100_value = getResultField(mf_20, 'Mod_Fliesszeit_Result')?.HQ
+			? Number(getResultField(mf_20, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
+			: null;
+		const mf_300_value = getResultField(mf_100, 'Mod_Fliesszeit_Result')?.HQ
+			? Number(getResultField(mf_100, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
+			: null;
+
+		mod_fliesszeit_data.data.push(mf_30_value);
+		mod_fliesszeit_data.data.push(mf_100_value);
+		mod_fliesszeit_data.data.push(mf_300_value);
+
+		let koella_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'Kölla',
 			color: '#1e13ef',
 			data: []
@@ -982,22 +981,21 @@
 		const k_20 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 100);
 		const k_100 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 300);
 
-		koella_data.data.push(
-			getResultField(k_23, 'Koella_Result')?.HQ
-				? Number(getResultField(k_23, 'Koella_Result').HQ.toFixed(1))
-				: null
-		);
-		koella_data.data.push(
-			getResultField(k_20, 'Koella_Result')?.HQ
-				? Number(getResultField(k_20, 'Koella_Result').HQ.toFixed(1))
-				: null
-		);
-		koella_data.data.push(
-			getResultField(k_100, 'Koella_Result')?.HQ
-				? Number(getResultField(k_100, 'Koella_Result').HQ.toFixed(1))
-				: null
-		);
-		let clark_wsl_data: { name: string; color: string; data: (number | null)[] } = {
+		const k_30_value = getResultField(k_23, 'Koella_Result')?.HQ
+			? Number(getResultField(k_23, 'Koella_Result').HQ.toFixed(1))
+			: null;
+		const k_100_value = getResultField(k_20, 'Koella_Result')?.HQ
+			? Number(getResultField(k_20, 'Koella_Result').HQ.toFixed(1))
+			: null;
+		const k_300_value = getResultField(k_100, 'Koella_Result')?.HQ
+			? Number(getResultField(k_100, 'Koella_Result').HQ.toFixed(1))
+			: null;
+
+		koella_data.data.push(k_30_value);
+		koella_data.data.push(k_100_value);
+		koella_data.data.push(k_300_value);
+
+		let clark_wsl_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'Clark WSL',
 			color: '#13e4ef',
 			data: []
@@ -1012,22 +1010,21 @@
 			(c: { Annuality: { number: number } }) => c.Annuality?.number == 300
 		);
 
-		clark_wsl_data.data.push(
-			getResultField(c_23, 'ClarkWSL_Result')?.Q
-				? Number(getResultField(c_23, 'ClarkWSL_Result').Q.toFixed(1))
-				: null
-		);
-		clark_wsl_data.data.push(
-			getResultField(c_20, 'ClarkWSL_Result')?.Q
-				? Number(getResultField(c_20, 'ClarkWSL_Result').Q.toFixed(1))
-				: null
-		);
-		clark_wsl_data.data.push(
-			getResultField(c_100, 'ClarkWSL_Result')?.Q
-				? Number(getResultField(c_100, 'ClarkWSL_Result').Q.toFixed(1))
-				: null
-		);
-		let nam_data: { name: string; color: string; data: (number | null)[] } = {
+		const c_30_value = getResultField(c_23, 'ClarkWSL_Result')?.Q
+			? Number(getResultField(c_23, 'ClarkWSL_Result').Q.toFixed(1))
+			: null;
+		const c_100_value = getResultField(c_20, 'ClarkWSL_Result')?.Q
+			? Number(getResultField(c_20, 'ClarkWSL_Result').Q.toFixed(1))
+			: null;
+		const c_300_value = getResultField(c_100, 'ClarkWSL_Result')?.Q
+			? Number(getResultField(c_100, 'ClarkWSL_Result').Q.toFixed(1))
+			: null;
+
+		clark_wsl_data.data.push(c_30_value);
+		clark_wsl_data.data.push(c_100_value);
+		clark_wsl_data.data.push(c_300_value);
+
+		let nam_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'NAM',
 			color: '#ef1313',
 			data: []
@@ -1051,8 +1048,234 @@
 				? Number(getResultField(n_100, 'NAM_Result').HQ.toFixed(1))
 				: null
 		);
-		chartOneOptions.series = [mod_fliesszeit_data, koella_data, clark_wsl_data, nam_data];
-		chart.ref?.updateSeries(chartOneOptions.series);
+
+		// Calculate mean (average) values for each group (30, 100, 300) from the three methods
+		function calculateMean(values: (number | null)[]): number | null {
+			const validValues = values.filter((v): v is number => v !== null && typeof v === 'number');
+			if (validValues.length === 0) return null;
+			const sum = validValues.reduce((acc, val) => acc + val, 0);
+			return sum / validValues.length;
+		}
+
+		// Calculate mean values for each group (30, 100, 300) from the three methods
+		const mean_30 = calculateMean([mf_30_value, k_30_value, c_30_value]);
+		const mean_100 = calculateMean([mf_100_value, k_100_value, c_100_value]);
+		const mean_300 = calculateMean([mf_300_value, k_300_value, c_300_value]);
+
+		// Set bar series type explicitly
+		mod_fliesszeit_data.type = 'column';
+		koella_data.type = 'column';
+		clark_wsl_data.type = 'column';
+		nam_data.type = 'column';
+
+		chartOneOptions.series = [
+			mod_fliesszeit_data,
+			koella_data,
+			clark_wsl_data,
+			nam_data
+		];
+
+		// Helper to draw custom medium lines after chart render/update
+		const drawMediumLines = (apexChart: any) => {
+			try {
+				if (!apexChart || !apexChart.w || !apexChart.w.globals) {
+					return;
+				}
+
+				// Wait a bit for SVG to be fully rendered
+				const findElements = () => {
+					const el = apexChart.el;
+					if (!el) return null;
+					
+					const svg = el.querySelector('svg');
+					if (!svg) return null;
+					
+					// plotArea is inside the apexcharts-inner element
+					const innerGroup = svg.querySelector('g.apexcharts-inner') as SVGGElement;
+					if (!innerGroup) return null;
+					
+					// Find plotArea inside innerGroup, or use innerGroup itself
+					const plotArea = innerGroup.querySelector('.apexcharts-plot-area') as SVGGElement || innerGroup;
+					if (!plotArea) return null;
+					
+					return { svg, plotArea };
+				};
+
+				const elements = findElements();
+				if (!elements) {
+					// Try again after a short delay
+					setTimeout(() => {
+						const retryElements = findElements();
+						if (retryElements) {
+							drawMediumLines(apexChart);
+						}
+					}, 200);
+					return;
+				}
+
+				const { svg, plotArea } = elements;
+
+				const globals = apexChart.w.globals;
+				const plotWidth = globals.gridWidth;
+				const plotHeight = globals.gridHeight;
+				const yMin = globals.minY;
+				const yMax = globals.maxY;
+
+				if (!plotWidth || !plotHeight || yMax === yMin) {
+					return;
+				}
+
+				// Calculate y position (relative to plotArea)
+				const getY = (val: number) => {
+					return plotHeight - ((val - yMin) / (yMax - yMin)) * plotHeight;
+				};
+
+				// Get actual x positions by finding the bars for each category
+				// ApexCharts creates bars with class 'apexcharts-bar-area'
+				const bars = svg.querySelectorAll('.apexcharts-bar-area rect');
+				const barsPerCategory = 4; // We have 4 series
+				const categoryCenters: number[] = [];
+				
+				// Calculate center of each category group
+				// Use simpler approach: calculate based on category index with offsets
+				const categoryWidth = plotWidth / 3;
+				
+				for (let catIndex = 0; catIndex < 3; catIndex++) {
+					// Base position for each category (center of category)
+					let baseCenter = categoryWidth * (catIndex + 0.5);
+					
+					// Try to get actual bar positions if available for more accurate positioning
+					const firstBarIndex = catIndex * barsPerCategory;
+					const lastBarIndex = firstBarIndex + barsPerCategory - 1;
+					
+					// Use smaller fixed pixel offsets for subtle positioning
+					const leftOffset = -30; // Move left line 30 pixels to the left
+					const rightOffset = 30;  // Move right line 30 pixels to the right
+					
+					if (firstBarIndex < bars.length && lastBarIndex < bars.length) {
+						const firstBar = bars[firstBarIndex] as SVGRectElement;
+						const lastBar = bars[lastBarIndex] as SVGRectElement;
+						const firstBarX = parseFloat(firstBar.getAttribute('x') || '0');
+						const lastBarX = parseFloat(lastBar.getAttribute('x') || '0');
+						const lastBarWidth = parseFloat(lastBar.getAttribute('width') || '0');
+						
+						// Use actual bar center as base
+						baseCenter = (firstBarX + lastBarX + lastBarWidth) / 2;
+						
+						// Apply fixed pixel offsets: move left line left, right line right
+						if (catIndex === 0) {
+							// Move left line to the left by fixed pixels
+							baseCenter = baseCenter + leftOffset;
+						} else if (catIndex === 2) {
+							// Move right line to the right by fixed pixels
+							baseCenter = baseCenter + rightOffset;
+						}
+					} else {
+						// Fallback: use calculated positions with fixed pixel offsets
+						if (catIndex === 0) {
+							// Move left - shift by fixed pixels to the left
+							baseCenter = baseCenter + leftOffset;
+						} else if (catIndex === 2) {
+							// Move right - shift by fixed pixels to the right
+							baseCenter = baseCenter + rightOffset;
+						}
+					}
+					
+					categoryCenters.push(baseCenter);
+				}
+
+				// Calculate line width based on actual bar group width
+				// Make lines shorter so the shift is more visible
+				let lineHalfWidth = plotWidth / 3 * 0.25; // Default - shorter lines
+				if (bars.length > 0) {
+					const firstBar = bars[0] as SVGRectElement;
+					const barWidth = parseFloat(firstBar.getAttribute('width') || '0');
+					lineHalfWidth = (barWidth * barsPerCategory) * 0.25; // Shorter lines
+				}
+
+				// Remove any existing medium lines and labels
+				const existingLines = svg.querySelectorAll('.medium-line, .medium-line-label');
+				existingLines.forEach((element: SVGElement) => element.remove());
+
+				const makeLine = (centerX: number, value: number | null, label: string) => {
+					if (value === null || !Number.isFinite(value)) return;
+					const y = getY(value);
+					
+					// Create the dashed line (teal/cyan blue that contrasts well with other blue bars)
+					const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+					line.setAttribute('class', 'medium-line');
+					line.setAttribute('x1', String(centerX - lineHalfWidth));
+					line.setAttribute('x2', String(centerX + lineHalfWidth));
+					line.setAttribute('y1', String(y));
+					line.setAttribute('y2', String(y));
+					line.setAttribute('stroke', '#00a8cc'); // Bright teal/cyan that contrasts with blue bars
+					line.setAttribute('stroke-width', '2.5'); // Slightly thicker
+					line.setAttribute('stroke-dasharray', '5,5');
+					line.setAttribute('opacity', '1');
+					line.setAttribute('style', 'pointer-events: none;');
+					plotArea.appendChild(line);
+					
+					// Create text label for the value (teal color, with m3/s unit)
+					const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+					text.setAttribute('class', 'medium-line-label');
+					text.setAttribute('x', String(centerX + lineHalfWidth + 5)); // Position to the right of the line
+					text.setAttribute('y', String(y - 3)); // Slightly above the line
+					text.setAttribute('fill', '#00a8cc'); // Bright teal color
+					text.setAttribute('font-size', '12px');
+					text.setAttribute('font-weight', '600'); // Bolder for better readability
+					text.setAttribute('font-family', 'Arial, sans-serif');
+					text.setAttribute('style', 'pointer-events: none;');
+					text.textContent = `${value.toFixed(1)} m³/s`;
+					plotArea.appendChild(text);
+				};
+
+				makeLine(categoryCenters[0], mean_30, 'Mean 30');
+				makeLine(categoryCenters[1], mean_100, 'Mean 100');
+				makeLine(categoryCenters[2], mean_300, 'Mean 300');
+			} catch (error) {
+				// Silently handle errors
+			}
+		};
+
+		// Set up event handlers for drawing lines
+		chartOneOptions.chart.events = {
+			...(chartOneOptions.chart.events || {}),
+			drawn: (chartContext: any, config: any) => {
+				setTimeout(() => {
+					drawMediumLines(chartContext);
+				}, 100);
+			},
+			animationEnd: (chartContext: any, config: any) => {
+				setTimeout(() => {
+					drawMediumLines(chartContext);
+				}, 100);
+			},
+			resized: (chartContext: any, config: any) => {
+				// Wait longer for chart to fully resize
+				setTimeout(() => {
+					drawMediumLines(chartContext);
+				}, 300);
+			},
+			dataPointSelection: (chartContext: any, config: any) => {
+				// Redraw lines after any interaction
+				setTimeout(() => {
+					drawMediumLines(chartContext);
+				}, 100);
+			}
+		};
+
+		// Update chart
+		if (chart.ref) {
+			chart.ref.updateSeries(chartOneOptions.series);
+			chart.ref.updateOptions(chartOneOptions);
+			
+			// Draw lines after update
+			setTimeout(() => {
+				if (chart.ref) {
+					drawMediumLines(chart.ref);
+				}
+			}, 500);
+		}
 	}
 	$effect(() => {
 		// Re-run when climate scenario changes
@@ -1067,6 +1290,7 @@
 		clark_wsl = data.project.ClarkWSL || [];
 		nam = data.project.NAM || [];
 	});
+
 
 	function addCalculation() {
 		if (calulcationType == 1) {
@@ -1832,6 +2056,24 @@
 		}
 	}
 
+	// Add window resize listener to redraw lines when window is resized
+	let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+	const handleResize = () => {
+		// Debounce resize events
+		if (resizeTimeout) {
+			clearTimeout(resizeTimeout);
+		}
+		resizeTimeout = setTimeout(() => {
+			if (chart.ref) {
+				// Wait for ApexCharts to finish resizing, then redraw lines
+				setTimeout(() => {
+					// Redraw the lines by calling showResults which will trigger the drawn event
+					showResults();
+				}, 300);
+			}
+		}, 150);
+	};
+
 	onMount(async () => {
 		// Check if soil shape-file exists
 		await checkSoilFileExists(data.project.id);
@@ -1841,6 +2083,19 @@
 		} else {
 			couldCalculate = true;
 		}
+
+		// Add window resize listener to redraw lines when window is resized
+		window.addEventListener('resize', handleResize);
+	});
+
+	// Cleanup on component destroy
+	$effect(() => {
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			if (resizeTimeout) {
+				clearTimeout(resizeTimeout);
+			}
+		};
 	});
 </script>
 

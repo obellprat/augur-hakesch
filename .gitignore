@@ -7,6 +7,10 @@ src/frontend/node_modules/
 src/frontend/not_used_pages/
 src/api/*.html
 src/api/prisma/src
+scripts/data/
+data/
+docs/
+
 node_modules
 
 # Output

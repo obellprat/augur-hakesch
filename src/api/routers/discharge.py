@@ -520,7 +520,7 @@ def get_curve_numbers_endpoint(ProjectId:str, user: User = Depends(get_user), so
             }
         )
         
-        task = get_curve_numbers.delay(project.id, user.id)
+        task = get_curve_numbers.delay(project.id, user.id, soil_data_source, own_soil)
         return JSONResponse({"task_id": task.id})
     except:
         raise HTTPException(
