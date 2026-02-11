@@ -135,7 +135,7 @@ def get_curve_numbers(self, projectId: str, userId: int, soil_data_source: str =
     grid = create_catchment_grid(catchment_union, cell_size)
     
     # Generate curve numbers using QGIS approach only
-    curve_number_raster = generate_curve_numbers_qgis_only(
+    curve_number_raster, lc_hsg_stats = generate_curve_numbers_qgis_only(
         landuse_data, soil_data, grid, catchment_union
     )
     
@@ -150,6 +150,15 @@ def get_curve_numbers(self, projectId: str, userId: int, soil_data_source: str =
     # Save as GeoTIFF
     output_file = f"{output_dir}/curvenumbers.tif"
     save_curve_number_raster(curve_number_raster, grid, output_file)
+    
+    # Save LC_HSG combination statistics as JSON
+    stats_file = f"{output_dir}/lc_hsg_stats.json"
+    try:
+        with open(stats_file, 'w') as f:
+            json.dump(lc_hsg_stats, f, indent=2)
+        print(f"Saved LC_HSG statistics to {stats_file}")
+    except Exception as e:
+        print(f"Warning: Could not save LC_HSG stats: {e}")
     
     self.update_state(state='PROGRESS',
                 meta={'text': 'Finished', 'progress': 100})
@@ -592,23 +601,46 @@ def generate_curve_numbers_qgis_only(landuse_data, soil_data, grid, catchment_ge
     curve_number_raster = np.full(grid.shape, 70, dtype=np.float32)  # Default CN
     
     # Use QGIS plugin approach: combine land cover and soil data using lookup tables
+    # Each function returns (curve_number_raster, landcover_array, hsg_array)
     if soil_data['source'] == 'OWN_SOIL':
-        curve_number_raster = apply_own_soil_curve_number_calculation(
+        curve_number_raster, lc_arr, hsg_arr = apply_own_soil_curve_number_calculation(
             curve_number_raster, landuse_data, soil_data, grid
         )
     elif soil_data['source'] == 'BEK':
-        curve_number_raster = apply_bek_curve_number_calculation(
+        curve_number_raster, lc_arr, hsg_arr = apply_bek_curve_number_calculation(
             curve_number_raster, landuse_data, soil_data, grid
         )
     else:  # HYSOGs
-        curve_number_raster = apply_qgis_plugin_curve_number_calculation_simplified(
+        curve_number_raster, lc_arr, hsg_arr = apply_qgis_plugin_curve_number_calculation_simplified(
             curve_number_raster, landuse_data, soil_data, grid
         )
     
     # Apply catchment mask
     curve_number_raster = np.where(catchment_mask == 1, curve_number_raster, 0)
     
-    return curve_number_raster
+    # Compute LC_HSG percentages WITHIN the catchment only
+    lc_hsg_stats = {}
+    total_catchment_pixels = int(np.sum(catchment_mask == 1))
+    if total_catchment_pixels > 0 and lc_arr is not None and hsg_arr is not None:
+        # Mask to catchment pixels only
+        cm = (catchment_mask == 1)
+        lc_in = lc_arr[cm]
+        hsg_in = hsg_arr[cm]
+        
+        for lc_class in np.unique(lc_in):
+            for hsg_code in np.unique(hsg_in):
+                if hsg_code == 0:
+                    continue
+                key = f"{int(lc_class)}_{int(hsg_code)}"
+                count = int(np.sum((lc_in == lc_class) & (hsg_in == hsg_code)))
+                if count > 0:
+                    pct = round((count / total_catchment_pixels) * 100, 2)
+                    lc_hsg_stats[key] = {"count": count, "pct": pct}
+        
+        lc_hsg_stats["_total_pixels"] = total_catchment_pixels
+        print(f"LC_HSG stats: {len(lc_hsg_stats) - 1} combinations, {total_catchment_pixels} total pixels")
+    
+    return curve_number_raster, lc_hsg_stats
 
 
 def apply_own_soil_curve_number_calculation(curve_number_raster, landuse_data, soil_data, grid):
@@ -701,8 +733,10 @@ def apply_own_soil_curve_number_calculation(curve_number_raster, landuse_data, s
         traceback.print_exc()
         # Fallback to default curve number
         curve_number_raster.fill(70)
+        landcover_reprojected = None
+        hsg_raster = None
     
-    return curve_number_raster
+    return curve_number_raster, landcover_reprojected, hsg_raster
 
 
 def apply_bek_curve_number_calculation(curve_number_raster, landuse_data, soil_data, grid):
@@ -803,8 +837,10 @@ def apply_bek_curve_number_calculation(curve_number_raster, landuse_data, soil_d
         traceback.print_exc()
         # Fallback to default curve number
         curve_number_raster.fill(70)
+        landcover_reprojected = None
+        hsg_undrained_raster = None
     
-    return curve_number_raster
+    return curve_number_raster, landcover_reprojected, hsg_undrained_raster
 
 
 def rasterize_own_soil_hsg(soil_data, target_shape, target_transform):
@@ -1032,8 +1068,10 @@ def apply_qgis_plugin_curve_number_calculation_simplified(curve_number_raster, l
         traceback.print_exc()
         # Fallback to default curve number
         curve_number_raster.fill(70)
+        landcover_reprojected = None
+        soil_reprojected = None
     
-    return curve_number_raster
+    return curve_number_raster, landcover_reprojected, soil_reprojected
 
 
 def create_curve_number_lookup_table():
@@ -1045,71 +1083,71 @@ def create_curve_number_lookup_table():
     # Format: "ESA_LC_HSG": curve_number
     lookup_table = {
         # Tree cover (10) combinations
-        "10_1": 45,   # Tree cover + HSG A
-        "10_2": 73,   # Tree cover + HSG B  
-        "10_3": 73,   # Tree cover + HSG C
-        "10_4": 73,   # Tree cover + HSG D
-        
+        "10_1": 42,    # Tree cover + HSG A
+        "10_2": 74,    # Tree cover + HSG B
+        "10_3": 74,    # Tree cover + HSG C
+        "10_4": 81,    # Tree cover + HSG D
+
         # Shrubland (20) combinations
-        "20_1": 35,   # Shrubland + HSG A
-        "20_2": 56,   # Shrubland + HSG B
-        "20_3": 73,   # Shrubland + HSG C
-        "20_4": 73,   # Shrubland + HSG D
-        
+        "20_1": 38,    # Shrubland + HSG A
+        "20_2": 55,    # Shrubland + HSG B
+        "20_3": 75,    # Shrubland + HSG C
+        "20_4": 76,    # Shrubland + HSG D
+
         # Grassland (30) combinations
-        "30_1": 30,   # Grassland + HSG A
-        "30_2": 66,   # Grassland + HSG B
-        "30_3": 66,   # Grassland + HSG C
-        "30_4": 73,   # Grassland + HSG D
-        
+        "30_1": 31,    # Grassland + HSG A
+        "30_2": 66,    # Grassland + HSG B
+        "30_3": 66,    # Grassland + HSG C
+        "30_4": 66,    # Grassland + HSG D
+
         # Cropland (40) combinations
-        "40_1": 62,   # Cropland + HSG A
-        "40_2": 66,   # Cropland + HSG B
-        "40_3": 73,   # Cropland + HSG C
-        "40_4": 66,   # Cropland + HSG D
-        
+        "40_1": 50,    # Cropland + HSG A
+        "40_2": 68,    # Cropland + HSG B  # was 67, +1
+        "40_3": 68,    # Cropland + HSG C  # was 73, -5
+        "40_4": 72,    # Cropland + HSG D  # was 73, -1
+
         # Built-up (50) combinations
-        "50_1": 89,   # Built-up + HSG A
-        "50_2": 92,   # Built-up + HSG B
-        "50_3": 94,   # Built-up + HSG C
-        "50_4": 95,   # Built-up + HSG D
-        
+        "50_1": 89,    # Built-up + HSG A
+        "50_2": 92,    # Built-up + HSG B
+        "50_3": 94,    # Built-up + HSG C
+        "50_4": 95,    # Built-up + HSG D
+
         # Bare/sparse vegetation (60) combinations
-        "60_1": 73,   # Bare + HSG A
-        "60_2": 69,   # Bare + HSG B
-        "60_3": 88,   # Bare + HSG C
-        "60_4": 91,   # Bare + HSG D
-        
+        "60_1": 39,    # Bare vegetation + HSG A  # was 44, -5
+        "60_2": 41,    # Bare vegetation + HSG B  # was 46, -5
+        "60_3": 96,    # Bare vegetation + HSG C  # was 91, +5
+        "60_4": 97,    # Bare vegetation + HSG D  # was 92, +5
+
         # Snow and ice (70) combinations
-        "70_1": 98,   # Snow/ice + HSG A
-        "70_2": 98,   # Snow/ice + HSG B
-        "70_3": 98,   # Snow/ice + HSG C
-        "70_4": 98,   # Snow/ice + HSG D
-        
+        "70_1": 98,    # Snow/ice + HSG A
+        "70_2": 98,    # Snow/ice + HSG B
+        "70_3": 98,    # Snow/ice + HSG C
+        "70_4": 98,    # Snow/ice + HSG D
+
         # Water bodies (80) combinations
-        "80_1": 100,  # Water + HSG A
-        "80_2": 100,  # Water + HSG B
-        "80_3": 100,  # Water + HSG C
-        "80_4": 100,  # Water + HSG D
-        
+        "80_1": 100,   # Water + HSG A
+        "80_2": 100,   # Water + HSG B
+        "80_3": 100,   # Water + HSG C
+        "80_4": 100,   # Water + HSG D
+
         # Herbaceous wetland (90) combinations
-        "90_1": 30,   # Wetland + HSG A
-        "90_2": 90,   # Wetland + HSG B
-        "90_3": 65,   # Wetland + HSG C
-        "90_4": 73,   # Wetland + HSG D
-        
+        "90_1": 32,    # Wetland + HSG A
+        "90_2": 63,    # Wetland + HSG B
+        "90_3": 67,    # Wetland + HSG C
+        "90_4": 73,    # Wetland + HSG D
+
         # Mangroves (95) combinations
-        "95_1": 30,   # Mangroves + HSG A
-        "95_2": 66,   # Mangroves + HSG B
-        "95_3": 66,   # Mangroves + HSG C
-        "95_4": 73,   # Mangroves + HSG D
-        
+        "95_1": 35,    # Mangroves + HSG A
+        "95_2": 67,    # Mangroves + HSG B
+        "95_3": 68,    # Mangroves + HSG C
+        "95_4": 69,    # Mangroves + HSG D
+
         # Moss and lichen (100) combinations
-        "100_1": 30,  # Moss + HSG A
-        "100_2": 58,  # Moss + HSG B
-        "100_3": 66,  # Moss + HSG C
-        "100_4": 73,  # Moss + HSG D
-    }
+        "100_1": 30,    # Moss/lichen + HSG A
+        "100_2": 56,    # Moss/lichen + HSG B
+        "100_3": 60,    # Moss/lichen + HSG C
+        "100_4": 77,    # Moss/lichen + HSG D
+    }  
     
     return lookup_table
 
