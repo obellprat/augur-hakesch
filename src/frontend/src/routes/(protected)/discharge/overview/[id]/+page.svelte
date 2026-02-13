@@ -24,6 +24,8 @@
 	import '../../../../../../node_modules/ol/ol.css';
 	import type { Coordinate } from 'ol/coordinate';
 
+	import { UmamiAnalytics, trackEvent } from '@lukulent/svelte-umami';
+
 	import { env } from '$env/dynamic/public';
 	import { _ } from 'svelte-i18n';
 
@@ -635,7 +637,7 @@ onMount(async () => {
 										data-bs-dismiss="modal"
 										data-bs-toggle="modal"
 										data-bs-target="#generate-modal"
-										onclick={calculateGeodatas}>{$_('page.general.yes')}</button
+										onclick={calculateGeodatas} data-umami-event="recalculate-modal-yes">{$_('page.general.yes')}</button
 									><button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.no')}</button>
 								</div>
 							</div>
@@ -672,7 +674,7 @@ onMount(async () => {
 										data-bs-dismiss="modal"
 										data-bs-toggle="modal"
 										data-bs-target="#generate-modal"
-										onclick={calculateGeodatas}
+										onclick={calculateGeodatas} data-umami-event="missinggeodata-modal-calculate"
 									>
 										{$_('page.discharge.overview.calculateGeodata')}
 									</button>
@@ -730,6 +732,7 @@ onMount(async () => {
 							<button
 								type="button"
 								onclick={calculateGeodatas}
+								data-umami-event="calculate-geodata-dropdown"
 								class="dropdown-item"
 								data-bs-toggle="modal"
 								data-bs-target="#generate-modal"
@@ -743,7 +746,7 @@ onMount(async () => {
 							<button
 								type="submit"
 								class="dropdown-item"
-								title={$_('page.general.save')}
+								title={$_('page.general.save')} data-umami-event="save-project-dropdown"
 								aria-label={$_('page.general.save')}
 							>
 								<i class="ti ti-device-floppy me-1 fs-24 align-middle"></i>
@@ -753,7 +756,7 @@ onMount(async () => {
 								type="button"
 								class="dropdown-item"
 								data-bs-toggle="modal"
-								data-bs-target="#delete-project-modal"
+								data-bs-target="#delete-project-modal" data-umami-event="delete-project-dropdown"
 								title={$_('page.general.delete')}
 								aria-label={$_('page.general.delete')}
 							>
@@ -776,7 +779,7 @@ onMount(async () => {
 					<div class="d-none d-xl-flex align-items-center gap-2">
 						<button
 							type="button"
-							onclick={calculateGeodatas}
+							onclick={calculateGeodatas} data-umami-event="calculate-geodata-button"
 							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
 							data-bs-toggle="modal"
 							data-bs-target="#generate-modal"
@@ -788,7 +791,7 @@ onMount(async () => {
 
 						<button
 							type="submit"
-							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
+							class="btn btn-sm btn-icon btn-ghost-primary d-flex" data-umami-event="save-project-button"
 							title={$_('page.general.save')}
 							aria-label={$_('page.general.save')}
 						>
@@ -885,6 +888,7 @@ onMount(async () => {
 												type="button"
 												class="btn btn-sm btn-outline-primary"
 												onclick={downloadIsozones}
+												data-umami-event="download-isozones-button"
 											>
 												<i class="ti ti-download me-1"></i>
 												{$_('page.discharge.overview.download')}
@@ -910,7 +914,8 @@ onMount(async () => {
 											<button
 												type="button"
 												class="btn btn-sm btn-outline-primary"
-												onclick={downloadBranches}
+												onclick={downloadBranches} 
+												data-umami-event="download-branches-button"
 											>
 												<i class="ti ti-download me-1"></i>
 												{$_('page.discharge.overview.download')}
@@ -964,7 +969,7 @@ onMount(async () => {
 						{$_('page.discharge.overview.deleteProject')}
 					</h4>
 					<button
-						type="button"
+						type="button" 
 						class="btn-close btn-close-white"
 						data-bs-dismiss="modal"
 						aria-label="${'page.general.close'}"

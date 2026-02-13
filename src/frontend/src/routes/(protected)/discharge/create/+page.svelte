@@ -154,7 +154,7 @@
 							</div>
 						</div>
 
-						<button type="submit" class="btn btn-primary">{$_('page.general.save')}</button>
+						<button type="submit" class="btn btn-primary" data-umami-event="create-project-button">{$_('page.general.save')}</button>
 					</form>
 				</div>
 				<!-- end col -->

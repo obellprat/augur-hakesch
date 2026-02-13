@@ -122,11 +122,11 @@
 			{
 				name: 'Clark-WSL',
 				data: [2.3, 2.5, 2.8],
-				color: '#13e4ef'
+				color: '#42c6f5'
 			}
 		],
 		chart: {
-			type: 'line',
+			type: 'bar',
 			height: 350
 		},
 		plotOptions: {
@@ -134,11 +134,28 @@
 				horizontal: false,
 				columnWidth: '70%',
 				borderRadius: 5,
-				borderRadiusApplication: 'end'
+				borderRadiusApplication: 'end',
+				dataLabels: {
+					position: 'top'
+				}
 			}
 		},
 		dataLabels: {
-			enabled: false
+			enabled: true,
+			enabledOnSeries: [0],
+			offsetY: -60,
+			offsetX: 25,
+			style: {
+				fontSize: '12px',
+				fontWeight: 600,
+				colors: ['#0d2b5e']
+			},
+			formatter: function (val: number) {
+				return val !== null && val !== undefined ? 'Median: ' + val.toFixed(1) : '';
+			},
+			background: {
+				enabled: false
+			}
 		},
 		stroke: {
 			show: true,
@@ -945,7 +962,7 @@
 	function showResults() {
 		let mod_fliesszeit_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'Mod. Fliesszeitverfahren',
-			color: '#1376ef',
+			color: '#5b9bd5',
 			data: []
 		};
 		const mf_23 = mod_verfahren.find(
@@ -974,7 +991,7 @@
 
 		let koella_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'Kölla',
-			color: '#1e13ef',
+			color: '#70b8ff',
 			data: []
 		};
 		const k_23 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 30);
@@ -997,7 +1014,7 @@
 
 		let clark_wsl_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'Clark WSL',
-			color: '#13e4ef',
+			color: '#42c6f5',
 			data: []
 		};
 		const c_23 = clark_wsl.find(
@@ -1026,255 +1043,73 @@
 
 		let nam_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'NAM',
-			color: '#ef1313',
+			color: '#a0d2f7',
 			data: []
 		};
 		const n_23 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 30);
 		const n_20 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 100);
 		const n_100 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 300);
 
-		nam_data.data.push(
-			getResultField(n_23, 'NAM_Result')?.HQ
-				? Number(getResultField(n_23, 'NAM_Result').HQ.toFixed(1))
-				: null
-		);
-		nam_data.data.push(
-			getResultField(n_20, 'NAM_Result')?.HQ
-				? Number(getResultField(n_20, 'NAM_Result').HQ.toFixed(1))
-				: null
-		);
-		nam_data.data.push(
-			getResultField(n_100, 'NAM_Result')?.HQ
-				? Number(getResultField(n_100, 'NAM_Result').HQ.toFixed(1))
-				: null
-		);
+		const nam_30_value = getResultField(n_23, 'NAM_Result')?.HQ
+			? Number(getResultField(n_23, 'NAM_Result').HQ.toFixed(1))
+			: null;
+		const nam_100_value = getResultField(n_20, 'NAM_Result')?.HQ
+			? Number(getResultField(n_20, 'NAM_Result').HQ.toFixed(1))
+			: null;
+		const nam_300_value = getResultField(n_100, 'NAM_Result')?.HQ
+			? Number(getResultField(n_100, 'NAM_Result').HQ.toFixed(1))
+			: null;
 
-		// Calculate mean (average) values for each group (30, 100, 300) from the three methods
-		function calculateMean(values: (number | null)[]): number | null {
+		nam_data.data.push(nam_30_value);
+		nam_data.data.push(nam_100_value);
+		nam_data.data.push(nam_300_value);
+
+		// Calculate median values for each group (30, 100, 300) from all four methods
+		function calculateMedian(values: (number | null)[]): number | null {
 			const validValues = values.filter((v): v is number => v !== null && typeof v === 'number');
 			if (validValues.length === 0) return null;
-			const sum = validValues.reduce((acc, val) => acc + val, 0);
-			return sum / validValues.length;
+			validValues.sort((a, b) => a - b);
+			const mid = Math.floor(validValues.length / 2);
+			if (validValues.length % 2 === 0) {
+				return Number(((validValues[mid - 1] + validValues[mid]) / 2).toFixed(1));
+			} else {
+				return validValues[mid];
+			}
 		}
 
-		// Calculate mean values for each group (30, 100, 300) from the three methods
-		const mean_30 = calculateMean([mf_30_value, k_30_value, c_30_value]);
-		const mean_100 = calculateMean([mf_100_value, k_100_value, c_100_value]);
-		const mean_300 = calculateMean([mf_300_value, k_300_value, c_300_value]);
+		const median_30 = calculateMedian([mf_30_value, k_30_value, c_30_value, nam_30_value]);
+		const median_100 = calculateMedian([mf_100_value, k_100_value, c_100_value, nam_100_value]);
+		const median_300 = calculateMedian([mf_300_value, k_300_value, c_300_value, nam_300_value]);
+
+		const median_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
+			name: 'Median',
+			color: '#0d2b5e',
+			data: [median_30, median_100, median_300]
+		};
 
 		// Set bar series type explicitly
+		median_data.type = 'column';
 		mod_fliesszeit_data.type = 'column';
 		koella_data.type = 'column';
 		clark_wsl_data.type = 'column';
 		nam_data.type = 'column';
 
 		chartOneOptions.series = [
+			median_data,
 			mod_fliesszeit_data,
 			koella_data,
 			clark_wsl_data,
 			nam_data
 		];
 
-		// Helper to draw custom medium lines after chart render/update
-		const drawMediumLines = (apexChart: any) => {
-			try {
-				if (!apexChart || !apexChart.w || !apexChart.w.globals) {
-					return;
-				}
-
-				// Wait a bit for SVG to be fully rendered
-				const findElements = () => {
-					const el = apexChart.el;
-					if (!el) return null;
-					
-					const svg = el.querySelector('svg');
-					if (!svg) return null;
-					
-					// plotArea is inside the apexcharts-inner element
-					const innerGroup = svg.querySelector('g.apexcharts-inner') as SVGGElement;
-					if (!innerGroup) return null;
-					
-					// Find plotArea inside innerGroup, or use innerGroup itself
-					const plotArea = innerGroup.querySelector('.apexcharts-plot-area') as SVGGElement || innerGroup;
-					if (!plotArea) return null;
-					
-					return { svg, plotArea };
-				};
-
-				const elements = findElements();
-				if (!elements) {
-					// Try again after a short delay
-					setTimeout(() => {
-						const retryElements = findElements();
-						if (retryElements) {
-							drawMediumLines(apexChart);
-						}
-					}, 200);
-					return;
-				}
-
-				const { svg, plotArea } = elements;
-
-				const globals = apexChart.w.globals;
-				const plotWidth = globals.gridWidth;
-				const plotHeight = globals.gridHeight;
-				const yMin = globals.minY;
-				const yMax = globals.maxY;
-
-				if (!plotWidth || !plotHeight || yMax === yMin) {
-					return;
-				}
-
-				// Calculate y position (relative to plotArea)
-				const getY = (val: number) => {
-					return plotHeight - ((val - yMin) / (yMax - yMin)) * plotHeight;
-				};
-
-				// Get actual x positions by finding the bars for each category
-				// ApexCharts creates bars with class 'apexcharts-bar-area'
-				const bars = svg.querySelectorAll('.apexcharts-bar-area rect');
-				const barsPerCategory = 4; // We have 4 series
-				const categoryCenters: number[] = [];
-				
-				// Calculate center of each category group
-				// Use simpler approach: calculate based on category index with offsets
-				const categoryWidth = plotWidth / 3;
-				
-				for (let catIndex = 0; catIndex < 3; catIndex++) {
-					// Base position for each category (center of category)
-					let baseCenter = categoryWidth * (catIndex + 0.5);
-					
-					// Try to get actual bar positions if available for more accurate positioning
-					const firstBarIndex = catIndex * barsPerCategory;
-					const lastBarIndex = firstBarIndex + barsPerCategory - 1;
-					
-					// Use smaller fixed pixel offsets for subtle positioning
-					const leftOffset = -30; // Move left line 30 pixels to the left
-					const rightOffset = 30;  // Move right line 30 pixels to the right
-					
-					if (firstBarIndex < bars.length && lastBarIndex < bars.length) {
-						const firstBar = bars[firstBarIndex] as SVGRectElement;
-						const lastBar = bars[lastBarIndex] as SVGRectElement;
-						const firstBarX = parseFloat(firstBar.getAttribute('x') || '0');
-						const lastBarX = parseFloat(lastBar.getAttribute('x') || '0');
-						const lastBarWidth = parseFloat(lastBar.getAttribute('width') || '0');
-						
-						// Use actual bar center as base
-						baseCenter = (firstBarX + lastBarX + lastBarWidth) / 2;
-						
-						// Apply fixed pixel offsets: move left line left, right line right
-						if (catIndex === 0) {
-							// Move left line to the left by fixed pixels
-							baseCenter = baseCenter + leftOffset;
-						} else if (catIndex === 2) {
-							// Move right line to the right by fixed pixels
-							baseCenter = baseCenter + rightOffset;
-						}
-					} else {
-						// Fallback: use calculated positions with fixed pixel offsets
-						if (catIndex === 0) {
-							// Move left - shift by fixed pixels to the left
-							baseCenter = baseCenter + leftOffset;
-						} else if (catIndex === 2) {
-							// Move right - shift by fixed pixels to the right
-							baseCenter = baseCenter + rightOffset;
-						}
-					}
-					
-					categoryCenters.push(baseCenter);
-				}
-
-				// Calculate line width based on actual bar group width
-				// Make lines shorter so the shift is more visible
-				let lineHalfWidth = plotWidth / 3 * 0.25; // Default - shorter lines
-				if (bars.length > 0) {
-					const firstBar = bars[0] as SVGRectElement;
-					const barWidth = parseFloat(firstBar.getAttribute('width') || '0');
-					lineHalfWidth = (barWidth * barsPerCategory) * 0.25; // Shorter lines
-				}
-
-				// Remove any existing medium lines and labels
-				const existingLines = svg.querySelectorAll('.medium-line, .medium-line-label');
-				existingLines.forEach((element: SVGElement) => element.remove());
-
-				const makeLine = (centerX: number, value: number | null, label: string) => {
-					if (value === null || !Number.isFinite(value)) return;
-					const y = getY(value);
-					
-					// Create the dashed line (teal/cyan blue that contrasts well with other blue bars)
-					const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-					line.setAttribute('class', 'medium-line');
-					line.setAttribute('x1', String(centerX - lineHalfWidth));
-					line.setAttribute('x2', String(centerX + lineHalfWidth));
-					line.setAttribute('y1', String(y));
-					line.setAttribute('y2', String(y));
-					line.setAttribute('stroke', '#00a8cc'); // Bright teal/cyan that contrasts with blue bars
-					line.setAttribute('stroke-width', '2.5'); // Slightly thicker
-					line.setAttribute('stroke-dasharray', '5,5');
-					line.setAttribute('opacity', '1');
-					line.setAttribute('style', 'pointer-events: none;');
-					plotArea.appendChild(line);
-					
-					// Create text label for the value (teal color, with m3/s unit)
-					const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-					text.setAttribute('class', 'medium-line-label');
-					text.setAttribute('x', String(centerX + lineHalfWidth + 5)); // Position to the right of the line
-					text.setAttribute('y', String(y - 3)); // Slightly above the line
-					text.setAttribute('fill', '#00a8cc'); // Bright teal color
-					text.setAttribute('font-size', '12px');
-					text.setAttribute('font-weight', '600'); // Bolder for better readability
-					text.setAttribute('font-family', 'Arial, sans-serif');
-					text.setAttribute('style', 'pointer-events: none;');
-					text.textContent = `${value.toFixed(1)} m³/s`;
-					plotArea.appendChild(text);
-				};
-
-				makeLine(categoryCenters[0], mean_30, 'Mean 30');
-				makeLine(categoryCenters[1], mean_100, 'Mean 100');
-				makeLine(categoryCenters[2], mean_300, 'Mean 300');
-			} catch (error) {
-				// Silently handle errors
-			}
-		};
-
-		// Set up event handlers for drawing lines
-		chartOneOptions.chart.events = {
-			...(chartOneOptions.chart.events || {}),
-			drawn: (chartContext: any, config: any) => {
-				setTimeout(() => {
-					drawMediumLines(chartContext);
-				}, 100);
-			},
-			animationEnd: (chartContext: any, config: any) => {
-				setTimeout(() => {
-					drawMediumLines(chartContext);
-				}, 100);
-			},
-			resized: (chartContext: any, config: any) => {
-				// Wait longer for chart to fully resize
-				setTimeout(() => {
-					drawMediumLines(chartContext);
-				}, 300);
-			},
-			dataPointSelection: (chartContext: any, config: any) => {
-				// Redraw lines after any interaction
-				setTimeout(() => {
-					drawMediumLines(chartContext);
-				}, 100);
-			}
-		};
+		// Adjust data label color for dark mode
+		const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+		chartOneOptions.dataLabels.style.colors = [isDark ? '#ffffff' : '#0d2b5e'];
 
 		// Update chart
 		if (chart.ref) {
 			chart.ref.updateSeries(chartOneOptions.series);
 			chart.ref.updateOptions(chartOneOptions);
-			
-			// Draw lines after update
-			setTimeout(() => {
-				if (chart.ref) {
-					drawMediumLines(chart.ref);
-				}
-			}, 500);
 		}
 	}
 	$effect(() => {
@@ -2197,7 +2032,7 @@
 				<p>{apiErrorMessage}</p>
 			</div>
 			<div class="modal-footer border-0">
-				<button type="button" class="btn btn-danger" data-bs-dismiss="modal"
+				<button type="button" class="btn btn-danger" data-bs-dismiss="modal" data-umami-event="api-error-modal-close"
 					>{$_('page.general.close')}</button
 				>
 			</div>
@@ -2413,8 +2248,8 @@
 						<div class="d-flex align-items-center gap-2 mt-3 mb-3">
 							<button
 								type="button"
-								class="btn btn-secondary"
-								onclick={fetchHadesValues}
+								class="btn btn-secondary" 
+								onclick={fetchHadesValues} data-umami-event="fetch-hades-values-button"
 								disabled={isFetchingHades}
 							>
 								{#if isFetchingHades}
@@ -2894,7 +2729,7 @@
 						<button
 							type="button"
 							class="btn btn-primary d-flex align-items-center gap-2"
-							onclick={() => bulkSaveForm?.requestSubmit()}
+							onclick={() => bulkSaveForm?.requestSubmit()} data-umami-event="bulk-save-button"
 							disabled={isBulkSaving}
 							title={$_('page.general.save')}
 							aria-label={$_('page.general.save')}
@@ -2909,7 +2744,7 @@
 						<button
 							type="button"
 							class="btn btn-outline-primary d-flex align-items-center gap-2"
-							onclick={() => calculateProject(data.project.id)}
+							onclick={() => calculateProject(data.project.id)} data-umami-event="calculate-project-button"
 							disabled={!couldCalculate || isBulkSaving}
 							title={$_('page.general.calculate')}
 							aria-label={$_('page.general.calculate')}
