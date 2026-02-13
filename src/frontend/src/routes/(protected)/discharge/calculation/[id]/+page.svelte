@@ -696,9 +696,9 @@
 			return {
 				ids: scenario.map((entry: any) => entry.id),
 				projectId: base?.project_id ?? data.project.id,
-				precipitation_factor: sanitizeNumber(base?.precipitation_factor ?? 0.7),
+				precipitation_factor: sanitizeNumber(base?.precipitation_factor ?? 0.748),
 				readiness_to_drain: sanitizeNumber(base?.readiness_to_drain ?? 0),
-				water_balance_mode: base?.water_balance_mode || 'cumulative',
+				water_balance_mode: base?.water_balance_mode || 'uniform',
 				storm_center_mode: base?.storm_center_mode || 'centroid',
 				routing_method: base?.routing_method || 'time_values'
 			};
@@ -1319,9 +1319,9 @@
 			const newnam = {
 				id: 0,
 				project_id: data.project.id,
-				precipitation_factor: 0.7,
+				precipitation_factor: 0.748,
 				readiness_to_drain: 1,
-				water_balance_mode: 'cumulative',
+				water_balance_mode: 'uniform',
 				storm_center_mode: 'centroid',
 				routing_method: 'time_values'
 			};

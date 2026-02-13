@@ -379,7 +379,7 @@ export const actions = {
 		}
 
 		// Validate that the mode values exist in their respective tables
-		const validWaterBalanceMode = water_balance_mode || "cumulative";
+		const validWaterBalanceMode = water_balance_mode || "uniform";
 		const validStormCenterMode = storm_center_mode || "centroid";
 		const validRoutingMethod = routing_method || "time_values";
 
@@ -671,10 +671,10 @@ export const actions = {
 				break;
 
 			case 'nam':
-				const precipitation_factor = Number(formDataRaw.get('precipitation_factor')) || 0.7;
+				const precipitation_factor = Number(formDataRaw.get('precipitation_factor')) || 0.748;
 				console.log(precipitation_factor);
 				const readiness_to_drain = Number(formDataRaw.get('readiness_to_drain')) || 0;
-				const water_balance_mode = (formDataRaw.get('water_balance_mode') as string) || 'cumulative';
+				const water_balance_mode = (formDataRaw.get('water_balance_mode') as string) || 'uniform';
 				const storm_center_mode = (formDataRaw.get('storm_center_mode') as string) || 'centroid';
 				const routing_method = (formDataRaw.get('routing_method') as string) || 'time_values';
 				
@@ -857,10 +857,10 @@ export const actions = {
 				const ids = (scenario.ids || []).map((id) => Number(id)).filter((id) => id > 0);
 				if (!ids.length) continue;
 				const precipitation_factor =
-					Number(scenario.precipitation_factor) || 0.7;
+					Number(scenario.precipitation_factor) || 0.748;
 				const readiness_to_drain =
 					Number(scenario.readiness_to_drain) || 0;
-				const water_balance_mode = scenario.water_balance_mode || 'cumulative';
+				const water_balance_mode = scenario.water_balance_mode || 'simple';
 				const storm_center_mode = scenario.storm_center_mode || 'centroid';
 				const routing_method = scenario.routing_method || 'time_values';
 
