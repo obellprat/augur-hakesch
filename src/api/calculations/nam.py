@@ -447,7 +447,7 @@ def nam(self,
     S_cells[valid_mask] = (25400 / cn_data[valid_mask]) - 254
     
     # Calculate initial abstraction Ia for each cell: Ia = 0.2 * S [mm]
-    Ia_cells = 0.2 * S_cells  # SCS standard: Ia = 0.2 * S
+    Ia_cells = 0.1 * S_cells  # SCS standard: Ia = 0.2 * S
     
     # Debug: Print statistics about curve numbers and retention
     print(f"Curve number statistics:")
@@ -614,7 +614,7 @@ def nam(self,
     # ------------------------------------------------------------
     # 3a. Storm geometry (same base behaviour as original)
     # ------------------------------------------------------------
-    storm_radius_km = 8.0  # large stratiform storm
+    storm_radius_km = 3.0  # large stratiform storm
 
     # Get grid resolution in meters (EPSG:2056 coordinates)
     cell_size_m = abs(cn_transform.a)  # meters per pixel in x direction
