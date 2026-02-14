@@ -122,7 +122,7 @@
 			{
 				name: 'Clark-WSL',
 				data: [2.3, 2.5, 2.8],
-				color: '#13e4ef'
+				color: '#42c6f5'
 			}
 		],
 		chart: {
@@ -134,11 +134,28 @@
 				horizontal: false,
 				columnWidth: '70%',
 				borderRadius: 5,
-				borderRadiusApplication: 'end'
+				borderRadiusApplication: 'end',
+				dataLabels: {
+					position: 'top'
+				}
 			}
 		},
 		dataLabels: {
-			enabled: false
+			enabled: true,
+			enabledOnSeries: [0],
+			offsetY: -60,
+			offsetX: 25,
+			style: {
+				fontSize: '12px',
+				fontWeight: 600,
+				colors: ['#0d2b5e']
+			},
+			formatter: function (val: number) {
+				return val !== null && val !== undefined ? 'Median: ' + val.toFixed(1) : '';
+			},
+			background: {
+				enabled: false
+			}
 		},
 		stroke: {
 			show: true,
@@ -696,9 +713,9 @@
 			return {
 				ids: scenario.map((entry: any) => entry.id),
 				projectId: base?.project_id ?? data.project.id,
-				precipitation_factor: sanitizeNumber(base?.precipitation_factor ?? 0.7),
+				precipitation_factor: sanitizeNumber(base?.precipitation_factor ?? 0.748),
 				readiness_to_drain: sanitizeNumber(base?.readiness_to_drain ?? 0),
-				water_balance_mode: base?.water_balance_mode || 'cumulative',
+				water_balance_mode: base?.water_balance_mode || 'uniform',
 				storm_center_mode: base?.storm_center_mode || 'centroid',
 				routing_method: base?.routing_method || 'time_values'
 			};
@@ -943,9 +960,9 @@
 	});
 
 	function showResults() {
-		let mod_fliesszeit_data: { name: string; color: string; data: (number | null)[] } = {
+		let mod_fliesszeit_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'Mod. Fliesszeitverfahren',
-			color: '#1376ef',
+			color: '#5b9bd5',
 			data: []
 		};
 		const mf_23 = mod_verfahren.find(
@@ -958,48 +975,46 @@
 			(mf: { Annuality: { number: number } }) => mf.Annuality?.number == 300
 		);
 
-		mod_fliesszeit_data.data.push(
-			getResultField(mf_23, 'Mod_Fliesszeit_Result')?.HQ
-				? Number(getResultField(mf_23, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
-				: null
-		);
-		mod_fliesszeit_data.data.push(
-			getResultField(mf_20, 'Mod_Fliesszeit_Result')?.HQ
-				? Number(getResultField(mf_20, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
-				: null
-		);
-		mod_fliesszeit_data.data.push(
-			getResultField(mf_100, 'Mod_Fliesszeit_Result')?.HQ
-				? Number(getResultField(mf_100, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
-				: null
-		);
-		let koella_data: { name: string; color: string; data: (number | null)[] } = {
+		const mf_30_value = getResultField(mf_23, 'Mod_Fliesszeit_Result')?.HQ
+			? Number(getResultField(mf_23, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
+			: null;
+		const mf_100_value = getResultField(mf_20, 'Mod_Fliesszeit_Result')?.HQ
+			? Number(getResultField(mf_20, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
+			: null;
+		const mf_300_value = getResultField(mf_100, 'Mod_Fliesszeit_Result')?.HQ
+			? Number(getResultField(mf_100, 'Mod_Fliesszeit_Result').HQ.toFixed(1))
+			: null;
+
+		mod_fliesszeit_data.data.push(mf_30_value);
+		mod_fliesszeit_data.data.push(mf_100_value);
+		mod_fliesszeit_data.data.push(mf_300_value);
+
+		let koella_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'Kölla',
-			color: '#1e13ef',
+			color: '#70b8ff',
 			data: []
 		};
 		const k_23 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 30);
 		const k_20 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 100);
 		const k_100 = koella.find((k: { Annuality: { number: number } }) => k.Annuality?.number == 300);
 
-		koella_data.data.push(
-			getResultField(k_23, 'Koella_Result')?.HQ
-				? Number(getResultField(k_23, 'Koella_Result').HQ.toFixed(1))
-				: null
-		);
-		koella_data.data.push(
-			getResultField(k_20, 'Koella_Result')?.HQ
-				? Number(getResultField(k_20, 'Koella_Result').HQ.toFixed(1))
-				: null
-		);
-		koella_data.data.push(
-			getResultField(k_100, 'Koella_Result')?.HQ
-				? Number(getResultField(k_100, 'Koella_Result').HQ.toFixed(1))
-				: null
-		);
-		let clark_wsl_data: { name: string; color: string; data: (number | null)[] } = {
+		const k_30_value = getResultField(k_23, 'Koella_Result')?.HQ
+			? Number(getResultField(k_23, 'Koella_Result').HQ.toFixed(1))
+			: null;
+		const k_100_value = getResultField(k_20, 'Koella_Result')?.HQ
+			? Number(getResultField(k_20, 'Koella_Result').HQ.toFixed(1))
+			: null;
+		const k_300_value = getResultField(k_100, 'Koella_Result')?.HQ
+			? Number(getResultField(k_100, 'Koella_Result').HQ.toFixed(1))
+			: null;
+
+		koella_data.data.push(k_30_value);
+		koella_data.data.push(k_100_value);
+		koella_data.data.push(k_300_value);
+
+		let clark_wsl_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'Clark WSL',
-			color: '#13e4ef',
+			color: '#42c6f5',
 			data: []
 		};
 		const c_23 = clark_wsl.find(
@@ -1012,47 +1027,90 @@
 			(c: { Annuality: { number: number } }) => c.Annuality?.number == 300
 		);
 
-		clark_wsl_data.data.push(
-			getResultField(c_23, 'ClarkWSL_Result')?.Q
-				? Number(getResultField(c_23, 'ClarkWSL_Result').Q.toFixed(1))
-				: null
-		);
-		clark_wsl_data.data.push(
-			getResultField(c_20, 'ClarkWSL_Result')?.Q
-				? Number(getResultField(c_20, 'ClarkWSL_Result').Q.toFixed(1))
-				: null
-		);
-		clark_wsl_data.data.push(
-			getResultField(c_100, 'ClarkWSL_Result')?.Q
-				? Number(getResultField(c_100, 'ClarkWSL_Result').Q.toFixed(1))
-				: null
-		);
-		let nam_data: { name: string; color: string; data: (number | null)[] } = {
+		const c_30_value = getResultField(c_23, 'ClarkWSL_Result')?.Q
+			? Number(getResultField(c_23, 'ClarkWSL_Result').Q.toFixed(1))
+			: null;
+		const c_100_value = getResultField(c_20, 'ClarkWSL_Result')?.Q
+			? Number(getResultField(c_20, 'ClarkWSL_Result').Q.toFixed(1))
+			: null;
+		const c_300_value = getResultField(c_100, 'ClarkWSL_Result')?.Q
+			? Number(getResultField(c_100, 'ClarkWSL_Result').Q.toFixed(1))
+			: null;
+
+		clark_wsl_data.data.push(c_30_value);
+		clark_wsl_data.data.push(c_100_value);
+		clark_wsl_data.data.push(c_300_value);
+
+		let nam_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'NAM',
-			color: '#ef1313',
+			color: '#a0d2f7',
 			data: []
 		};
 		const n_23 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 30);
 		const n_20 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 100);
 		const n_100 = nam.find((n: { Annuality: { number: number } }) => n.Annuality?.number == 300);
 
-		nam_data.data.push(
-			getResultField(n_23, 'NAM_Result')?.HQ
-				? Number(getResultField(n_23, 'NAM_Result').HQ.toFixed(1))
-				: null
-		);
-		nam_data.data.push(
-			getResultField(n_20, 'NAM_Result')?.HQ
-				? Number(getResultField(n_20, 'NAM_Result').HQ.toFixed(1))
-				: null
-		);
-		nam_data.data.push(
-			getResultField(n_100, 'NAM_Result')?.HQ
-				? Number(getResultField(n_100, 'NAM_Result').HQ.toFixed(1))
-				: null
-		);
-		chartOneOptions.series = [mod_fliesszeit_data, koella_data, clark_wsl_data, nam_data];
-		chart.ref?.updateSeries(chartOneOptions.series);
+		const nam_30_value = getResultField(n_23, 'NAM_Result')?.HQ
+			? Number(getResultField(n_23, 'NAM_Result').HQ.toFixed(1))
+			: null;
+		const nam_100_value = getResultField(n_20, 'NAM_Result')?.HQ
+			? Number(getResultField(n_20, 'NAM_Result').HQ.toFixed(1))
+			: null;
+		const nam_300_value = getResultField(n_100, 'NAM_Result')?.HQ
+			? Number(getResultField(n_100, 'NAM_Result').HQ.toFixed(1))
+			: null;
+
+		nam_data.data.push(nam_30_value);
+		nam_data.data.push(nam_100_value);
+		nam_data.data.push(nam_300_value);
+
+		// Calculate median values for each group (30, 100, 300) from all four methods
+		function calculateMedian(values: (number | null)[]): number | null {
+			const validValues = values.filter((v): v is number => v !== null && typeof v === 'number');
+			if (validValues.length === 0) return null;
+			validValues.sort((a, b) => a - b);
+			const mid = Math.floor(validValues.length / 2);
+			if (validValues.length % 2 === 0) {
+				return Number(((validValues[mid - 1] + validValues[mid]) / 2).toFixed(1));
+			} else {
+				return validValues[mid];
+			}
+		}
+
+		const median_30 = calculateMedian([mf_30_value, k_30_value, c_30_value, nam_30_value]);
+		const median_100 = calculateMedian([mf_100_value, k_100_value, c_100_value, nam_100_value]);
+		const median_300 = calculateMedian([mf_300_value, k_300_value, c_300_value, nam_300_value]);
+
+		const median_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
+			name: 'Median',
+			color: '#0d2b5e',
+			data: [median_30, median_100, median_300]
+		};
+
+		// Set bar series type explicitly
+		median_data.type = 'column';
+		mod_fliesszeit_data.type = 'column';
+		koella_data.type = 'column';
+		clark_wsl_data.type = 'column';
+		nam_data.type = 'column';
+
+		chartOneOptions.series = [
+			median_data,
+			mod_fliesszeit_data,
+			koella_data,
+			clark_wsl_data,
+			nam_data
+		];
+
+		// Adjust data label color for dark mode
+		const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+		chartOneOptions.dataLabels.style.colors = [isDark ? '#ffffff' : '#0d2b5e'];
+
+		// Update chart
+		if (chart.ref) {
+			chart.ref.updateSeries(chartOneOptions.series);
+			chart.ref.updateOptions(chartOneOptions);
+		}
 	}
 	$effect(() => {
 		// Re-run when climate scenario changes
@@ -1067,6 +1125,7 @@
 		clark_wsl = data.project.ClarkWSL || [];
 		nam = data.project.NAM || [];
 	});
+
 
 	function addCalculation() {
 		if (calulcationType == 1) {
@@ -1095,9 +1154,9 @@
 			const newnam = {
 				id: 0,
 				project_id: data.project.id,
-				precipitation_factor: 0.7,
+				precipitation_factor: 0.748,
 				readiness_to_drain: 1,
-				water_balance_mode: 'cumulative',
+				water_balance_mode: 'uniform',
 				storm_center_mode: 'centroid',
 				routing_method: 'time_values'
 			};
@@ -1832,6 +1891,24 @@
 		}
 	}
 
+	// Add window resize listener to redraw lines when window is resized
+	let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+	const handleResize = () => {
+		// Debounce resize events
+		if (resizeTimeout) {
+			clearTimeout(resizeTimeout);
+		}
+		resizeTimeout = setTimeout(() => {
+			if (chart.ref) {
+				// Wait for ApexCharts to finish resizing, then redraw lines
+				setTimeout(() => {
+					// Redraw the lines by calling showResults which will trigger the drawn event
+					showResults();
+				}, 300);
+			}
+		}, 150);
+	};
+
 	onMount(async () => {
 		// Check if soil shape-file exists
 		await checkSoilFileExists(data.project.id);
@@ -1841,6 +1918,19 @@
 		} else {
 			couldCalculate = true;
 		}
+
+		// Add window resize listener to redraw lines when window is resized
+		window.addEventListener('resize', handleResize);
+	});
+
+	// Cleanup on component destroy
+	$effect(() => {
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			if (resizeTimeout) {
+				clearTimeout(resizeTimeout);
+			}
+		};
 	});
 </script>
 
@@ -1942,7 +2032,7 @@
 				<p>{apiErrorMessage}</p>
 			</div>
 			<div class="modal-footer border-0">
-				<button type="button" class="btn btn-danger" data-bs-dismiss="modal"
+				<button type="button" class="btn btn-danger" data-bs-dismiss="modal" data-umami-event="api-error-modal-close"
 					>{$_('page.general.close')}</button
 				>
 			</div>
@@ -1996,7 +2086,7 @@
 	<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h4 class="modal-title" id="clarkwsl-help-modal-label">ClarkWSL - Abflussprozesse</h4>
+				<h4 class="modal-title" id="clarkwsl-help-modal-label">Herleitung Abflussprozesstypen</h4>
 				<button
 					type="button"
 					class="btn-close"
@@ -2006,21 +2096,7 @@
 			</div>
 			<div class="modal-body">
 				<p>
-					Bei der Hochwasserabflussbildung spielen neben der Dauer und der Intensität von
-					Starkniederschlägen und der Grösse/Topographie des Einzugsgebiets die auftretenden
-					Abflussprozesse eine entscheidende Rolle. Zu den wichtigsten bei Starkregen auftretenden
-					Abflussprozessen zählen der Oberflächenabfluss aufgrund von Infiltrationshemmnissen (HOF),
-					der gesättigte Oberflächenabfluss (SOF), der Abfluss im Boden (SSF) und die
-					Tiefenversickerung (DP). Die Abflussprozesstypen können zusätzlich nach ihrer Reaktion in
-					rasch beitragend (z.B. SSF1), verzögert beitragend (z.B. SSF2) und stark verzögert
-					beitragend (z.B. SSF3) unterschieden werden. Methoden zur Bestimmung der im Einzugsgebiet
-					auftretenden Abflussprozesse sind z.B. in [1], [2] oder [3] beschrieben.
-				</p>
-				<p>
-					Eine flächendifferenzierte Ansprache der Abflusstypen mit Zuordnung der
-					Reaktionsfreudigkeit erfordert einen hohen Arbeitsaufwand und ist mit Unschärfen
-					verbunden. Stattdessen wird vorgeschlagen, die Abflussprozesse nach ihrer Abflussreaktion
-					in Abflussklassen zu unterteilen:
+					Bei der Hochwasserabflussbildung spielen neben der Dauer und der Intensität von Starkniederschlägen und der Grösse/Topographie des Einzugsgebiets die Bodeneigenschaften eine entscheidende Rolle. Bei der Hochwasserabschätzung werden Böden mit gleicher Abflussreaktion in Klassen unterteilt.
 				</p>
 				<table class="table table-sm table-bordered">
 					<thead>
@@ -2058,6 +2134,22 @@
 						</tr>
 					</tbody>
 				</table>
+				<p>
+					Die Bestimmung der Klassen erfolgt über folgende Abflussprozesstypen:
+				</p>
+				<p>
+					<b>HOF</b>: Oberflächenabfluss aufgrund von Infiltrationshemmnissen (Hortonian Overland Flow) wird auf Böden und Oberflächen beobachtet, die verdich-tet oder wasserabstossend und deshalb nur schwach durchlässig sind.<br /> 
+					<b>SOF</b>: Gesättigter Oberflächenabfluss (Saturation Overland Flow) tritt nach Sättigung des Bodens auf. Häufig auf flachgründigen oder feucht-nassen Böden mit geringem Speichervermögen.<br />
+					<b>SSF</b>: Abfluss im Boden (Sub-Surface Flow) tritt auf, wenn über einer Stauschicht im Boden hoch durchlässige Schichten liegen oder Makroporen dem Wasser ein rasches laterales Fliessen ermöglichen. <br />
+					<b>DP</b>: Ist der Boden gut durchlässig und liegt er über einem durchlässigem C-Horizont, kann über die Tiefensickerung (Deep Percolation) Wasser in den tiefen Untergrund eindringen und gespeichert werden, ohne dass Abfluss entsteht.<br />
+				</p>
+				<p>
+					Die Abflussprozesstypen werden mit einer Zahl zwischen 1 bis 3 ergänzt, wobei 1 für eine rasche Reaktion, 2 für eine verzögerte und 3 für eine stark verzögerte Reaktion steht (z.B. rascher (SOF1), verzögerter (SOF2) oder stark verzögerter Oberflächenabfluss (SOF3)).
+				</p>
+				<p>
+					Die Abflussprozesstypen können über folgendes Schema nach SCHERRER & NAEF (2002, vereinfacht) für Wieslandböden im Gelände hergeleitet werden.
+				</p>
+				<img src="{base}/assets/images/abflussprozesstypen.png" alt="Abflussprozesstypen" class="img-fluid" />
 				<p class="mt-3">
 					<strong>Literatur:</strong>
 				</p>
@@ -2158,8 +2250,8 @@
 						<div class="d-flex align-items-center gap-2 mt-3 mb-3">
 							<button
 								type="button"
-								class="btn btn-secondary"
-								onclick={fetchHadesValues}
+								class="btn btn-secondary" 
+								onclick={fetchHadesValues} data-umami-event="fetch-hades-values-button"
 								disabled={isFetchingHades}
 							>
 								{#if isFetchingHades}
@@ -2639,7 +2731,7 @@
 						<button
 							type="button"
 							class="btn btn-primary d-flex align-items-center gap-2"
-							onclick={() => bulkSaveForm?.requestSubmit()}
+							onclick={() => bulkSaveForm?.requestSubmit()} data-umami-event="bulk-save-button"
 							disabled={isBulkSaving}
 							title={$_('page.general.save')}
 							aria-label={$_('page.general.save')}
@@ -2654,7 +2746,7 @@
 						<button
 							type="button"
 							class="btn btn-outline-primary d-flex align-items-center gap-2"
-							onclick={() => calculateProject(data.project.id)}
+							onclick={() => calculateProject(data.project.id)} data-umami-event="calculate-project-button"
 							disabled={!couldCalculate || isBulkSaving}
 							title={$_('page.general.calculate')}
 							aria-label={$_('page.general.calculate')}

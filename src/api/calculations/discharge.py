@@ -1035,7 +1035,7 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     # Rertrieve and load DEM
     # ----------------------
 
-    dem_file = 'data/geotiffminusriver.tif'
+    dem_file = 'data/besoaglu-minusriver-5m.tif'
     dirmap = (1, 2, 3, 4, 5, 6, 7, 8)
     
     # Optimized: Use rasterio directly for windowed reading (faster than Grid.from_raster + read_raster)
@@ -1060,7 +1060,8 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
         window_transform = rasterio.windows.transform(window, src.transform)
         
         # Save the windowed DEM to temp file for Grid operations
-        temp_dem_path = 'data/temp/smalldem.tif'
+        # Use projectId to avoid race conditions between concurrent tasks
+        temp_dem_path = f'data/temp/{projectId}_smalldem.tif'
         os.makedirs(os.path.dirname(temp_dem_path), exist_ok=True)
         
         profile = src.profile.copy()
@@ -1073,6 +1074,9 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
         with rasterio.open(temp_dem_path, 'w', **profile) as dst:
             dst.write(dem_data, 1)
     
+    # Free windowed DEM data now that it's written to disk
+    del dem_data
+    
     # Now create Grid from the smaller windowed file (much faster)
     self.update_state(state='PROGRESS',
                 meta={'text': 'Processing DEM', 'progress' : 15})
@@ -1082,13 +1086,13 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     small_view = grid.view(dem)
     grid.to_raster(dem, temp_dem_path, target_view=small_view)
 
-    del grid
+    del grid, dem, small_view
     gc.collect()
 
     self.update_state(state='PROGRESS',
                 meta={'text': 'Reading flow direction', 'progress' : 25})
 
-    d8_file = 'data/d8_be.tif'
+    d8_file = 'data/d8_besoaglu.tif'
     
     # Optimized: Use rasterio directly for windowed reading (same optimization as DEM)
     with rasterio.open(d8_file) as src:
@@ -1102,7 +1106,8 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
         window_transform = rasterio.windows.transform(window, src.transform)
         
         # Save the windowed flow direction to temp file
-        temp_fdir_path = 'data/temp/smallfdir.tif'
+        # Use projectId to avoid race conditions between concurrent tasks
+        temp_fdir_path = f'data/temp/{projectId}_smallfdir.tif'
         os.makedirs(os.path.dirname(temp_fdir_path), exist_ok=True)
         
         profile = src.profile.copy()
@@ -1115,6 +1120,9 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
         with rasterio.open(temp_fdir_path, 'w', **profile) as dst:
             dst.write(fdir_data, 1)
     
+    # Free windowed fdir data now that it's written to disk
+    del fdir_data
+    
     # Create Grid from the smaller windowed file
     grid = Grid.from_raster(temp_fdir_path)
     fdir = grid.read_raster(temp_fdir_path)
@@ -1122,11 +1130,11 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     small_view = grid.view(fdir)
     grid.to_raster(fdir, temp_fdir_path, target_view=small_view)
 
-    del grid
+    del grid, small_view
     gc.collect()
 
 
-    grid2 = Grid.from_raster('data/temp/smallfdir.tif')
+    grid2 = Grid.from_raster(temp_fdir_path)
     """    
     self.update_state(state='PROGRESS',
                 meta={'text': 'Compute flow directions: Fill pits', 'progress' : 8})
@@ -1185,11 +1193,13 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     slope = grid2.cell_slopes(fdir=fdir, dirmap=dirmap, dem=dem, nodata=0)
     slope_percentage = slope * 100
 
+    # Free DEM arrays — no longer needed after slope calculation
+    del dem, dem_view, slope
+    gc.collect()
 
     # create wald raster    
     self.update_state(state='PROGRESS',
                 meta={'text': 'Getting forest', 'progress' : 70})
-    forests = gpd.read_file('data/ch_wald.shp')
     grid2.clip_to(catch)
     # Convert catchment raster to vector geometry and find intersection
     shapes = grid2.polygonize()
@@ -1197,6 +1207,10 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     objektart = 'objektart'
     catchment_polygon = ops.unary_union([geometry.shape(shape)
                                         for shape, value in shapes])
+
+    # Load forest shapefile with bounding box filter to avoid loading entire file
+    catchment_bounds = catchment_polygon.bounds
+    forests = gpd.read_file('data/ch_wald.shp', bbox=catchment_bounds)
     forests = forests[forests.intersects(catchment_polygon)]
     catchment_forests = gpd.GeoDataFrame(forests, 
                                     geometry=forests.intersection(catchment_polygon))
@@ -1209,6 +1223,10 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     forests_raster = grid2.rasterize(forests_polygons, fill=-1)
     forests_raster[forests_raster >= 0] = 1
     forests_raster[forests_raster < 0] = 0
+
+    # Free forest/vector data — only the raster is needed from here
+    del forests, catchment_forests, shapes, catchment_polygon, forest_types
+    gc.collect()
 
     # calculate "Hindernislayer".
     
@@ -1233,6 +1251,10 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
 
     obstacle_raster = Raster(obstacle_grid, viewfinder=grid2.viewfinder)
 
+    # Free obstacle layer intermediates
+    del slope_percentage, forests_raster, acc_view, obstacle_grid
+    gc.collect()
+
     # Compute maximum distance to outlet
     
     self.update_state(state='PROGRESS',
@@ -1244,7 +1266,10 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
 
     dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap, weights=obstacle_raster)
 
-    #dist = dist * cell_size
+    # Free obstacle raster and accumulation — no longer needed
+    del obstacle_raster, acc
+    gc.collect()
+
     dist = dist * cell_size
     dist[dist == np.inf] = -1000000
     dist[dist <= 0] = -1000000
@@ -1347,6 +1372,10 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
             with rasterio.open(raw_time_filename, 'w', **raw_time_profile) as dst:
                 dst.write(np.asarray(raw_time_raster), 1)
 
+    # Free raster data after writing — only scalar results needed from here
+    del dist, raw_time_values, raw_time_raster, small_view2, fdir
+    gc.collect()
+
     self.update_state(state='PROGRESS',
                 meta={'text': 'Polygonize catchment', 'progress' : 92})
     # Create a vector representation of the catchment mask
@@ -1411,8 +1440,25 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
             except:
                 pass
     
+    # Clean up temp files to avoid disk accumulation
+    try:
+        if os.path.exists(temp_dem_path):
+            os.remove(temp_dem_path)
+        if os.path.exists(temp_fdir_path):
+            os.remove(temp_fdir_path)
+    except Exception:
+        pass  # Non-critical cleanup failure
+    
     self.update_state(state='PROGRESS',
                 meta={'text': 'Finish', 'progress' : 100})
+    
+    # Schedule a graceful worker shutdown after this task completes.
+    # GDAL/numpy C extensions leak memory that gc.collect() cannot reclaim,
+    # causing "double free or corruption" on subsequent tasks in the same process.
+    # With Docker restart: unless-stopped, the worker comes back fresh.
+    from celery.worker import state as worker_state
+    worker_state.should_stop = 0  # EX_OK — clean shutdown after task ack
+    
     return
 
 

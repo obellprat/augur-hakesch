@@ -3,7 +3,7 @@
 
 	import Navlink from '../../page/discharge/navlink.svelte';
 	import { base } from '$app/paths';
-	let { title, icon, href, projectcount = 0, currentproject = null } = $props();
+	let { title, icon, href, projectcount = 0, currentproject = null, target = '_self' } = $props();
 	import { _ } from 'svelte-i18n';
 
 	let active = $derived(page.url.pathname.includes(href));
@@ -66,7 +66,7 @@
 			</ul>
 		</div>
 	{:else}
-		<a href={url} class="side-nav-link" data-sveltekit-preload-data="off">
+		<a href={url} class="side-nav-link" data-sveltekit-preload-data="off" target={target}>
 			<span class="menu-icon"><i class={icon}></i></span>
 			<span class="menu-text"> {title} </span>
 		</a>

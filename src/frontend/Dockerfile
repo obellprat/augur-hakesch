@@ -8,6 +8,9 @@ WORKDIR /app
 
 COPY . .
 
+RUN apk update
+RUN apk add git
+
 RUN npm ci
 
 RUN npx prisma generate

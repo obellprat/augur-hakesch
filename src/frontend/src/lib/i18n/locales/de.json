@@ -114,7 +114,7 @@
         },
         "modFZV": {
           "peakFlow": "Abflussfluss- koeffizient [psi]",
-          "wettingVolume": "Benetzungsvolumen für 20-jähriges Ereignis [mm]",
+          "wettingVolume": "Benetzungsvolumen für 20-jährliches Ereignis [mm]",
           "peakFlowTooltip": "Plausible Werte liegen zwischen 0.08 und 0.4",
           "wettingVolumeTooltip": "Plausible Werte liegen zwischen 20 mm - 45 mm"
         },
@@ -170,7 +170,8 @@
       "version": "Version",
       "frontend": "Frontend",
       "backend": "Backend",
-      "french": "Französisch"
+      "french": "Französisch",
+      "technicalDocumentation": "Techn. Dokumentation"
     },
     "about": {
       "title": " ",

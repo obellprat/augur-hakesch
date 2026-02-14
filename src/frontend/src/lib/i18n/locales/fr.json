@@ -170,7 +170,8 @@
       "version": "Version",
       "backend": "Backend",
       "frontend": "Frontend",
-      "french": "Français"
+      "french": "Français",
+      "technicalDocumentation": "Doc. technique"
     },
     "about": {
       "title": "À propos d’AUGUR",

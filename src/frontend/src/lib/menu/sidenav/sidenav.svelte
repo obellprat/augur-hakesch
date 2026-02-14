@@ -56,6 +56,7 @@
 			<!--<Navlink title={$_('page.nav.science')} href="science" icon="ti ti-school" />-->
 
 			<Navlink title={$_('page.nav.aboutAugur')} href="about" icon="ti ti-info-circle" />
+			<Navlink title={$_('page.nav.technicalDocumentation')} href="assets/documents/AUGUR_Dokumentation_HZP.2026.02.03.pdf" icon="ti ti-file-type-pdf" target="_blank" />
 		</ul>
 
 		<!-- dDonate Box -->
