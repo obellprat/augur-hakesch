@@ -170,7 +170,8 @@
       "version": "Version",
       "frontend": "Frontend",
       "backend": "Backend",
-      "french": "Französisch"
+      "french": "Französisch",
+      "technicalDocumentation": "Techn. Dokumentation"
     },
     "about": {
       "title": " ",
