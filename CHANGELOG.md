@@ -1,3 +1,19 @@
+## 1.1.0-rc.1 (2026-02-14)
+
+### Feat
+
+- **frontend**: added technical documentation
+- **frontend**: Session tracking
+- **frontend**: Added analytics (umami)
+- **calibration**: Set physical calibration values back to default
+
+### Fix
+
+- **frontend**: description of Abflussprozesstypen changed
+- **frontend**: jährlich not jährig
+- **api,-nam**: calibrated nam cn lookup table
+- **api**: not so aggressive monitorin, so the cpu remains stable
+
 ## 1.1.0-alpha.3 (2026-01-31)
 
 ### Feat
