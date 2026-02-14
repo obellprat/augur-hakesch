@@ -9,7 +9,7 @@ src/api/*.html
 src/api/prisma/src
 scripts/data/
 data/
-docs/
+docs/output/
 
 node_modules
 

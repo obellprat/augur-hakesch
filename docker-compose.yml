@@ -10,18 +10,8 @@ services:
     env_file: ".env"
     depends_on:
       - redis
-    labels:
-      # Enable Traefik for this specific "backend" service
-      - traefik.enable=true
-      # Define the port inside of the Docker service to use
-      - traefik.http.services.app.loadbalancer.server.port=8000
-      # Use the traefik-public network (declared below)
-      - traefik.docker.network=traefik-public
-      - traefik.http.routers.app-http.middlewares=https-redirect
     networks:
-      # Use the public network created to be shared between Traefik and
-      # any other service that needs to be publicly available with HTTPS
-      - traefik-public
+      - augur-public
 
   view:
     image: stumpisuter/augur-hakesch-frontend:latest
@@ -33,16 +23,8 @@ services:
       - 3000:3000
     command: node build/index.js
     env_file: ".env"
-    labels:
-      # Enable Traefik for this specific "backend" service
-      - traefik.enable=true
-      # Define the port inside of the Docker service to use
-      - traefik.http.services.app.loadbalancer.server.port=3000
-      # Use the traefik-public network (declared below)
-      - traefik.docker.network=traefik-public
-      - traefik.http.routers.app-http.middlewares=https-redirect
     networks:
-      - traefik-public
+      - augur-public
 
   worker:
     image: stumpisuter/augur-hakesch-api:dev
@@ -69,18 +51,13 @@ services:
         reservations:
           memory: 8g
     networks:
-      # Use the public network created to be shared between Traefik and
-      # any other service that needs to be publicly available with HTTPS
-      - traefik-public
+      - augur-public
 
 
   redis:
     image: redis:8.2.1
     networks:
-      # Use the public network created to be shared between Traefik and
-      # any other service that needs to be publicly available with HTTPS
-      - traefik-public
-
+      - augur-public
 
   dashboard:
     build: ./src/api
@@ -95,8 +72,8 @@ services:
       - redis
       - worker
     networks:
-      - traefik-public
+      - augur-public
 
 networks:
-  traefik-public:
+  augur-public:
     external: true
