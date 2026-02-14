@@ -2086,7 +2086,7 @@
 	<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h4 class="modal-title" id="clarkwsl-help-modal-label">ClarkWSL - Abflussprozesse</h4>
+				<h4 class="modal-title" id="clarkwsl-help-modal-label">Herleitung Abflussprozesstypen</h4>
 				<button
 					type="button"
 					class="btn-close"
@@ -2096,21 +2096,7 @@
 			</div>
 			<div class="modal-body">
 				<p>
-					Bei der Hochwasserabflussbildung spielen neben der Dauer und der Intensität von
-					Starkniederschlägen und der Grösse/Topographie des Einzugsgebiets die auftretenden
-					Abflussprozesse eine entscheidende Rolle. Zu den wichtigsten bei Starkregen auftretenden
-					Abflussprozessen zählen der Oberflächenabfluss aufgrund von Infiltrationshemmnissen (HOF),
-					der gesättigte Oberflächenabfluss (SOF), der Abfluss im Boden (SSF) und die
-					Tiefenversickerung (DP). Die Abflussprozesstypen können zusätzlich nach ihrer Reaktion in
-					rasch beitragend (z.B. SSF1), verzögert beitragend (z.B. SSF2) und stark verzögert
-					beitragend (z.B. SSF3) unterschieden werden. Methoden zur Bestimmung der im Einzugsgebiet
-					auftretenden Abflussprozesse sind z.B. in [1], [2] oder [3] beschrieben.
-				</p>
-				<p>
-					Eine flächendifferenzierte Ansprache der Abflusstypen mit Zuordnung der
-					Reaktionsfreudigkeit erfordert einen hohen Arbeitsaufwand und ist mit Unschärfen
-					verbunden. Stattdessen wird vorgeschlagen, die Abflussprozesse nach ihrer Abflussreaktion
-					in Abflussklassen zu unterteilen:
+					Bei der Hochwasserabflussbildung spielen neben der Dauer und der Intensität von Starkniederschlägen und der Grösse/Topographie des Einzugsgebiets die Bodeneigenschaften eine entscheidende Rolle. Bei der Hochwasserabschätzung werden Böden mit gleicher Abflussreaktion in Klassen unterteilt.
 				</p>
 				<table class="table table-sm table-bordered">
 					<thead>
@@ -2148,6 +2134,22 @@
 						</tr>
 					</tbody>
 				</table>
+				<p>
+					Die Bestimmung der Klassen erfolgt über folgende Abflussprozesstypen:
+				</p>
+				<p>
+					<b>HOF</b>: Oberflächenabfluss aufgrund von Infiltrationshemmnissen (Hortonian Overland Flow) wird auf Böden und Oberflächen beobachtet, die verdich-tet oder wasserabstossend und deshalb nur schwach durchlässig sind.<br /> 
+					<b>SOF</b>: Gesättigter Oberflächenabfluss (Saturation Overland Flow) tritt nach Sättigung des Bodens auf. Häufig auf flachgründigen oder feucht-nassen Böden mit geringem Speichervermögen.<br />
+					<b>SSF</b>: Abfluss im Boden (Sub-Surface Flow) tritt auf, wenn über einer Stauschicht im Boden hoch durchlässige Schichten liegen oder Makroporen dem Wasser ein rasches laterales Fliessen ermöglichen. <br />
+					<b>DP</b>: Ist der Boden gut durchlässig und liegt er über einem durchlässigem C-Horizont, kann über die Tiefensickerung (Deep Percolation) Wasser in den tiefen Untergrund eindringen und gespeichert werden, ohne dass Abfluss entsteht.<br />
+				</p>
+				<p>
+					Die Abflussprozesstypen werden mit einer Zahl zwischen 1 bis 3 ergänzt, wobei 1 für eine rasche Reaktion, 2 für eine verzögerte und 3 für eine stark verzögerte Reaktion steht (z.B. rascher (SOF1), verzögerter (SOF2) oder stark verzögerter Oberflächenabfluss (SOF3)).
+				</p>
+				<p>
+					Die Abflussprozesstypen können über folgendes Schema nach SCHERRER & NAEF (2002, vereinfacht) für Wieslandböden im Gelände hergeleitet werden.
+				</p>
+				<img src="{base}/assets/images/abflussprozesstypen.png" alt="Abflussprozesstypen" class="img-fluid" />
 				<p class="mt-3">
 					<strong>Literatur:</strong>
 				</p>
