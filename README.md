@@ -21,8 +21,10 @@ The application is composed of several services orchestrated via Docker Compose:
 flowchart LR
   User[Browser] -->|HTTP| View[view: SvelteKit :3000]
   View -->|REST / JSON| API[api: FastAPI :8000]
-  API -->|ORM| Prisma[Prisma Client]
-  Prisma --> DB[(PostgreSQL)]
+  View -->|ORM| PrismaJS[Prisma Client JS]
+  API -->|ORM| PrismaPY[Prisma Client Python]
+  PrismaJS --> DB[(PostgreSQL)]
+  PrismaPY --> DB[(PostgreSQL)]
   API -->|Tasks| Celery[worker: Celery]
   Celery <--> Redis[(Redis :6379)]
   API --> Keycloak[(Keycloak IdP)]
@@ -45,7 +47,7 @@ Authentication is handled by an external [Keycloak](https://www.keycloak.org/) i
 - **Frontend**: SvelteKit 2, Svelte 5, TypeScript, Prisma (JS client), Bootstrap 5, Leaflet/OpenLayers, Plotly, ApexCharts
 - **Database**: PostgreSQL (external, via `DATABASE_URL`)
 - **Auth**: Keycloak, Auth.js (SvelteKit adapter)
-- **Infrastructure**: Docker, Docker Compose, Traefik (reverse proxy), Redis
+- **Infrastructure**: Docker, Docker Compose, Redis
 
 ## Project Structure
 
@@ -75,8 +77,6 @@ augur-hakesch/
 │       ├── Dockerfile
 │       └── .env.example
 ├── docker-compose.yml          # Local development (full stack)
-├── docker-compose.server.yml   # Production deployment (with Traefik)
-├── docker-compose.traefik.yml  # Standalone Traefik reverse proxy
 ├── docker-compose.keycloak.yml # Keycloak + PostgreSQL for auth
 ├── Taskfile.yml                # Task runner commands
 ├── pyproject.toml              # Project metadata & commitizen config
@@ -135,7 +135,7 @@ Create a `.env` file in the project root. Required variables:
 5. **Create the Docker network** (required once)
 
    ```bash
-   docker network create traefik-public
+   docker network create augur-public
    ```
 
 6. **Start the application**
@@ -256,8 +256,6 @@ pytest src/api/tests -q
 | File | Purpose |
 |------|---------|
 | `docker-compose.yml` | **Local development** — all services with volume mounts for live reloading |
-| `docker-compose.server.yml` | **Production** — pre-built images, Traefik reverse proxy, resource limits |
-| `docker-compose.traefik.yml` | **Standalone Traefik** — HTTPS with Let's Encrypt, used in production |
 | `docker-compose.keycloak.yml` | **Keycloak + PostgreSQL** — identity provider stack |
 
 ### Building Docker Images
@@ -273,23 +271,6 @@ task push
 docker compose build api
 docker compose build view
 ```
-
-### Production Deployment
-
-For production, use the server and Traefik compose files:
-
-```bash
-# Create the external network
-docker network create traefik-public
-
-# Start Traefik (reverse proxy with HTTPS)
-docker compose -f docker-compose.traefik.yml up -d
-
-# Start the application services
-docker compose -f docker-compose.server.yml up -d
-```
-
-The Celery worker in production uses thread-based concurrency with resource limits (8 GB memory, 2 CPUs).
 
 ## Coding Style
 
@@ -316,4 +297,4 @@ An optional monitoring service lives in `src/monitor/`. It periodically checks t
 
 ## License
 
-See the project repository for license information.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
