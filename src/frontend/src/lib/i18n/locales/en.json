@@ -57,19 +57,19 @@
       },
       "calculation": {
         "idf": {
-          "precipLowerPeriod1h": "Precipitation [mm] for 30-year return period, 1 hour duration",
-          "precipLowerPeriod24h": "Precipitation [mm] for  30-year return period, 24 hour duration",
+          "precipLowerPeriod1h": "30-year, 1 h",
+          "precipLowerPeriod24h": "30-year, 24 h",
           "returnPeriod": " 30-year return period",
-          "precipUpperPeriod1h": "Precipitation [mm] for 100-year return period, 1 hour duration",
-          "precipUpperPeriod24h": "Precipitation [mm] for 100-year return period, 24 hour duration",
+          "precipUpperPeriod1h": "100-year, 1 h",
+          "precipUpperPeriod24h": "100-year, 24 h",
           "upperReturnPeriod": "100-year return period"
         },
         "szenario": "Scenario",
         "modFZV": {
           "wettingVolume": "Wetting volume for 20-year event [mm]",
           "peakFlow": "Peak flow coefficient [psi]",
-          "peakFlowTooltip": "Plausible values lie between 0.08 and 0.4",
-          "wettingVolumeTooltip": "Plausible values lie between 20 mm and 45 mm"
+          "peakFlowTooltip": "Plausible values lie between 0.08 and 0.45",
+          "wettingVolumeTooltip": "Plausible values lie between 20 mm and 50 mm"
         },
         "calculate": "Calculate hydrology",
         "deleteCalculation": "Delete calculation",
@@ -117,7 +117,7 @@
           "dischargeTooltip": "m³/s"
         },
         "generalInput": "General",
-        "inputsForPrecipitationIntensity": "Information on the calculation of precipitation intensity",
+        "inputsForPrecipitationIntensity": "Precipitation intensity [mm/duration]",
         "modFliesszeit": "Modified flow time method",
         "koells": "Koella",
         "typeOfCalculation": "Which process should be added to the project?",

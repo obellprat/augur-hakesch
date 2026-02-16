@@ -57,19 +57,19 @@
       },
       "calculation": {
         "idf": {
-          "precipLowerPeriod1h": "Précipitations [mm] pour une période de retour de 30 ans, durée 1 heure",
-          "precipLowerPeriod24h": "Précipitations [mm] pour une période de retour de 30 ans, durée 24 heures",
+          "precipLowerPeriod1h": "30 ans, 1h",
+          "precipLowerPeriod24h": "30 ans, 24h",
           "returnPeriod": "Période de retour de 30 ans",
-          "precipUpperPeriod1h": "Précipitations [mm] pour une période de retour de 100 ans, durée 1 heure",
-          "precipUpperPeriod24h": "Précipitations [mm] pour une période de retour de 100 ans, durée 24 heures",
+          "precipUpperPeriod1h": "100 ans, 1h",
+          "precipUpperPeriod24h": "100 ans, 24h",
           "upperReturnPeriod": "Période de retour de 100 ans"
         },
         "szenario": "Scénario",
         "modFZV": {
           "wettingVolume": "Volume de mouillage pour un événement de 20 ans [mm]",
           "peakFlow": "Coefficient de débit de pointe [psi]",
-          "peakFlowTooltip": "Les valeurs plausibles se situent entre 0,08 et 0,4",
-          "wettingVolumeTooltip": "Les valeurs plausibles se situent entre 20 mm et 45 mm"
+          "peakFlowTooltip": "Les valeurs plausibles se situent entre 0,08 et 0,45",
+          "wettingVolumeTooltip": "Les valeurs plausibles se situent entre 20 mm et 50 mm"
         },
         "calculate": "Calculer l’hydrologie",
         "deleteCalculation": "Supprimer le calcul",
@@ -117,7 +117,7 @@
           "dischargeTooltip": "m³/s"
         },
         "generalInput": "Général",
-        "inputsForPrecipitationIntensity": "Informations sur le calcul de l’intensité des précipitations",
+        "inputsForPrecipitationIntensity": "Intensité des précipitations [mm/durée]",
         "modFliesszeit": "Méthode du temps d’écoulement modifié",
         "koells": "Koella",
         "typeOfCalculation": "Quel processus doit être ajouté au projet ?",

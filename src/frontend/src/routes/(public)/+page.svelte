@@ -12,9 +12,15 @@
 
 <style>
 	.card-img-top {
-		height: 200px;
+		height: 300px;
 		object-fit: cover;
 		object-position: center;
+	}
+
+	@media (min-width: 1200px) {
+		.card-img-top {
+			height: 380px;
+		}
 	}
 </style>
 

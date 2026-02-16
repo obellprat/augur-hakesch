@@ -163,11 +163,24 @@
 			colors: ['transparent']
 		},
 		xaxis: {
-			categories: ['30', '100', '300']
+			categories: ['30-jährlich', '100-jährlich', '300-jährlich'],
+			labels: {
+				style: {
+					fontSize: '14px'
+				}
+			}
 		},
 		yaxis: {
 			title: {
-				text: 'HQ [m3/s]'
+				text: 'HQ [m3/s]',
+				style: {
+					fontSize: '14px'
+				}
+			},
+			labels: {
+				style: {
+					fontSize: '14px'
+				}
 			}
 		},
 		fill: {
@@ -176,7 +189,7 @@
 		tooltip: {
 			y: {
 				formatter: function (val: number) {
-					return '$ ' + val + '  m3/s';
+					return val + '  m3/s';
 				}
 			}
 		}
@@ -2138,7 +2151,7 @@
 					Die Bestimmung der Klassen erfolgt über folgende Abflussprozesstypen:
 				</p>
 				<p>
-					<b>HOF</b>: Oberflächenabfluss aufgrund von Infiltrationshemmnissen (Hortonian Overland Flow) wird auf Böden und Oberflächen beobachtet, die verdich-tet oder wasserabstossend und deshalb nur schwach durchlässig sind.<br /> 
+					<b>HOF</b>: Oberflächenabfluss aufgrund von Infiltrationshemmnissen (Hortonian Overland Flow) wird auf Böden und Oberflächen beobachtet, die verdichtet oder wasserabstossend und deshalb nur schwach durchlässig sind.<br /> 
 					<b>SOF</b>: Gesättigter Oberflächenabfluss (Saturation Overland Flow) tritt nach Sättigung des Bodens auf. Häufig auf flachgründigen oder feucht-nassen Böden mit geringem Speichervermögen.<br />
 					<b>SSF</b>: Abfluss im Boden (Sub-Surface Flow) tritt auf, wenn über einer Stauschicht im Boden hoch durchlässige Schichten liegen oder Makroporen dem Wasser ein rasches laterales Fliessen ermöglichen. <br />
 					<b>DP</b>: Ist der Boden gut durchlässig und liegt er über einem durchlässigem C-Horizont, kann über die Tiefensickerung (Deep Percolation) Wasser in den tiefen Untergrund eindringen und gespeichert werden, ohne dass Abfluss entsteht.<br />
@@ -2147,9 +2160,10 @@
 					Die Abflussprozesstypen werden mit einer Zahl zwischen 1 bis 3 ergänzt, wobei 1 für eine rasche Reaktion, 2 für eine verzögerte und 3 für eine stark verzögerte Reaktion steht (z.B. rascher (SOF1), verzögerter (SOF2) oder stark verzögerter Oberflächenabfluss (SOF3)).
 				</p>
 				<p>
-					Die Abflussprozesstypen können über folgendes Schema nach SCHERRER & NAEF (2002, vereinfacht) für Wieslandböden im Gelände hergeleitet werden.
+					Die Abflussprozesstypen, die Werte Vo20, WSV und psi können über folgende Schemen hergeleitet werden.
 				</p>
 				<img src="{base}/assets/images/abflussprozesstypen.png" alt="Abflussprozesstypen" class="img-fluid" />
+				<img src="{base}/assets/images/abflussprozesstypen2.png" alt="Abflussprozesstypen 2" class="img-fluid" />
 				<p class="mt-3">
 					<strong>Literatur:</strong>
 				</p>
@@ -2162,11 +2176,6 @@
 						«Automatisch hergeleitete Abflussprozesskarten – ein neues Werkzeug zur Abschätzung von
 						Hochwasserabflüssen, Felix Naef et al., «Wasser Energie Luft» – 99. Jahrgang, 2007, Heft
 						3, CH-5401 Baden.
-					</li>
-					<li>
-						Scherrer, S. (2006): Bestimmungsschlüssel zur Identifikation von hochwasserrelevanten
-						Flächen, Herausgeber: Landesamt für Umwelt, Wasserwirtschaft und Gewerbeaufsicht
-						Rheinland-Pfalz (LUWG).
 					</li>
 				</ol>
 			</div>
@@ -2434,7 +2443,7 @@
 														type="number"
 														step="any"
 														max="99.999"
-														class="form-control"
+														class="form-control text-end"
 														class:is-invalid={(() => {
 															const val = manuallyEditedVo20.has(combinedIndex)
 																? (sharedVo20Values[combinedIndex] ?? 0)
@@ -2443,11 +2452,11 @@
 																	: (sharedVo20Values[combinedIndex] ?? 0));
 															return val >= 100;
 														})()}
-														value={manuallyEditedVo20.has(combinedIndex)
+														value={Math.round((manuallyEditedVo20.has(combinedIndex)
 															? (sharedVo20Values[combinedIndex] ?? 0)
 															: (clarkScenarioForms[combinedIndex] !== undefined 
 																? calculateSummaryV0_20(combinedIndex) 
-																: (sharedVo20Values[combinedIndex] ?? 0))}
+																: (sharedVo20Values[combinedIndex] ?? 0))) * 100) / 100}
 														oninput={(event) => {
 															const target = event.currentTarget as HTMLInputElement;
 															const inputValue = sanitizeNumber(target.valueAsNumber ?? Number(target.value));
@@ -2474,7 +2483,7 @@
 														type="number"
 														step="any"
 														max="0.999"
-														class="form-control"
+														class="form-control text-end"
 														class:is-invalid={(() => {
 															const val = manuallyEditedPsi.has(combinedIndex)
 																? (modScenarioForms[combinedIndex]?.psi ?? 0)
@@ -2483,11 +2492,11 @@
 																	: (modScenarioForms[combinedIndex]?.psi ?? 0));
 															return val >= 1;
 														})()}
-														value={manuallyEditedPsi.has(combinedIndex)
+														value={Math.round((manuallyEditedPsi.has(combinedIndex)
 															? (modScenarioForms[combinedIndex]?.psi ?? 0)
 															: (clarkScenarioForms[combinedIndex] !== undefined 
 																? calculateSummaryPsi(combinedIndex) 
-																: (modScenarioForms[combinedIndex]?.psi ?? 0))}
+																: (modScenarioForms[combinedIndex]?.psi ?? 0))) * 100) / 100}
 														oninput={(event) => {
 															const target = event.currentTarget as HTMLInputElement;
 															const inputValue = sanitizeNumber(target.valueAsNumber ?? Number(target.value));

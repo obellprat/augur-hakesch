@@ -352,6 +352,7 @@
 			
 			const isozone = new WebGLTileLayer({
 				source: isozone_source,
+				opacity: 0.8,
 				style: {
 					color: [
 						'interpolate',
