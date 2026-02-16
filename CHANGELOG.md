@@ -1,62 +1,17 @@
 ## 1.1.0 (2026-02-16)
 
-### Fix
-
-- **frontend**: small layout fixes and text changes
-
-### Refactor
-
-- cleanup and better description in readme
-
-## 1.1.0-rc.1 (2026-02-14)
-
 ### Feat
 
 - **frontend**: added technical documentation
 - **frontend**: Session tracking
 - **frontend**: Added analytics (umami)
 - **calibration**: Set physical calibration values back to default
-
-### Fix
-
-- **frontend**: description of Abflussprozesstypen changed
-- **frontend**: jährlich not jährig
-- **api,-nam**: calibrated nam cn lookup table
-- **api**: not so aggressive monitorin, so the cpu remains stable
-
-## 1.1.0-alpha.3 (2026-01-31)
-
-### Feat
-
 - **frontend**: vo_20 and psi validation with error message
 - **frontend,-precipitation**: Change chart library and show uncertainity
 - **external-monitoring**: new tool for external monitoring service
 - **backend,-frontend**: monitoring page and statistics
-
-### Fix
-
-- **frontend,-api**: updated zone_parameters with calibrated values
-
-## 1.1.0-alpha.2 (2026-01-20)
-
-### Feat
-
 - **frontend**: included the Arbeitshilfe
-
-### Fix
-
-- **frontend**: bigger map for projects (creating and editing)
-
-## 1.1.0-alpha.1 (2026-01-17)
-
-### Feat
-
 - **frontend**: added geotools suter and bellprat climate consulting under the credits. and a link to github
-
-## 1.1.0-alpha.0 (2026-01-17)
-
-### Feat
-
 - **frontend,-precipitation**: Autocomplete location box, share link
 - **frontend,-precipitation**: get data from db, adjust graph and css style fixes
 - **frontend**: Table style vo_20 and psi entry
@@ -64,68 +19,66 @@
 
 ### Fix
 
+- **frontend**: small layout fixes and text changes
+- **frontend**: description of Abflussprozesstypen changed
+- **frontend**: jährlich not jährig
+- **api,-nam**: calibrated nam cn lookup table
+- **api**: not so aggressive monitorin, so the cpu remains stable
+- **frontend,-api**: updated zone_parameters with calibrated values
+- **frontend**: bigger map for projects (creating and editing)
 - **frontend**: Rounding the results to one decimal place
 - **frontend**: Moving the Save and Calculate button
 - **frontend**: Hades values without decimal places. Move the button
+
+### Refactor
+
+- cleanup and better description in readme
 
 ## 1.0.0 (2025-12-15)
 
 ### Feat
 
 - **frontend**: NAM calibration of storm event
-
-## 1.0.0-alpha.2 (2025-12-10)
-
-### Feat
-
 - **frontend**: ClarkWSL Help modal
+- **frontend**: Infobutton with hoover for explanations
+- **frontend**: Show a progressbar while calculation
+- **frontend**: When creating a project, the user is asked whether the geodata should be calculated
+- **frontend**: Delete multiple projects simultaneously
+- **frontend**: Reorganization of the Hydrological Calculation Page. All fields below each other and new layout
+- **api,frontend**: New recurrence periods added (30, 100, 300)
+- **api,frontend**: User can get the HADES data in the frontend. Takes the values from the provided netcdf file
+- **frontend,api**: Update to clima scenarios of meteoschweiz
+- **calibration**: Integrate results of the first calibration in the methods
+- **Science**: Add science page, change light background, add marker to precipitation tool
+- **api**: faster catchment calculations
+- **frontend,-api**: NAM hydrograph implementation
+- **frontend**: Combine annualities and init hydrological processes
+- **darkmode-images**: Add functionality to show different images in dark mode as well as the logos
+- **api,frontend**: User can upload his own soil type shapefile
+- **api**: Possibility to add custom soil shapefile to calculate cn
+- **frontend**: NAM integration into the frontend
+- **api**: Use the Bodeneignungskarte in Switzerland to generate the curve numbers
+- **frontend**: shows a spinner when loading data from database
+- **frontend,api**: integration of clark-wsl calculation
+- **frontend**: Display the geodata in project overview
+- **frontend**: Show the calculated river network
+- **api,frontend**: integrating version display in frontend and backend
+- **frontend**: Show results as Plots
+- **frontend**: Show results as Plots
+- **frontend**: Show results as Plots
 
 ### Fix
 
 - **frontend**: Remove the buttons for calculation and saving on the top right
 - **frontend**: InvalidateAll on project overview after recalculation shows also the geo-metadatas
-
-## 1.0.0-alpha.1 (2025-12-03)
-
-### Feat
-
-- **frontend**: Infobutton with hoover for explanations
-- **frontend**: Show a progressbar while calculation
-
-### Fix
-
 - **frontend**: reload branches over the isozones after catchment analysis
 - **frontend**: HADES values with correct coordinate transformation
-
-## 1.0.0-alpha.0 (2025-12-02)
-
-### Feat
-
-- **frontend**: When creating a project, the user is asked whether the geodata should be calculated
-- **frontend**: Delete multiple projects simultaneously
-
-### Fix
-
 - **frontend**: csrf disabled because multiple subdomains (www and without)
 - **frontend**: checks the precip values before the calculation
 - **frontend**: error handling when api is not working
 - **frontend**: faster project loading without the geojsons
 - **frontend**: Text adjustments for recurring periods
-
-## 0.7.0-dev.2 (2025-11-20)
-
-### Fix
-
 - **frontend**: layout improvements on calculation page
-
-## 0.7.0-dev.1 (2025-11-20)
-
-### Feat
-
-- **frontend**: Reorganization of the Hydrological Calculation Page. All fields below each other and new layout
-
-### Fix
-
 - **API,-NAM**: bug fixing cc_factor on rain in NAM
 - **api,ClarkWSL**: bugfixing fraction lists missing items. It is a list
 - **ClarkWSL**: Ensure that discharge types are handed over as strings
@@ -136,91 +89,16 @@
 - **loglog-int**: fix isclose issue in function
 - **loglog-int**: Log-log interpolation is not selecting properly 300 year period
 - **koella**: Correct TB conversion parameters
-
-## 0.6.0-dev.1 (2025-11-14)
-
-### Feat
-
-- **api,frontend**: New recurrence periods added (30, 100, 300)
-- **api,frontend**: User can get the HADES data in the frontend. Takes the values from the provided netcdf file
-- **frontend,api**: Update to clima scenarios of meteoschweiz
-- **calibration**: Integrate results of the first calibration in the methods
-- **Science**: Add science page, change light background, add marker to precipitation tool
-
-### Fix
-
 - **frontend**: sort results by annuality
 - **climate-change-signal**: values were wrong and have adjusted according to new "note for estimating future changes in extreme precipitation return levels" from MeteoSwiss
 - **api**: fixes strange bug with pysheds array with sizes of 160000... make the reading window a little bit smaller
-
-## 0.5.0-dev.1 (2025-11-04)
-
-### Feat
-
-- **frontend,api**: climate change instagration
-- **api**: faster catchment calculations
-- **frontend,-api**: NAM hydrograph implementation
-
-### Fix
-
-- **api**: fixes strange bug with pysheds array with sizes of 160000... make the reading window a little bit smaller
 - **TB-convergence**: Adjust parameters for TB convergence in MF and Koella to avoid failing convergence
-
-## 0.4.0-dev.1 (2025-10-23)
-
-### Feat
-
-- **frontend**: Combine annualities and init hydrological processes
-
-### Fix
-
 - **frontend**: welcome text change
-
-## 0.3.1-dev.1 (2025-10-21)
-
-### Feat
-
-- **darkmode-images**: Add functionality to show different images in dark mode as well as the logos
-
-### Fix
-
 - **frontend**: same height for all card-img-top
 - **frontend**: fixes bugs in adding new calculations after saving
-
-### Refactor
-
-- **frontend**: Set and hide standard NAM parameters
-- **frontend**: hide donation box
-- **api,frontend**: small changes in spinner, translation and docker
-
-## 0.3.0-beta.0 (2025-09-15)
-
-### Feat
-
-- **api,frontend**: User can upload his own soil type shapefile
-- **api**: Possibility to add custom soil shapefile to calculate cn
-- **frontend**: NAM integration into the frontend
-
-## 0.3.0-alpha.1 (2025-09-11)
-
-### Feat
-
-- **api**: Use the Bodeneignungskarte in Switzerland to generate the curve numbers
-
-### Fix
-
 - **api**: Use a_crit 1000 and not 10000 for generating isozones
 - **api,frontend**: Better error description, when the calculation is not working
 - **api**: Use the correct cumulative length for the calculation and not the maximum length
-
-## 0.3.0-alpha.0 (2025-09-10)
-
-### Feat
-
-- **frontend**: shows a spinner when loading data from database
-
-### Fix
-
 - **frontend**: Calculations cannot be performed if the geodata has not yet been calculated. The user will be informed of this. Fix #41
 - **frontend**: The data for the calculations is saved before the calculations are performed
 - **api**: change cumulative flow length in project-wide calculation
@@ -229,51 +107,19 @@
 - **discharge.py**: calculation corrections for koella and clark-wsl
 - **frontend**: after saving calculation-data it was not possible to add other calculations. And fixes the decimal places bug
 - **api,frontend**: Enable to download isozone, catchment and branches as tif and geojson
-
-## 0.3.0-dev.5 (2025-08-10)
-
-### Fix
-
 - **api,frontend**: Calculation progress display fix
-
-## 0.3.0-dev.4 (2025-07-28)
-
-### Fix
-
 - **frontend**: Displays an error message if there was an exception in the API functions
-
-## 0.3.0-dev.3 (2025-07-27)
-
-### Feat
-
-- **frontend,api**: integration of clark-wsl calculation
-
-## 0.3.0-dev.2 (2025-07-26)
-
-### Feat
-
-- **frontend**: Display the geodata in project overview
-- **frontend**: Show the calculated river network
-
-### Fix
-
 - **frontend**: Frontend starts even the backend is not accessible
-
-## 0.3.0-dev.1 (2025-07-25)
-
-### Feat
-
-- **api,frontend**: integrating version display in frontend and backend
-- **frontend**: Show results as Plots
-
-### Fix
-
+- bump version files
 - **frontend**: show version in frontend
 
 ### Refactor
 
+- **frontend**: Set and hide standard NAM parameters
+- **frontend**: hide donation box
+- **api,frontend**: small changes in spinner, translation and docker
 - **api**: delete unused api calculation files
-- **api,frontend**: Previously, semantic versioning was used. Commitizen is more widely used
+- **Change-the-versioning-system-to-Commitizen**: Previously, semantic versioning was used. Commitizen is more widely used
 
 ## 0.2.0 (2025-07-25)
 
