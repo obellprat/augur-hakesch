@@ -1083,46 +1083,46 @@ def create_curve_number_lookup_table():
     # Format: "ESA_LC_HSG": curve_number
     lookup_table = {
         # Tree cover (10) combinations
-        "10_1": 34,    # Tree cover + HSG A
-        "10_2": 54,    # Tree cover + HSG B  # was 53, +1
-        "10_3": 54,    # Tree cover + HSG C  # was 53, +1
-        "10_4": 62,    # Tree cover + HSG D  # was 61, +1
+        "10_1": 40,    # Tree cover + HSG A
+        "10_2": 60,    # Tree cover + HSG B  # was 61, -1
+        "10_3": 61,    # Tree cover + HSG C  # was 62, -1
+        "10_4": 75,    # Tree cover + HSG D  # was 74, +1
 
         # Shrubland (20) combinations
-        "20_1": 30,    # Shrubland + HSG A
-        "20_2": 47,    # Shrubland + HSG B
-        "20_3": 67,    # Shrubland + HSG C
-        "20_4": 68,    # Shrubland + HSG D
+        "20_1": 36,    # Shrubland + HSG A
+        "20_2": 53,    # Shrubland + HSG B
+        "20_3": 73,    # Shrubland + HSG C
+        "20_4": 74,    # Shrubland + HSG D
 
         # Grassland (30) combinations
-        "30_1": 23,    # Grassland + HSG A
-        "30_2": 46,    # Grassland + HSG B  # was 45, +1
-        "30_3": 46,    # Grassland + HSG C  # was 45, +1
-        "30_4": 47,    # Grassland + HSG D  # was 46, +1
+        "30_1": 28,    # Grassland + HSG A
+        "30_2": 52,    # Grassland + HSG B  # was 53, -1
+        "30_3": 53,    # Grassland + HSG C  # was 54, -1
+        "30_4": 59,    # Grassland + HSG D  # was 58, +1
 
         # Cropland (40) combinations
-        "40_1": 42,    # Cropland + HSG A
-        "40_2": 42,    # Cropland + HSG B  # was 43, -1
-        "40_3": 42,    # Cropland + HSG C  # was 43, -1
-        "40_4": 42,    # Cropland + HSG D  # was 43, -1
+        "40_1": 48,    # Cropland + HSG A
+        "40_2": 53,    # Cropland + HSG B  # was 54, -1
+        "40_3": 53,    # Cropland + HSG C  # was 54, -1
+        "40_4": 56,    # Cropland + HSG D  # was 58, -2
 
         # Built-up (50) combinations
-        "50_1": 81,    # Built-up + HSG A
-        "50_2": 84,    # Built-up + HSG B
-        "50_3": 96,    # Built-up + HSG C
-        "50_4": 97,    # Built-up + HSG D
+        "50_1": 87,    # Built-up + HSG A
+        "50_2": 90,    # Built-up + HSG B
+        "50_3": 92,    # Built-up + HSG C
+        "50_4": 93,    # Built-up + HSG D
 
         # Bare/sparse vegetation (60) combinations
-        "60_1": 31,    # Bare vegetation + HSG A
-        "60_2": 32,    # Bare vegetation + HSG B
-        "60_3": 88,    # Bare vegetation + HSG C
-        "60_4": 89,    # Bare vegetation + HSG D
+        "60_1": 37,    # Bare vegetation + HSG A
+        "60_2": 39,    # Bare vegetation + HSG B
+        "60_3": 94,    # Bare vegetation + HSG C
+        "60_4": 95,    # Bare vegetation + HSG D
 
         # Snow and ice (70) combinations
-        "70_1": 92,    # Snow/ice + HSG A
-        "70_2": 92,    # Snow/ice + HSG B
-        "70_3": 92,    # Snow/ice + HSG C
-        "70_4": 92,    # Snow/ice + HSG D
+        "70_1": 98,    # Snow/ice + HSG A
+        "70_2": 98,    # Snow/ice + HSG B
+        "70_3": 98,    # Snow/ice + HSG C
+        "70_4": 98,    # Snow/ice + HSG D
 
         # Water bodies (80) combinations
         "80_1": 100,   # Water + HSG A
@@ -1131,23 +1131,23 @@ def create_curve_number_lookup_table():
         "80_4": 100,   # Water + HSG D
 
         # Herbaceous wetland (90) combinations
-        "90_1": 24,    # Wetland + HSG A
-        "90_2": 55,    # Wetland + HSG B
-        "90_3": 59,    # Wetland + HSG C
-        "90_4": 64,    # Wetland + HSG D
+        "90_1": 30,    # Wetland + HSG A
+        "90_2": 61,    # Wetland + HSG B
+        "90_3": 65,    # Wetland + HSG C
+        "90_4": 71,    # Wetland + HSG D
 
         # Mangroves (95) combinations
-        "95_1": 27,    # Mangroves + HSG A
-        "95_2": 59,    # Mangroves + HSG B
-        "95_3": 60,    # Mangroves + HSG C
-        "95_4": 61,    # Mangroves + HSG D
+        "95_1": 33,    # Mangroves + HSG A
+        "95_2": 65,    # Mangroves + HSG B
+        "95_3": 66,    # Mangroves + HSG C
+        "95_4": 67,    # Mangroves + HSG D
 
         # Moss and lichen (100) combinations
-        "100_1": 21,    # Moss/lichen + HSG A
-        "100_2": 58,    # Moss/lichen + HSG B
-        "100_3": 52,    # Moss/lichen + HSG C
-        "100_4": 69,    # Moss/lichen + HSG D
-    }  
+        "100_1": 28,    # Moss/lichen + HSG A
+        "100_2": 54,    # Moss/lichen + HSG B
+        "100_3": 58,    # Moss/lichen + HSG C
+        "100_4": 75,    # Moss/lichen + HSG D
+    }
     
     return lookup_table
 

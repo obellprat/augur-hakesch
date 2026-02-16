@@ -447,7 +447,7 @@ def nam(self,
     S_cells[valid_mask] = (25400 / cn_data[valid_mask]) - 254
     
     # Calculate initial abstraction Ia for each cell: Ia = 0.2 * S [mm]
-    Ia_cells = 0.1 * S_cells  # SCS standard: Ia = 0.2 * S
+    Ia_cells = 0.05 * S_cells  # SCS standard: Ia = 0.2 * S
     
     # Debug: Print statistics about curve numbers and retention
     print(f"Curve number statistics:")
@@ -614,7 +614,7 @@ def nam(self,
     # ------------------------------------------------------------
     # 3a. Storm geometry (same base behaviour as original)
     # ------------------------------------------------------------
-    storm_radius_km = 3.0  # large stratiform storm
+    storm_radius_km = 8.0  # large stratiform storm
 
     # Get grid resolution in meters (EPSG:2056 coordinates)
     cell_size_m = abs(cn_transform.a)  # meters per pixel in x direction
@@ -733,8 +733,9 @@ def nam(self,
     if water_balance_mode == "uniform":
         # Uniform approach: Use uniform precipitation for SCS calculation
         uniform_precip = P_total_storm * precipitation_factor  # Apply scaling factor
+        uniform_precip = P_total_storm * min(106.61 * catchment_area ** (-0.289) / 100, 1.0)
         
-        print(f"Uniform approach - uniform={uniform_precip:.2f}mm (factor={precipitation_factor})")
+        print(f"Uniform approach - uniform={uniform_precip:.2f}mm (factor={precipitation_factor}, catchment_area={catchment_area:.2f}km²)")
         
         P_mask = uniform_precip > Ia_cells[valid_mask]
         print(f"{np.sum(P_mask)} cells have P > Ia out of {np.sum(valid_mask)} valid cells")

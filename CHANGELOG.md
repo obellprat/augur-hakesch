@@ -1,3 +1,13 @@
+## 1.1.0 (2026-02-16)
+
+### Fix
+
+- **frontend**: small layout fixes and text changes
+
+### Refactor
+
+- cleanup and better description in readme
+
 ## 1.1.0-rc.1 (2026-02-14)
 
 ### Feat
