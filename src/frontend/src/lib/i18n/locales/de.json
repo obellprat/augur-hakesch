@@ -107,7 +107,7 @@
         "idf": {
           "precipLowerPeriod1h": "30-jährlich, 1h ",
           "precipLowerPeriod24h": "30-jährlich, 24h",
-          "precipUpperPeriod1h": "1000-jährlich, 1h ",
+          "precipUpperPeriod1h": "100-jährlich, 1h ",
           "precipUpperPeriod24h": "100-jährlich, 24h ",
           "returnPeriod": "30-järige  Wiederkehrperiode",
           "upperReturnPeriod": "100-järige Wiederkehrperiode"

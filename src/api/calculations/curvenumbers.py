@@ -1083,40 +1083,40 @@ def create_curve_number_lookup_table():
     # Format: "ESA_LC_HSG": curve_number
     lookup_table = {
         # Tree cover (10) combinations
-        "10_1": 40,    # Tree cover + HSG A
-        "10_2": 60,    # Tree cover + HSG B  # was 61, -1
-        "10_3": 61,    # Tree cover + HSG C  # was 62, -1
-        "10_4": 75,    # Tree cover + HSG D  # was 74, +1
+        "10_1": 42,    # Tree cover + HSG A
+        "10_2": 74,    # Tree cover + HSG B
+        "10_3": 74,    # Tree cover + HSG C
+        "10_4": 81,    # Tree cover + HSG D
 
         # Shrubland (20) combinations
-        "20_1": 36,    # Shrubland + HSG A
-        "20_2": 53,    # Shrubland + HSG B
-        "20_3": 73,    # Shrubland + HSG C
-        "20_4": 74,    # Shrubland + HSG D
+        "20_1": 38,    # Shrubland + HSG A
+        "20_2": 55,    # Shrubland + HSG B
+        "20_3": 75,    # Shrubland + HSG C
+        "20_4": 76,    # Shrubland + HSG D
 
         # Grassland (30) combinations
-        "30_1": 28,    # Grassland + HSG A
-        "30_2": 52,    # Grassland + HSG B  # was 53, -1
-        "30_3": 53,    # Grassland + HSG C  # was 54, -1
-        "30_4": 59,    # Grassland + HSG D  # was 58, +1
+        "30_1": 31,    # Grassland + HSG A
+        "30_2": 66,    # Grassland + HSG B
+        "30_3": 66,    # Grassland + HSG C
+        "30_4": 66,    # Grassland + HSG D
 
         # Cropland (40) combinations
-        "40_1": 48,    # Cropland + HSG A
-        "40_2": 53,    # Cropland + HSG B  # was 54, -1
-        "40_3": 53,    # Cropland + HSG C  # was 54, -1
-        "40_4": 56,    # Cropland + HSG D  # was 58, -2
+        "40_1": 50,    # Cropland + HSG A
+        "40_2": 68,    # Cropland + HSG B  # was 67, +1
+        "40_3": 68,    # Cropland + HSG C  # was 73, -5
+        "40_4": 72,    # Cropland + HSG D  # was 73, -1
 
         # Built-up (50) combinations
-        "50_1": 87,    # Built-up + HSG A
-        "50_2": 90,    # Built-up + HSG B
-        "50_3": 92,    # Built-up + HSG C
-        "50_4": 93,    # Built-up + HSG D
+        "50_1": 89,    # Built-up + HSG A
+        "50_2": 92,    # Built-up + HSG B
+        "50_3": 94,    # Built-up + HSG C
+        "50_4": 95,    # Built-up + HSG D
 
         # Bare/sparse vegetation (60) combinations
-        "60_1": 37,    # Bare vegetation + HSG A
-        "60_2": 39,    # Bare vegetation + HSG B
-        "60_3": 94,    # Bare vegetation + HSG C
-        "60_4": 95,    # Bare vegetation + HSG D
+        "60_1": 39,    # Bare vegetation + HSG A  # was 44, -5
+        "60_2": 41,    # Bare vegetation + HSG B  # was 46, -5
+        "60_3": 96,    # Bare vegetation + HSG C  # was 91, +5
+        "60_4": 97,    # Bare vegetation + HSG D  # was 92, +5
 
         # Snow and ice (70) combinations
         "70_1": 98,    # Snow/ice + HSG A
@@ -1131,23 +1131,23 @@ def create_curve_number_lookup_table():
         "80_4": 100,   # Water + HSG D
 
         # Herbaceous wetland (90) combinations
-        "90_1": 30,    # Wetland + HSG A
-        "90_2": 61,    # Wetland + HSG B
-        "90_3": 65,    # Wetland + HSG C
-        "90_4": 71,    # Wetland + HSG D
+        "90_1": 32,    # Wetland + HSG A
+        "90_2": 63,    # Wetland + HSG B
+        "90_3": 67,    # Wetland + HSG C
+        "90_4": 73,    # Wetland + HSG D
 
         # Mangroves (95) combinations
-        "95_1": 33,    # Mangroves + HSG A
-        "95_2": 65,    # Mangroves + HSG B
-        "95_3": 66,    # Mangroves + HSG C
-        "95_4": 67,    # Mangroves + HSG D
+        "95_1": 35,    # Mangroves + HSG A
+        "95_2": 67,    # Mangroves + HSG B
+        "95_3": 68,    # Mangroves + HSG C
+        "95_4": 69,    # Mangroves + HSG D
 
         # Moss and lichen (100) combinations
-        "100_1": 28,    # Moss/lichen + HSG A
-        "100_2": 54,    # Moss/lichen + HSG B
-        "100_3": 58,    # Moss/lichen + HSG C
-        "100_4": 75,    # Moss/lichen + HSG D
-    }
+        "100_1": 30,    # Moss/lichen + HSG A
+        "100_2": 56,    # Moss/lichen + HSG B
+        "100_3": 60,    # Moss/lichen + HSG C
+        "100_4": 77,    # Moss/lichen + HSG D
+    } 
     
     return lookup_table
 

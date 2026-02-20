@@ -63,7 +63,7 @@ const createNewProject = async (project: Prisma.ProjectCreateInput) => {
 			NAM: {
 				create: annualities.map((annuality: { id: number }) => ({
 					x: annuality.id,
-					precipitation_factor: 1,
+					precipitation_factor: 0.748,
 					water_balance_mode: 'uniform'
 				}))
 			}

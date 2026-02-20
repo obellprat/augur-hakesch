@@ -447,7 +447,7 @@ def nam(self,
     S_cells[valid_mask] = (25400 / cn_data[valid_mask]) - 254
     
     # Calculate initial abstraction Ia for each cell: Ia = 0.2 * S [mm]
-    Ia_cells = 0.05 * S_cells  # SCS standard: Ia = 0.2 * S
+    Ia_cells = 0.2 * S_cells  # SCS standard: Ia = 0.2 * S
     
     # Debug: Print statistics about curve numbers and retention
     print(f"Curve number statistics:")
@@ -733,7 +733,7 @@ def nam(self,
     if water_balance_mode == "uniform":
         # Uniform approach: Use uniform precipitation for SCS calculation
         uniform_precip = P_total_storm * precipitation_factor  # Apply scaling factor
-        uniform_precip = P_total_storm * min(106.61 * catchment_area ** (-0.289) / 100, 1.0)
+        #uniform_precip = P_total_storm * min(106.61 * catchment_area ** (-0.289) / 100, 1.0)
         
         print(f"Uniform approach - uniform={uniform_precip:.2f}mm (factor={precipitation_factor}, catchment_area={catchment_area:.2f}km²)")
         

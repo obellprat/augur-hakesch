@@ -410,7 +410,7 @@ export const actions = {
 						id: annuality.id
 					}
 				},
-				precipitation_factor: Number(precipitation_factor) || 0,
+				precipitation_factor: Number(precipitation_factor) || 0.748,
 				readiness_to_drain: Number(readiness_to_drain) || 0,
 				WaterBalanceMode: {
 					connect: {
@@ -434,7 +434,7 @@ export const actions = {
 						number: Number(x) || 0
 					}
 				},
-				precipitation_factor: Number(precipitation_factor) || 0,
+				precipitation_factor: Number(precipitation_factor) || 0.748,
 				readiness_to_drain: Number(readiness_to_drain) || 0,
 				WaterBalanceMode: {
 					connect: {
@@ -671,7 +671,7 @@ export const actions = {
 				break;
 
 			case 'nam':
-				const precipitation_factor = Number(formDataRaw.get('precipitation_factor')) || 1;
+				const precipitation_factor = Number(formDataRaw.get('precipitation_factor')) || 0.748;
 				console.log(precipitation_factor);
 				const readiness_to_drain = Number(formDataRaw.get('readiness_to_drain')) || 0;
 				const water_balance_mode = (formDataRaw.get('water_balance_mode') as string) || 'uniform';
@@ -857,7 +857,7 @@ export const actions = {
 				const ids = (scenario.ids || []).map((id) => Number(id)).filter((id) => id > 0);
 				if (!ids.length) continue;
 				const precipitation_factor =
-					Number(scenario.precipitation_factor) || 1;
+					Number(scenario.precipitation_factor) || 0.748;
 				const readiness_to_drain =
 					Number(scenario.readiness_to_drain) || 0;
 				const water_balance_mode = scenario.water_balance_mode || 'uniform';
