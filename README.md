@@ -1,4 +1,7 @@
 # Augur-Hakesch
+![GitHub Release](https://img.shields.io/github/v/release/obellprat/augur-hakesch) ![GitHub Release Date](https://img.shields.io/github/release-date/obellprat/augur-hakesch) ![GitHub last commit](https://img.shields.io/github/last-commit/obellprat/augur-hakesch) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/obellprat/augur-hakesch/augur-build.yml) ![Dynamic TOML Badge](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fobellprat%2Faugur-hakesch%2Frefs%2Fheads%2Fmain%2Fpyproject.toml&query=%24.project.version&label=Developement%20version) ![GitHub License](https://img.shields.io/github/license/obellprat/augur-hakesch)
+
+
 
 Augur-Hakesch is an [AUGUR](https://augur.world) application for river discharge calculations based on the Swiss HAKESCH method, re-calibrated on selected catchments using new precipitation climatology from the Swiss Federal Office of Meteorology and Climatology (MeteoSwiss).
 
