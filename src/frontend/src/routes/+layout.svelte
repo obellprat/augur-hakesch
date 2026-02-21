@@ -11,17 +11,20 @@
 	import { loadScript } from '$lib/page/loadscript';
 	import { onMount } from 'svelte';
 
-	import { UmamiAnalytics } from '@lukulent/svelte-umami';
-	import { trackSession } from '@lukulent/svelte-umami';
+	import { UmamiAnalytics, trackSession, status } from '@lukulent/svelte-umami';
 	import { page } from '$app/state';
 
 	let { children } = $props();
+	let sessionTracked = false;
 
 	onMount(async () => {
 		await loadScript(`${base}/assets/js/app.js`);
+	});
 
-		if (page.data.session) {
-			await trackSession(page.data.session.myuser?.id.toString() ?? '0'	, { email: page.data.session.user?.email ?? '', name: page.data.session.user?.name ?? '' } as SessionJSON);
+	$effect(() => {
+		if (!sessionTracked && $status === 'loaded' && page.data.session) {
+			sessionTracked = true;
+			trackSession(page.data.session.myuser?.id.toString() ?? '0', { email: page.data.session.user?.email ?? '', name: page.data.session.user?.name ?? '' } as SessionJSON);
 		}
 	});
 </script>
