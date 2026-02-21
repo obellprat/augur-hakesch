@@ -30,7 +30,7 @@ jobs:
         file: ./src/api/Dockerfile
         build-args: DATABASE_URL=${{ secrets.DATABASE_URL }}
         push: true
-        tags: stumpisuter/augur-hakesch-api:dev
+        tags: stumpisuter/augur-hakesch-api:latest
     -
       name: Build and push frontend
       uses: docker/build-push-action@v6
@@ -39,4 +39,4 @@ jobs:
         file: ./src/frontend/Dockerfile
         build-args: DATABASE_URL=${{ secrets.DATABASE_URL }}
         push: true
-        tags: stumpisuter/augur-hakesch-frontend:dev
+        tags: stumpisuter/augur-hakesch-frontend:latest
