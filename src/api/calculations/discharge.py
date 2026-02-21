@@ -1035,7 +1035,7 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     # Rertrieve and load DEM
     # ----------------------
 
-    dem_file = 'data/besoaglu-minusriver-5m.tif'
+    dem_file = 'data/dem_besoaglurarai.tif'
     dirmap = (1, 2, 3, 4, 5, 6, 7, 8)
     
     # Optimized: Use rasterio directly for windowed reading (faster than Grid.from_raster + read_raster)
@@ -1092,7 +1092,7 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     self.update_state(state='PROGRESS',
                 meta={'text': 'Reading flow direction', 'progress' : 25})
 
-    d8_file = 'data/d8_besoaglu.tif'
+    d8_file = 'data/d8_besoagluarai_int.tif'
     
     # Optimized: Use rasterio directly for windowed reading (same optimization as DEM)
     with rasterio.open(d8_file) as src:

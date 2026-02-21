@@ -1482,7 +1482,7 @@ def extract_dem(self, projectId: str, userId: int):
                 meta={'text': 'Loading DEM data', 'progress': 20})
     
     # Load the large DEM file
-    dem_file = "./data/geotiffminusriver.tif"
+    dem_file = "./data/dem_besoaglurarai.tif"
     
     try:
         with rasterio.open(dem_file) as src:
