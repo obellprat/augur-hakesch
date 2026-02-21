@@ -1,3 +1,17 @@
+## 1.1.1 (2026-02-21)
+
+### Feat
+
+- **api**: added AR and AI data
+
+### Fix
+
+- **frontend**: race condition for loading umami scripts
+- **frontend**: Prevent effects at low screen resolutions. Table no longer overlaps the right-hand side
+- **api,-frontend**: NAM precipitation factor fix
+
+## 1.10 (2026-02-16)
+
 ## 1.1.0 (2026-02-16)
 
 ### Feat
