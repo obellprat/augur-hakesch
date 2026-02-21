@@ -832,8 +832,8 @@ onMount(async () => {
 			</div>
 			<div class="card-body">
 				<div class="row">
-					<input type="hidden" name="id" value={data.project.id} />
-					<div class="col-sm-3">
+				<input type="hidden" name="id" value={data.project.id} />
+				<div class="col-md-4 overflow-hidden">
 						<div class="mb-3">
 							<label for="title" class="form-label"
 								>{$_('page.discharge.overview.projectTitle')}</label
@@ -928,7 +928,7 @@ onMount(async () => {
 							<!-- end card-body-->
 						</div>
 					</div>
-					<div class="col-sm-9">
+					<div class="col-md-8">
 						<div class="py-2">
 							{$_('page.discharge.overview.pourpoint')}: {northing} // {easting}
 							<input

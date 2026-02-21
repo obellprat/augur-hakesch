@@ -66,10 +66,10 @@
         },
         "szenario": "Scénario",
         "modFZV": {
-          "wettingVolume": "Volume de mouillage pour un événement de 20 ans [mm]",
-          "peakFlow": "Coefficient de débit de pointe [psi]",
-          "peakFlowTooltip": "Les valeurs plausibles se situent entre 0,08 et 0,45",
-          "wettingVolumeTooltip": "Les valeurs plausibles se situent entre 20 mm et 50 mm"
+          "wettingVolume": "VO 20 [mm]",
+          "peakFlow": "psi",
+          "peakFlowTooltip": "Coefficient de débit de pointe psi. Les valeurs plausibles se situent entre 0,08 et 0,45",
+          "wettingVolumeTooltip": "Volume de mouillage pour un événement de 20 ans. Les valeurs plausibles se situent entre 20 mm et 50 mm"
         },
         "calculate": "Calculer l’hydrologie",
         "deleteCalculation": "Supprimer le calcul",

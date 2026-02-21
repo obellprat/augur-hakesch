@@ -113,10 +113,10 @@
           "upperReturnPeriod": "100-järige Wiederkehrperiode"
         },
         "modFZV": {
-          "peakFlow": "Abflussfluss- koeffizient [psi]",
-          "wettingVolume": "Benetzungsvolumen für 20-jährliches Ereignis [mm]",
-          "peakFlowTooltip": "Plausible Werte liegen zwischen 0.08 und 0.45",
-          "wettingVolumeTooltip": "Plausible Werte liegen zwischen 20 mm - 50 mm"
+          "peakFlow": "psi",
+          "wettingVolume": "VO 20 [mm]",
+          "peakFlowTooltip": "Abflussflusskoeffizient psi. Plausible Werte liegen zwischen 0.08 und 0.45",
+          "wettingVolumeTooltip": "Benetzungsvolumen für 20-jährliches Ereignis. Plausible Werte liegen zwischen 20 mm - 50 mm"
         },
         "results": "Resultate",
         "returnPeriod": "Wiederkehrperiode",

@@ -66,10 +66,10 @@
         },
         "szenario": "Scenario",
         "modFZV": {
-          "wettingVolume": "Wetting volume for 20-year event [mm]",
-          "peakFlow": "Peak flow coefficient [psi]",
-          "peakFlowTooltip": "Plausible values lie between 0.08 and 0.45",
-          "wettingVolumeTooltip": "Plausible values lie between 20 mm and 50 mm"
+          "wettingVolume": "VO 20 [mm]",
+          "peakFlow": "psi",
+          "peakFlowTooltip": "Peak flow coefficient psi. Plausible values lie between 0.08 and 0.45",
+          "wettingVolumeTooltip": "Wetting volume for 20-year event.Plausible values lie between 20 mm and 50 mm"
         },
         "calculate": "Calculate hydrology",
         "deleteCalculation": "Delete calculation",

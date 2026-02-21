@@ -2213,7 +2213,7 @@
 		<div class="card-body">
 			<div class="row">
 				<!-- Input Part -->
-				<div class="col-lg-4">
+				<div class="col-lg-4 overflow-hidden">
 					<form
 						class="d-none"
 						method="post"
@@ -2369,11 +2369,12 @@
 		
 						{#each clarkScenarioRange as scenarioIndex}
 							<div class="row g-2 py-2 align-items-start">
-								<div class="mb-3 col-md-12">
-									<table class="table table-sm table-bordered">
-										<thead>
-											<tr>
-												<th style="width: 30%;">Zone</th>
+							<div class="mb-3 col-md-12">
+								<div class="table-responsive">
+								<table class="table table-sm table-bordered">
+									<thead>
+										<tr>
+											<th style="width: 30%;">Zone</th>
 												<th style="width: 20%;">{$_('page.discharge.calculation.percentage')}</th>
 												<th style="width: 15%;">{$_('page.discharge.calculation.modFZV.wettingVolume')}
 													<span
@@ -2439,11 +2440,12 @@
 													<td></td>
 													<td class="text-end fw-bold">{calculatePercentageSum(scenarioIndex)}%</td>
 													<td><input
-														id={`shared-vo20-${combinedIndex}`}
-														type="number"
-														step="any"
-														max="99.999"
-														class="form-control text-end"
+													id={`shared-vo20-${combinedIndex}`}
+													type="number"
+													step="any"
+													max="99.999"
+													style="min-width: 80px;"
+													class="form-control text-end"
 														class:is-invalid={(() => {
 															const val = manuallyEditedVo20.has(combinedIndex)
 																? (sharedVo20Values[combinedIndex] ?? 0)
@@ -2479,11 +2481,12 @@
 													/></td>	
 													<td></td>
 													<td><input
-														id={`psi-scenario${combinedIndex}`}
-														type="number"
-														step="any"
-														max="0.999"
-														class="form-control text-end"
+													id={`psi-scenario${combinedIndex}`}
+													type="number"
+													step="any"
+													max="0.999"
+													style="min-width: 80px;"
+													class="form-control text-end"
 														class:is-invalid={(() => {
 															const val = manuallyEditedPsi.has(combinedIndex)
 																? (modScenarioForms[combinedIndex]?.psi ?? 0)
@@ -2521,7 +2524,8 @@
 										{/each}
 										</tbody>
 									</table>
-									<div class="row g-2 mt-2">
+								</div>
+								<div class="row g-2 mt-2">
 										<div class="col-md-4">
 											{#if koellaScenarioForms[scenarioIndex]}
 												<div class="row g-2 py-2 align-items-end">
