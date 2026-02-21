@@ -88,7 +88,7 @@
         "missingIdfMessage": "Veuillez saisir les valeurs d’intensité de précipitation (P_bas 1h, P_bas 24h, P_haut 1h et P_haut 24h) avant de lancer le calcul.",
         "calculationTitle": "- Calcul | AUGUR",
         "clarkwsl": "Clark WSL",
-        "nam": "NAM",
+        "nam": "NAM.BE",
         "namParams": {
           "precipitationFactor": "Facteur de précipitation [-]",
           "readinessToDrain": "Capacité de drainage [mm]",

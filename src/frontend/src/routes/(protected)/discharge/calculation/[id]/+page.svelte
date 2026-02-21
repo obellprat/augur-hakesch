@@ -1055,7 +1055,7 @@
 		clark_wsl_data.data.push(c_300_value);
 
 		let nam_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
-			name: 'NAM',
+			name: 'NAM.BE',
 			color: '#a0d2f7',
 			data: []
 		};
@@ -1385,7 +1385,7 @@
 				// Each API call returns a group task_id for all climate scenarios
 				groupTaskIds.push(result.task_id);
 			} catch (error) {
-				handleApiError('Error calculating NAM', error);
+				handleApiError('Error calculating NAM.BE', error);
 				toast.pop();
 				return;
 			}

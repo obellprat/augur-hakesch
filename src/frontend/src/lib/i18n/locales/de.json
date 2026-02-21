@@ -69,7 +69,7 @@
           "glacierArea": "Gletscherfläche"
         },
         "clarkwsl": "Clark-WSL",
-        "nam": "NAM",
+        "nam": "NAM.BE",
         "namParams": {
           "precipitationFactor": "Niederschlagsfaktor [-]",
           "readinessToDrain": "Abflussbereitschaft [mm]",
