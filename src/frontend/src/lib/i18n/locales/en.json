@@ -31,6 +31,8 @@
         "northing": "Northing",
         "calculateGeodata": "Recalculate geodata",
         "apiUnavailable": "We could not reach the AUGUR service. Please try again later.",
+        "invalidRegionTitle": "Invalid Region",
+        "invalidRegionMessage": "AUGUR is not available for this region. Please select a point within the supported area.",
         "isozonesRunning": "The geodata is currently being recalculated, please wait",
         "recalculating": "The process is initializing. Please wait...",
         "errorrecalculating": "The geodata could not be calculated. Please try again later.<br>",

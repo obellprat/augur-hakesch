@@ -31,6 +31,8 @@
         "northing": "Coordonnée nord",
         "calculateGeodata": "Recalculer les géodonnées",
         "apiUnavailable": "Le service AUGUR n’a pas pu être atteint. Veuillez réessayer plus tard.",
+        "invalidRegionTitle": "Région invalide",
+        "invalidRegionMessage": "AUGUR n’est pas disponible pour cette région. Veuillez sélectionner un point dans la zone prise en charge.",
         "isozonesRunning": "Les géodonnées sont en cours de recalcul, veuillez patienter",
         "recalculating": "Le processus est en cours d’initialisation. Veuillez patienter…",
         "errorrecalculating": "Les géodonnées n’ont pas pu être calculées. Veuillez réessayer plus tard.<br>",

@@ -1,16 +1,43 @@
-from fastapi import APIRouter, Depends, Response, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, Response, HTTPException, UploadFile, File, Query
 from fastapi.responses import FileResponse
 from celery.result import AsyncResult
 from helpers.prisma import prisma
 from helpers.user import get_user
 from prisma.models import User
 from pathlib import Path
+from shapely.geometry import Point
+import geopandas as gpd
 import zipfile
 import os
 import shutil
 
 router = APIRouter(prefix="/file",
     tags=["file"],)
+
+_valid_places_path = Path("data") / "valid_places.shp"
+_valid_places_gdf: gpd.GeoDataFrame | None = None
+
+
+def _load_valid_places() -> gpd.GeoDataFrame:
+    global _valid_places_gdf
+    if _valid_places_gdf is None:
+        if not _valid_places_path.exists():
+            raise HTTPException(status_code=500, detail="valid_places.shp not found")
+        _valid_places_gdf = gpd.read_file(_valid_places_path)
+    return _valid_places_gdf
+
+
+@router.get("/check-valid-region")
+async def check_valid_region(
+    x: float = Query(..., description="Easting in LV95 (EPSG:2056)"),
+    y: float = Query(..., description="Northing in LV95 (EPSG:2056)"),
+):
+    """Check whether a point (LV95 / EPSG:2056) lies inside a valid region."""
+    gdf = _load_valid_places()
+    point = Point(x, y)
+    is_valid = bool(gdf.intersects(point).any())
+    return {"valid": is_valid}
+
 
 @router.get("/{task_id}")
 def get_file(task_id):

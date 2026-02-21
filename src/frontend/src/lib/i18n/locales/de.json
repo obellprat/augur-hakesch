@@ -31,6 +31,8 @@
         "northing": "Northing",
         "calculateGeodata": "Geodaten neu berechnen",
         "apiUnavailable": "Die Verbindung zum AUGUR Dienst konnte nicht hergestellt werden. Bitte versuchen Sie es später erneut.",
+        "invalidRegionTitle": "Ungültige Region",
+        "invalidRegionMessage": "AUGUR ist für diese Region nicht verfügbar. Bitte wählen Sie einen Punkt innerhalb des unterstützten Gebiets.",
         "isozonesRunning": "Die Geodaten werden aktuell neu berechnet, bitte warten",
         "geodatasuccess": "Die Geodaten wurden erfolgreich berechnet",
         "download-failed": "Fehler beim Herunterladen",

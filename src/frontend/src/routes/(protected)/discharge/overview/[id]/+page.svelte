@@ -72,8 +72,35 @@
 		}
 	}
 
+	async function checkValidRegion(x: number, y: number): Promise<boolean> {
+		const response = await fetch(
+			env.PUBLIC_HAKESCH_API_PATH + `/file/check-valid-region?x=${x}&y=${y}`,
+			{
+				method: 'GET',
+				headers: {
+					Authorization: 'Bearer ' + data.session.access_token
+				}
+			}
+		);
+		if (!response.ok) {
+			throw new Error(`Region check returned status ${response.status}`);
+		}
+		const result = await response.json();
+		return result.valid === true;
+	}
+
 	async function calculateGeodatas() {
 		try {
+			const isValid = await checkValidRegion(easting, northing);
+			if (!isValid) {
+				const jq = (globalThis as any).$;
+				if (jq) {
+					jq('#generate-modal').modal('hide');
+					jq('#invalid-region-modal').modal('show');
+				}
+				return;
+			}
+
 			await fetch('?/update', {
 				body: new FormData(document.getElementById('project-form') as HTMLFormElement),
 				method: 'post'
@@ -703,6 +730,31 @@ onMount(async () => {
 								</div>
 								<div class="modal-body">
 									<p>{apiErrorMessage}</p>
+								</div>
+								<div class="modal-footer border-0">
+									<button type="button" class="btn btn-danger" data-bs-dismiss="modal">{$_('page.general.close')}</button>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div
+						id="invalid-region-modal"
+						class="modal fade"
+						tabindex="-1"
+						role="dialog"
+						aria-labelledby="invalid-region-modal-label"
+						aria-hidden="true"
+					>
+						<div class="modal-dialog modal-dialog-centered">
+							<div class="modal-content">
+								<div class="modal-header text-bg-danger border-0">
+									<h4 class="modal-title" id="invalid-region-modal-label">{$_('page.discharge.overview.invalidRegionTitle')}</h4>
+									<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label={$_('page.general.close')}
+									></button>
+								</div>
+								<div class="modal-body">
+									<p>{$_('page.discharge.overview.invalidRegionMessage')}</p>
 								</div>
 								<div class="modal-footer border-0">
 									<button type="button" class="btn btn-danger" data-bs-dismiss="modal">{$_('page.general.close')}</button>
