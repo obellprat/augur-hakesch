@@ -151,7 +151,7 @@
 				colors: ['#0d2b5e']
 			},
 			formatter: function (val: number) {
-				return val !== null && val !== undefined ? 'Median: ' + val.toFixed(1) : '';
+				return val !== null && val !== undefined ? 'Mittelwert: ' + val.toFixed(1) : '';
 			},
 			background: {
 				enabled: false
@@ -1077,38 +1077,31 @@
 		nam_data.data.push(nam_100_value);
 		nam_data.data.push(nam_300_value);
 
-		// Calculate median values for each group (30, 100, 300) from all four methods
-		function calculateMedian(values: (number | null)[]): number | null {
+		function calculateMean(values: (number | null)[]): number | null {
 			const validValues = values.filter((v): v is number => v !== null && typeof v === 'number');
 			if (validValues.length === 0) return null;
-			validValues.sort((a, b) => a - b);
-			const mid = Math.floor(validValues.length / 2);
-			if (validValues.length % 2 === 0) {
-				return Number(((validValues[mid - 1] + validValues[mid]) / 2).toFixed(1));
-			} else {
-				return validValues[mid];
-			}
+			const sum = validValues.reduce((acc, v) => acc + v, 0);
+			return Number((sum / validValues.length).toFixed(1));
 		}
 
-		const median_30 = calculateMedian([mf_30_value, k_30_value, c_30_value, nam_30_value]);
-		const median_100 = calculateMedian([mf_100_value, k_100_value, c_100_value, nam_100_value]);
-		const median_300 = calculateMedian([mf_300_value, k_300_value, c_300_value, nam_300_value]);
+		const mean_30 = calculateMean([mf_30_value, k_30_value, c_30_value, nam_30_value]);
+		const mean_100 = calculateMean([mf_100_value, k_100_value, c_100_value, nam_100_value]);
+		const mean_300 = calculateMean([mf_300_value, k_300_value, c_300_value, nam_300_value]);
 
-		const median_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
-			name: 'Median',
+		const mean_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
+			name: 'Mittelwert',
 			color: '#0d2b5e',
-			data: [median_30, median_100, median_300]
+			data: [mean_30, mean_100, mean_300]
 		};
 
-		// Set bar series type explicitly
-		median_data.type = 'column';
+		mean_data.type = 'column';
 		mod_fliesszeit_data.type = 'column';
 		koella_data.type = 'column';
 		clark_wsl_data.type = 'column';
 		nam_data.type = 'column';
 
 		chartOneOptions.series = [
-			median_data,
+			mean_data,
 			mod_fliesszeit_data,
 			koella_data,
 			clark_wsl_data,
