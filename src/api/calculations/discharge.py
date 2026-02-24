@@ -129,10 +129,10 @@ def modifizierte_fliesszeit(self,
     project_northing: Optional[float] = None,
     cc_degree: float = 0.0,
     climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
-    TB_start=10,    # Initial value for TB [min]
+    TB_start=1,    # Initial value for TB [min]
     istep=0.1,        # Step size for TB [min]
     tol=1,          # Convergence tolerance [mm]
-    max_iter=10000
+    max_iter=1000000
 ):
     result_data = {}    
     if x == 2.3 or x == 100 or x == 20:
