@@ -1,3 +1,15 @@
+## 1.1.2 (2026-03-02)
+
+### Feat
+
+- **frontend,-api**: Check whether the region is supported by Augur
+
+### Fix
+
+- **api**: calulcation of delta_h was wrong with nan values inside the dem
+- **api**: start condition for tb iteration decreased
+- **frontend**: show the average instead of the mean
+
 ## 1.1.1 (2026-02-21)
 
 ### Feat
