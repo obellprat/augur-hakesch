@@ -447,7 +447,7 @@ def nam(self,
     S_cells[valid_mask] = (25400 / cn_data[valid_mask]) - 254
     
     # Calculate initial abstraction Ia for each cell: Ia = 0.2 * S [mm]
-    Ia_cells = 0.2 * S_cells  # SCS standard: Ia = 0.2 * S
+    Ia_cells = 0.1 * S_cells  # SCS standard: Ia = 0.2 * S
     
     # Debug: Print statistics about curve numbers and retention
     print(f"Curve number statistics:")
@@ -472,7 +472,7 @@ def nam(self,
     print("Calculating runoff for each cell using travel time calculation...")
     
     dt = 10  # Time step [min]
-    Tc_total = 60  # Total simulation time [min]
+    Tc_total = 60 # Total simulation time [min]
     print(f"Simulation parameters: dt={dt}min, Tc_total={Tc_total}min")
     
     # Calculate max_timesteps for simulation (based on maximum travel time)
@@ -1482,7 +1482,7 @@ def extract_dem(self, projectId: str, userId: int):
                 meta={'text': 'Loading DEM data', 'progress': 20})
     
     # Load the large DEM file
-    dem_file = "./data/dem_besoaglurarai.tif"
+    dem_file = "./data/besoagluaraiti-minusriver-5m.tif"
     
     try:
         with rasterio.open(dem_file) as src:

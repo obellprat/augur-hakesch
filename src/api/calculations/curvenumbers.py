@@ -1084,9 +1084,9 @@ def create_curve_number_lookup_table():
     lookup_table = {
         # Tree cover (10) combinations
         "10_1": 42,    # Tree cover + HSG A
-        "10_2": 74,    # Tree cover + HSG B
-        "10_3": 74,    # Tree cover + HSG C
-        "10_4": 81,    # Tree cover + HSG D
+        "10_2": 74,    # Tree cover + HSG B  # was 73, +1
+        "10_3": 74,    # Tree cover + HSG C  # was 73, +1
+        "10_4": 79,    # Tree cover + HSG D  # was 78, +1
 
         # Shrubland (20) combinations
         "20_1": 38,    # Shrubland + HSG A
@@ -1096,15 +1096,15 @@ def create_curve_number_lookup_table():
 
         # Grassland (30) combinations
         "30_1": 31,    # Grassland + HSG A
-        "30_2": 66,    # Grassland + HSG B
-        "30_3": 66,    # Grassland + HSG C
-        "30_4": 66,    # Grassland + HSG D
+        "30_2": 67,    # Grassland + HSG B  # was 66, +1
+        "30_3": 67,    # Grassland + HSG C  # was 66, +1
+        "30_4": 67,    # Grassland + HSG D  # was 66, +1
 
         # Cropland (40) combinations
         "40_1": 50,    # Cropland + HSG A
-        "40_2": 68,    # Cropland + HSG B  # was 67, +1
-        "40_3": 68,    # Cropland + HSG C  # was 73, -5
-        "40_4": 72,    # Cropland + HSG D  # was 73, -1
+        "40_2": 61,    # Cropland + HSG B  # was 62, -1
+        "40_3": 63,    # Cropland + HSG C  # was 62, +1
+        "40_4": 68,    # Cropland + HSG D  # was 67, +1
 
         # Built-up (50) combinations
         "50_1": 89,    # Built-up + HSG A
@@ -1113,10 +1113,10 @@ def create_curve_number_lookup_table():
         "50_4": 95,    # Built-up + HSG D
 
         # Bare/sparse vegetation (60) combinations
-        "60_1": 39,    # Bare vegetation + HSG A  # was 44, -5
-        "60_2": 41,    # Bare vegetation + HSG B  # was 46, -5
-        "60_3": 96,    # Bare vegetation + HSG C  # was 91, +5
-        "60_4": 97,    # Bare vegetation + HSG D  # was 92, +5
+        "60_1": 39,    # Bare vegetation + HSG A
+        "60_2": 41,    # Bare vegetation + HSG B
+        "60_3": 96,    # Bare vegetation + HSG C
+        "60_4": 97,    # Bare vegetation + HSG D
 
         # Snow and ice (70) combinations
         "70_1": 98,    # Snow/ice + HSG A
@@ -1147,7 +1147,7 @@ def create_curve_number_lookup_table():
         "100_2": 56,    # Moss/lichen + HSG B
         "100_3": 60,    # Moss/lichen + HSG C
         "100_4": 77,    # Moss/lichen + HSG D
-    } 
+    }
     
     return lookup_table
 

@@ -11,6 +11,7 @@ import geopandas as gpd
 from shapely import geometry, ops
 import pandas as pd
 import os
+import shutil
 from prisma import Prisma
 from calculations.calculations import app
 try:
@@ -39,6 +40,37 @@ from calculations.calculations import app
 # Set to 8 to allow some parallelism while preventing connection exhaustion
 # This is higher than worker concurrency (4) to allow retries but lower than unlimited
 _prisma_connection_semaphore = threading.Semaphore(8)
+
+
+def _sanitize_nodata_for_dtype(nodata_value, dtype_name):
+    """Return a dtype-compatible nodata value or None."""
+    if nodata_value is None:
+        return None
+
+    dtype = np.dtype(dtype_name)
+
+    # Integer rasters cannot represent NaN/inf or fractional nodata values.
+    if np.issubdtype(dtype, np.integer):
+        if not np.isfinite(nodata_value):
+            return None
+        if float(nodata_value).is_integer():
+            nodata_int = int(nodata_value)
+            info = np.iinfo(dtype)
+            if info.min <= nodata_int <= info.max:
+                return nodata_int
+        return None
+
+    if np.issubdtype(dtype, np.floating):
+        if np.isnan(nodata_value):
+            return np.nan
+        if not np.isfinite(nodata_value):
+            return None
+        info = np.finfo(dtype)
+        if info.min <= float(nodata_value) <= info.max:
+            return float(nodata_value)
+        return None
+
+    return None
 
 
 def connect_prisma_with_retry(max_retries=10, base_delay=0.2, max_delay=5.0):
@@ -1035,7 +1067,7 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     # Rertrieve and load DEM
     # ----------------------
 
-    dem_file = 'data/dem_besoaglurarai.tif'
+    dem_file = 'data/dem.tif'
     dirmap = (1, 2, 3, 4, 5, 6, 7, 8)
     
     # Optimized: Use rasterio directly for windowed reading (faster than Grid.from_raster + read_raster)
@@ -1043,18 +1075,29 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     self.update_state(state='PROGRESS',
                 meta={'text': 'Reading DEM window', 'progress' : 10})
     
-    # Calculate window bounds
-    window_bounds = (northing - 9000, easting - 9000, northing + 9000, easting + 9000)
+    # Calculate requested bounds around the outlet point (x, y in EPSG:2056).
+    requested_bounds = (northing - 9000, easting - 9000, northing + 9000, easting + 9000)
     
     # Use rasterio directly for faster windowed reading
     with rasterio.open(dem_file) as src:
-        # Get CRS from source
         dem_crs = src.crs
-        # Calculate window from bounds
+        # Clip requested bounds to dataset extent to avoid out-of-range windows.
+        window_bounds = (
+            max(requested_bounds[0], src.bounds.left),
+            max(requested_bounds[1], src.bounds.bottom),
+            min(requested_bounds[2], src.bounds.right),
+            min(requested_bounds[3], src.bounds.top),
+        )
+        if window_bounds[0] >= window_bounds[2] or window_bounds[1] >= window_bounds[3]:
+            raise ValueError(
+                f"Requested outlet window does not overlap DEM extent. "
+                f"requested={requested_bounds} dem_bounds={src.bounds}"
+            )
+
         window = rasterio.windows.from_bounds(
             window_bounds[0], window_bounds[1], window_bounds[2], window_bounds[3],
             src.transform
-        )
+        ).round_offsets().round_lengths()
         # Read the windowed data directly
         dem_data = src.read(1, window=window)
         window_transform = rasterio.windows.transform(window, src.transform)
@@ -1088,11 +1131,11 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
 
     del grid, dem, small_view
     gc.collect()
-
     self.update_state(state='PROGRESS',
                 meta={'text': 'Reading flow direction', 'progress' : 25})
 
-    d8_file = 'data/d8_besoagluarai_int.tif'
+    #d8_file = 'data/d8_besoagluaraiti_int.tif'
+    d8_file = 'data/d8.tif'
     
     # Optimized: Use rasterio directly for windowed reading (same optimization as DEM)
     with rasterio.open(d8_file) as src:
@@ -1100,7 +1143,7 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
         window = rasterio.windows.from_bounds(
             window_bounds[0], window_bounds[1], window_bounds[2], window_bounds[3],
             src.transform
-        )
+        ).round_offsets().round_lengths()
         # Read the windowed data directly
         fdir_data = src.read(1, window=window)
         window_transform = rasterio.windows.transform(window, src.transform)
@@ -1167,7 +1210,7 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     x_snap, y_snap = grid2.snap_to_mask(acc > a_crit, (northing, easting))
     catch = grid2.catchment(x=x_snap, y=y_snap, fdir=fdir, dirmap=dirmap, 
                         xytype='coordinate')
-
+          
     # Clip the bounding box to the catchment
     grid2.clip_to(catch)
 
@@ -1181,11 +1224,13 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     branches = grid2.extract_river_network(fdir, acc > a_crit, dirmap=dirmap)
     L_cum = cumulative_length(branches)
 
-    # Reload DEM with grid2 for compatibility (grid2 has catchment-clipped view)
+    # Reload DEM and compute elevation range strictly within the catchment.
     dem = grid2.read_raster(temp_dem_path)
-    dem_view = grid2.view(dem)
-    dem_view[dem_view < 0] = np.nan
-    delta_H = float(np.nanmax(dem_view) - np.nanmin(dem_view)) 
+    dem_values = np.asarray(np.ma.filled(dem, np.nan), dtype=np.float64)
+    catch_mask = np.asarray(catch, dtype=bool)
+    dem_values[~catch_mask] = np.nan
+    dem_values[dem_values < 0] = np.nan
+    delta_H = float(np.nanmax(dem_values) - np.nanmin(dem_values))
 
     # calculate slope
     self.update_state(state='PROGRESS',
@@ -1194,7 +1239,7 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     slope_percentage = slope * 100
 
     # Free DEM arrays — no longer needed after slope calculation
-    del dem, dem_view, slope
+    del dem, dem_values, slope
     gc.collect()
 
     # create wald raster    
