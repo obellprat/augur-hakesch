@@ -19,6 +19,7 @@ RUN npm ci
 
 COPY src/frontend .
 
+RUN npm run prepare
 RUN npx prisma generate
 RUN npm run build
 
