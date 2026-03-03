@@ -14,6 +14,7 @@ model User {
   email   String    @unique
   name    String?
   Project Project[]
+  NewsRead NewsRead[]
 }
 
 model Project {
@@ -271,4 +272,30 @@ model RoutingMethod {
   method          String   @id
   description     String
   NAM             NAM[]
+}
+
+model News {
+  id          Int       @id @default(autoincrement())
+  titleDe     String
+  titleEn     String
+  titleFr     String
+  contentDe   String
+  contentEn   String
+  contentFr   String
+  isImportant Boolean   @default(false)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  NewsRead    NewsRead[]
+}
+
+model NewsRead {
+  id      Int      @id @default(autoincrement())
+  userId  Int
+  newsId  Int
+  readAt  DateTime @default(now())
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  news    News     @relation(fields: [newsId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, newsId])
 }

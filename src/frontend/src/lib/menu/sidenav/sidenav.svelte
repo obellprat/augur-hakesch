@@ -40,7 +40,6 @@
 			<Navlink title={$_('page.dashboard.nav')} href="./" icon="ti ti-home" />
 
 			<Navlink title={$_('page.precipitation.nav')} href="precipitation" icon="ti ti-cloud-rain" />
-
 			<Navlink
 				title={$_('page.discharge.nav')}
 				href="discharge"
@@ -55,6 +54,8 @@
 
 			<!--<Navlink title={$_('page.nav.science')} href="science" icon="ti ti-school" />-->
 
+			<Navlink title={$_('page.news.nav')} href="news" icon="ti ti-speakerphone" />
+	
 			<Navlink title={$_('page.nav.aboutAugur')} href="about" icon="ti ti-info-circle" />
 			<Navlink title={$_('page.nav.technicalDocumentation')} href="assets/documents/AUGUR_Dokumentation_2026-02-20.pdf" icon="ti ti-file-type-pdf" target="_blank" />
 		</ul>

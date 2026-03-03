@@ -145,6 +145,16 @@
       "title": "Précipitations",
       "nav": "Précipitations"
     },
+    "news": {
+      "title": "Actualites",
+      "nav": "Actualites",
+      "noNews": "Aucune actualite pour le moment.",
+      "important": "Important",
+      "read": "Lu",
+      "markAsRead": "Marquer comme lu",
+      "importantModalTitle": "Actualite importante",
+      "changelog": "Journal des modifications"
+    },
     "science": {
       "title": "Science",
       "heading": "Précipitations globales",
@@ -173,7 +183,8 @@
       "backend": "Backend",
       "frontend": "Frontend",
       "french": "Français",
-      "technicalDocumentation": "Doc. technique"
+      "technicalDocumentation": "Doc. technique",
+      "news": "Actualites"
     },
     "about": {
       "title": "À propos d’AUGUR",

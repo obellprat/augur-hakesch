@@ -145,6 +145,16 @@
       "title": "Precipitation",
       "nav": "Niederschlag"
     },
+    "news": {
+      "title": "Neuigkeiten",
+      "nav": "Neuigkeiten",
+      "noNews": "Aktuell sind keine Neuigkeiten vorhanden.",
+      "important": "Wichtig",
+      "read": "Gelesen",
+      "markAsRead": "Als gelesen markieren",
+      "importantModalTitle": "Wichtige Neuigkeit",
+      "changelog": "Changelog"
+    },
     "science": {
       "title": "Hintergrund",
       "heading": "Niederschlag Global",
@@ -173,7 +183,8 @@
       "frontend": "Frontend",
       "backend": "Backend",
       "french": "Französisch",
-      "technicalDocumentation": "Techn. Dokumentation"
+      "technicalDocumentation": "Techn. Dokumentation",
+      "news": "Neuigkeiten"
     },
     "about": {
       "title": " ",
