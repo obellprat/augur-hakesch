@@ -42,7 +42,7 @@ export const load: LayoutServerLoad = async (event) => {
 
 		return {
 			apiversion: versionObject.version, // This will include the version from the API response
-			version: '1.1.2', // This is dynamically set in the build process
+			version: '1.2.0', // This is dynamically set in the build process
 			session,
 			importantNews
 		};

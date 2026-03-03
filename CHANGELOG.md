@@ -1,3 +1,9 @@
+## 1.2.0 (2026-03-03)
+
+### Feat
+
+- **frontend,api**: Added news system to inform users with important news and overview of the changelog
+
 ## 1.1.2 (2026-03-02)
 
 ### Feat
