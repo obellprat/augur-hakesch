@@ -16,7 +16,8 @@ services:
   view:
     image: stumpisuter/augur-hakesch-frontend:latest
     build: 
-      context: ./src/frontend
+      context: .
+      dockerfile: src/frontend/Dockerfile
       args:
         DATABASE_URL: ${DATABASE_URL}
     ports:
