@@ -6,12 +6,18 @@ ENV DATABASE_URL=${DATABASE_URL}
 
 WORKDIR /app
 
-COPY . .
+COPY CHANGELOG.md /CHANGELOG.md
+COPY src/frontend/package.json ./package.json
+COPY src/frontend/package-lock.json ./package-lock.json
+COPY src/frontend/scripts ./scripts
+COPY src/frontend/prisma ./prisma
 
 RUN apk update
 RUN apk add git
 
 RUN npm ci
+
+COPY src/frontend .
 
 RUN npx prisma generate
 RUN npm run build
