@@ -134,6 +134,27 @@
 		available_logs: string[];
 	}
 
+	interface CeleryInfo {
+		running: number;
+		waiting: number;
+		failure: number;
+		workers: string[];
+		worker_count: number;
+		worker_stats: Array<{
+			worker: string;
+			running: number;
+			reserved: number;
+			scheduled: number;
+		}>;
+		recent_failures: Array<{
+			task_id: string;
+			task_name?: string | null;
+			date_done?: string | null;
+			traceback?: string | null;
+		}>;
+		timestamp: string;
+	}
+
 	let summary = $state<MonitoringSummary | null>(null);
 	let systemInfo = $state<SystemInfo | null>(null);
 	let cpuInfo = $state<CpuInfo | null>(null);
@@ -142,6 +163,7 @@
 	let networkInfo = $state<NetworkInfo | null>(null);
 	let processInfo = $state<ProcessInfo | null>(null);
 	let logInfo = $state<LogInfo | null>(null);
+	let celeryInfo = $state<CeleryInfo | null>(null);
 	let selectedLogFile = $state<string>('celery.log');
 	let logLines = $state<number>(100);
 	let error = $state<string | null>(null);
@@ -213,6 +235,12 @@
 			);
 			if (processesRes.ok) {
 				processInfo = await processesRes.json();
+			}
+
+			// Fetch Celery queue status
+			const celeryRes = await fetch(env.PUBLIC_HAKESCH_API_PATH + '/monitoring/celery', { headers });
+			if (celeryRes.ok) {
+				celeryInfo = await celeryRes.json();
 			}
 
 			loading = false;
@@ -397,6 +425,97 @@
 				</div>
 			</div>
 		</div>
+
+		{#if celeryInfo}
+			<div class="card mb-4">
+				<div class="card-body">
+					<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+						<h5 class="card-title mb-0">Celery Status</h5>
+						<small class="text-muted">
+							Workers: {celeryInfo.worker_count} {celeryInfo.worker_count === 1 ? 'worker' : 'workers'}
+						</small>
+					</div>
+					<div class="row mt-3">
+						<div class="col-md-4 mb-2">
+							<div class="border rounded p-3 h-100">
+								<div class="text-muted">Running</div>
+								<div class="fs-3 fw-bold text-primary">{celeryInfo.running}</div>
+							</div>
+						</div>
+						<div class="col-md-4 mb-2">
+							<div class="border rounded p-3 h-100">
+								<div class="text-muted">Waiting</div>
+								<div class="fs-3 fw-bold text-warning">{celeryInfo.waiting}</div>
+							</div>
+						</div>
+						<div class="col-md-4 mb-2">
+							<div class="border rounded p-3 h-100">
+								<div class="text-muted">Failure</div>
+								<div class="fs-3 fw-bold text-danger">{celeryInfo.failure}</div>
+							</div>
+						</div>
+					</div>
+					{#if celeryInfo.worker_stats && celeryInfo.worker_stats.length > 0}
+						<div class="mt-3">
+							<h6>Worker Load</h6>
+							<table class="table table-sm table-striped mb-0">
+								<thead>
+									<tr>
+										<th>Worker</th>
+										<th>Running</th>
+										<th>Reserved</th>
+										<th>Scheduled</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each celeryInfo.worker_stats as worker}
+										<tr>
+											<td>{worker.worker}</td>
+											<td>{worker.running}</td>
+											<td>{worker.reserved}</td>
+											<td>{worker.scheduled}</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
+					<div class="mt-3">
+						<h6>Recent Failed Tasks</h6>
+						{#if celeryInfo.recent_failures && celeryInfo.recent_failures.length > 0}
+							<table class="table table-sm table-striped mb-0">
+								<thead>
+									<tr>
+										<th>Task ID</th>
+										<th>Task Name</th>
+										<th>Finished At</th>
+										<th>Error</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each celeryInfo.recent_failures as failed}
+										<tr>
+											<td><code>{failed.task_id}</code></td>
+											<td>{failed.task_name || 'N/A'}</td>
+											<td>{failed.date_done ? new Date(failed.date_done).toLocaleString() : 'N/A'}</td>
+											<td>
+												{#if failed.traceback}
+													<code>{failed.traceback.split('\n')[0]}</code>
+												{:else}
+													N/A
+												{/if}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						{:else}
+							<p class="text-muted mb-0">No failed tasks found in current result backend window.</p>
+						{/if}
+					</div>
+				</div>
+			</div>
+		{/if}
 
 		<!-- Tabs -->
 		<ul class="nav nav-tabs mb-3" role="tablist">

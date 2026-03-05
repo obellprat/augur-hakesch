@@ -189,7 +189,8 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                     discharge_point_crs="EPSG:2056",
                     project_easting=project.Point.easting,
                     project_northing=project.Point.northing,
-                    climate_scenario=scenario
+                    climate_scenario=scenario,
+                    debug=False
                 ))
 
         if len(doDoTasks) > 0:
@@ -494,7 +495,8 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
                 discharge_point_crs="EPSG:2056",
                 project_easting=project.Point.easting,
                 project_northing=project.Point.northing,
-                climate_scenario=scenario
+                climate_scenario=scenario,
+                debug=False
             ))
         
         task = group(doDoTasks).apply_async()

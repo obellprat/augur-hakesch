@@ -8,12 +8,14 @@ import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 import logging
 import time
 from threading import Lock, Thread
 import atexit
 import subprocess
+import json
+from calculations.calculations import app as celery_app
 
 router = APIRouter(prefix="/monitoring", tags=["monitoring"])
 
@@ -499,6 +501,101 @@ async def get_processes_info(user: User = Depends(get_user), limit: int = 10):
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting processes info: {str(e)}")
+
+
+def _get_celery_failures(max_scan: int = 10000, limit: int = 20) -> Tuple[int, List[Dict]]:
+    """Get failure count and a recent list of failed task metadata."""
+    try:
+        backend_client = getattr(celery_app.backend, "client", None)
+        if backend_client is None:
+            return 0, []
+
+        failure_count = 0
+        failures: List[Dict] = []
+        scanned = 0
+        for key in backend_client.scan_iter(match="celery-task-meta-*", count=500):
+            scanned += 1
+            if scanned > max_scan:
+                break
+
+            raw_value = backend_client.get(key)
+            if not raw_value:
+                continue
+
+            try:
+                decoded = raw_value.decode("utf-8") if isinstance(raw_value, (bytes, bytearray)) else raw_value
+                payload = json.loads(decoded)
+            except (UnicodeDecodeError, json.JSONDecodeError, TypeError):
+                continue
+
+            if payload.get("status") == "FAILURE":
+                failure_count += 1
+                task_id = (
+                    key.decode("utf-8", errors="ignore")
+                    if isinstance(key, (bytes, bytearray))
+                    else str(key)
+                ).replace("celery-task-meta-", "")
+                failures.append(
+                    {
+                        "task_id": task_id,
+                        "task_name": payload.get("name"),
+                        "date_done": payload.get("date_done"),
+                        "traceback": payload.get("traceback"),
+                        "result": payload.get("result"),
+                    }
+                )
+
+        # Sort newest first where possible, otherwise keep unknown dates at the end.
+        failures.sort(
+            key=lambda x: x.get("date_done") or "",
+            reverse=True
+        )
+        return failure_count, failures[:limit]
+    except Exception as e:
+        logging.warning("Could not read Celery failures: %s", e)
+        return 0, []
+
+
+@router.get("/celery")
+async def get_celery_info(user: User = Depends(get_user)):
+    """Get Celery task queue status (running, waiting, failure)."""
+    try:
+        inspect = celery_app.control.inspect(timeout=1.0)
+        active = inspect.active() or {}
+        reserved = inspect.reserved() or {}
+        scheduled = inspect.scheduled() or {}
+
+        running_count = sum(len(tasks) for tasks in active.values())
+        waiting_count = sum(len(tasks) for tasks in reserved.values()) + sum(
+            len(tasks) for tasks in scheduled.values()
+        )
+        failure_count, recent_failures = _get_celery_failures()
+
+        worker_names = sorted(set(active.keys()) | set(reserved.keys()) | set(scheduled.keys()))
+        worker_stats = [
+            {
+                "worker": worker,
+                "running": len(active.get(worker, [])),
+                "reserved": len(reserved.get(worker, [])),
+                "scheduled": len(scheduled.get(worker, [])),
+            }
+            for worker in worker_names
+        ]
+
+        return JSONResponse(
+            {
+                "running": running_count,
+                "waiting": waiting_count,
+                "failure": failure_count,
+                "workers": worker_names,
+                "worker_count": len(worker_names),
+                "worker_stats": worker_stats,
+                "recent_failures": recent_failures,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting Celery info: {str(e)}")
 
 
 @router.get("/logs")
