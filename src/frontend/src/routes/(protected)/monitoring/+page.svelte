@@ -1,11 +1,11 @@
 <script lang="ts">
 	import pageTitle from '$lib/page/pageTitle';
-	import type { PageServerData } from './$types';
+	import type { PageData } from './$types';
 	import { onMount, onDestroy } from 'svelte';
 	import { env } from '$env/dynamic/public';
 	import { _ } from 'svelte-i18n';
 
-	let { data }: { data: PageServerData } = $props();
+	let { data }: { data: PageData } = $props();
 	$pageTitle = 'Server Monitoring';
 
 	interface MonitoringSummary {
@@ -138,6 +138,11 @@
 		running: number;
 		waiting: number;
 		failure: number;
+		broker_queue_depth_total: number;
+		broker_queue_depth_by_queue: Array<{
+			queue: string;
+			depth: number;
+		}>;
 		workers: string[];
 		worker_count: number;
 		worker_stats: Array<{
@@ -164,6 +169,9 @@
 	let processInfo = $state<ProcessInfo | null>(null);
 	let logInfo = $state<LogInfo | null>(null);
 	let celeryInfo = $state<CeleryInfo | null>(null);
+	let purgeLoading = $state<boolean>(false);
+	let purgeMessage = $state<string | null>(null);
+	let purgeError = $state<string | null>(null);
 	let selectedLogFile = $state<string>('celery.log');
 	let logLines = $state<number>(100);
 	let error = $state<string | null>(null);
@@ -173,12 +181,18 @@
 	let refreshTimer: ReturnType<typeof setInterval> | null = null;
 	let activeTab = $state<string>('summary');
 
+	function getAuthHeaders() {
+		const accessToken =
+			(data as { session?: { access_token?: string } }).session?.access_token ?? '';
+		return {
+			Authorization: 'Bearer ' + accessToken
+		};
+	}
+
 	async function fetchMonitoringData() {
 		try {
 			error = null;
-			const headers = {
-				Authorization: 'Bearer ' + data.session.access_token
-			};
+			const headers = getAuthHeaders();
 
 			// Fetch summary
 			const summaryRes = await fetch(env.PUBLIC_HAKESCH_API_PATH + '/monitoring/summary', {
@@ -252,9 +266,7 @@
 
 	async function fetchLogs() {
 		try {
-			const headers = {
-				Authorization: 'Bearer ' + data.session.access_token
-			};
+			const headers = getAuthHeaders();
 			const res = await fetch(
 				env.PUBLIC_HAKESCH_API_PATH +
 					`/monitoring/logs?lines=${logLines}&log_file=${selectedLogFile}`,
@@ -267,6 +279,44 @@
 			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to fetch logs';
+		}
+	}
+
+	async function purgeCeleryQueue() {
+		const confirmed = window.confirm(
+			'This will remove all pending tasks from the Celery broker queue. Running tasks are not affected. Continue?'
+		);
+		if (!confirmed) return;
+
+		try {
+			purgeLoading = true;
+			purgeError = null;
+			purgeMessage = null;
+
+			const headers = getAuthHeaders();
+			const res = await fetch(env.PUBLIC_HAKESCH_API_PATH + '/monitoring/celery/purge', {
+				method: 'POST',
+				headers
+			});
+
+			if (!res.ok) {
+				let detail = `Failed to purge queue: ${res.status}`;
+				try {
+					const payload = await res.json();
+					if (payload?.detail) detail = payload.detail;
+				} catch {
+					// Keep default detail when response body is not JSON.
+				}
+				throw new Error(detail);
+			}
+
+			const payload = await res.json();
+			purgeMessage = `Purged ${payload.purged ?? 0} pending task(s) from broker queue.`;
+			await fetchMonitoringData();
+		} catch (err) {
+			purgeError = err instanceof Error ? err.message : 'Failed to purge Celery queue';
+		} finally {
+			purgeLoading = false;
 		}
 	}
 
@@ -431,30 +481,72 @@
 				<div class="card-body">
 					<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
 						<h5 class="card-title mb-0">Celery Status</h5>
-						<small class="text-muted">
-							Workers: {celeryInfo.worker_count} {celeryInfo.worker_count === 1 ? 'worker' : 'workers'}
-						</small>
+						<div class="d-flex align-items-center gap-2">
+							<small class="text-muted">
+								Workers: {celeryInfo.worker_count} {celeryInfo.worker_count === 1 ? 'worker' : 'workers'}
+							</small>
+							<button
+								class="btn btn-sm btn-outline-danger"
+								onclick={purgeCeleryQueue}
+								disabled={purgeLoading}
+							>
+								{purgeLoading ? 'Purging...' : 'Purge Queue'}
+							</button>
+						</div>
 					</div>
+					{#if purgeMessage}
+						<div class="alert alert-success mt-3 mb-0">{purgeMessage}</div>
+					{/if}
+					{#if purgeError}
+						<div class="alert alert-danger mt-3 mb-0">{purgeError}</div>
+					{/if}
 					<div class="row mt-3">
-						<div class="col-md-4 mb-2">
+						<div class="col-md-3 mb-2">
 							<div class="border rounded p-3 h-100">
 								<div class="text-muted">Running</div>
 								<div class="fs-3 fw-bold text-primary">{celeryInfo.running}</div>
 							</div>
 						</div>
-						<div class="col-md-4 mb-2">
+						<div class="col-md-3 mb-2">
 							<div class="border rounded p-3 h-100">
-								<div class="text-muted">Waiting</div>
+								<div class="text-muted">Waiting (Reserved + Scheduled)</div>
 								<div class="fs-3 fw-bold text-warning">{celeryInfo.waiting}</div>
 							</div>
 						</div>
-						<div class="col-md-4 mb-2">
+						<div class="col-md-3 mb-2">
 							<div class="border rounded p-3 h-100">
 								<div class="text-muted">Failure</div>
 								<div class="fs-3 fw-bold text-danger">{celeryInfo.failure}</div>
 							</div>
 						</div>
+						<div class="col-md-3 mb-2">
+							<div class="border rounded p-3 h-100">
+								<div class="text-muted">Broker Queue Depth</div>
+								<div class="fs-3 fw-bold text-info">{celeryInfo.broker_queue_depth_total}</div>
+							</div>
+						</div>
 					</div>
+					{#if celeryInfo.broker_queue_depth_by_queue && celeryInfo.broker_queue_depth_by_queue.length > 0}
+						<div class="mt-3">
+							<h6>Broker Queue Depth By Queue</h6>
+							<table class="table table-sm table-striped mb-0">
+								<thead>
+									<tr>
+										<th>Queue</th>
+										<th>Depth</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each celeryInfo.broker_queue_depth_by_queue as queueDepth}
+										<tr>
+											<td>{queueDepth.queue}</td>
+											<td>{queueDepth.depth}</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
 					{#if celeryInfo.worker_stats && celeryInfo.worker_stats.length > 0}
 						<div class="mt-3">
 							<h6>Worker Load</h6>

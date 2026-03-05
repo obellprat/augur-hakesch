@@ -556,6 +556,48 @@ def _get_celery_failures(max_scan: int = 10000, limit: int = 20) -> Tuple[int, L
         return 0, []
 
 
+def _get_broker_queue_depth(active_queues: Dict) -> Tuple[int, List[Dict]]:
+    """Get broker queue depth from Redis (total + per queue)."""
+    try:
+        queue_names = {"celery"}
+        for worker_queues in active_queues.values():
+            if not isinstance(worker_queues, list):
+                continue
+            for queue_info in worker_queues:
+                if isinstance(queue_info, dict):
+                    queue_name = queue_info.get("name")
+                    if queue_name:
+                        queue_names.add(queue_name)
+
+        queue_depth_by_queue: List[Dict] = []
+        total_depth = 0
+
+        with celery_app.connection_for_read() as connection:
+            if getattr(connection.transport, "driver_type", None) != "redis":
+                return 0, []
+
+            channel = connection.channel()
+            try:
+                redis_client = getattr(channel, "client", None)
+                if redis_client is None:
+                    return 0, []
+
+                for queue_name in sorted(queue_names):
+                    try:
+                        depth = int(redis_client.llen(queue_name))
+                    except Exception:
+                        depth = 0
+                    total_depth += depth
+                    queue_depth_by_queue.append({"queue": queue_name, "depth": depth})
+            finally:
+                channel.close()
+
+        return total_depth, queue_depth_by_queue
+    except Exception as e:
+        logging.warning("Could not read Celery broker queue depth: %s", e)
+        return 0, []
+
+
 @router.get("/celery")
 async def get_celery_info(user: User = Depends(get_user)):
     """Get Celery task queue status (running, waiting, failure)."""
@@ -564,12 +606,14 @@ async def get_celery_info(user: User = Depends(get_user)):
         active = inspect.active() or {}
         reserved = inspect.reserved() or {}
         scheduled = inspect.scheduled() or {}
+        active_queues = inspect.active_queues() or {}
 
         running_count = sum(len(tasks) for tasks in active.values())
         waiting_count = sum(len(tasks) for tasks in reserved.values()) + sum(
             len(tasks) for tasks in scheduled.values()
         )
         failure_count, recent_failures = _get_celery_failures()
+        broker_queue_depth_total, broker_queue_depth_by_queue = _get_broker_queue_depth(active_queues)
 
         worker_names = sorted(set(active.keys()) | set(reserved.keys()) | set(scheduled.keys()))
         worker_stats = [
@@ -591,11 +635,29 @@ async def get_celery_info(user: User = Depends(get_user)):
                 "worker_count": len(worker_names),
                 "worker_stats": worker_stats,
                 "recent_failures": recent_failures,
+                "broker_queue_depth_total": broker_queue_depth_total,
+                "broker_queue_depth_by_queue": broker_queue_depth_by_queue,
                 "timestamp": datetime.now().isoformat(),
             }
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting Celery info: {str(e)}")
+
+
+@router.post("/celery/purge")
+async def purge_celery_queue(user: User = Depends(get_user)):
+    """Purge pending Celery messages from broker queues."""
+    try:
+        purged_count = celery_app.control.purge() or 0
+        return JSONResponse(
+            {
+                "purged": int(purged_count),
+                "timestamp": datetime.now().isoformat(),
+                "message": "Queued tasks purged successfully.",
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error purging Celery queue: {str(e)}")
 
 
 @router.get("/logs")
