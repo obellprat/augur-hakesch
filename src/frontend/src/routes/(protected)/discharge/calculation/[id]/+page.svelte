@@ -572,6 +572,8 @@
 	let isCheckingSoilFile = $state(false);
 	let isBulkSaving = $state(false);
 	let bulkSaveForm: HTMLFormElement | null = null;
+	let pendingBulkSavePromise: Promise<boolean> | null = null;
+	let resolvePendingBulkSave: ((success: boolean) => void) | null = null;
 	let bulkPayload = $state('{}');
 
 	let modScenarioForms = $state<ModScenarioForm[]>([]);
@@ -1649,6 +1651,34 @@
 			(globalThis as any).$('#calculation-progress-modal').modal('hide');
 		}
 	}
+
+	function submitBulkSave(): Promise<boolean> {
+		if (isBulkSaving && pendingBulkSavePromise) {
+			return pendingBulkSavePromise;
+		}
+		if (!bulkSaveForm) {
+			return Promise.resolve(false);
+		}
+		pendingBulkSavePromise = new Promise<boolean>((resolve) => {
+			resolvePendingBulkSave = resolve;
+		});
+		bulkSaveForm.requestSubmit();
+		return pendingBulkSavePromise;
+	}
+
+	async function calculateProjectWithSave(project_id: Number) {
+		const saveSuccessful = await submitBulkSave();
+		if (!saveSuccessful) {
+			return;
+		}
+		await calculateProject(project_id);
+	}
+
+	function finalizeBulkSave(success: boolean) {
+		resolvePendingBulkSave?.(success);
+		resolvePendingBulkSave = null;
+		pendingBulkSavePromise = null;
+	}
 	function getGroupStatus(taskID: String) {
 		fetch(env.PUBLIC_HAKESCH_API_PATH + `/task/group/${taskID}`, {
 			method: 'GET',
@@ -2218,6 +2248,7 @@
 								await update({ reset: false });
 								isBulkSaving = false;
 								if (result.type === 'success' && result.data) {
+									finalizeBulkSave(true);
 									data.project = result.data;
 									toast.push($_('page.discharge.calculation.successfullsave'), {
 										theme: {
@@ -2227,6 +2258,7 @@
 										}
 									});
 								} else if (result.type === 'failure') {
+									finalizeBulkSave(false);
 									const failure =
 										(result.data as { message?: string })?.message ||
 										$_('page.discharge.calculation.calcerror');
@@ -2237,6 +2269,8 @@
 										},
 										initial: 0
 									});
+								} else {
+									finalizeBulkSave(false);
 								}
 							};
 						}}
@@ -2737,7 +2771,9 @@
 						<button
 							type="button"
 							class="btn btn-primary d-flex align-items-center gap-2"
-							onclick={() => bulkSaveForm?.requestSubmit()} data-umami-event="bulk-save-button"
+							onclick={() => {
+								void submitBulkSave();
+							}} data-umami-event="bulk-save-button"
 							disabled={isBulkSaving}
 							title={$_('page.general.save')}
 							aria-label={$_('page.general.save')}
@@ -2752,7 +2788,7 @@
 						<button
 							type="button"
 							class="btn btn-outline-primary d-flex align-items-center gap-2"
-							onclick={() => calculateProject(data.project.id)} data-umami-event="calculate-project-button"
+							onclick={() => calculateProjectWithSave(data.project.id)} data-umami-event="calculate-project-button"
 							disabled={!couldCalculate || isBulkSaving}
 							title={$_('page.general.calculate')}
 							aria-label={$_('page.general.calculate')}
