@@ -1076,7 +1076,13 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
                 meta={'text': 'Reading DEM window', 'progress' : 10})
     
     # Calculate requested bounds around the outlet point (x, y in EPSG:2056).
-    requested_bounds = (northing - 9000, easting - 9000, northing + 9000, easting + 9000)
+    half_window_m = float(os.getenv("DISCHARGE_WINDOW_HALF_SIZE_M", "12000"))
+    requested_bounds = (
+        northing - half_window_m,
+        easting - half_window_m,
+        northing + half_window_m,
+        easting + half_window_m
+    )
     
     # Use rasterio directly for faster windowed reading
     with rasterio.open(dem_file) as src:
@@ -1103,7 +1109,6 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
         window_transform = rasterio.windows.transform(window, src.transform)
         
         # Save the windowed DEM to temp file for Grid operations
-        # Use projectId to avoid race conditions between concurrent tasks
         temp_dem_path = f'data/temp/{projectId}_smalldem.tif'
         os.makedirs(os.path.dirname(temp_dem_path), exist_ok=True)
         
@@ -1113,7 +1118,6 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
             'width': window.width,
             'transform': window_transform
         })
-        
         with rasterio.open(temp_dem_path, 'w', **profile) as dst:
             dst.write(dem_data, 1)
     
@@ -1149,7 +1153,6 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
         window_transform = rasterio.windows.transform(window, src.transform)
         
         # Save the windowed flow direction to temp file
-        # Use projectId to avoid race conditions between concurrent tasks
         temp_fdir_path = f'data/temp/{projectId}_smallfdir.tif'
         os.makedirs(os.path.dirname(temp_fdir_path), exist_ok=True)
         
@@ -1159,7 +1162,6 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
             'width': window.width,
             'transform': window_transform
         })
-        
         with rasterio.open(temp_fdir_path, 'w', **profile) as dst:
             dst.write(fdir_data, 1)
     
@@ -1304,7 +1306,7 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     
     self.update_state(state='PROGRESS',
                 meta={'text': 'Calculate distance', 'progress' : 85})
-    dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap)  
+    dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap)
     dist = dist * cell_size
     dist[dist == np.inf] = -1000000
     dist_max = np.nanmax(dist)
@@ -1497,12 +1499,16 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     self.update_state(state='PROGRESS',
                 meta={'text': 'Finish', 'progress' : 100})
     
-    # Schedule a graceful worker shutdown after this task completes.
-    # GDAL/numpy C extensions leak memory that gc.collect() cannot reclaim,
-    # causing "double free or corruption" on subsequent tasks in the same process.
-    # With Docker restart: unless-stopped, the worker comes back fresh.
-    from celery.worker import state as worker_state
-    worker_state.should_stop = 0  # EX_OK — clean shutdown after task ack
+    # Optional compatibility mode:
+    # some environments may still require a full worker recycle after this task.
+    # Disabled by default to avoid restart churn between requests.
+    shutdown_after_prepare = (
+        os.getenv("CELERY_SHUTDOWN_AFTER_PREPARE_DISCHARGE", "false").strip().lower()
+        in ("1", "true", "yes", "on")
+    )
+    if shutdown_after_prepare:
+        from celery.worker import state as worker_state
+        worker_state.should_stop = 0  # EX_OK — clean shutdown after task ack
     
     return
 

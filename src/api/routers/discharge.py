@@ -3,12 +3,13 @@ from fastapi.responses import JSONResponse
 from helpers.prisma import prisma
 from helpers.user import get_user
 from prisma.models import User
-from celery import group
+from celery import chain, group
 import pandas as pd
 
 from calculations.discharge import construct_idf_curve, modifizierte_fliesszeit, prepare_discharge_hydroparameters, koella, clark_wsl_modified
 from calculations.nam import nam, extract_dem
 from calculations.curvenumbers import get_curve_numbers
+from calculations.orchestration import launch_group
 
 router = APIRouter(prefix="/discharge",
     tags=["discharge"],)
@@ -47,36 +48,6 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                 }
             }
         )
-
-         # Get discharge point coordinates from project if available
-        discharge_point = None
-        discharge_point_crs = "EPSG:4326"
-        if hasattr(project, 'Point') and project.Point:
-            # Convert from EPSG:2056 (Swiss coordinates) to geographic coordinates for routing
-            try:
-                import pyproj
-                transformer = pyproj.Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
-                lon, lat = transformer.transform(project.Point.easting, project.Point.northing)
-                discharge_point = (lon, lat)
-            except Exception as e:
-                print(f"Warning: Could not convert discharge point coordinates: {e}")
-                discharge_point = None
-        
-        # Execute extract_dem and check for success
-        dem_result = extract_dem.apply(args=[project.id, user.id])
-        if dem_result.failed():
-            raise HTTPException(
-                status_code=500,
-                detail=f"DEM extraction failed: {dem_result.result}"
-            )
-        
-        # Execute get_curve_numbers and check for success
-        curve_numbers_result = get_curve_numbers.apply(args=[project.id, user.id, "bek", project.NAM[0].use_own_soil_data])
-        if curve_numbers_result.failed():
-            raise HTTPException(
-                status_code=500,
-                detail=f"Curve numbers calculation failed: {curve_numbers_result.result}"
-            )
 
         doDoTasks = []
 
@@ -194,8 +165,12 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                 ))
 
         if len(doDoTasks) > 0:
-            task = group(doDoTasks).apply_async()
-            task.save()
+            own_soil = project.NAM[0].use_own_soil_data if len(project.NAM) > 0 else True
+            prerequisites = chain(
+                extract_dem.si(project.id, user.id),
+                get_curve_numbers.si(project.id, user.id, "bek", own_soil),
+            )
+            task = chain(prerequisites, launch_group.si(doDoTasks)).apply_async()
             return JSONResponse({"task_id": task.id})
 
     except Exception as e:
@@ -433,39 +408,6 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
                 detail=f"NAM with ID {NAMId} not found in project {ProjectId}"
             )
 
-        doDoTasks = []
-
-        # Get discharge point coordinates from project if available
-        discharge_point = None
-        discharge_point_crs = "EPSG:4326"
-        if hasattr(project, 'Point') and project.Point:
-            # Convert from EPSG:2056 (Swiss coordinates) to geographic coordinates for routing
-            try:
-                import pyproj
-                transformer = pyproj.Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
-                lon, lat = transformer.transform(project.Point.easting, project.Point.northing)
-                discharge_point = (lon, lat)
-            except Exception as e:
-                print(f"Warning: Could not convert discharge point coordinates: {e}")
-                discharge_point = None
-        
-        # Execute extract_dem and check for success
-        dem_result = extract_dem.apply(args=[project.id, user.id])
-        if dem_result.failed():
-            raise HTTPException(
-                status_code=500,
-                detail=f"DEM extraction failed: {dem_result.result}"
-            )
-        
-        # Execute get_curve_numbers and check for success
-        curve_numbers_result = get_curve_numbers.apply(args=[project.id, user.id, "bek", nam_obj.use_own_soil_data])
-        if curve_numbers_result.failed():
-            raise HTTPException(
-                status_code=500,
-                detail=f"Curve numbers calculation failed: {curve_numbers_result.result}"
-            )
-
-        # Only proceed with NAM calculation if both prerequisites succeeded
         # Climate scenarios to calculate
         climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree"]
         
@@ -496,11 +438,14 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
                 project_easting=project.Point.easting,
                 project_northing=project.Point.northing,
                 climate_scenario=scenario,
-                debug=False
+                debug=True
             ))
         
-        task = group(doDoTasks).apply_async()
-        task.save()
+        prerequisites = chain(
+            extract_dem.si(project.id, user.id),
+            get_curve_numbers.si(project.id, user.id, "bek", nam_obj.use_own_soil_data),
+        )
+        task = chain(prerequisites, launch_group.si(doDoTasks)).apply_async()
         return JSONResponse({"task_id": task.id})
 
     except Exception as e:

@@ -36,6 +36,18 @@ app.conf.accept_content = ['json']
 app.conf.task_message_max_retries = 3
 # Optimize result backend for faster lookups
 app.conf.result_expires = 3600  # Results expire after 1 hour
+app.conf.task_routes = {
+    # Memory-intensive raster and distributed runoff tasks
+    "prepare_discharge_hydroparameters": {"queue": "heavy"},
+    "extract_dem": {"queue": "heavy"},
+    "get_curve_numbers": {"queue": "heavy"},
+    "nam": {"queue": "heavy"},
+    # Lightweight method calculations
+    "modifizierte_fliesszeit": {"queue": "light"},
+    "koella": {"queue": "light"},
+    "clark-wsl": {"queue": "light"},
+    "launch_group": {"queue": "light"},
+}
 
 logger = get_task_logger(__name__)
 logging.getLogger('prisma').setLevel(logging.ERROR)
@@ -64,4 +76,4 @@ def after_setup_celery_logger(logger, **kwargs):
     """ This function sets the 'celery' logger handler and formatter """
     create_celery_logger_handler(logger, False)
 
-app.autodiscover_tasks(['calculations.discharge','calculations.nam','calculations.curvenumbers'])
+app.autodiscover_tasks(['calculations.discharge','calculations.nam','calculations.curvenumbers', 'calculations.orchestration'])
