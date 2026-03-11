@@ -36,3 +36,5 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 src/frontend/static/assets/precip_db/augur.sqlite
+src/api/logs/celery-heavy.log
+src/api/logs/celery-light.log
