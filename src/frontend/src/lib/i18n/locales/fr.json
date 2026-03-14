@@ -155,6 +155,27 @@
       "importantModalTitle": "Actualite importante",
       "changelog": "Journal des modifications"
     },
+    "support": {
+      "title": "Support",
+      "heading": "Contact et support",
+      "description": "Décrivez votre demande. Nous créons un ticket et suivons toutes les réponses dans un seul fil.",
+      "requesterName": "Nom",
+      "requesterEmail": "E-mail",
+      "subject": "Sujet",
+      "message": "Message",
+      "submit": "Envoyer le ticket",
+      "success": "Le ticket #{id} a été créé avec succès.",
+      "error": "Le ticket n'a pas pu être créé. Veuillez réessayer.",
+      "boardTitle": "Tickets support",
+      "noTickets": "Aucun ticket disponible.",
+      "forbidden": "Vous n'avez pas la permission de consulter les tickets support. Le rôle Keycloak «support_admin» est requis.",
+      "status": "Statut",
+      "changeStatus": "Changer le statut",
+      "thread": "Fil",
+      "noComments": "Aucun commentaire pour le moment.",
+      "reply": "Réponse",
+      "sendReply": "Envoyer la réponse"
+    },
     "science": {
       "title": "Science",
       "heading": "Précipitations globales",

@@ -155,6 +155,27 @@
       "importantModalTitle": "Wichtige Neuigkeit",
       "changelog": "Changelog"
     },
+    "support": {
+      "title": "Support",
+      "heading": "Kontakt und Support",
+      "description": "Beschreiben Sie Ihr Anliegen. Wir erstellen ein Ticket und bearbeiten es im Team.",
+      "requesterName": "Name",
+      "requesterEmail": "E-Mail",
+      "subject": "Betreff",
+      "message": "Nachricht",
+      "submit": "Ticket senden",
+      "success": "Ticket #{id} wurde erfolgreich erstellt.",
+      "error": "Ticket konnte nicht erstellt werden. Bitte erneut versuchen.",
+      "boardTitle": "Support Tickets",
+      "noTickets": "Keine Tickets vorhanden.",
+      "forbidden": "Sie haben keine Berechtigung, Support-Tickets einzusehen. Benötigt wird die Keycloak-Rolle «support_admin».",
+      "status": "Status",
+      "changeStatus": "Status ändern",
+      "thread": "Verlauf",
+      "noComments": "Noch keine Kommentare.",
+      "reply": "Antwort",
+      "sendReply": "Antwort senden"
+    },
     "science": {
       "title": "Hintergrund",
       "heading": "Niederschlag Global",

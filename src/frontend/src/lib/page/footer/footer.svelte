@@ -16,7 +16,7 @@
                 <div class="text-md-end footer-links d-none d-md-block">
                     <a href="{base}/about">{$_('page.nav.aboutAugur')}</a>
                     <!--<a href="/support">{$_('page.nav.support')}</a>-->
-                    <a href="mailto:bellprat@climate.expert,christoph@suter-burri.ch?subject=AUGUR%20">{$_('page.nav.contact')}</a>
+                    <a href="{base}/support">{$_('page.nav.contact')}</a>
                 </div>
             </div>
         </div>

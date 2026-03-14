@@ -155,6 +155,27 @@
       "importantModalTitle": "Important News",
       "changelog": "Changelog"
     },
+    "support": {
+      "title": "Support",
+      "heading": "Contact and Support",
+      "description": "Describe your request. We create a ticket and track all answers in one thread.",
+      "requesterName": "Name",
+      "requesterEmail": "Email",
+      "subject": "Subject",
+      "message": "Message",
+      "submit": "Send ticket",
+      "success": "Ticket #{id} was created successfully.",
+      "error": "Ticket could not be created. Please try again.",
+      "boardTitle": "Support Tickets",
+      "noTickets": "No tickets found.",
+      "forbidden": "You do not have permission to view support tickets. The Keycloak role «support_admin» is required.",
+      "status": "Status",
+      "changeStatus": "Change status",
+      "thread": "Thread",
+      "noComments": "No comments yet.",
+      "reply": "Reply",
+      "sendReply": "Send reply"
+    },
     "science": {
       "title": "Science",
       "heading": "Precipitation Global",
