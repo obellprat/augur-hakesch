@@ -47,6 +47,7 @@ app.conf.task_routes = {
     "koella": {"queue": "light"},
     "clark-wsl": {"queue": "light"},
     "launch_group": {"queue": "light"},
+    "send_support_notification": {"queue": "light"},
 }
 
 logger = get_task_logger(__name__)
@@ -76,4 +77,10 @@ def after_setup_celery_logger(logger, **kwargs):
     """ This function sets the 'celery' logger handler and formatter """
     create_celery_logger_handler(logger, False)
 
-app.autodiscover_tasks(['calculations.discharge','calculations.nam','calculations.curvenumbers', 'calculations.orchestration'])
+app.autodiscover_tasks([
+    'calculations.discharge',
+    'calculations.nam',
+    'calculations.curvenumbers',
+    'calculations.orchestration',
+    'calculations.support_notifications',
+])
