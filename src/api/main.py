@@ -10,7 +10,17 @@ from helpers.user import map_user
 import logging
 import uvicorn
 
-from routers import file, task, project, discharge, version, netcdf, monitoring, news
+from routers import (
+    file,
+    task,
+    project,
+    export_import,
+    discharge,
+    version,
+    netcdf,
+    monitoring,
+    news,
+)
 
 from version import __version__
 
@@ -76,6 +86,7 @@ app.include_router(file.router)
 app.include_router(task.router)
 app.include_router(version.router)
 app.include_router(project.router)
+app.include_router(export_import.router)
 app.include_router(discharge.router)
 app.include_router(netcdf.router)
 app.include_router(monitoring.router)
