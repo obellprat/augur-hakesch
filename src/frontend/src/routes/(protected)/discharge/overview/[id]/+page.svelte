@@ -974,6 +974,23 @@ onMount(async () => {
 												{$_('page.discharge.overview.download')}
 											</button>
 										</div>
+										<div class="col-5 fw-semibold">
+											{$_('page.discharge.create.exportProject')}:
+										</div>
+										<div class="col-7">
+											<button
+												type="button"
+												class="btn btn-sm btn-outline-primary"
+												onclick={() => downloadFile(
+													`${env.PUBLIC_HAKESCH_API_PATH}/project/export/${data.project.id}`,
+													`project_${data.project.id}.augur.zip`
+												)}
+												data-umami-event="export-project-button"
+											>
+												<i class="ti ti-download me-1"></i>
+												{$_('page.discharge.overview.download')}
+											</button>
+										</div>
 									</div>
 								{/if}
 							</div>

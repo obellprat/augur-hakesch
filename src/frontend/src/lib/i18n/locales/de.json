@@ -55,7 +55,13 @@
       },
       "project": "Projekt",
       "create": {
-        "createproject": "Projekt erstellen"
+        "createproject": "Projekt erstellen",
+        "exportProject": "Projekt exportieren",
+        "importProject": "Projekt importieren",
+        "importProjectTitle": "Projekt importieren",
+        "importProjectDescription": "Wählen Sie eine AUGUR-Exportdatei (.augur.zip) zum Importieren aus.",
+        "importSuccess": "Projekt erfolgreich importiert",
+        "importError": "Import fehlgeschlagen"
       },
       "calculation": {
         "calcrunning": "Berechnung läuft...",

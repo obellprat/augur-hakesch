@@ -55,7 +55,13 @@
       },
       "project": "Project",
       "create": {
-        "createproject": "Create project"
+        "createproject": "Create project",
+        "exportProject": "Export project",
+        "importProject": "Import project",
+        "importProjectTitle": "Import project",
+        "importProjectDescription": "Select an AUGUR export file (.augur.zip) to import.",
+        "importSuccess": "Project imported successfully",
+        "importError": "Import failed"
       },
       "calculation": {
         "idf": {

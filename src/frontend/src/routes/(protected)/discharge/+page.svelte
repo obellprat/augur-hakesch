@@ -3,6 +3,8 @@
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 	import { _ } from 'svelte-i18n';
+	import { env } from '$env/dynamic/public';
+	import { invalidateAll } from '$app/navigation';
 	import type { PageServerData } from './$types';
 
 	let { data }: { data: PageServerData } = $props();
@@ -11,6 +13,9 @@
 
 	let selectedProjects = $state<string[]>([]);
 	let selectAll = $state(false);
+	let importInProgress = $state(false);
+	let importError = $state<string | null>(null);
+	let importFileInput: HTMLInputElement;
 
 	function toggleSelectAll() {
 		if (selectAll) {
@@ -51,6 +56,80 @@
 				// Fallback to jQuery if available
 				(globalThis as any).$('#delete-projects-modal').modal('show');
 			}
+		}
+	}
+
+	async function exportProject(projectId: string) {
+		try {
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH + `/project/export/${projectId}`,
+				{
+					method: 'GET',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
+					}
+				}
+			);
+			if (!response.ok) throw new Error('Export failed');
+			const blob = await response.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `project_${projectId}.augur.zip`;
+			a.click();
+			URL.revokeObjectURL(url);
+		} catch (err) {
+			console.error('Export failed', err);
+		}
+	}
+
+	function showImportModal() {
+		const modalElement = document.getElementById('import-project-modal');
+		if (modalElement) {
+			if ((window as any).bootstrap) {
+				const modal = new (window as any).bootstrap.Modal(modalElement);
+				modal.show();
+			} else if ((globalThis as any).$) {
+				(globalThis as any).$('#import-project-modal').modal('show');
+			}
+		}
+		importError = null;
+		if (importFileInput) importFileInput.value = '';
+	}
+
+	async function doImport() {
+		if (!importFileInput?.files?.length) return;
+		importInProgress = true;
+		importError = null;
+		try {
+			const formData = new FormData();
+			formData.append('file', importFileInput.files[0]);
+			const response = await fetch(
+				env.PUBLIC_HAKESCH_API_PATH + '/project/import',
+				{
+					method: 'POST',
+					headers: {
+						Authorization: 'Bearer ' + data.session.access_token
+					},
+					body: formData
+				}
+			);
+			if (!response.ok) {
+				const err = await response.json().catch(() => ({}));
+				throw new Error(err.detail || 'Import failed');
+			}
+			const result = await response.json();
+			const modalElement = document.getElementById('import-project-modal');
+			if (modalElement && (window as any).bootstrap) {
+				const modal = (window as any).bootstrap.Modal.getInstance(modalElement);
+				modal?.hide();
+			}
+			await invalidateAll();
+			window.location.href = base + '/discharge/overview/' + result.project_id;
+		} catch (err) {
+			importError = err instanceof Error ? err.message : $_('page.discharge.create.importError');
+		} finally {
+			importInProgress = false;
 		}
 	}
 
@@ -96,11 +175,14 @@
 					</button>
 				</div>
 
-				<div class="ms-auto">
-					<!--<div class="app-search">
-                        <input type="text" class="form-control rounded-pill" placeholder="Search mail...">
-                        <i class="ri-search-line fs-18 app-search-icon text-muted"></i>
-                    </div>-->
+				<div class="ms-auto d-flex gap-2">
+					<button
+						type="button"
+						class="btn btn-outline-primary rounded-pill"
+						onclick={showImportModal}
+					>
+						{$_('page.discharge.create.importProject')}
+					</button>
 					<a
 						href="{base}/discharge/create"
 						type="button"
@@ -167,7 +249,22 @@
 										<p class="fs-12 text-muted mb-0 text-end"></p>
 									</td>
 
-									<td class="pe-3">
+									<td class="pe-3 position-relative z-2">
+										<button
+											type="button"
+											class="btn btn-sm btn-icon btn-ghost-light text-body rounded-circle"
+											data-bs-toggle="tooltip"
+											data-bs-placement="top"
+											data-bs-title="{$_('page.discharge.create.exportProject')}"
+											aria-label="{$_('page.discharge.create.exportProject')}"
+											onclick={(e) => {
+												e.preventDefault();
+												e.stopPropagation();
+												exportProject(project.id);
+											}}
+										>
+											<i class="ri-download-2-line fs-18"></i>
+										</button>
 										<iconify-icon
 											icon="solar:bolt-circle-bold-duotone"
 											class="text-danger fs-16 ms-2 align-middle"
@@ -238,3 +335,57 @@
 	<!-- /.modal-dialog -->
 </div>
 <!-- /.modal -->
+
+<!-- Import Project Modal -->
+<div
+	id="import-project-modal"
+	class="modal fade"
+	tabindex="-1"
+	role="dialog"
+	aria-labelledby="import-project-modalLabel"
+	aria-hidden="true"
+>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="import-project-modalLabel">
+					{$_('page.discharge.create.importProjectTitle')}
+				</h4>
+				<button
+					type="button"
+					class="btn-close"
+					data-bs-dismiss="modal"
+					aria-label="Close"
+				></button>
+			</div>
+			<div class="modal-body">
+				<p class="text-muted">{$_('page.discharge.create.importProjectDescription')}</p>
+				{#if importError}
+					<div class="alert alert-danger" role="alert">{importError}</div>
+				{/if}
+				<input
+					bind:this={importFileInput}
+					type="file"
+					class="form-control"
+					accept=".augur.zip,.augur,.zip"
+				/>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-light" data-bs-dismiss="modal">
+					{$_('page.general.cancel')}
+				</button>
+				<button
+					type="button"
+					class="btn btn-primary"
+					disabled={importInProgress}
+					onclick={doImport}
+				>
+					{#if importInProgress}
+						<span class="spinner-border spinner-border-sm me-1" role="status"></span>
+					{/if}
+					{$_('page.discharge.create.importProject')}
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
