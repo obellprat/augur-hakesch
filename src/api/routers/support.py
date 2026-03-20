@@ -50,6 +50,35 @@ def _recipient_emails() -> list[str]:
     return [email.strip().lower() for email in raw_recipients.split(",") if email.strip()]
 
 
+def _scope_roles(request: Request) -> list[str]:
+    roles: list[str] = []
+    raw_auth = request.scope.get("auth")
+
+    if isinstance(raw_auth, (list, tuple, set)):
+        roles.extend([str(role) for role in raw_auth if role])
+    elif isinstance(raw_auth, dict):
+        claim_roles = raw_auth.get("roles", [])
+        if isinstance(claim_roles, list):
+            roles.extend([str(role) for role in claim_roles if role])
+
+    raw_user = request.scope.get("user")
+    if raw_user is not None:
+        realm_access = getattr(raw_user, "realm_access", None)
+        if isinstance(realm_access, dict):
+            claim_roles = realm_access.get("roles", [])
+            if isinstance(claim_roles, list):
+                roles.extend([str(role) for role in claim_roles if role])
+        direct_roles = getattr(raw_user, "roles", None)
+        if isinstance(direct_roles, list):
+            roles.extend([str(role) for role in direct_roles if role])
+
+    return roles
+
+
+def _is_support_admin(request: Request) -> bool:
+    return SUPPORT_ADMIN_ROLE in _scope_roles(request)
+
+
 def _get_authenticated_user_from_scope(request: Request) -> User | None:
     if "user" not in request.scope or request.scope["user"] is None:
         return None
@@ -102,9 +131,11 @@ def create_ticket(payload: CreateTicketBody, request: Request):
     )
 
     recipients = _recipient_emails()
-    if len(recipients) > 0:
+    recipient_set = set(recipients)
+    recipient_set.add(requester_email)
+    if len(recipient_set) > 0:
         prisma.supportrecipient.create_many(
-            data=[{"ticketId": ticket.id, "email": email} for email in recipients],
+            data=[{"ticketId": ticket.id, "email": email} for email in sorted(recipient_set)],
             skip_duplicates=True,
         )
 
@@ -134,16 +165,15 @@ def create_ticket(payload: CreateTicketBody, request: Request):
     return JSONResponse(_serialize_ticket(full_ticket), status_code=201)
 
 
-@router.get(
-    "/tickets",
-    dependencies=[Depends(CheckPermissions(SUPPORT_ADMIN_ROLE))],
-)
-def list_tickets(status: str | None = Query(default=None), _: User = Depends(get_user)):
+@router.get("/tickets")
+def list_tickets(request: Request, status: str | None = Query(default=None), user: User = Depends(get_user)):
     where = {}
     if status is not None:
         if status not in ALLOWED_STATUSES:
             raise HTTPException(status_code=400, detail="Invalid status")
         where["status"] = status
+    if not _is_support_admin(request):
+        where["requesterEmail"] = user.email
 
     tickets = prisma.supportticket.find_many(
         where=where,
@@ -154,17 +184,16 @@ def list_tickets(status: str | None = Query(default=None), _: User = Depends(get
     return JSONResponse(serialized_tickets)
 
 
-@router.get(
-    "/tickets/{ticket_id}",
-    dependencies=[Depends(CheckPermissions(SUPPORT_ADMIN_ROLE))],
-)
-def get_ticket(ticket_id: int, _: User = Depends(get_user)):
+@router.get("/tickets/{ticket_id}")
+def get_ticket(ticket_id: int, request: Request, user: User = Depends(get_user)):
     ticket = prisma.supportticket.find_unique(
         where={"id": ticket_id},
         include={"comments": True, "recipients": True},
     )
     if ticket is None:
         raise HTTPException(status_code=404, detail="Ticket not found")
+    if not _is_support_admin(request) and _normalize_email(ticket.requesterEmail) != _normalize_email(user.email):
+        raise HTTPException(status_code=403, detail="Forbidden")
     return JSONResponse(_serialize_ticket(ticket))
 
 

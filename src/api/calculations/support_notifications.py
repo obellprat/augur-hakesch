@@ -28,11 +28,35 @@ def _resolve_recipients(ticket_id: int) -> list[str]:
             except Exception:
                 pass
 
+    ticket = None
+    try:
+        if not prisma.is_connected():
+            prisma.connect()
+            connected_here = True
+        ticket = prisma.supportticket.find_unique(where={"id": ticket_id})
+        if ticket is not None and ticket.requesterEmail:
+            recipients.append(ticket.requesterEmail.strip().lower())
+    except Exception as exc:
+        LOG.warning("Could not load support ticket requester from DB: %s", exc)
+    finally:
+        if connected_here:
+            try:
+                prisma.disconnect()
+            except Exception:
+                pass
+
     if len(recipients) > 0:
-        return recipients
+        return list(dict.fromkeys(recipients))
 
     env_recipients = os.getenv("SUPPORT_EMAIL_RECIPIENTS", "")
     return [email.strip().lower() for email in env_recipients.split(",") if email.strip()]
+
+
+def _ticket_url(ticket_id: int) -> str:
+    base_url = (os.getenv("SUPPORT_TICKET_BASE_URL") or os.getenv("ORIGIN") or "").strip().rstrip("/")
+    if not base_url:
+        return f"/support/tickets?ticket={ticket_id}"
+    return f"{base_url}/support/tickets?ticket={ticket_id}"
 
 
 def _send_mail(subject: str, body: str, recipients: list[str]) -> bool:
@@ -80,10 +104,44 @@ def send_support_notification(
         return {"sent": False, "reason": "no-recipients"}
 
     actor = actor_name or actor_email or "unknown actor"
-    subject = f"[AUGUR Support] Ticket #{ticket_id} update"
-    body = f"Ticket #{ticket_id} has a new update.\n\nEvent: {event_type}\nActor: {actor}\n"
+    ticket = None
+    latest_comment = None
+    connected_here = False
+    try:
+        if not prisma.is_connected():
+            prisma.connect()
+            connected_here = True
+        ticket = prisma.supportticket.find_unique(where={"id": ticket_id})
+        comments = prisma.supportcomment.find_many(where={"ticketId": ticket_id})
+        if comments:
+            latest_comment = max(comments, key=lambda item: item.id)
+    except Exception as exc:
+        LOG.warning("Could not load support ticket details for mail: %s", exc)
+    finally:
+        if connected_here:
+            try:
+                prisma.disconnect()
+            except Exception:
+                pass
+
+    ticket_subject = ticket.subject if ticket is not None else "(unknown subject)"
+    ticket_message = ticket.message if ticket is not None else "(no ticket message)"
+    ticket_link = _ticket_url(ticket_id)
+
+    subject = f"[AUGUR Support] Ticket #{ticket_id}: {ticket_subject}"
+    body = (
+        f"Ticket #{ticket_id} has a new update.\n\n"
+        f"Event: {event_type}\n"
+        f"Actor: {actor}\n"
+        f"Subject: {ticket_subject}\n"
+        f"Requester: {ticket.requesterEmail if ticket is not None else 'unknown'}\n"
+        f"Ticket message:\n{ticket_message}\n\n"
+    )
+    if latest_comment is not None:
+        body += f"Latest reply:\n{latest_comment.body}\n\n"
     if new_status:
-        body += f"Status: {new_status}\n"
+        body += f"Status: {new_status}\n\n"
+    body += f"Open ticket: {ticket_link}\n"
 
     was_sent = _send_mail(subject=subject, body=body, recipients=recipients)
     return {"sent": was_sent, "recipients": recipients, "eventType": event_type}

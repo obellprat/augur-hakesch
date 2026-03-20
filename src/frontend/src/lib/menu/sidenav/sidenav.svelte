@@ -58,6 +58,7 @@
 	
 			<Navlink title={$_('page.nav.aboutAugur')} href="about" icon="ti ti-info-circle" />
 			<Navlink title={$_('page.nav.technicalDocumentation')} href="assets/documents/AUGUR_Dokumentation_2026-02-20.pdf" icon="ti ti-file-type-pdf" target="_blank" />
+			<Navlink title={$_('page.support.title')} href="support/tickets" icon="ti ti-lifebuoy" />
 		</ul>
 
 		<!-- dDonate Box -->

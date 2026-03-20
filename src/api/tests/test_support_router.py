@@ -89,7 +89,12 @@ class FakePrisma:
         where = where or {}
         results = []
         for ticket in self.tickets.values():
-            if where.get("status") and where["status"] != ticket["status"]:
+            skip = False
+            for key, value in where.items():
+                if ticket.get(key) != value:
+                    skip = True
+                    break
+            if skip:
                 continue
             results.append(self._ticket_with_relations(ticket) if include else FakeRecord(ticket))
         return results
@@ -158,7 +163,8 @@ def test_create_ticket_public_sets_recipients_and_initial_comment(monkeypatch):
 
     assert response.status_code == 201
     assert body["requesterEmail"] == "person@example.org"
-    assert len(body["recipients"]) == 2
+    assert len(body["recipients"]) == 3
+    assert "person@example.org" in body["recipients"]
     assert len(body["comments"]) == 1
     assert fake_task.calls[0]["event_type"] == "ticket_created"
 
@@ -168,9 +174,86 @@ def test_list_tickets_rejects_invalid_status(monkeypatch):
     monkeypatch.setattr(support, "prisma", fake_prisma)
 
     with pytest.raises(HTTPException) as exc:
-        support.list_tickets(status="unknown_status", _=FakeRecord({"id": 1, "email": "a@b.c"}))
+        support.list_tickets(
+            request=SimpleNamespace(scope={"auth": []}),
+            status="unknown_status",
+            user=FakeRecord({"id": 1, "email": "a@b.c"}),
+        )
 
     assert exc.value.status_code == 400
+
+
+def test_list_tickets_non_admin_only_gets_own(monkeypatch):
+    fake_prisma = FakePrisma()
+    monkeypatch.setattr(support, "prisma", fake_prisma)
+
+    fake_prisma.ticket_create(
+        {
+            "subject": "Mine",
+            "message": "My own ticket body",
+            "requesterEmail": "me@example.org",
+            "status": "open",
+            "priority": "normal",
+            "source": "public_form",
+        }
+    )
+    fake_prisma.ticket_create(
+        {
+            "subject": "Other",
+            "message": "Other ticket body",
+            "requesterEmail": "other@example.org",
+            "status": "open",
+            "priority": "normal",
+            "source": "public_form",
+        }
+    )
+
+    response = support.list_tickets(
+        request=SimpleNamespace(scope={"auth": ["user"]}),
+        status=None,
+        user=FakeRecord({"id": 5, "email": "me@example.org"}),
+    )
+    body = json.loads(response.body.decode("utf-8"))
+
+    assert response.status_code == 200
+    assert len(body) == 1
+    assert body[0]["requesterEmail"] == "me@example.org"
+
+
+def test_list_tickets_support_admin_gets_all(monkeypatch):
+    fake_prisma = FakePrisma()
+    monkeypatch.setattr(support, "prisma", fake_prisma)
+
+    fake_prisma.ticket_create(
+        {
+            "subject": "Mine",
+            "message": "My own ticket body",
+            "requesterEmail": "me@example.org",
+            "status": "open",
+            "priority": "normal",
+            "source": "public_form",
+        }
+    )
+    fake_prisma.ticket_create(
+        {
+            "subject": "Other",
+            "message": "Other ticket body",
+            "requesterEmail": "other@example.org",
+            "status": "open",
+            "priority": "normal",
+            "source": "public_form",
+        }
+    )
+
+    response = support.list_tickets(
+        request=SimpleNamespace(scope={"auth": [support.SUPPORT_ADMIN_ROLE]}),
+        status=None,
+        user=FakeRecord({"id": 5, "email": "me@example.org"}),
+    )
+    body = json.loads(response.body.decode("utf-8"))
+
+    assert response.status_code == 200
+    assert len(body) == 2
 
 
 def test_update_ticket_resolved_sends_notification(monkeypatch):

@@ -5,11 +5,12 @@
 
 	$pageTitle = $_('page.support.boardTitle');
 
-	let { data } = $props();
+	let { data, form } = $props();
 	const statuses = ['open', 'in_progress', 'resolved', 'closed'];
 
-	const selectedTicket =
-		data.tickets.find((ticket: any) => ticket.id === data.selectedTicketId) ?? data.tickets[0];
+const selectedTicket = $derived(
+	data.tickets.find((ticket: any) => ticket.id === data.selectedTicketId) ?? data.tickets[0]
+);
 </script>
 
 <svelte:head>
@@ -19,6 +20,74 @@
 <div class="page-container">
 	<div class="row">
 		<div class="col-lg-4">
+			<div class="card mb-3">
+				<div class="card-body">
+					<h4 class="card-title">{$_('page.support.heading')}</h4>
+					<p class="text-muted">{$_('page.support.description')}</p>
+
+					{#if form?.createTicketSuccess}
+						<div class="alert alert-success" role="alert">
+							{$_('page.support.success', { values: { id: form.createTicketId } })}
+						</div>
+					{:else if form?.createTicketError}
+						<div class="alert alert-danger" role="alert">
+							{$_('page.support.error')}
+						</div>
+					{/if}
+
+					<form method="POST" action="?/createTicket">
+						<div class="mb-3">
+							<label class="form-label" for="requesterName">{$_('page.support.requesterName')}</label>
+							<input
+								class="form-control"
+								id="requesterName"
+								name="requesterName"
+								type="text"
+								value={form?.createTicketValues?.requesterName ?? ''}
+								maxlength="120"
+							/>
+						</div>
+						<div class="mb-3">
+							<label class="form-label" for="requesterEmail">{$_('page.support.requesterEmail')}</label>
+							<input
+								class="form-control"
+								id="requesterEmail"
+								name="requesterEmail"
+								type="email"
+								value={form?.createTicketValues?.requesterEmail ?? ''}
+								required
+							/>
+						</div>
+						<div class="mb-3">
+							<label class="form-label" for="subject">{$_('page.support.subject')}</label>
+							<input
+								class="form-control"
+								id="subject"
+								name="subject"
+								type="text"
+								value={form?.createTicketValues?.subject ?? ''}
+								required
+								minlength="3"
+								maxlength="200"
+							/>
+						</div>
+						<div class="mb-3">
+							<label class="form-label" for="message">{$_('page.support.message')}</label>
+							<textarea
+								class="form-control"
+								id="message"
+								name="message"
+								rows="6"
+								required
+								minlength="10"
+								maxlength="5000"
+							>{form?.createTicketValues?.message ?? ''}</textarea>
+						</div>
+						<button type="submit" class="btn btn-primary">{$_('page.support.submit')}</button>
+					</form>
+				</div>
+			</div>
+
 			<div class="card">
 				<div class="card-body">
 					<h4 class="card-title">{$_('page.support.boardTitle')}</h4>

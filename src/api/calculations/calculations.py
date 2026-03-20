@@ -8,10 +8,19 @@ from celery import Celery
 
 from pathlib import Path
 
+TASK_MODULES = (
+    "calculations.discharge",
+    "calculations.nam",
+    "calculations.curvenumbers",
+    "calculations.orchestration",
+    "calculations.support_notifications",
+)
+
 app = Celery(__name__)
 app.conf.broker_url = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379")
 app.conf.result_backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://localhost:6379")
 app.conf.worker_redirect_stdouts = False
+app.conf.imports = TASK_MODULES
 
 # Performance optimizations for faster task startup and execution
 # Reduce prefetch to prevent tasks from being held while waiting for I/O
@@ -77,10 +86,4 @@ def after_setup_celery_logger(logger, **kwargs):
     """ This function sets the 'celery' logger handler and formatter """
     create_celery_logger_handler(logger, False)
 
-app.autodiscover_tasks([
-    'calculations.discharge',
-    'calculations.nam',
-    'calculations.curvenumbers',
-    'calculations.orchestration',
-    'calculations.support_notifications',
-])
+app.autodiscover_tasks(list(TASK_MODULES))
