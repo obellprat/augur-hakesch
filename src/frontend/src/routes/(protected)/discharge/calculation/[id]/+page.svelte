@@ -2563,14 +2563,17 @@
 											{#if koellaScenarioForms[scenarioIndex]}
 												<div class="row g-2 py-2 align-items-end">
 													<div class="col-md-12">
-														<label for={`glacier_area-scenario${scenarioIndex}`} class="form-label">
+														<label
+															for={`glacier_area-scenario${scenarioIndex}`}
+															class="form-label glacier-area-label-disabled"
+														>
 															{$_('page.discharge.calculation.koella.glacierArea')} km<sup>2</sup>
 														</label>
-														<input
+														<input 
 															id={`glacier_area-scenario${scenarioIndex}`}
 															type="number"
 															step="1"
-															class="form-control"
+															class="form-control glacier-area-disabled"
 															value={koellaScenarioForms[scenarioIndex].glacier_area}
 															oninput={(event) => {
 																const target = event.currentTarget as HTMLInputElement;
@@ -2579,7 +2582,7 @@
 																	sanitizeNumber(target.valueAsNumber ?? Number(target.value))
 																);
 															}}
-														/>
+														disabled/>
 													</div>
 												</div>
 												{/if}
@@ -3189,3 +3192,17 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	input.glacier-area-disabled:disabled {
+		background-color: #242424;
+		border-color: #adb5bd;
+		color: #495057;
+		cursor: not-allowed;
+		opacity: 1;
+	}
+
+	label.glacier-area-label-disabled {
+		color: #6c757d;
+	}
+</style>
