@@ -21,6 +21,8 @@ model User {
   name    String?
   Project Project[]
   NewsRead NewsRead[]
+  CreatedSupportTickets SupportTicket[] @relation("SupportTicketCreator")
+  SupportComments       SupportComment[]
 }
 
 model Project {
@@ -304,4 +306,49 @@ model NewsRead {
   news    News     @relation(fields: [newsId], references: [id], onDelete: Cascade)
 
   @@unique([userId, newsId])
+}
+
+model SupportTicket {
+  id              Int       @id @default(autoincrement())
+  subject         String
+  message         String
+  status          String    @default("open")
+  priority        String    @default("normal")
+  requesterEmail  String
+  requesterName   String?
+  source          String    @default("public_form")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdByUserId Int?
+  createdByUser   User?     @relation("SupportTicketCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  comments        SupportComment[]
+  recipients      SupportRecipient[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SupportComment {
+  id           Int           @id @default(autoincrement())
+  ticketId     Int
+  ticket       SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorUserId Int?
+  authorUser   User?         @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+  authorEmail  String?
+  authorName   String?
+  body         String
+  isInternal   Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+
+  @@index([ticketId, createdAt])
+}
+
+model SupportRecipient {
+  id        Int           @id @default(autoincrement())
+  ticketId  Int
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  email     String
+  createdAt DateTime      @default(now())
+
+  @@unique([ticketId, email])
 }

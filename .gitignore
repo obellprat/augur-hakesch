@@ -38,3 +38,4 @@ vite.config.ts.timestamp-*
 src/frontend/static/assets/precip_db/augur.sqlite
 src/api/logs/celery-heavy.log
 src/api/logs/celery-light.log
+src/api/__pycache__/main.cpython-310.pyc

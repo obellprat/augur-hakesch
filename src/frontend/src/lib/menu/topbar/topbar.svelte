@@ -112,7 +112,7 @@
 							</a>
 
 							<!-- item-->
-							<a href="javascript:void(0);" class="dropdown-item">
+							<a href="{base}/support/tickets" class="dropdown-item">
 								<i class="ri-question-line me-1 fs-16 align-middle"></i>
 								<span class="align-middle">{$_('page.nav.support')}</span>
 							</a>
