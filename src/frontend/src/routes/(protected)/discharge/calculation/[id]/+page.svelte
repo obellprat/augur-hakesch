@@ -1098,7 +1098,7 @@
 
 		const mean_data: { name: string; color: string; data: (number | null)[]; type?: string } = {
 			name: 'Mittelwert',
-			color: '#0d2b5e',
+			color: '#ffffff',
 			data: [mean_30, mean_100, mean_300]
 		};
 
