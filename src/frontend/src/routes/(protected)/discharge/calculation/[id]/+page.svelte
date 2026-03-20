@@ -598,11 +598,17 @@
 
 	// Climate scenario options
 	const climateScenarios = [
-		{ value: 'current', label: 'Current Climate' },
-		{ value: '1_5_degree', label: '+1.5°C' },
-		{ value: '2_degree', label: '+2.0°C' },
-		{ value: '3_degree', label: '+3.0°C' }
+		{ value: 'current', labelKey: 'page.discharge.calculation.climateScenarioOptions.current' },
+		{ value: '1_5_degree', labelKey: 'page.discharge.calculation.climateScenarioOptions.plus1_5' },
+		{ value: '2_degree', labelKey: 'page.discharge.calculation.climateScenarioOptions.plus2_0' },
+		{ value: '3_degree', labelKey: 'page.discharge.calculation.climateScenarioOptions.plus3_0' }
 	];
+	let selectedClimateScenarioLabel = $derived(
+		$_(
+			climateScenarios.find((scenario) => scenario.value === selectedClimateScenario)?.labelKey ||
+				'page.discharge.calculation.climateScenarioOptions.current'
+		)
+	);
 
 	// Helper function to get the appropriate result field based on selected climate scenario
 	function getResultField(item: any, baseFieldName: string) {
@@ -2833,7 +2839,7 @@
 											bind:value={selectedClimateScenario}
 										>
 											{#each climateScenarios as scenario}
-												<option value={scenario.value}>{scenario.label}</option>
+												<option value={scenario.value}>{$_(scenario.labelKey)}</option>
 											{/each}
 										</select>
 									</div>
@@ -2841,6 +2847,11 @@
 									<div class="row">
 										<!-- Input Part -->
 										<div class="col-lg-6">
+											<h5 class="text-muted mb-2">
+												{$_('page.discharge.calculation.chart.barChartScenarioTitle', {
+													values: { scenario: selectedClimateScenarioLabel }
+												})}
+											</h5>
 											{#key selectedClimateScenario}
 												<div use:renderChart={chart}></div>
 											{/key}
@@ -2849,7 +2860,9 @@
 											{#if nam.some((n: any) => getResultField(n, 'NAM_Result')?.HQ_time)}
 												<div class="mt-4">
 													<h5 class="text-muted">
-														{$_('page.discharge.calculation.chart.namBeHydrograph')}
+														{$_('page.discharge.calculation.chart.namBeHydrograph', {
+															values: { scenario: selectedClimateScenarioLabel }
+														})}
 													</h5>
 													<div class="card">
 														<div class="card-body">

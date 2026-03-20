@@ -121,7 +121,8 @@
           "discharge": "Discharge",
           "dischargeUnit": "Discharge [m³/s]",
           "timeUnit": "Time [min]",
-          "namBeHydrograph": "NAM.BE Hydrograph",
+          "barChartScenarioTitle": "Climate scenario: {scenario}",
+          "namBeHydrograph": "NAM.BE Hydrograph - Climate scenario: {scenario}",
           "dischargeTimeSeries": "Discharge Time Series",
           "dischargeTooltip": "m³/s"
         },
@@ -142,6 +143,12 @@
         "hadesValuesError": "Error loading HADES values",
         "hadesValuesNoCoordinates": "No discharge point coordinates found",
         "climateScenario": "Climate scenario",
+        "climateScenarioOptions": {
+          "current": "Current Climate",
+          "plus1_5": "+1.5°C",
+          "plus2_0": "+2.0°C",
+          "plus3_0": "+3.0°C"
+        },
         "hydrologicalCalculation": "Hydrological calculations",
         "percentage": "Percentage (%)",
         "psiValidationError": "The value must be less than 1",

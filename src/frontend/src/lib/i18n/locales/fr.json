@@ -121,7 +121,8 @@
           "discharge": "Débit",
           "dischargeUnit": "Débit [m³/s]",
           "timeUnit": "Temps [min]",
-          "namBeHydrograph": "Hydrogramme NAM.BE",
+          "barChartScenarioTitle": "Scénario climatique : {scenario}",
+          "namBeHydrograph": "Hydrogramme NAM.BE - Scénario climatique : {scenario}",
           "dischargeTimeSeries": "Série temporelle du débit",
           "dischargeTooltip": "m³/s"
         },
@@ -142,6 +143,12 @@
         "hadesValuesError": "Erreur lors du chargement des valeurs HADES",
         "hadesValuesNoCoordinates": "Aucune coordonnée du point de décharge trouvée",
         "climateScenario": "Scénario climatique",
+        "climateScenarioOptions": {
+          "current": "Climat actuel",
+          "plus1_5": "+1.5°C",
+          "plus2_0": "+2.0°C",
+          "plus3_0": "+3.0°C"
+        },
         "hydrologicalCalculation": "Calculs hydrologiques",
         "percentage": "Pour cent",
         "psiValidationError": "La valeur doit être inférieure à 1",

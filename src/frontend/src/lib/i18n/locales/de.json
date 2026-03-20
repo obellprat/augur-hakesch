@@ -102,7 +102,8 @@
           "discharge": "Abfluss",
           "dischargeUnit": "Abfluss [m³/s]",
           "timeUnit": "Zeit [min]",
-          "namBeHydrograph": "Ganglinie NAM.BE",
+          "barChartScenarioTitle": "Klimaszenario: {scenario}",
+          "namBeHydrograph": "Ganglinie NAM.BE - Klimaszenario: {scenario}",
           "dischargeTimeSeries": "Abfluss-Zeitreihe",
           "dischargeTooltip": "m³/s"
         },
@@ -142,6 +143,12 @@
         "hadesValuesError": "Fehler beim Laden der HADES Werte",
         "hadesValuesNoCoordinates": "Keine Abflusspunkt-Koordinaten gefunden",
         "climateScenario": "Klimaszenario",
+        "climateScenarioOptions": {
+          "current": "Aktuelles Klima",
+          "plus1_5": "+1.5°C",
+          "plus2_0": "+2.0°C",
+          "plus3_0": "+3.0°C"
+        },
         "hydrologicalCalculation": "Hydrologische Berechnungen",
         "percentage": "Prozent (%)",
         "psiValidationError": "Der Wert muss kleiner als 1 sein",
