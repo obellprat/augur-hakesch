@@ -102,6 +102,7 @@
           "discharge": "Abfluss",
           "dischargeUnit": "Abfluss [m³/s]",
           "timeUnit": "Zeit [min]",
+          "namBeHydrograph": "Ganglinie NAM.BE",
           "dischargeTimeSeries": "Abfluss-Zeitreihe",
           "dischargeTooltip": "m³/s"
         },

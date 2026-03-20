@@ -121,6 +121,7 @@
           "discharge": "Débit",
           "dischargeUnit": "Débit [m³/s]",
           "timeUnit": "Temps [min]",
+          "namBeHydrograph": "Hydrogramme NAM.BE",
           "dischargeTimeSeries": "Série temporelle du débit",
           "dischargeTooltip": "m³/s"
         },

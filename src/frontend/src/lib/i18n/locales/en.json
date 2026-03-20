@@ -121,6 +121,7 @@
           "discharge": "Discharge",
           "dischargeUnit": "Discharge [m³/s]",
           "timeUnit": "Time [min]",
+          "namBeHydrograph": "NAM.BE Hydrograph",
           "dischargeTimeSeries": "Discharge Time Series",
           "dischargeTooltip": "m³/s"
         },

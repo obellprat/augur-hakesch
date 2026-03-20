@@ -2849,7 +2849,7 @@
 											{#if nam.some((n: any) => getResultField(n, 'NAM_Result')?.HQ_time)}
 												<div class="mt-4">
 													<h5 class="text-muted">
-														{$_('page.discharge.calculation.chart.dischargeTimeSeries')}
+														{$_('page.discharge.calculation.chart.namBeHydrograph')}
 													</h5>
 													<div class="card">
 														<div class="card-body">
