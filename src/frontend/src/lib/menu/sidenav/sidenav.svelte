@@ -5,6 +5,11 @@
 	import { page } from '$app/state';
 
 	let props = $props();
+	let aboutActive = $derived(
+		page.url.pathname.includes('/about') ||
+			page.url.pathname.includes('/news') ||
+			page.url.pathname.includes('/support')
+	);
 </script>
 
 <!-- Sidenav Menu Start -->
@@ -54,11 +59,27 @@
 
 			<!--<Navlink title={$_('page.nav.science')} href="science" icon="ti ti-school" />-->
 
-			<Navlink title={$_('page.news.nav')} href="news" icon="ti ti-speakerphone" />
-	
-			<Navlink title={$_('page.nav.aboutAugur')} href="about" icon="ti ti-info-circle" />
 			<Navlink title={$_('page.nav.technicalDocumentation')} href="assets/documents/AUGUR_Dokumentation_2026-02-20.pdf" icon="ti ti-file-type-pdf" target="_blank" />
-			<Navlink title={$_('page.support.title')} href="support/tickets" icon="ti ti-lifebuoy" />
+
+			<Navlink
+				title={$_('page.nav.aboutAugur')}
+				href="about"
+				icon="ti ti-info-circle"
+				submenuId="aboutSubmenu"
+				submenuOpen={aboutActive}
+				submenuToggle={false}
+			>
+				<li class="side-nav-item">
+					<a href={base + '/news'} class="side-nav-link" data-sveltekit-preload-data="off">
+						<span class="menu-text"> {$_('page.news.nav')} </span>
+					</a>
+				</li>
+				<li class="side-nav-item">
+					<a href={base + '/support/tickets'} class="side-nav-link" data-sveltekit-preload-data="off">
+						<span class="menu-text"> {$_('page.support.title')} </span>
+					</a>
+				</li>
+			</Navlink>
 		</ul>
 
 		<!-- dDonate Box -->

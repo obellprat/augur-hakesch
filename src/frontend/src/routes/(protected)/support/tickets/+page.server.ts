@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/public';
+import { base } from '$app/paths';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -49,7 +50,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const session = await locals.auth();
 	const accessToken = (session as any)?.access_token;
 	if (!accessToken) {
-		throw redirect(303, `/login?redirect_url=${encodeURIComponent(url.href)}`);
+		throw redirect(303, `${base}/login?redirect_url=${encodeURIComponent(url.href)}`);
 	}
 
 	const result = await fetchTickets(accessToken);

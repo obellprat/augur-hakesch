@@ -3,7 +3,18 @@
 
 	import Navlink from '../../page/discharge/navlink.svelte';
 	import { base } from '$app/paths';
-	let { title, icon, href, projectcount = 0, currentproject = null, target = '_self' } = $props();
+	let {
+		title,
+		icon,
+		href,
+		projectcount = 0,
+		currentproject = null,
+		target = '_self',
+		submenuId = null,
+		submenuOpen = false,
+		submenuToggle = true,
+		children = null
+	} = $props();
 	import { _ } from 'svelte-i18n';
 
 	let active = $derived(page.url.pathname.includes(href));
@@ -63,6 +74,26 @@
 						</div>
 					</li>
 				{/if}
+			</ul>
+		</div>
+	{:else if submenuId}
+		<a
+			href={url}
+			data-bs-toggle={submenuToggle ? 'collapse' : undefined}
+			data-bs-target={submenuToggle ? '#' + submenuId : undefined}
+			aria-expanded={submenuOpen}
+			aria-controls={submenuId}
+			class="side-nav-link"
+			data-sveltekit-preload-data="off"
+			target={target}
+		>
+			<span class="menu-icon"><i class={icon}></i></span>
+			<span class="menu-text"> {title} </span>
+			<span class="menu-arrow"></span>
+		</a>
+		<div class={['collapse', { show: submenuOpen }]} id={submenuId}>
+			<ul class="sub-menu">
+				{@render children?.()}
 			</ul>
 		</div>
 	{:else}
