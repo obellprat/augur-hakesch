@@ -2116,107 +2116,6 @@
 	</div>
 </div>
 
-<!-- ClarkWSL Help Modal -->
-<div
-	id="clarkwsl-help-modal"
-	class="modal fade"
-	tabindex="-1"
-	role="dialog"
-	aria-labelledby="clarkwsl-help-modal-label"
-	aria-hidden="true"
->
-	<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h4 class="modal-title" id="clarkwsl-help-modal-label">Herleitung Abflussprozesstypen</h4>
-				<button
-					type="button"
-					class="btn-close"
-					data-bs-dismiss="modal"
-					aria-label={$_('page.general.close')}
-				></button>
-			</div>
-			<div class="modal-body">
-				<p>
-					Bei der Hochwasserabflussbildung spielen neben der Dauer und der Intensität von Starkniederschlägen und der Grösse/Topographie des Einzugsgebiets die Bodeneigenschaften eine entscheidende Rolle. Bei der Hochwasserabschätzung werden Böden mit gleicher Abflussreaktion in Klassen unterteilt.
-				</p>
-				<table class="table table-sm table-bordered">
-					<thead>
-						<tr>
-							<th>Abflussreaktion Klasse</th>
-							<th>Beschreibung</th>
-							<th>Abflussprozesse</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td>Klasse 1</td>
-							<td>rasch und stark beitragend</td>
-							<td>HOF1, SOF1</td>
-						</tr>
-						<tr>
-							<td>Klasse 2</td>
-							<td>leicht verzögert beitragend</td>
-							<td>HOF2, SOF2, SSF1</td>
-						</tr>
-						<tr>
-							<td>Klasse 3</td>
-							<td>verzögert beitragend</td>
-							<td>SOF3, SSF2</td>
-						</tr>
-						<tr>
-							<td>Klasse 4</td>
-							<td>stark verzögert beitragend</td>
-							<td>SOF3, SSF3</td>
-						</tr>
-						<tr>
-							<td>Klasse 5</td>
-							<td>sehr stark verzögert beitragend</td>
-							<td>DP</td>
-						</tr>
-					</tbody>
-				</table>
-				<p>
-					Die Bestimmung der Klassen erfolgt über folgende Abflussprozesstypen:
-				</p>
-				<p>
-					<b>HOF</b>: Oberflächenabfluss aufgrund von Infiltrationshemmnissen (Hortonian Overland Flow) wird auf Böden und Oberflächen beobachtet, die verdichtet oder wasserabstossend und deshalb nur schwach durchlässig sind.<br /> 
-					<b>SOF</b>: Gesättigter Oberflächenabfluss (Saturation Overland Flow) tritt nach Sättigung des Bodens auf. Häufig auf flachgründigen oder feucht-nassen Böden mit geringem Speichervermögen.<br />
-					<b>SSF</b>: Abfluss im Boden (Sub-Surface Flow) tritt auf, wenn über einer Stauschicht im Boden hoch durchlässige Schichten liegen oder Makroporen dem Wasser ein rasches laterales Fliessen ermöglichen. <br />
-					<b>DP</b>: Ist der Boden gut durchlässig und liegt er über einem durchlässigem C-Horizont, kann über die Tiefensickerung (Deep Percolation) Wasser in den tiefen Untergrund eindringen und gespeichert werden, ohne dass Abfluss entsteht.<br />
-				</p>
-				<p>
-					Die Abflussprozesstypen werden mit einer Zahl zwischen 1 bis 3 ergänzt, wobei 1 für eine rasche Reaktion, 2 für eine verzögerte und 3 für eine stark verzögerte Reaktion steht (z.B. rascher (SOF1), verzögerter (SOF2) oder stark verzögerter Oberflächenabfluss (SOF3)).
-				</p>
-				<p>
-					Die Abflussprozesstypen, die Werte Vo20, WSV und psi können über folgende Schemen hergeleitet werden.
-				</p>
-				<img src="{base}/assets/images/abflussprozesstypen.png" alt="Abflussprozesstypen" class="img-fluid" />
-				<img src="{base}/assets/images/abflussprozesstypen2.png" alt="Abflussprozesstypen 2" class="img-fluid" />
-				<p class="mt-3">
-					<strong>Literatur:</strong>
-				</p>
-				<ol>
-					<li>
-						«Hochwasserabschätzung in schweizerischen Einzugsgebieten Praxishilfe Berichte des BWG,
-						Serie Wasser Nr. 4, Bern 2003.
-					</li>
-					<li>
-						«Automatisch hergeleitete Abflussprozesskarten – ein neues Werkzeug zur Abschätzung von
-						Hochwasserabflüssen, Felix Naef et al., «Wasser Energie Luft» – 99. Jahrgang, 2007, Heft
-						3, CH-5401 Baden.
-					</li>
-				</ol>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-primary" data-bs-dismiss="modal">
-					{$_('page.general.close')}
-				</button>
-			</div>
-		</div>
-	</div>
-</div>
-
 <div class="flex-grow-1 card">
 	<div class="h-100">
 		<div class="card-header py-2 px-3 border-bottom">
@@ -2387,17 +2286,7 @@
 					<section class="">
 						<h4 class="text-muted mb-3">
 							{$_('page.discharge.calculation.hydrologicalCalculation')}
-							<button
-									type="button"
-									class="btn btn-sm btn-link p-0"
-									style="line-height: 1; color: var(--bs-info);"
-									data-bs-toggle="modal"
-									data-bs-target="#clarkwsl-help-modal"
-									aria-label="ClarkWSL Hilfe"
-									title="ClarkWSL Hilfe"
-								>
-									<i class="ti ti-info-circle fs-18"></i>
-								</button>
+							
 						</h4>
 		
 						{#each clarkScenarioRange as scenarioIndex}
@@ -2407,33 +2296,46 @@
 								<table class="table table-sm table-bordered">
 									<thead>
 										<tr>
-											<th style="width: 30%;">Zone</th>
+											<th style="width: 30%;">Abflussprozesstyp
+												<a
+														href="{base}/assets/documents/beschreibung_zone.pdf"
+														target="_blank"
+														rel="noopener noreferrer"
+														class="badge badge-circle ms-1"
+														style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; text-decoration: none;"
+														title="Beschreibung Zonen (PDF)"
+														aria-label="Beschreibung der Zonen PDF öffnen"
+													>
+														<i class="ri-information-line" style="font-weight: 100;"></i>
+													</a>
+											</th>
 												<th style="width: 20%;">{$_('page.discharge.calculation.percentage')}</th>
 												<th style="width: 15%;">{$_('page.discharge.calculation.modFZV.wettingVolume')}
-													<span
-														class="badge badge-circle"
-														data-bs-toggle="tooltip"
-														data-bs-trigger="hover"
-														data-bs-placement="top"
-														data-bs-title={$_('page.discharge.calculation.modFZV.wettingVolumeTooltip')}
-														style="cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0;"
-														use:initTooltip
+													<a
+														href="{base}/assets/documents/v0-werte.pdf"
+														target="_blank"
+														rel="noopener noreferrer"
+														class="badge badge-circle ms-1"
+														style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; text-decoration: none;"
+														title="v0-Werte (PDF)"
+														aria-label="v0-Werte PDF öffnen"
 													>
-														<i class="ri-question-line mb-1" style="font-weight: 100;"></i>
-													</span></th>
+														<i class="ri-information-line" style="font-weight: 100;"></i>
+													</a>
+												</th>
 												<th style="width: 15%;">WSV</th>
 												<th style="width: 20%;">{$_('page.discharge.calculation.modFZV.peakFlow')}
-													<span
-														class="badge badge-circle"
-														data-bs-toggle="tooltip"
-														data-bs-trigger="hover"
-														data-bs-placement="top"
-														data-bs-title={$_('page.discharge.calculation.modFZV.peakFlowTooltip')}
-														style="cursor: help; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0;"
-														use:initTooltip
-													>
-														<i class="ri-question-line mb-1" style="font-weight: 100;"></i>
-													</span></th>
+													<a
+													href="{base}/assets/documents/psi.pdf"
+													target="_blank"
+													rel="noopener noreferrer"
+													class="badge badge-circle ms-1"
+													style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; text-decoration: none;"
+													title="Beschreibung PSI (PDF)"
+													aria-label="Beschreibung psi PDF öffnen"
+												>
+													<i class="ri-information-line" style="font-weight: 100;"></i>
+												</a></th>
 											</tr>
 										</thead>
 										<tbody>
