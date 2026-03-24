@@ -1,3 +1,25 @@
+## 1.3.0-rc.1 (2026-03-24)
+
+### Feat
+
+- **frontend,-api**: shows a warning if the catchment size is bigger than 15km2
+- **frontend**: CSV Export function for the hydrograph
+- **frontend,-api**: Creating a new contact form with a simple ticketing system
+- **frontend**: Naming of the diagramm. Localisation of current clima
+- **frontend,-api**: Import and export of projects as sqlite and zip file
+- **frontend,-api**: added redis queue view
+- **frontend,-api**: celery tasks monitoring
+
+### Fix
+
+- **frontend**: Integration of documentation pdf for zone, psi and v0 20
+- **frontend**: Restructuring of the menu and proper redirection for support tickets
+- **frontend**: Mean in white
+- **frontend**: disabled glacier area input
+- **frontend**: Naming of the hydrograph to NAM.BE
+- **api**: Division of the worker into two parallel workers for better processing of multiple calculation requests
+- **frontend**: saves the project before calculation
+
 ## 1.2.0 (2026-03-03)
 
 ### Feat
