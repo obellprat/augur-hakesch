@@ -123,6 +123,8 @@
           "timeUnit": "Temps [min]",
           "barChartScenarioTitle": "Scénario climatique : {scenario}",
           "namBeHydrograph": "Hydrogramme NAM.BE - Scénario climatique : {scenario}",
+          "exportNamBeCsv": "CSV",
+          "exportNamBeCsvError": "Erreur lors de l'export CSV",
           "dischargeTimeSeries": "Série temporelle du débit",
           "dischargeTooltip": "m³/s"
         },

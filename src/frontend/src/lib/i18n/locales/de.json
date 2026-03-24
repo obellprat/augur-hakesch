@@ -104,6 +104,8 @@
           "timeUnit": "Zeit [min]",
           "barChartScenarioTitle": "Klimaszenario: {scenario}",
           "namBeHydrograph": "Ganglinie NAM.BE - Klimaszenario: {scenario}",
+          "exportNamBeCsv": "CSV",
+          "exportNamBeCsvError": "Fehler beim CSV-Export",
           "dischargeTimeSeries": "Abfluss-Zeitreihe",
           "dischargeTooltip": "m³/s"
         },

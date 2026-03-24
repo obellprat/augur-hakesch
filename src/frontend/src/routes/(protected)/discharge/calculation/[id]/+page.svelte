@@ -377,6 +377,92 @@
 		}
 	}
 
+	// Export NAM.BE ganglinie data as CSV
+	function exportNamBeGanglinieCsv() {
+		if (!nam || nam.length === 0) return;
+		try {
+			const sortedNamResults = nam
+				.slice()
+				.sort((a: any, b: any) => (a.Annuality?.number || 0) - (b.Annuality?.number || 0));
+
+			const dischargeDataArray: number[][] = [];
+			let globalStartIndex = Infinity;
+			let globalEndIndex = 0;
+
+			for (let i = 0; i < sortedNamResults.length; i++) {
+				const namItem = sortedNamResults[i];
+				const namResult = getResultField(namItem, 'NAM_Result');
+				if (namResult?.HQ_time) {
+					const dischargeData = JSON.parse(namResult.HQ_time);
+					dischargeDataArray.push(dischargeData);
+
+					let startIndex = 0;
+					let endIndex = dischargeData.length;
+					for (let j = 0; j < dischargeData.length; j++) {
+						if (dischargeData[j] > 0) {
+							startIndex = Math.max(0, j - 1);
+							break;
+						}
+					}
+					for (let j = dischargeData.length - 1; j >= 0; j--) {
+						if (dischargeData[j] > 0) {
+							endIndex = Math.min(dischargeData.length, j + 2);
+							break;
+						}
+					}
+					globalStartIndex = Math.min(globalStartIndex, startIndex);
+					globalEndIndex = Math.max(globalEndIndex, endIndex);
+				}
+			}
+
+			if (dischargeDataArray.length === 0) return;
+
+			const timeSteps = Array.from(
+				{ length: globalEndIndex - globalStartIndex },
+				(_, index) => (globalStartIndex + index) * 10
+			);
+
+			const escapeCsv = (val: string | number) => {
+				const s = String(val);
+				return s.includes(',') || s.includes('"') || s.includes('\n')
+					? '"' + s.replace(/"/g, '""') + '"'
+					: s;
+			};
+
+			const timeHeader = $_('page.discharge.calculation.chart.timeUnit');
+			const unit = $_('page.discharge.calculation.chart.dischargeTooltip');
+			const headers = [
+				timeHeader,
+				...sortedNamResults
+					.filter((n: any) => getResultField(n, 'NAM_Result')?.HQ_time)
+					.map((n: any) => `${n.Annuality?.description || 'Annuality'} (${unit})`)
+			];
+
+			const rows = timeSteps.map((time, idx) => {
+				const values: (string | number)[] = [time];
+				dischargeDataArray.forEach((data) => {
+					const v = data[globalStartIndex + idx];
+					values.push(typeof v === 'number' ? v.toFixed(2) : '');
+				});
+				return values.map(escapeCsv).join(',');
+			});
+
+			const csv = [headers.map(escapeCsv).join(','), ...rows].join('\n');
+			const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = `nam_be_ganglinie_${selectedClimateScenario}.csv`;
+			link.click();
+			URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error('Error exporting NAM.BE ganglinie CSV:', error);
+			toast.push($_('page.discharge.calculation.chart.exportNamBeCsvError'), {
+				theme: 'danger'
+			});
+		}
+	}
+
 	// Function to create discharge timesteps chart options
 	function getDischargeChartOptions(hqTimeData: string | null, title: string): Chart {
 		if (!hqTimeData) {
@@ -2764,11 +2850,21 @@
 											<!-- NAM Discharge Timesteps Graph -->
 											{#if nam.some((n: any) => getResultField(n, 'NAM_Result')?.HQ_time)}
 												<div class="mt-4">
-													<h5 class="text-muted">
-														{$_('page.discharge.calculation.chart.namBeHydrograph', {
-															values: { scenario: selectedClimateScenarioLabel }
-														})}
-													</h5>
+													<div class="d-flex justify-content-between align-items-center mb-2">
+														<h5 class="text-muted mb-0">
+															{$_('page.discharge.calculation.chart.namBeHydrograph', {
+																values: { scenario: selectedClimateScenarioLabel }
+															})}
+														</h5>
+														<button
+															type="button"
+															class="btn btn-sm btn-outline-secondary"
+															onclick={exportNamBeGanglinieCsv}
+														>
+															<i class="ri-download-2-line me-1"></i>
+															{$_('page.discharge.calculation.chart.exportNamBeCsv')}
+														</button>
+													</div>
 													<div class="card">
 														<div class="card-body">
 															{#key selectedClimateScenario}
