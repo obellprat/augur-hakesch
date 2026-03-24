@@ -51,7 +51,9 @@
         "isozones": "Isozones",
         "download": "Download",
         "channel": "Channel",
-        "geodatasuccess": "The geodata has been successfully calculated"
+        "geodatasuccess": "The geodata has been successfully calculated",
+        "catchmentSizeInfoTitle": "Information",
+        "catchmentSizeInfoMessage": "This catchment area is {area} km². The methods were not calibrated for catchment areas larger than 10 km²."
       },
       "project": "Project",
       "create": {

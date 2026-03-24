@@ -53,9 +53,13 @@
 		apiErrorMessage = getApiErrorFallback();
 	});
 
+
 	// Track if component is mounted to prevent invalidateAll() calls after destruction
 	let isMounted = $state(true);
 	let statusCheckTimeout: ReturnType<typeof setTimeout> | null = null;
+	// Show catchment size info modal after calculation when area > 15 km²
+	let pendingCatchmentModalCheck = $state(false);
+	let catchmentSizeForInfoModal = $state<number | null>(null);
 
 	// Safe wrapper for invalidateAll that checks if component is still mounted
 	async function safeInvalidateAll() {
@@ -193,13 +197,34 @@
 					} else if (res.task_status == 'SUCCESS') {
 						html = $_('page.discharge.overview.geodatasuccess');
 
+						pendingCatchmentModalCheck = true;
 						const jq = (globalThis as any).$;
+						const projectId = data.project?.id;
 						if (jq) {
 							jq('#generate-modal').modal('hide');
 						}
-						// Call safeInvalidateAll without await to avoid blocking, errors are handled internally
-						safeInvalidateAll().catch(() => {
-							// Errors are already handled in safeInvalidateAll
+						// After refresh, fetch fresh project and check if catchment > 15 km²
+						safeInvalidateAll().then(() => {
+							if (!isMounted || !pendingCatchmentModalCheck || !projectId) return;
+							return fetch(
+								`${env.PUBLIC_HAKESCH_API_PATH}/project/by-id/${projectId}`,
+								{
+									headers: {
+										Authorization: 'Bearer ' + data.session.access_token
+									}
+								}
+							).then((r) => (r.ok ? r.json() : null));
+						}).then((project) => {
+							pendingCatchmentModalCheck = false;
+							if (!project || !isMounted) return;
+							const area = Number(project.catchment_area);
+							if (!Number.isNaN(area) && area > 15) {
+								catchmentSizeForInfoModal = Math.round(area * 10) / 10;
+								const jq = (globalThis as any).$;
+								if (jq) jq('#catchment-size-info-modal').modal('show');
+							}
+						}).catch(() => {
+							pendingCatchmentModalCheck = false;
 						});
 						if (isMounted) {
 							addIsozones();
@@ -467,6 +492,13 @@
 		return downloadFile(
 			`${env.PUBLIC_HAKESCH_API_PATH}/file/branches/${data.project.id}`,
 			`branches_${data.project.id}.geojson`
+		);
+	}
+
+	function exportProject() {
+		return downloadFile(
+			`${env.PUBLIC_HAKESCH_API_PATH}/project/export/${data.project.id}`,
+			`project_${data.project.id}.augur.zip`
 		);
 	}
 
@@ -763,6 +795,35 @@ onMount(async () => {
 						</div>
 					</div>
 
+					<div
+						id="catchment-size-info-modal"
+						class="modal fade"
+						tabindex="-1"
+						role="dialog"
+						aria-labelledby="catchment-size-info-modal-label"
+						aria-hidden="true"
+					>
+						<div class="modal-dialog modal-dialog-centered">
+							<div class="modal-content">
+								<div class="modal-header text-bg-warning border-0">
+									<h4 class="modal-title" id="catchment-size-info-modal-label">{$_('page.discharge.overview.catchmentSizeInfoTitle')}</h4>
+									<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label={$_('page.general.close')}
+									></button>
+								</div>
+								<div class="modal-body">
+									<p>
+										{$_('page.discharge.overview.catchmentSizeInfoMessage', {
+											values: { area: catchmentSizeForInfoModal ?? '-' }
+										})}
+									</p>
+								</div>
+								<div class="modal-footer border-0">
+									<button type="button" class="btn btn-warning" data-bs-dismiss="modal">{$_('page.general.close')}</button>
+								</div>
+							</div>
+						</div>
+					</div>
+
 					<!-- End Modals -->
 					<!-- Dropdown -->
 					<div class="dropdown align-items-center d-flex d-xl-none">
@@ -808,6 +869,17 @@ onMount(async () => {
 							<button
 								type="button"
 								class="dropdown-item"
+								onclick={exportProject}
+								data-umami-event="export-project-dropdown"
+								title={$_('page.discharge.create.exportProject')}
+								aria-label={$_('page.discharge.create.exportProject')}
+							>
+								<i class="ti ti-file-export me-1 fs-24 align-middle"></i>
+								<span class="align-middle">{$_('page.discharge.create.exportProject')}</span>
+							</button>
+							<button
+								type="button"
+								class="dropdown-item"
 								data-bs-toggle="modal"
 								data-bs-target="#delete-project-modal" data-umami-event="delete-project-dropdown"
 								title={$_('page.general.delete')}
@@ -849,6 +921,16 @@ onMount(async () => {
 							aria-label={$_('page.general.save')}
 						>
 							<i class="ti ti-device-floppy fs-24"></i>
+						</button>
+						<button
+							type="button"
+							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
+							onclick={exportProject}
+							data-umami-event="export-project-button"
+							title={$_('page.discharge.create.exportProject')}
+							aria-label={$_('page.discharge.create.exportProject')}
+						>
+							<i class="ti ti-file-export fs-24"></i>
 						</button>
 						<span
 							class="btn btn-sm btn-icon btn-ghost-danger d-flex"
@@ -981,11 +1063,8 @@ onMount(async () => {
 											<button
 												type="button"
 												class="btn btn-sm btn-outline-primary"
-												onclick={() => downloadFile(
-													`${env.PUBLIC_HAKESCH_API_PATH}/project/export/${data.project.id}`,
-													`project_${data.project.id}.augur.zip`
-												)}
-												data-umami-event="export-project-button"
+												onclick={exportProject}
+												data-umami-event="export-project-geodata-button"
 											>
 												<i class="ti ti-download me-1"></i>
 												{$_('page.discharge.overview.download')}

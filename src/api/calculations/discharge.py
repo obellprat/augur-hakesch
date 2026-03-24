@@ -1509,8 +1509,8 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     if shutdown_after_prepare:
         from celery.worker import state as worker_state
         worker_state.should_stop = 0  # EX_OK — clean shutdown after task ack
-    
-    return
+
+    return {"catchment_area_km2": float(catchmentkm2.item())}
 
 
 def cumulative_length(geojson_featurecollection):

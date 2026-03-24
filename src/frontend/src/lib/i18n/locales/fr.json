@@ -51,7 +51,9 @@
         "isozones": "Isozones",
         "download": "Télécharger",
         "channel": "Chenal",
-        "geodatasuccess": "Les géodonnées ont été calculées avec succès"
+        "geodatasuccess": "Les géodonnées ont été calculées avec succès",
+        "catchmentSizeInfoTitle": "Information",
+        "catchmentSizeInfoMessage": "La taille de ce bassin versant est de {area} km². Les méthodes n'ont pas été calibrées pour des bassins versants de plus de 10 km²."
       },
       "project": "Projet",
       "create": {

@@ -51,7 +51,9 @@
         "calculation": "Berechnung der Geodaten",
         "errorrecalculating": "Die Geodaten konnten nicht berechnet werden. Bitte versuchen Sie es später erneut.<br>",
         "recalculating": "Der Prozess wird intialisiert. Bitte warten...",
-        "recalculationDialogText": "Die Geodaten werden berechnet. Dieser Prozess dauert je nach Einzugsgebietsgrösse einige Minuten"
+        "recalculationDialogText": "Die Geodaten werden berechnet. Dieser Prozess dauert je nach Einzugsgebietsgrösse einige Minuten",
+        "catchmentSizeInfoTitle": "Hinweis",
+        "catchmentSizeInfoMessage": "Dieses Einzugsgebiet ist {area} km² gross. Die Verfahren wurden nicht für Einzugsgebietsgrössen grösser als 10 km² kalibriert."
       },
       "project": "Projekt",
       "create": {
