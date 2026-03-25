@@ -1,3 +1,9 @@
+## 1.3.0-rc.2 (2026-03-25)
+
+### Feat
+
+- **frontend**: Documentation for the own soil data shapefile with an example
+
 ## 1.3.0-rc.1 (2026-03-24)
 
 ### Feat
