@@ -32,6 +32,7 @@ type BulkPayload = {
 		water_balance_mode?: string;
 		storm_center_mode?: string;
 		routing_method?: string;
+		use_own_soil_data?: boolean;
 	}>[] | null;
 };
 
@@ -863,6 +864,7 @@ export const actions = {
 				const water_balance_mode = scenario.water_balance_mode || 'uniform';
 				const storm_center_mode = scenario.storm_center_mode || 'centroid';
 				const routing_method = scenario.routing_method || 'time_values';
+				const use_own_soil_data = Boolean(scenario.use_own_soil_data);
 
 				for (const id of ids) {
 					await prisma.NAM.update({
@@ -872,7 +874,8 @@ export const actions = {
 							readiness_to_drain,
 							water_balance_mode,
 							storm_center_mode,
-							routing_method
+							routing_method,
+							use_own_soil_data
 						}
 					});
 				}

@@ -458,7 +458,10 @@
 		} catch (error) {
 			console.error('Error exporting NAM.BE ganglinie CSV:', error);
 			toast.push($_('page.discharge.calculation.chart.exportNamBeCsvError'), {
-				theme: 'danger'
+				theme: {
+					'--toastColor': 'white',
+					'--toastBackground': 'darkred'
+				}
 			});
 		}
 	}
@@ -654,7 +657,7 @@
 	let isUploading = $state(false);
 	let couldCalculate = $state(false);
 	let soilFileExists = $state(false);
-	let useOwnSoilData = $state(false);
+	let useOwnSoilData = $state(Boolean(data.project.NAM?.[0]?.use_own_soil_data ?? false));
 	let isCheckingSoilFile = $state(false);
 	let isBulkSaving = $state(false);
 	let bulkSaveForm: HTMLFormElement | null = null;
@@ -1037,7 +1040,8 @@
 				readiness_to_drain: scenario.readiness_to_drain,
 				water_balance_mode: scenario.water_balance_mode,
 				storm_center_mode: scenario.storm_center_mode,
-				routing_method: scenario.routing_method
+				routing_method: scenario.routing_method,
+				use_own_soil_data: useOwnSoilData
 			}))
 		};
 	}
@@ -1224,6 +1228,7 @@
 		koella = data.project.Koella || [];
 		clark_wsl = data.project.ClarkWSL || [];
 		nam = data.project.NAM || [];
+		useOwnSoilData = Boolean(data.project.NAM?.[0]?.use_own_soil_data ?? false);
 	});
 
 
@@ -2202,6 +2207,85 @@
 	</div>
 </div>
 
+<!-- Soil upload help modal -->
+<div
+	id="soil-upload-help-modal"
+	class="modal fade"
+	tabindex="-1"
+	role="dialog"
+	aria-labelledby="soil-upload-help-modal-label"
+	aria-hidden="true"
+>
+	<div class="modal-dialog modal-dialog-centered modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="soil-upload-help-modal-label">
+					{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalTitle')}
+				</h4>
+				<button
+					type="button"
+					class="btn-close"
+					data-bs-dismiss="modal"
+					aria-label={$_('page.general.close')}
+				></button>
+			</div>
+			<div class="modal-body">
+				<p class="mb-3">
+					{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalIntro')}
+				</p>
+				<ul class="mb-3">
+					<li>{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalGroupA')}</li>
+					<li>{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalGroupB')}</li>
+					<li>{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalGroupC')}</li>
+					<li>{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalGroupD')}</li>
+				</ul>
+				<p class="mb-2">
+					{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalShapefileReq')}
+				</p>
+				<ul class="mb-3">
+					<li>
+						{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalShapefilePolygon')}
+						<code>soil.shp</code>)
+					</li>
+					<li>
+						{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalShapefileAttr')}
+						<code>hsg</code>
+						{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalShapefileAttrValues')}
+						<code>A</code>, <code>B</code>, <code>C</code>, <code>D</code>.
+					</li>
+					<li>{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalShapefileZip')}</li>
+				</ul>
+
+				<p class="mb-1">
+					{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalExample')}
+					<a
+						href="{base}/assets/documents/soil.zip"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="ms-1"
+						>soil.zip</a
+					>.
+				</p>
+				<p class="mb-0 small text-muted">
+					{$_('page.discharge.calculation.namParams.uploadZipFileHelpModalSourceLabel')}
+					<a
+						href="https://boku.ac.at/fileadmin/data/H03000/H87000/H87100/DAN_IAN_Reports/Report0151_Band_2.pdf"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="ms-1"
+						>Report0151_Band_2.pdf</a
+					>
+				</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+					{$_('page.general.close')}
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <div class="flex-grow-1 card">
 	<div class="h-100">
 		<div class="card-header py-2 px-3 border-bottom">
@@ -2726,9 +2810,28 @@
 													{/if}
 
 													{#if !soilFileExists || useOwnSoilData}
-														<label for={`zip_upload-scenario${scenarioIndex}`} class="form-label">
-															{$_('page.discharge.calculation.namParams.uploadZipFile')}
-														</label>
+														<div class="d-flex align-items-center gap-2 mb-1">
+															<label
+																for={`zip_upload-scenario${scenarioIndex}`}
+																class="form-label mb-0"
+															>
+																{$_('page.discharge.calculation.namParams.uploadZipFile')}
+															</label>
+															<button
+																type="button"
+																class="btn p-0 text-decoration-none"
+																data-bs-toggle="modal"
+																data-bs-target="#soil-upload-help-modal"
+																title={$_(
+																	'page.discharge.calculation.namParams.uploadZipFileHelpModalTitle'
+																)}
+																aria-label={$_(
+																	'page.discharge.calculation.namParams.uploadZipFileHelpModalTitle'
+																)}
+															>
+																<i class="ti ti-help-circle fs-18"></i>
+															</button>
+														</div>
 														<input
 															type="file"
 															class="form-control"
