@@ -118,6 +118,8 @@ def nam(self,
     cc_degree: float = 0.0,
     climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
     debug: bool = True,
+    use_pre_moisture: bool = False,
+    persist_result: bool = True,
 ):
     """
     NAM (Nedbør-Afstrømnings-Model) calculation based on distributed curve numbers and travel times.
@@ -446,8 +448,9 @@ def nam(self,
     S_cells = np.full_like(cn_data, np.nan, dtype=np.float32)
     S_cells[valid_mask] = (25400 / cn_data[valid_mask]) - 254
     
-    # Calculate initial abstraction Ia for each cell: Ia = 0.2 * S [mm]
-    Ia_cells = 0.1 * S_cells  # SCS standard: Ia = 0.2 * S
+    # Initial abstraction: standard 10% of S (Ia = 0.1*S); Vorfeuchte 100y: 5% of S
+    ia_fraction = 0.05 if (use_pre_moisture and float(x) == 100) else 0.10
+    Ia_cells = ia_fraction * S_cells
     
     # Debug: Print statistics about curve numbers and retention
     print(f"Curve number statistics:")
@@ -1307,6 +1310,18 @@ def nam(self,
     Pe_final = HQ * dt * 60 / (np.sum(valid_mask) * pixel_area_m2 / 1000)  # Average Pe for reporting
     # 7. Update database
     prisma = None
+    if not persist_result:
+        return {
+            "HQ": float(HQ),
+            "Tc": float(Tc),
+            "TB": float(TB),
+            "TFl": float(TFl),
+            "i": float(i_final),
+            "S": float(S),
+            "Ia": float(Ia),
+            "Pe": float(Pe_final),
+            "HQ_time": json.dumps([float(q) for q in discharge_timesteps]),
+        }
     try:
         prisma = connect_prisma_with_retry()
         

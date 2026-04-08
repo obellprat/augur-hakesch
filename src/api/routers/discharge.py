@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from helpers.prisma import prisma
 from helpers.user import get_user
@@ -6,7 +6,14 @@ from prisma.models import User
 from celery import chain, group
 import pandas as pd
 
-from calculations.discharge import construct_idf_curve, modifizierte_fliesszeit, prepare_discharge_hydroparameters, koella, clark_wsl_modified
+from calculations.discharge import (
+    HAKESCH_ZONE_PARAMS,
+    construct_idf_curve,
+    modifizierte_fliesszeit,
+    prepare_discharge_hydroparameters,
+    koella,
+    clark_wsl_modified,
+)
 from calculations.nam import nam, extract_dem
 from calculations.curvenumbers import get_curve_numbers
 from calculations.orchestration import launch_group
@@ -14,8 +21,27 @@ from calculations.orchestration import launch_group
 router = APIRouter(prefix="/discharge",
     tags=["discharge"],)
 
+
+def _clark_fractions_for_annuity(project, annuality_number: float):
+    """Return Clark WSL fractions for the given return period, or None."""
+    for cw in getattr(project, "ClarkWSL", None) or []:
+        ann = getattr(cw, "Annuality", None)
+        if ann is None:
+            continue
+        if float(ann.number) == float(annuality_number):
+            return [
+                {"typ": f.ZoneParameterTyp, "pct": f.pct}
+                for f in cw.Fractions
+            ]
+    return None
+
+
 @router.get("/calculate_project")
-def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
+def get_calculate_project(
+    ProjectId: str,
+    use_pre_moisture: bool = Query(False),
+    user: User = Depends(get_user),
+):
     try:
         project =  prisma.project.find_unique_or_raise(
             where = {
@@ -55,6 +81,9 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
         climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree"]
 
         for mod_fliesszeit in project.Mod_Fliesszeit:
+            mf_fracs = _clark_fractions_for_annuity(
+                project, mod_fliesszeit.Annuality.number
+            )
             for scenario in climate_scenarios:
                 doDoTasks.append(modifizierte_fliesszeit.s(
                     project.IDF_Parameters.P_low_1h, 
@@ -72,10 +101,15 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                     mod_fliesszeit.id,
                     project_easting=project.Point.easting,
                     project_northing=project.Point.northing,
-                    climate_scenario=scenario
+                    climate_scenario=scenario,
+                    use_pre_moisture=use_pre_moisture,
+                    atyp_fractions=mf_fracs,
                 ))
 
         for koella_obj in project.Koella:
+            k_fracs = _clark_fractions_for_annuity(
+                project, koella_obj.Annuality.number
+            )
             for scenario in climate_scenarios:
                 doDoTasks.append(koella.s(
                     project.IDF_Parameters.P_low_1h, 
@@ -92,20 +126,10 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                     koella_obj.id,
                     project_easting=project.Point.easting,
                     project_northing=project.Point.northing,
-                    climate_scenario=scenario
+                    climate_scenario=scenario,
+                    use_pre_moisture=use_pre_moisture,
+                    atyp_fractions=k_fracs,
                 ))
-
-                # TODO: get zone parameters from DB
-                zone_parameters = {
-                "Atyp 1": {'V0_20': 20, 'WSV': 10, 'psi': 0.45, 'alpha': 82},
-                "Atyp 2": {'V0_20': 25, 'WSV': 20, 'psi': 0.35, 'alpha': 76},
-                "Atyp 3": {'V0_20': 35, 'WSV': 30, 'psi': 0.15,  'alpha': 63.5},
-                "Atyp 4": {'V0_20': 45,   'WSV': 45, 'psi': 0.1,   'alpha': 54},
-                "Atyp 5": {'V0_20': 50, 'WSV': 60, 'psi': 0.05, 'alpha': 42},
-                "Siedl.typ 1": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
-                "Siedl.typ 2": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
-                "Siedl.typ 3": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
-            }
 
         for clark_wsl_obj in project.ClarkWSL:
             fractions_dict = [
@@ -120,7 +144,7 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                     P_high_24h=project.IDF_Parameters.P_high_24h,
                     rp_low=project.IDF_Parameters.rp_low,
                     rp_high=project.IDF_Parameters.rp_high,
-                    discharge_types_parameters=zone_parameters,
+                    discharge_types_parameters=HAKESCH_ZONE_PARAMS,
                     x=clark_wsl_obj.Annuality.number,
                     fractions_dict=fractions_dict,
                     clark_wsl=clark_wsl_obj.id,
@@ -131,7 +155,8 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                     climate_scenario=scenario,
                     intensity_fn=None,
                     dt=clark_wsl_obj.dt,
-                    pixel_area_m2=clark_wsl_obj.pixel_area_m2
+                    pixel_area_m2=clark_wsl_obj.pixel_area_m2,
+                    use_pre_moisture=use_pre_moisture,
                 ))
 
         for nam_obj in project.NAM:
@@ -161,7 +186,8 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
                     project_easting=project.Point.easting,
                     project_northing=project.Point.northing,
                     climate_scenario=scenario,
-                    debug=False
+                    debug=False,
+                    use_pre_moisture=use_pre_moisture,
                 ))
 
         if len(doDoTasks) > 0:
@@ -183,7 +209,12 @@ def get_calculate_project(ProjectId:str, user: User = Depends(get_user)):
         )
 
 @router.get("/modifizierte_fliesszeit")
-def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User = Depends(get_user)):
+def get_modifizierte_fliesszeit(
+    ProjectId: str,
+    ModFliesszeitId: int,
+    use_pre_moisture: bool = Query(False),
+    user: User = Depends(get_user),
+):
     try:
         project =  prisma.project.find_unique_or_raise(
             where = {
@@ -197,11 +228,20 @@ def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User 
                     'include' :  {
                         'Annuality' : True
                     }
-                }
+                },
+                'ClarkWSL': {
+                    'include': {
+                        'Annuality': True,
+                        'Fractions': True,
+                    }
+                },
             }
         )
 
         modFliesszeit = next((x for x in project.Mod_Fliesszeit if x.id == ModFliesszeitId), None)
+        mf_fracs = _clark_fractions_for_annuity(
+            project, modFliesszeit.Annuality.number
+        )
         
         # Climate scenarios to calculate
         climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree"]
@@ -224,7 +264,9 @@ def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User 
                 modFliesszeit.id,
                 project_easting=project.Point.easting,
                 project_northing=project.Point.northing,
-                climate_scenario=scenario
+                climate_scenario=scenario,
+                use_pre_moisture=use_pre_moisture,
+                atyp_fractions=mf_fracs,
             ))
         
         task = group(doDoTasks).apply_async()
@@ -238,7 +280,12 @@ def get_modifizierte_fliesszeit(ProjectId:str, ModFliesszeitId: int, user: User 
         )
 
 @router.get("/koella")
-def get_koella(ProjectId:str, KoellaId: int, user: User = Depends(get_user)):
+def get_koella(
+    ProjectId: str,
+    KoellaId: int,
+    use_pre_moisture: bool = Query(False),
+    user: User = Depends(get_user),
+):
     try:
         project =  prisma.project.find_unique_or_raise(
             where = {
@@ -252,11 +299,20 @@ def get_koella(ProjectId:str, KoellaId: int, user: User = Depends(get_user)):
                     'include' :  {
                         'Annuality' : True
                     }
-                }
+                },
+                'ClarkWSL': {
+                    'include': {
+                        'Annuality': True,
+                        'Fractions': True,
+                    }
+                },
             }
         )
 
         koella_obj = next((x for x in project.Koella if x.id == KoellaId), None)
+        k_fracs = _clark_fractions_for_annuity(
+            project, koella_obj.Annuality.number
+        )
         
         # Climate scenarios to calculate
         climate_scenarios = ["current", "1_5_degree", "2_degree", "3_degree"]
@@ -278,7 +334,9 @@ def get_koella(ProjectId:str, KoellaId: int, user: User = Depends(get_user)):
                 koella_obj.id,
                 project_easting=project.Point.easting,
                 project_northing=project.Point.northing,
-                climate_scenario=scenario
+                climate_scenario=scenario,
+                use_pre_moisture=use_pre_moisture,
+                atyp_fractions=k_fracs,
             ))
         
         task = group(doDoTasks).apply_async()
@@ -305,7 +363,12 @@ def clark_wsl_modified(self,
 ):
 """
 @router.get("/clark-wsl")
-def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)):
+def get_clark_wsl(
+    ProjectId: str,
+    ClarkWSLId: int,
+    use_pre_moisture: bool = Query(False),
+    user: User = Depends(get_user),
+):
     try:
         project =  prisma.project.find_unique_or_raise(
             where = {
@@ -323,18 +386,6 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
                 }
             }
         )
-
-        # TODO: get zone parameters from DB
-        zone_parameters = {
-                "Atyp 1": {'V0_20': 20, 'WSV': 10, 'psi': 0.45, 'alpha': 82},
-                "Atyp 2": {'V0_20': 25, 'WSV': 20, 'psi': 0.35, 'alpha': 76},
-                "Atyp 3": {'V0_20': 35, 'WSV': 30, 'psi': 0.15,  'alpha': 63.5},
-                "Atyp 4": {'V0_20': 45,   'WSV': 45, 'psi': 0.1,   'alpha': 54},
-                "Atyp 5": {'V0_20': 50, 'WSV': 60, 'psi': 0.05, 'alpha': 42},
-                "Siedl.typ 1": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
-                "Siedl.typ 2": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
-                "Siedl.typ 3": {'V0_20': 30, 'WSV': 20, 'psi': 0.3, 'alpha': 80},
-            }
 
         clark_wsl_obj = next((x for x in project.ClarkWSL if x.id == ClarkWSLId), None)
 
@@ -355,7 +406,7 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
                 P_high_24h=project.IDF_Parameters.P_high_24h,
                 rp_low=project.IDF_Parameters.rp_low,
                 rp_high=project.IDF_Parameters.rp_high,
-                discharge_types_parameters=zone_parameters,
+                discharge_types_parameters=HAKESCH_ZONE_PARAMS,
                 x=clark_wsl_obj.Annuality.number,
                 fractions_dict=fractions_dict,
                 clark_wsl=clark_wsl_obj.id,
@@ -366,7 +417,8 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
                 climate_scenario=scenario,
                 intensity_fn=None,
                 dt=clark_wsl_obj.dt,
-                pixel_area_m2=clark_wsl_obj.pixel_area_m2
+                pixel_area_m2=clark_wsl_obj.pixel_area_m2,
+                use_pre_moisture=use_pre_moisture,
             ))
         
         task = group(doDoTasks).apply_async()
@@ -380,7 +432,12 @@ def get_clark_wsl(ProjectId:str, ClarkWSLId: int, user: User = Depends(get_user)
         )
 
 @router.get("/nam")
-def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):    
+def get_nam(
+    ProjectId: str,
+    NAMId: int,
+    use_pre_moisture: bool = Query(False),
+    user: User = Depends(get_user),
+):    
     try:
         project = prisma.project.find_unique(
             where={
@@ -438,7 +495,8 @@ def get_nam(ProjectId:str, NAMId: int, user: User = Depends(get_user)):
                 project_easting=project.Point.easting,
                 project_northing=project.Point.northing,
                 climate_scenario=scenario,
-                debug=True
+                debug=True,
+                use_pre_moisture=use_pre_moisture,
             ))
         
         prerequisites = chain(
