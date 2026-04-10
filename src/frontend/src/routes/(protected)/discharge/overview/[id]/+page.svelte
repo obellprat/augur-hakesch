@@ -61,6 +61,30 @@
 	let pendingCatchmentModalCheck = $state(false);
 	let catchmentSizeForInfoModal = $state<number | null>(null);
 
+	let geoTaskInFlight = $state(false);
+	let geoCalculateDisabled = $derived(geoTaskInFlight || data.project.isozones_running);
+
+	function formatQueueWaitText(queueWait: unknown): string | null {
+		if (!queueWait || typeof queueWait !== 'object') return null;
+		const o = queueWait as Record<string, unknown>;
+		if (
+			o.in_queue === true &&
+			typeof o.position === 'number' &&
+			typeof o.queue_length === 'number'
+		) {
+			// Redis list head (index 0) is the last enqueue side for Celery/kombu; workers dequeue
+			// from the other end — so human "place in line" is counted from the execution front.
+			const place = o.queue_length - o.position;
+			return $_('page.discharge.taskQueue.position', {
+				values: { place, total: o.queue_length }
+			});
+		}
+		if (o.broker === 'redis' && o.in_queue === false) {
+			return $_('page.discharge.taskQueue.startingSoon');
+		}
+		return null;
+	}
+
 	// Safe wrapper for invalidateAll that checks if component is still mounted
 	async function safeInvalidateAll() {
 		if (!isMounted) return;
@@ -94,6 +118,9 @@
 	}
 
 	async function calculateGeodatas() {
+		if (geoTaskInFlight || data.project.isozones_running) {
+			return;
+		}
 		try {
 			const isValid = await checkValidRegion(easting, northing);
 			if (!isValid) {
@@ -128,6 +155,7 @@
 			if (!payload?.task_id) {
 				throw new Error($_('page.discharge.overview.api-without-task_id'));
 			}
+			geoTaskInFlight = true;
 			const actTime = new Date();
 			const progressTextEl = document.getElementById('progresstext');
 			if (progressTextEl) {
@@ -139,6 +167,7 @@
 			}
 			getStatus(payload.task_id);
 		} catch (error) {
+			geoTaskInFlight = false;
 			console.error('calculateGeodatas failed', error);
 			const detail = error instanceof Error ? error.message : '';
 			showApiErrorModal(detail);
@@ -188,13 +217,18 @@
 								.attr('aria-valuenow', obj.progress);
 						}
 					} else if (res.task_status == 'PENDING') {
-						html = $_('page.discharge.overview.recalculating');
+						const qw = formatQueueWaitText((res as { queue_wait?: unknown }).queue_wait);
+						html = qw
+							? `${$_('page.discharge.overview.recalculating')} <br /> ${qw}`
+							: $_('page.discharge.overview.recalculating');
 					} else if (res.task_status == 'FAILURE') {
+						geoTaskInFlight = false;
 						html =
 							$_('page.discharge.overview.errorrecalculating') +
 							'Fehler: ' +
 							obj.text;
 					} else if (res.task_status == 'SUCCESS') {
+						geoTaskInFlight = false;
 						html = $_('page.discharge.overview.geodatasuccess');
 
 						pendingCatchmentModalCheck = true;
@@ -253,7 +287,10 @@
 					}, 1000);
 				}
 			})
-			.catch((err) => console.log(err));
+			.catch((err) => {
+				geoTaskInFlight = false;
+				console.log(err);
+			});
 	}
 
 	function addCatchment() {
@@ -591,6 +628,7 @@ onMount(async () => {
 
 	onDestroy(() => {
 		isMounted = false;
+		geoTaskInFlight = false;
 		if (statusCheckTimeout) {
 			clearTimeout(statusCheckTimeout);
 			statusCheckTimeout = null;
@@ -697,6 +735,7 @@ onMount(async () => {
 										data-bs-dismiss="modal"
 										data-bs-toggle="modal"
 										data-bs-target="#generate-modal"
+										disabled={geoCalculateDisabled}
 										onclick={calculateGeodatas} data-umami-event="recalculate-modal-yes">{$_('page.general.yes')}</button
 									><button type="button" class="btn btn-light" data-bs-dismiss="modal">{$_('page.general.no')}</button>
 								</div>
@@ -734,6 +773,7 @@ onMount(async () => {
 										data-bs-dismiss="modal"
 										data-bs-toggle="modal"
 										data-bs-target="#generate-modal"
+										disabled={geoCalculateDisabled}
 										onclick={calculateGeodatas} data-umami-event="missinggeodata-modal-calculate"
 									>
 										{$_('page.discharge.overview.calculateGeodata')}
@@ -850,6 +890,7 @@ onMount(async () => {
 								class="dropdown-item"
 								data-bs-toggle="modal"
 								data-bs-target="#generate-modal"
+								disabled={geoCalculateDisabled}
 								title={$_('page.discharge.overview.calculateGeodata')}
 								aria-label={$_('page.discharge.overview.calculateGeodata')}
 							>
@@ -908,6 +949,7 @@ onMount(async () => {
 							class="btn btn-sm btn-icon btn-ghost-primary d-flex"
 							data-bs-toggle="modal"
 							data-bs-target="#generate-modal"
+							disabled={geoCalculateDisabled}
 							title={$_('page.discharge.overview.calculateGeodata')}
 							aria-label={$_('page.discharge.overview.calculateGeodata')}
 						>

@@ -16,6 +16,10 @@
       "projects": "Projekte",
       "geodata": "Geodaten",
       "calculate": "Hydrologie",
+      "taskQueue": {
+        "position": "In der Warteschlange: Platz {place} von {total}",
+        "startingSoon": "Die Berechnung startet gleich …"
+      },
       "overviewText": "Übersicht",
       "overview": {
         "discharge-projekt": "Abfluss - Projekt",

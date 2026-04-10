@@ -1055,8 +1055,37 @@ def construct_idf_curve(
 # Example usage:
 # idf_fn = construct_idf_curve(25, 50, 60, 120, 2.33, 100)
 
+def _clear_isozones_running_on_failure(project_id: str) -> None:
+    """Reset isozones_running if the task fails before the success DB update."""
+    prisma = None
+    try:
+        prisma = connect_prisma_with_retry()
+        prisma.project.update(
+            where={"id": project_id},
+            data={"isozones_running": False},
+        )
+    except Exception:
+        pass
+    finally:
+        if prisma is not None:
+            try:
+                prisma.disconnect(5)
+            except Exception:
+                pass
+
+
 @app.task(name="prepare_discharge_hydroparameters", bind=True)
 def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 3000, v_gerinne = 1.5):
+    try:
+        return _prepare_discharge_hydroparameters_impl(
+            self, projectId, userId, northing, easting, a_crit, v_gerinne
+        )
+    except Exception:
+        _clear_isozones_running_on_failure(projectId)
+        raise
+
+
+def _prepare_discharge_hydroparameters_impl(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 3000, v_gerinne = 1.5):
     # Send immediate progress update to indicate task has started
     self.update_state(state='PROGRESS',
                 meta={'text': 'Task started, initializing...', 'progress' : 5})
@@ -1307,8 +1336,8 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     self.update_state(state='PROGRESS',
                 meta={'text': 'Calculate distance', 'progress' : 85})
     dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap)
-    dist = dist * cell_size
-    dist[dist == np.inf] = -1000000
+    dist *= cell_size
+    dist[~np.isfinite(dist)] = -1000000
     dist_max = np.nanmax(dist)
 
     dist = grid2.distance_to_outlet(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate', mask=grid2.mask, dirmap=dirmap, weights=obstacle_raster)
@@ -1317,17 +1346,18 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     del obstacle_raster, acc
     gc.collect()
 
-    dist = dist * cell_size
-    dist[dist == np.inf] = -1000000
+    dist *= cell_size
+    dist[~np.isfinite(dist)] = -1000000
     dist[dist <= 0] = -1000000
     
     # Save raw time values before discretization
-    raw_time_values = dist.copy()
+    raw_time_values = dist.astype(np.float32, copy=True)
     raw_time_values[raw_time_values == -1000000] = np.nan
-    raw_time_values = (raw_time_values)/(v_gerinne * 60 * 100)
+    raw_time_values /= (v_gerinne * 60 * 100)
     
-    # Discretize into time classes for isozones
-    dist = np.floor(((dist)/(v_gerinne * 60 * 100)) / 10) + 1  # strecke / geschwindigkeit * 60(-> für m/min) * 100 (hindernislayer) / 10 (-> 10 Minuten klassen) +1 da wir bei Klasse 1 starten
+    # Discretize into time classes for isozones.
+    # Keep this as expression assignment to preserve pysheds-compatible dtype/nodata handling.
+    dist = np.floor(((dist) / (v_gerinne * 60 * 100)) / 10) + 1
 
     dist[dist<=0] = None
 
@@ -1393,17 +1423,14 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     self.update_state(state='PROGRESS',
                 meta={'text': 'Writing time values file', 'progress' : 91})
     
-    # Create raw time values raster
-    raw_time_raster = Raster(raw_time_values, viewfinder=grid2.viewfinder)
-    
     # Define the output filename for raw time values
     raw_time_filename = f"data/{userId}/{projectId}/time_values.tif"
     
     # Profile for raw time values (float data type)
     raw_time_profile = default_profile.copy()
     raw_time_profile_updates = {
-        'crs' : raw_time_raster.crs.srs,
-        'transform' : raw_time_raster.affine,
+        'crs' : dist.crs.srs,
+        'transform' : dist.affine,
         'dtype' : 'float32',
         'nodata' : np.nan,
         'height' : height,
@@ -1413,14 +1440,14 @@ def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northin
     
     with MemoryFile() as memfile:
         with memfile.open(**raw_time_profile) as mem:
-            mem.write(np.asarray(raw_time_raster), 1)
+            mem.write(np.asarray(raw_time_values, dtype=np.float32), 1)
             
             # Save as regular GeoTIFF (not COG for raw values)
             with rasterio.open(raw_time_filename, 'w', **raw_time_profile) as dst:
-                dst.write(np.asarray(raw_time_raster), 1)
+                dst.write(np.asarray(raw_time_values, dtype=np.float32), 1)
 
     # Free raster data after writing — only scalar results needed from here
-    del dist, raw_time_values, raw_time_raster, small_view2, fdir
+    del dist, raw_time_values, small_view2, fdir
     gc.collect()
 
     self.update_state(state='PROGRESS',

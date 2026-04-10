@@ -4,6 +4,7 @@ from helpers.prisma import prisma
 from helpers.user import get_user
 from prisma.models import User
 from celery import chain, group
+from celery.result import AsyncResult
 import pandas as pd
 
 from calculations.discharge import construct_idf_curve, modifizierte_fliesszeit, prepare_discharge_hydroparameters, koella, clark_wsl_modified
@@ -487,7 +488,12 @@ async def get_prepare_discharge_hydroparametersisozones(ProjectId:str, user: Use
                 'Point' : True
             }
         )
-        print(project)
+        if project.isozones_running and project.isozones_taskid:
+            prev = AsyncResult(project.isozones_taskid)
+            if prev.status not in ("SUCCESS", "FAILURE", "REVOKED"):
+                return JSONResponse(
+                    {"task_id": project.isozones_taskid, "existing_task": True}
+                )
         task = prepare_discharge_hydroparameters.delay(project.id, user.id, project.Point.easting, project.Point.northing)
         prisma.project.update(
             where = {
@@ -498,7 +504,7 @@ async def get_prepare_discharge_hydroparametersisozones(ProjectId:str, user: Use
                 'isozones_taskid': task.id,
             },
             )
-        return JSONResponse({"task_id": task.id})
+        return JSONResponse({"task_id": task.id, "existing_task": False})
     except:
         # Handle missing user scenario
         raise HTTPException(

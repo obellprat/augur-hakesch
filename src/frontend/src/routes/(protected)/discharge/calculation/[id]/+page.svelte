@@ -1,7 +1,7 @@
 <script lang="ts">
 	import pageTitle from '$lib/page/pageTitle';
 	import type { ActionData, PageServerData } from './$types';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { currentProject } from '$lib/state.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -654,12 +654,42 @@
 		return false;
 	}
 
+	/** Eine Projekt-Berechnung erzeugt 48 Celery-Teilaufgaben; Warteschlange sinnvoll in diesen Einheiten. */
+	const PROJECT_CALCULATION_SUBTASKS = 48;
+
+	function formatProjectCalculationQueueText(queueWait: unknown): string | null {
+		if (!queueWait || typeof queueWait !== 'object') return null;
+		const o = queueWait as Record<string, unknown>;
+		if (
+			o.in_queue === true &&
+			typeof o.position === 'number' &&
+			typeof o.queue_length === 'number'
+		) {
+			const placeRaw = o.queue_length - o.position;
+			if (placeRaw < PROJECT_CALCULATION_SUBTASKS) {
+				return null;
+			}
+			const place = Math.floor(placeRaw / PROJECT_CALCULATION_SUBTASKS);
+			const total = Math.ceil(o.queue_length / PROJECT_CALCULATION_SUBTASKS);
+			return $_('page.discharge.taskQueue.position', {
+				values: { place, total }
+			});
+		}
+		if (o.broker === 'redis' && o.in_queue === false) {
+			return $_('page.discharge.taskQueue.startingSoon');
+		}
+		return null;
+	}
+
 	let isUploading = $state(false);
 	let couldCalculate = $state(false);
 	let soilFileExists = $state(false);
 	let useOwnSoilData = $state(Boolean(data.project.NAM?.[0]?.use_own_soil_data ?? false));
 	let isCheckingSoilFile = $state(false);
 	let isBulkSaving = $state(false);
+	let projectCalculationInFlight = $state(false);
+	let scenarioBatchInFlight = $state(false);
+	let calculationBusy = $derived(projectCalculationInFlight || scenarioBatchInFlight);
 	let bulkSaveForm: HTMLFormElement | null = null;
 	let pendingBulkSavePromise: Promise<boolean> | null = null;
 	let resolvePendingBulkSave: ((success: boolean) => void) | null = null;
@@ -1273,6 +1303,10 @@
 		if (!ensureIdfInputs()) {
 			return;
 		}
+		if (scenarioBatchInFlight || projectCalculationInFlight) {
+			return;
+		}
+		scenarioBatchInFlight = true;
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
@@ -1306,6 +1340,7 @@
 				// Each API call returns a group task_id for all climate scenarios
 				groupTaskIds.push(result.task_id);
 			} catch (error) {
+				scenarioBatchInFlight = false;
 				handleApiError('Error calculating ModFliess', error);
 				toast.pop();
 				return;
@@ -1316,6 +1351,7 @@
 		if (groupTaskIds.length > 0) {
 			getMultipleGroupStatus(groupTaskIds);
 		} else {
+			scenarioBatchInFlight = false;
 			toast.pop();
 			toast.push($_('page.discharge.calculation.calcerror'), {
 				theme: {
@@ -1330,6 +1366,10 @@
 		if (!ensureIdfInputs()) {
 			return;
 		}
+		if (scenarioBatchInFlight || projectCalculationInFlight) {
+			return;
+		}
+		scenarioBatchInFlight = true;
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
@@ -1363,6 +1403,7 @@
 				// Each API call returns a group task_id for all climate scenarios
 				groupTaskIds.push(result.task_id);
 			} catch (error) {
+				scenarioBatchInFlight = false;
 				handleApiError('Error calculating Koella', error);
 				toast.pop();
 				return;
@@ -1373,6 +1414,7 @@
 		if (groupTaskIds.length > 0) {
 			getMultipleGroupStatus(groupTaskIds);
 		} else {
+			scenarioBatchInFlight = false;
 			toast.pop();
 			toast.push($_('page.discharge.calculation.calcerror'), {
 				theme: {
@@ -1387,6 +1429,10 @@
 		if (!ensureIdfInputs()) {
 			return;
 		}
+		if (scenarioBatchInFlight || projectCalculationInFlight) {
+			return;
+		}
+		scenarioBatchInFlight = true;
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
@@ -1420,6 +1466,7 @@
 				// Each API call returns a group task_id for all climate scenarios
 				groupTaskIds.push(result.task_id);
 			} catch (error) {
+				scenarioBatchInFlight = false;
 				handleApiError('Error calculating ClarkWSL', error);
 				toast.pop();
 				return;
@@ -1430,6 +1477,7 @@
 		if (groupTaskIds.length > 0) {
 			getMultipleGroupStatus(groupTaskIds);
 		} else {
+			scenarioBatchInFlight = false;
 			toast.pop();
 			toast.push($_('page.discharge.calculation.calcerror'), {
 				theme: {
@@ -1444,6 +1492,10 @@
 		if (!ensureIdfInputs()) {
 			return;
 		}
+		if (scenarioBatchInFlight || projectCalculationInFlight) {
+			return;
+		}
+		scenarioBatchInFlight = true;
 		toast.push($_('page.discharge.calculation.calcrunning'), {
 			initial: 0
 		});
@@ -1477,6 +1529,7 @@
 				// Each API call returns a group task_id for all climate scenarios
 				groupTaskIds.push(result.task_id);
 			} catch (error) {
+				scenarioBatchInFlight = false;
 				handleApiError('Error calculating NAM.BE', error);
 				toast.pop();
 				return;
@@ -1487,6 +1540,7 @@
 		if (groupTaskIds.length > 0) {
 			getMultipleGroupStatus(groupTaskIds);
 		} else {
+			scenarioBatchInFlight = false;
 			toast.pop();
 			toast.push($_('page.discharge.calculation.calcerror'), {
 				theme: {
@@ -1714,6 +1768,9 @@
 		if (!ensureIdfInputs()) {
 			return;
 		}
+		if (projectCalculationInFlight || scenarioBatchInFlight) {
+			return;
+		}
 		// Show modal and initialize progress
 		(globalThis as any).$('#calculation-progress-modal').modal('show');
 		const progressBarEl = document.querySelector(
@@ -1723,6 +1780,10 @@
 		if (progressBarEl) {
 			progressBarEl.style.width = '0%';
 			progressBarEl.setAttribute('aria-valuenow', '0');
+		}
+		const progressTextClear = document.getElementById('calculation-progresstext');
+		if (progressTextClear) {
+			progressTextClear.textContent = '';
 		}
 
 		try {
@@ -1742,8 +1803,10 @@
 			if (!payload?.task_id) {
 				throw new Error('API response missing task_id');
 			}
+			projectCalculationInFlight = true;
 			getGroupStatus(payload.task_id);
 		} catch (error) {
+			projectCalculationInFlight = false;
 			handleApiError('calculateProject failed', error);
 			(globalThis as any).$('#calculation-progress-modal').modal('hide');
 		}
@@ -1802,10 +1865,13 @@
 				}
 
 				if (progressTextEl) {
-					progressTextEl.innerHTML = `${completed} / ${total} (${progress}%)`;
+					const qwText =
+						completed < total ? formatProjectCalculationQueueText(res.queue_wait) : null;
+					progressTextEl.textContent = qwText ?? '';
 				}
 
 				if (completed === total) {
+					projectCalculationInFlight = false;
 					(globalThis as any).$('#calculation-progress-modal').modal('hide');
 					toast.push($_('page.discharge.calculation.calcsuccess'), {
 						theme: {
@@ -1817,6 +1883,7 @@
 					invalidateAll();
 					return;
 				} else if (res.status === 'FAILURE') {
+					projectCalculationInFlight = false;
 					(globalThis as any).$('#calculation-progress-modal').modal('hide');
 					toast.push(
 						'<h3 style="padding:5;">' +
@@ -1841,6 +1908,7 @@
 				}, 1000);
 			})
 			.catch((err) => {
+				projectCalculationInFlight = false;
 				console.log(err);
 				(globalThis as any).$('#calculation-progress-modal').modal('hide');
 			});
@@ -1891,6 +1959,7 @@
 			}
 
 			if (anyFailed) {
+				scenarioBatchInFlight = false;
 				toast.pop();
 				toast.push($_('page.discharge.calculation.calcerror'), {
 					theme: {
@@ -1903,6 +1972,7 @@
 			}
 
 			if (allCompleted) {
+				scenarioBatchInFlight = false;
 				toast.pop();
 				toast.push($_('page.discharge.calculation.calcsuccess'), {
 					theme: {
@@ -2056,6 +2126,11 @@
 		window.addEventListener('resize', handleResize);
 	});
 
+	onDestroy(() => {
+		projectCalculationInFlight = false;
+		scenarioBatchInFlight = false;
+	});
+
 	// Cleanup on component destroy
 	$effect(() => {
 		return () => {
@@ -2192,6 +2267,7 @@
 				</h4>
 			</div>
 			<div class="modal-body">
+				<p id="calculation-progresstext" class="text-muted small mb-2"></p>
 				<div class="progress mb-2">
 					<div
 						class="progress-bar"
@@ -2889,7 +2965,7 @@
 							type="button"
 							class="btn btn-outline-primary d-flex align-items-center gap-2"
 							onclick={() => calculateProjectWithSave(data.project.id)} data-umami-event="calculate-project-button"
-							disabled={!couldCalculate || isBulkSaving}
+							disabled={!couldCalculate || isBulkSaving || calculationBusy}
 							title={$_('page.general.calculate')}
 							aria-label={$_('page.general.calculate')}
 						>

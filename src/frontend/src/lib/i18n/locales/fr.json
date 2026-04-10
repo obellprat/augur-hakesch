@@ -16,6 +16,10 @@
       "projects": "Projets",
       "geodata": "Géodonnées",
       "calculate": "Hydrologie",
+      "taskQueue": {
+        "position": "En file d’attente : place {place} sur {total}",
+        "startingSoon": "Le calcul va démarrer sous peu …"
+      },
       "overviewText": "Aperçu",
       "overview": {
         "deleteProject": "Supprimer le projet",

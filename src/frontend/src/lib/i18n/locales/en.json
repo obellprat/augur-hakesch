@@ -16,6 +16,10 @@
       "projects": "Projects",
       "geodata": "Geodata",
       "calculate": "Hydrology",
+      "taskQueue": {
+        "position": "In queue: position {place} of {total}",
+        "startingSoon": "Your calculation will start shortly …"
+      },
       "overviewText": "Overview",
       "overview": {
         "deleteProject": "Delete project",

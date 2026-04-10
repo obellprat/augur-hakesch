@@ -4,8 +4,16 @@ from celery.result import AsyncResult
 import json
 from celery.result import GroupResult
 
+from calculations.calculations import app as celery_app
+from helpers.celery_queue_wait import (
+    resolve_queue_wait,
+    resolve_queue_wait_for_pending_tasks,
+)
+
 router = APIRouter(prefix="/task",
     tags=["task"],)
+
+_GROUP_TERMINAL_STATUSES = frozenset({"SUCCESS", "FAILURE", "REVOKED"})
 
 
 def _build_group_status_payload(group_id: str, group_result: GroupResult):
@@ -46,23 +54,42 @@ def _build_group_status_payload(group_id: str, group_result: GroupResult):
         "task_result": task_result
     }
 
+def _attach_queue_wait(payload: dict, task_id: str) -> dict:
+    qw = resolve_queue_wait(celery_app, task_id)
+    if qw is not None:
+        payload["queue_wait"] = qw
+    return payload
+
+
+def _group_payload_with_queue_wait(group_id: str, group_result: GroupResult) -> dict:
+    result = _build_group_status_payload(group_id, group_result)
+    if result["completed"] < result["total"] and result["status"] != "FAILURE":
+        open_ids = [
+            res.id for res in group_result.results
+            if res.status not in _GROUP_TERMINAL_STATUSES
+        ]
+        qw = resolve_queue_wait_for_pending_tasks(celery_app, open_ids)
+        if qw is not None:
+            result["queue_wait"] = qw
+    return result
+
+
 @router.get("/{task_id}")
 def get_status(task_id):
     task_result = AsyncResult(task_id)
-    print(task_result.result)
     try:
         result = {
             "task_id": task_id,
-                "task_status": task_result.status,
-                "task_result": json.dumps(task_result.result)
-            }
-    except:
+            "task_status": task_result.status,
+            "task_result": json.dumps(task_result.result),
+        }
+    except Exception:
         result = {
             "task_id": task_id,
             "task_status": task_result.status,
-            "task_result": str(task_result.result)
+            "task_result": str(task_result.result),
         }
-    #task_result.forget()
+    _attach_queue_wait(result, task_id)
     return JSONResponse(result)
 
 @router.get("/group/{task_id}")
@@ -81,7 +108,9 @@ def get_group_status(task_id):
         if resolved_group_id:
             resolved_group = GroupResult.restore(resolved_group_id)
             if resolved_group is not None:
-                return JSONResponse(_build_group_status_payload(resolved_group_id, resolved_group))
+                return JSONResponse(
+                    _group_payload_with_queue_wait(resolved_group_id, resolved_group)
+                )
 
         result = {
             "group_id": task_id,
@@ -95,6 +124,6 @@ def get_group_status(task_id):
             "status": "FAILURE" if status == "FAILURE" else ("SUCCESS" if status == "SUCCESS" else status),
             "task_result": str(task_result.result) if status == "FAILURE" else None
         }
+        _attach_queue_wait(result, task_id)
         return JSONResponse(result)
-    result = _build_group_status_payload(task_id, group_result)
-    return JSONResponse(result)
+    return JSONResponse(_group_payload_with_queue_wait(task_id, group_result))
