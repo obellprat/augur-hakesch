@@ -1,3 +1,15 @@
+## 1.3.0-rc.3 (2026-04-12)
+
+### Feat
+
+- **api,-frontend**: Display of the waiting loop during calculation
+
+### Fix
+
+- **api**: TB Iteration did not converge: try it again with tb_start 1 before the exception rises
+- **frontend**: hide Siedl Typ and avoid editing the average vo_20 and psi
+- **frontend**: kumulative instead of kumulativ in german translation
+
 ## 1.3.0-rc.2 (2026-03-25)
 
 ### Feat
