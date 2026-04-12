@@ -330,25 +330,24 @@ def modifizierte_fliesszeit_standardVo(self,
     J = delta_H / L
     TFl = 0.0195 * (L ** 0.77) * (J ** -0.385)
 
-    # 3. Iteration to determine TB
-    TB = TB_start
-    for _ in range(max_iter):
-        Tc = TB + TFl
-        ix = intensity_fn(rp_years = x, duration_minutes = Tc)  # [mm/h]
-        #ix = ix * (1 + cc_factor)
-        #print(f"Current TB: {TB}, Intensity: {ix}")
-        #print(f"Vox: {Vox}, TFl: {TFl}, Tc: {Tc}")
-        #print(f"criterion:{abs(TB / 60 * ix - Vox)}")
-        if abs(TB / 60 * ix - Vox) < tol:
-            # Convergence reached
-            break 
-        else: 
+    # 3. Iteration to determine TB (retry with TB_start=1 if user start value fails)
+    tb_start_attempts = [TB_start] + ([1] if TB_start != 1 else [])
+    converged = False
+    for tb0 in tb_start_attempts:
+        TB = tb0
+        for _ in range(max_iter):
+            Tc = TB + TFl
+            ix = intensity_fn(rp_years = x, duration_minutes = Tc)  # [mm/h]
+            if abs(TB / 60 * ix - Vox) < tol:
+                converged = True
+                break
             if TB * ix < Vox:
-                TB_new = TB - istep
+                TB = TB - istep
             else:
-                TB_new = TB + istep
-            TB = TB_new
-    else:
+                TB = TB + istep
+        if converged:
+            break
+    if not converged:
         raise RuntimeError("TB iteration did not converge.")
 
     Tc = TB + TFl
@@ -585,22 +584,25 @@ def koella_standardVo(self,
     TFl = TFl_h * 60  # min
     kGang = 1 # Initial value for hydrograph correction factor
 
-    TB = TB_start
-    for _ in range(max_iter):
-        Tc = TB + TFl
-        ix = intensity_fn(rp_years = x, duration_minutes = Tc) 
-        if abs(TB / 60 * ix - Vox) < tol:
-            # Convergence reached
-            break 
-        else: 
+    tb_start_attempts = [TB_start] + ([1] if TB_start != 1 else [])
+    converged = False
+    for tb0 in tb_start_attempts:
+        TB = tb0
+        for _ in range(max_iter):
+            Tc = TB + TFl
+            ix = intensity_fn(rp_years = x, duration_minutes = Tc)
+            if abs(TB / 60 * ix - Vox) < tol:
+                converged = True
+                break
             if TB * ix < Vox:
-                TB_new = TB - istep
+                TB = TB - istep
             else:
-                TB_new = TB + istep
-            TB = TB_new
-    else:
+                TB = TB + istep
+        if converged:
+            break
+    if not converged:
         raise RuntimeError("TB iteration did not converge.")
-      
+
     # Hydrograph correction (rain duration = Tc)
     if Tc <= 60:
         if E > 1:
