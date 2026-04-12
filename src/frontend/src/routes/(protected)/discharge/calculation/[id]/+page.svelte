@@ -1021,6 +1021,37 @@
 		return Math.round(sum * 100) / 100;
 	}
 
+	/** Auf `true` setzen, um die Summenfelder V₀,20 und PSI wieder als Inputs darzustellen. */
+	const summaryVo20PsiRowEditable = false;
+
+	function getDisplayedSummaryVo20(combinedIndex: number): number {
+		return Math.round(
+			(manuallyEditedVo20.has(combinedIndex)
+				? (sharedVo20Values[combinedIndex] ?? 0)
+				: clarkScenarioForms[combinedIndex] !== undefined
+					? calculateSummaryV0_20(combinedIndex)
+					: (sharedVo20Values[combinedIndex] ?? 0)) * 100
+		) / 100;
+	}
+
+	function getDisplayedSummaryPsi(combinedIndex: number): number {
+		return Math.round(
+			(manuallyEditedPsi.has(combinedIndex)
+				? (modScenarioForms[combinedIndex]?.psi ?? 0)
+				: clarkScenarioForms[combinedIndex] !== undefined
+					? calculateSummaryPsi(combinedIndex)
+					: (modScenarioForms[combinedIndex]?.psi ?? 0)) * 100
+		) / 100;
+	}
+
+	function isSummaryVo20Invalid(combinedIndex: number): boolean {
+		return getDisplayedSummaryVo20(combinedIndex) >= 100;
+	}
+
+	function isSummaryPsiInvalid(combinedIndex: number): boolean {
+		return getDisplayedSummaryPsi(combinedIndex) >= 1;
+	}
+
 	type NamEditableKey = Exclude<keyof NamScenarioForm, 'ids' | 'projectId'>;
 
 	function updateNamScenario(index: number, key: NamEditableKey, value: number | string) {
@@ -2586,6 +2617,7 @@
 										</thead>
 										<tbody>
 											{#each zones as z, i}
+												{#if z.typ !== 'Siedl.typ 1'}
 												<tr>
 													<td>{z.typ}</td>
 													<td>
@@ -2615,92 +2647,93 @@
 													<td class="text-end">{z.WSV ?? 0}</td>
 													<td class="text-end">{z.psi ?? 0}</td>
 												</tr>
+												{/if}
 											{/each}
 											{#each combinedScenarioRange as combinedIndex}
 												<tr>
 													<td></td>
 													<td class="text-end fw-bold">{calculatePercentageSum(scenarioIndex)}%</td>
-													<td><input
-													id={`shared-vo20-${combinedIndex}`}
-													type="number"
-													step="any"
-													max="99.999"
-													style="min-width: 80px;"
-													class="form-control text-end"
-														class:is-invalid={(() => {
-															const val = manuallyEditedVo20.has(combinedIndex)
-																? (sharedVo20Values[combinedIndex] ?? 0)
-																: (clarkScenarioForms[combinedIndex] !== undefined 
-																	? calculateSummaryV0_20(combinedIndex) 
-																	: (sharedVo20Values[combinedIndex] ?? 0));
-															return val >= 100;
-														})()}
-														value={Math.round((manuallyEditedVo20.has(combinedIndex)
-															? (sharedVo20Values[combinedIndex] ?? 0)
-															: (clarkScenarioForms[combinedIndex] !== undefined 
-																? calculateSummaryV0_20(combinedIndex) 
-																: (sharedVo20Values[combinedIndex] ?? 0))) * 100) / 100}
-														oninput={(event) => {
-															const target = event.currentTarget as HTMLInputElement;
-															const inputValue = sanitizeNumber(target.valueAsNumber ?? Number(target.value));
-															if (inputValue >= 100) {
-																target.classList.add('is-invalid');
-																toast.push($_('page.discharge.calculation.vo20ValidationError') || 'Vo20 value must be less than 100', {
-																	theme: {
-																		'--toastColor': 'white',
-																		'--toastBackground': 'darkorange'
+													<td class="text-end">
+														{#if summaryVo20PsiRowEditable}
+															<input
+																id={`shared-vo20-${combinedIndex}`}
+																type="number"
+																step="any"
+																max="99.999"
+																style="min-width: 80px;"
+																class="form-control text-end"
+																class:is-invalid={isSummaryVo20Invalid(combinedIndex)}
+																value={getDisplayedSummaryVo20(combinedIndex)}
+																oninput={(event) => {
+																	const target = event.currentTarget as HTMLInputElement;
+																	const inputValue = sanitizeNumber(
+																		target.valueAsNumber ?? Number(target.value)
+																	);
+																	if (inputValue >= 100) {
+																		target.classList.add('is-invalid');
+																		toast.push(
+																			$_('page.discharge.calculation.vo20ValidationError') ||
+																				'Vo20 value must be less than 100',
+																			{
+																				theme: {
+																					'--toastColor': 'white',
+																					'--toastBackground': 'darkorange'
+																				}
+																			}
+																		);
+																	} else {
+																		target.classList.remove('is-invalid');
+																		updateSharedVo20(combinedIndex, inputValue);
 																	}
-																});
-															} else {
-																target.classList.remove('is-invalid');
-																updateSharedVo20(
-																	combinedIndex,
-																	inputValue
-																);
-															}
-														}}
-													/></td>	
+																}}
+															/>
+														{:else}
+															<span class:text-danger={isSummaryVo20Invalid(combinedIndex)}>
+																{getDisplayedSummaryVo20(combinedIndex)}
+															</span>
+														{/if}
+													</td>
 													<td></td>
-													<td><input
-													id={`psi-scenario${combinedIndex}`}
-													type="number"
-													step="any"
-													max="0.999"
-													style="min-width: 80px;"
-													class="form-control text-end"
-														class:is-invalid={(() => {
-															const val = manuallyEditedPsi.has(combinedIndex)
-																? (modScenarioForms[combinedIndex]?.psi ?? 0)
-																: (clarkScenarioForms[combinedIndex] !== undefined 
-																	? calculateSummaryPsi(combinedIndex) 
-																	: (modScenarioForms[combinedIndex]?.psi ?? 0));
-															return val >= 1;
-														})()}
-														value={Math.round((manuallyEditedPsi.has(combinedIndex)
-															? (modScenarioForms[combinedIndex]?.psi ?? 0)
-															: (clarkScenarioForms[combinedIndex] !== undefined 
-																? calculateSummaryPsi(combinedIndex) 
-																: (modScenarioForms[combinedIndex]?.psi ?? 0))) * 100) / 100}
-														oninput={(event) => {
-															const target = event.currentTarget as HTMLInputElement;
-															const inputValue = sanitizeNumber(target.valueAsNumber ?? Number(target.value));
-															if (inputValue >= 1) {
-																target.classList.add('is-invalid');
-																toast.push($_('page.discharge.calculation.psiValidationError') || 'Psi value must be less than 1', {
-																	theme: {
-																		'--toastColor': 'white',
-																		'--toastBackground': 'darkorange'
+													<td class="text-end">
+														{#if summaryVo20PsiRowEditable}
+															<input
+																id={`psi-scenario${combinedIndex}`}
+																type="number"
+																step="any"
+																max="0.999"
+																style="min-width: 80px;"
+																class="form-control text-end"
+																class:is-invalid={isSummaryPsiInvalid(combinedIndex)}
+																value={getDisplayedSummaryPsi(combinedIndex)}
+																oninput={(event) => {
+																	const target = event.currentTarget as HTMLInputElement;
+																	const inputValue = sanitizeNumber(
+																		target.valueAsNumber ?? Number(target.value)
+																	);
+																	if (inputValue >= 1) {
+																		target.classList.add('is-invalid');
+																		toast.push(
+																			$_('page.discharge.calculation.psiValidationError') ||
+																				'Psi value must be less than 1',
+																			{
+																				theme: {
+																					'--toastColor': 'white',
+																					'--toastBackground': 'darkorange'
+																				}
+																			}
+																		);
+																	} else {
+																		target.classList.remove('is-invalid');
+																		updateModPsi(combinedIndex, inputValue);
 																	}
-																});
-															} else {
-																target.classList.remove('is-invalid');
-																updateModPsi(
-																	combinedIndex,
-																	inputValue
-																);
-															}
-														}}
-													/></td>
+																}}
+															/>
+														{:else}
+															<span class:text-danger={isSummaryPsiInvalid(combinedIndex)}>
+																{getDisplayedSummaryPsi(combinedIndex)}
+															</span>
+														{/if}
+													</td>
 												</tr>
 										{/each}
 										</tbody>
