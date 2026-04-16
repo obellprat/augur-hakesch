@@ -1,3 +1,9 @@
+## 1.3.0 (2026-04-16)
+
+### Fix
+
+- **frontend**: Replacement of new Arbeitshilfe and renaming HADES B04
+
 ## 1.3.0-rc.3 (2026-04-12)
 
 ### Feat
