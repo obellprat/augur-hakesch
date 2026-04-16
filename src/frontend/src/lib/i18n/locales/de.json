@@ -158,7 +158,7 @@
         "missingGeodata": "Die Geodaten wurden noch nicht berechnet. Bitte auf der Projektübersicht die Daten berechnen, damit die hydrologischen Berechnungen durchgeführt werden können.",
         "zipUploadSuccess": "Hochladen erfolgreich",
         "zipUploadError": "Fehler beim Hochladen",
-        "hadesValues": "HADES Werte",
+        "hadesValues": "HADES B04",
         "hadesValuesLoading": "HADES Werte werden geladen...",
         "hadesValuesSuccess": "HADES Werte erfolgreich geladen",
         "hadesValuesError": "Fehler beim Laden der HADES Werte",

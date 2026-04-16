@@ -2403,7 +2403,7 @@
 					</h3>
 				</div>
 				<a
-					href="{base}/assets/documents/Be01_HydrologieBE_20240715_VersionPDF.pdf"
+					href="{base}/assets/documents/AH_Hochwasserabschaetzung_im_Kanton_Bern.pdf"
 					target="_blank"
 					rel="noopener noreferrer"
 					class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2"
