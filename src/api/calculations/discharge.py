@@ -164,7 +164,7 @@ def modifizierte_fliesszeit(self,
     TB_start=10,    # Initial value for TB [min]
     istep=0.1,        # Step size for TB [min]
     tol=1,          # Convergence tolerance [mm]
-    max_iter=10000
+    max_iter=100000
 ):
     result_data = {}    
     if x == 2.3 or x == 100 or x == 20:
@@ -279,7 +279,7 @@ def modifizierte_fliesszeit_standardVo(self,
     TB_start=10,    # Initial value for TB [min]
     istep=0.1,        # Step size for TB [min]
     tol=1,          # Convergence tolerance [mm]
-    max_iter=10000
+    max_iter=100000
 ):
     # Map climate scenario to cc_degree if not explicitly set
     scenario_to_degree = {
@@ -386,7 +386,7 @@ def koella(self,
     TB_start=10,            # Start value for TB [min]
     tol=1,                  # Convergence tolerance [mm]
     istep=0.1,                # Step size for TB [min]
-    max_iter=10000            # Max. iterations
+    max_iter=100000            # Max. iterations
 ):
     result_data = {}    
     if x == 2.3 or x == 100 or x == 20:
@@ -503,7 +503,7 @@ def koella_standardVo(self,
     TB_start=10,            # Start value for TB [min]
     tol=1,                  # Convergence tolerance [mm]
     istep=.1,                # Step size for TB [min]
-    max_iter=10000            # Max. iterations
+    max_iter=100000            # Max. iterations
 ):
     # Map climate scenario to cc_degree if not explicitly set
     scenario_to_degree = {
