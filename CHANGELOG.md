@@ -1,3 +1,10 @@
+## 1.3.1 (2026-07-02)
+
+### Fix
+
+- **frontend**: Language switch working for all pages
+- **frontend,-api**: hakesch_api_path for background connection to api
+
 ## 1.3.0 (2026-04-16)
 
 ### Fix
