@@ -1,15 +1,16 @@
 <script lang="ts">
 	import pageTitle from '$lib/page/pageTitle';
 
-	import { locale, locales } from 'svelte-i18n';
+	import { locale } from 'svelte-i18n';
 	import { _ } from 'svelte-i18n';
 	import { page } from '$app/state';
+	import { setAppLocale } from '$lib/i18n';
 
 	import { signIn, signOut } from '@auth/sveltekit/client';
 
 	import { base } from '$app/paths';
 	function changeLanguage(code: string) {
-		locale.set(code);
+		setAppLocale(code);
 	}
 </script>
 
