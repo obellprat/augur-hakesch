@@ -1,3 +1,9 @@
+## 1.3.2 (2026-08-20)
+
+### Fix
+
+- **frontend**: Precip_db with correct driver for linux
+
 ## 1.3.1 (2026-07-02)
 
 ### Fix
