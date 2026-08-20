@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 import Database from 'better-sqlite3';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
 import { existsSync } from 'fs';
 
 export async function GET({ url }) {
@@ -21,15 +20,12 @@ export async function GET({ url }) {
  */
 async function selectLocation(lat: number, lng: number) {
 	try {
-		// Construct path to SQLite database
-		// Path is relative to the project root: src/frontend/static/assets/precip_db/augur.sqlite
-		// Try multiple possible paths to handle different execution contexts
 		const possiblePaths = [
-			join(process.cwd(), 'src/frontend/static/assets/precip_db/augur.sqlite'), // From project root
-			join(process.cwd(), 'static/assets/precip_db/augur.sqlite'), // If cwd is src/frontend
-			join(process.cwd(), '/build/client/abfluss/assets/precip_db/augur.sqlite'), 
-			join(dirname(fileURLToPath(import.meta.url)), '../../../../static/assets/precip_db/augur.sqlite') // Relative to this file
-		];
+			process.env.PRECIP_DB_PATH,
+			join(process.cwd(), 'build/client/abfluss/assets/precip_db/augur.sqlite'), // adapter-node + paths.base
+			join(process.cwd(), 'static/assets/precip_db/augur.sqlite'), // vite dev
+			join(process.cwd(), 'src/frontend/static/assets/precip_db/augur.sqlite') // monorepo root
+		].filter((path): path is string => Boolean(path));
 
 		let dbPath: string | null = null;
 		for (const path of possiblePaths) {

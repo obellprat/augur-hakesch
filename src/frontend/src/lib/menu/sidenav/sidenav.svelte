@@ -59,7 +59,7 @@
 
 			<!--<Navlink title={$_('page.nav.science')} href="science" icon="ti ti-school" />-->
 
-			<Navlink title={$_('page.nav.technicalDocumentation')} href="assets/documents/AUGUR_Dokumentation_2026-02-20.pdf" icon="ti ti-file-type-pdf" target="_blank" />
+			<Navlink title={$_('page.nav.technicalDocumentation')} href="assets/documents/Technische_Dokumentation_AUGUR_Aug26.pdf" icon="ti ti-file-type-pdf" target="_blank" />
 
 			<Navlink
 				title={$_('page.nav.aboutAugur')}

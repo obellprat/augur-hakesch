@@ -1,28 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { redirect } from '@sveltejs/kit';
-	import { browser } from '$app/environment';
 	import { base } from '$app/paths';
-
-	import { signIn } from '@auth/sveltekit/client';
+	import { startKeycloakLogin } from '$lib/auth/keycloakAuth';
 	import { _ } from 'svelte-i18n';
 
-	let redirect_url: string | null = null;
-	if (browser) {
-		const urlParams = new URLSearchParams(window.location.search);
-		redirect_url = urlParams.get('redirect_url');
-	}
-
-	function login() {
-		signIn('keycloak', {
-			redirectTo: redirect_url ? `${decodeURIComponent(redirect_url)}` : `${base}/`
-		});
-	}
-
-	function register() {
-		// Hint the provider to show account creation
-		signIn('keycloak', null, { prompt: 'create' });
-	}
+	const callbackUrl = $derived(
+		page.url.searchParams.get('redirect_url')
+			? decodeURIComponent(page.url.searchParams.get('redirect_url')!)
+			: `${base}/`
+	);
 </script>
 
 <div class="page-container container-fluid d-flex flex-grow-1">
@@ -42,10 +28,19 @@
 						<p class="text-muted small">{$_('page.login.privacy_note')}</p>
 
 						<div class="d-flex gap-2 mt-3">
-							<button class="btn btn-primary" id="loginBtn" type="button" onclick={login}>
+							<button
+								class="btn btn-primary"
+								id="loginBtn"
+								type="button"
+								onclick={() => startKeycloakLogin(callbackUrl)}
+							>
 								{$_('page.login.btn_login')}
 							</button>
-							<button class="btn btn-outline-primary" type="button" onclick={register}>
+							<button
+								class="btn btn-outline-primary"
+								type="button"
+								onclick={() => startKeycloakLogin(callbackUrl, 'create')}
+							>
 								{$_('page.login.btn_register')}
 							</button>
 						</div>

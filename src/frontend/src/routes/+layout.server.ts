@@ -68,7 +68,7 @@ export const load: LayoutServerLoad = async (event) => {
 	try {
 		const response = await fetch(versionUrl, {
 			method: 'GET',
-			signal: AbortSignal.timeout(200)
+			signal: AbortSignal.timeout(3000)
 		});
 
 		const versionObject = await response.json();

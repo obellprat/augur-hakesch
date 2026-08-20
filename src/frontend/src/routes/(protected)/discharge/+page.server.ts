@@ -5,6 +5,9 @@ import { base } from '$app/paths';
 
 export const load: PageServerLoad = async (events) => {
 	const session = await events.locals.auth();
+	if (!session?.myuser?.id) {
+		redirect(303, `${base}/login?redirect_url=${base}/discharge`);
+	}
 	const projects = await getAllProjects(session.myuser.id);
 
 	return {

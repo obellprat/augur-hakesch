@@ -6,7 +6,7 @@
 	import { page } from '$app/state';
 	import { setAppLocale } from '$lib/i18n';
 
-	import { signIn, signOut } from '@auth/sveltekit/client';
+	import { startKeycloakLogin, startKeycloakLogout } from '$lib/auth/keycloakAuth';
 
 	import { base } from '$app/paths';
 	function changeLanguage(code: string) {
@@ -124,7 +124,7 @@
 							<a
 								href="javascript:void(0);"
 								class="dropdown-item active fw-semibold text-danger"
-								onclick={() => signOut()}
+								onclick={() => startKeycloakLogout()}
 							>
 								<i class="ri-logout-box-line me-1 fs-16 align-middle"></i>
 								<span class="align-middle">{$_('page.nav.sign-out')}</span>
@@ -138,7 +138,7 @@
 						class="topbar-link btn btn-primary bg-gradient rounded-pill"
 						id="loginBtn"
 						type="button"
-						onclick={() => signIn('keycloak')}>{$_('page.nav.login')}</button
+						onclick={() => startKeycloakLogin()}>{$_('page.nav.login')}</button
 					>
 				</div>
 				<div class="" id="loginbuttonbar">
@@ -146,7 +146,7 @@
 						class="topbar-link btn btn-outline-primary rounded-pill"
 						id="loginBtn"
 						type="button"
-						onclick={() => signIn('keycloak', null, { prompt: 'create' })}
+						onclick={() => startKeycloakLogin(`${base}/`, 'create')}
 						>{$_('page.nav.signup')}</button
 					>
 				</div>

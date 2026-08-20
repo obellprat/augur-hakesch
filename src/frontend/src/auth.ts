@@ -1,4 +1,4 @@
-import { SvelteKitAuth } from '@auth/sveltekit';
+import { SvelteKitAuth, type SvelteKitAuthConfig } from '@auth/sveltekit';
 import keycloak from '@auth/sveltekit/providers/keycloak';
 import { prisma } from '$lib/prisma';
 
@@ -15,13 +15,57 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 		],
 		secret: env.AUTH_SECRET,
 		trustHost: true,
-		// When trustHost is true, Auth.js auto-detects the URL from request headers
-		// This allows it to work with both www and non-www domains automatically
-		// Only set url explicitly if you need to override this behavior
-		// AUTH_URL should be the base URL WITHOUT the SvelteKit base path (/abfluss)
-		debug: true,
+		// Behind a TLS-terminating proxy Node sees HTTP, so Auth.js must not prefix
+		// cookies with __Secure- (it would then ignore them on the callback).
+		// The cookies themselves still need Secure=true because the browser is on HTTPS.
+		useSecureCookies: false,
+		cookies: {
+			sessionToken: {
+				name: 'abfluss.session-token',
+				options: { httpOnly: true, sameSite: 'lax', path: '/abfluss', secure: true }
+			},
+			callbackUrl: {
+				name: 'abfluss.callback-url',
+				options: { httpOnly: true, sameSite: 'lax', path: '/abfluss', secure: true }
+			},
+			csrfToken: {
+				name: 'abfluss.csrf-token',
+				options: { httpOnly: true, sameSite: 'lax', path: '/abfluss', secure: true }
+			},
+			pkceCodeVerifier: {
+				name: 'abfluss.pkce.code_verifier',
+				options: {
+					httpOnly: true,
+					sameSite: 'lax',
+					path: '/abfluss',
+					secure: true,
+					maxAge: 60 * 15
+				}
+			},
+			state: {
+				name: 'abfluss.state',
+				options: {
+					httpOnly: true,
+					sameSite: 'lax',
+					path: '/abfluss',
+					secure: true,
+					maxAge: 60 * 15
+				}
+			},
+			nonce: {
+				name: 'abfluss.nonce',
+				options: {
+					httpOnly: true,
+					sameSite: 'lax',
+					path: '/abfluss',
+					secure: true,
+					maxAge: 60 * 15
+				}
+			}
+		},
+		debug: env.AUTH_DEBUG === 'true',
 		callbacks: {
-			async jwt({ token, account }) {
+			async jwt({ token, account }: { token: any; account?: any }) {
 				if (account) {
 					return {
 						...token,
@@ -32,9 +76,9 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 				}
 				return token;
 			},
-			async session({ session, token }) {
+			async session({ session, token }: { session: any; token: any }) {
 				const users = await prisma.user.findMany({});
-				let myuser = users.find((t) => t.email == session.user.email);
+				let myuser = users.find((t: { email?: string | null }) => t.email == session.user.email);
 				if (myuser) {
 					if (myuser.name != session.user.name) {
 						myuser = await prisma.user.update({
@@ -91,5 +135,5 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 			}
 		}
 	};
-	return authOptions;
+	return authOptions as SvelteKitAuthConfig;
 });

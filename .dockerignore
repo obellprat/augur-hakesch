@@ -1,0 +1,11 @@
+.git
+.github
+**/.svelte-kit
+**/node_modules
+**/__pycache__
+src/frontend/build
+src/api
+src/monitor
+**/.env
+**/.env.*
+src/frontend/static/assets/precip_db/augur.sqlite

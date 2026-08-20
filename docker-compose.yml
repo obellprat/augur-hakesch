@@ -21,9 +21,24 @@ services:
       args:
         DATABASE_URL: ${DATABASE_URL}
     ports:
-      - 3000:3000
+      - 3001:3000
     command: node build/index.js
     env_file: ".env"
+    environment:
+      # Server-side fetches from the view container must use the Docker service name,
+      # not localhost (which would point back to the view container itself).
+      HAKESCH_API_PATH: http://api:8000
+      # SvelteKit adapter-node CSRF check uses ORIGIN to validate the Host header.
+      # Override on the production host via .env or the deployment environment.
+      # Production MUST set these on the view service (ORIGIN was previously commented out):
+      #   ORIGIN: "https://www.augur.world"
+      #   PROTOCOL_HEADER: x-forwarded-proto
+      #   HOST_HEADER: x-forwarded-host
+      ORIGIN: ${ORIGIN:-https://augur.world}
+    volumes:
+      # Same target as production (named volume augur-precipdb).
+      # kit.paths.base is /abfluss, so adapter-node serves client assets from here.
+      - ./src/frontend/static/assets/precip_db:/app/build/client/abfluss/assets/precip_db:ro
     networks:
       - augur-public
 
