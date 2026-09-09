@@ -2403,7 +2403,7 @@
 					</h3>
 				</div>
 				<a
-					href="{base}/assets/documents/AH_Hochwasserabschaetzung_im_Kanton_Bern.pdf"
+					href="{base}/assets/documents/AH_Hochwasserabschaetzung_AUGUR_2026-08-27.pdf"
 					target="_blank"
 					rel="noopener noreferrer"
 					class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2"

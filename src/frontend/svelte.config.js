@@ -12,7 +12,11 @@ const config = {
 		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 		adapter: adapter(),
 		paths: {
-			base: '/abfluss'
+			base: '/abfluss',
+			// Absolute asset URLs. The default (relative: true) resolves
+			// `_app/...` against the current page, so Auth.js routes under
+			// `/abfluss/auth/...` request `/abfluss/auth/_app/...` (404).
+			relative: false
 		},
 		csrf: {
 			checkOrigin: false,

@@ -1,6 +1,7 @@
 import { SvelteKitAuth, type SvelteKitAuthConfig } from '@auth/sveltekit';
 import keycloak from '@auth/sveltekit/providers/keycloak';
 import { prisma } from '$lib/prisma';
+import { base } from '$app/paths';
 
 import { env } from '$env/dynamic/private';
 
@@ -64,6 +65,10 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 			}
 		},
 		debug: env.AUTH_DEBUG === 'true',
+		pages: {
+			signIn: `${base}/login`,
+			error: `${base}/login`
+		},
 		callbacks: {
 			async jwt({ token, account }: { token: any; account?: any }) {
 				if (account) {
