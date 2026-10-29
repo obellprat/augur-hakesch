@@ -118,11 +118,14 @@ def nam(self,
     cc_degree: float = 0.0,
     climate_scenario: str = "current",  # Climate scenario: "current", "1_5_degree", "2_degree", "3_degree", "4_degree"
     debug: bool = True,
+    persist: bool = True,
 ):
     """
     NAM (Nedbør-Afstrømnings-Model) calculation based on distributed curve numbers and travel times.
     This is a distributed rainfall-runoff model that uses curve numbers for each cell and 
     calculates runoff at 10-minute timesteps using either travel time or isozone routing methods.
+
+    persist=False returns the hydrograph values without writing NAM_Result.
     """
 
     def _nam_print(*args, **kwargs):
@@ -447,7 +450,7 @@ def nam(self,
     S_cells[valid_mask] = (25400 / cn_data[valid_mask]) - 254
     
     # Calculate initial abstraction Ia for each cell: Ia = 0.2 * S [mm]
-    Ia_cells = 0.1 * S_cells  # SCS standard: Ia = 0.2 * S
+    Ia_cells = 0.05 * S_cells  # SCS standard: Ia = 0.2 * S
     
     # Debug: Print statistics about curve numbers and retention
     print(f"Curve number statistics:")
@@ -731,9 +734,8 @@ def nam(self,
     
     # Calculate effective precipitation for each cell using SCS method
     if water_balance_mode == "uniform":
-        # Uniform approach: Use uniform precipitation for SCS calculation
-        uniform_precip = P_total_storm * precipitation_factor  # Apply scaling factor
-        #uniform_precip = P_total_storm * min(106.61 * catchment_area ** (-0.289) / 100, 1.0)
+        # Uniform approach: scale the storm total by the project precipitation factor.
+        uniform_precip = P_total_storm * precipitation_factor
         
         print(f"Uniform approach - uniform={uniform_precip:.2f}mm (factor={precipitation_factor}, catchment_area={catchment_area:.2f}km²)")
         
@@ -1305,94 +1307,74 @@ def nam(self,
     S = np.nanmean(S_cells[valid_mask])  # Average S for reporting
     Ia = np.nanmean(Ia_cells[valid_mask])  # Average Ia for reporting
     Pe_final = HQ * dt * 60 / (np.sum(valid_mask) * pixel_area_m2 / 1000)  # Average Pe for reporting
-    # 7. Update database
-    prisma = None
-    try:
-        prisma = connect_prisma_with_retry()
-        
-        # Calculate average curve number for reporting
-        effective_curve_number = np.nanmean(cn_data[valid_mask]) if cn_data is not None else curve_number
+    effective_curve_number = np.nanmean(cn_data[valid_mask]) if cn_data is not None else curve_number
+    # 7. Update database. Comparison runs pass persist=False and only return HQ.
+    if persist:
+        prisma = None
+        try:
+            prisma = connect_prisma_with_retry()
 
-        # Debug: Prepare HQ_time data
-        # Convert numpy float32 values to regular Python floats for JSON serialization
-        discharge_timesteps_serializable = [float(x) for x in discharge_timesteps]
-        hq_time_json = json.dumps(discharge_timesteps_serializable)
-        print(f"Debug - HQ_time JSON length: {len(hq_time_json)}")
-        print(f"Debug - HQ_time JSON sample: {hq_time_json[:200]}...")
-        
-        # Debug: Verify all data types
-        print(f"Debug - HQ type: {type(HQ)}, value: {HQ}")
-        print(f"Debug - Tc type: {type(Tc)}, value: {Tc}")
-        print(f"Debug - TB type: {type(TB)}, value: {TB}")
-        print(f"Debug - TFl type: {type(TFl)}, value: {TFl}")
-        print(f"Debug - i_final type: {type(i_final)}, value: {i_final}")
-        print(f"Debug - S type: {type(S)}, value: {S}")
-        print(f"Debug - Ia type: {type(Ia)}, value: {Ia}")
-        print(f"Debug - Pe_final type: {type(Pe_final)}, value: {Pe_final}")
+            discharge_timesteps_serializable = [float(x) for x in discharge_timesteps]
+            hq_time_json = json.dumps(discharge_timesteps_serializable)
+            result_data = {
+                'HQ': float(HQ),
+                'Tc': Tc,
+                'TB': TB,
+                'TFl': TFl,
+                'i': float(i_final),
+                'S': float(S),
+                'Ia': float(Ia),
+                'Pe': float(Pe_final),
+                'HQ_time': hq_time_json,
+            }
 
-        # Build the update data based on climate scenario
-        result_data = {
-            'HQ': float(HQ),
-            'Tc': Tc,
-            'TB': TB,
-            'TFl': TFl,
-            'i': float(i_final),
-            'S': float(S),
-            'Ia': float(Ia),
-            'Pe': float(Pe_final),
-            'HQ_time': hq_time_json,
-        }
-        
-        # Use conditional logic to set the correct relation field
-        if climate_scenario == "1_5_degree":
-            data_update = {
-                'NAM_Result_1_5': {
-                    'upsert': {'update': result_data, 'create': result_data}
+            if climate_scenario == "1_5_degree":
+                data_update = {
+                    'NAM_Result_1_5': {
+                        'upsert': {'update': result_data, 'create': result_data}
+                    }
                 }
-            }
-        elif climate_scenario == "2_degree":
-            data_update = {
-                'NAM_Result_2': {
-                    'upsert': {'update': result_data, 'create': result_data}
+            elif climate_scenario == "2_degree":
+                data_update = {
+                    'NAM_Result_2': {
+                        'upsert': {'update': result_data, 'create': result_data}
+                    }
                 }
-            }
-        elif climate_scenario == "3_degree":
-            data_update = {
-                'NAM_Result_3': {
-                    'upsert': {'update': result_data, 'create': result_data}
+            elif climate_scenario == "3_degree":
+                data_update = {
+                    'NAM_Result_3': {
+                        'upsert': {'update': result_data, 'create': result_data}
+                    }
                 }
-            }
-        elif climate_scenario == "4_degree":
-            data_update = {
-                'NAM_Result_4': {
-                    'upsert': {'update': result_data, 'create': result_data}
+            elif climate_scenario == "4_degree":
+                data_update = {
+                    'NAM_Result_4': {
+                        'upsert': {'update': result_data, 'create': result_data}
+                    }
                 }
-            }
-        else:  # current
-            data_update = {
-                'NAM_Result': {
-                    'upsert': {'update': result_data, 'create': result_data}
+            else:  # current
+                data_update = {
+                    'NAM_Result': {
+                        'upsert': {'update': result_data, 'create': result_data}
+                    }
                 }
-            }
-        
-        updatedResults = prisma.nam.update(
-            where={
-                'id': nam_id
-            },
-            data=data_update
-        )
-        
-        print(f"Debug - Database update successful: {updatedResults}")
-    except Exception as e:
-        print(f"Error updating NAM results: {e}")
-        print(traceback.format_exc())
-    finally:
-        if prisma is not None:
-            try:
-                prisma.disconnect(5)
-            except Exception:
-                pass
-    print("NAM results updated in database.")
+
+            prisma.nam.update(
+                where={
+                    'id': nam_id
+                },
+                data=data_update
+            )
+            print("NAM results updated in database.")
+        except Exception as e:
+            print(f"Error updating NAM results: {e}")
+            print(traceback.format_exc())
+        finally:
+            if prisma is not None:
+                try:
+                    prisma.disconnect(5)
+                except Exception:
+                    pass
     return {
         "HQ": float(HQ),
         "Tc": float(Tc),

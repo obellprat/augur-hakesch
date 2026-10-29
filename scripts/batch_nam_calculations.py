@@ -5,6 +5,9 @@ Batch NAM Calculations Script
 This script iterates through entries in the NAM table, calls the NAM calculation function,
 and saves the output values (HQ, Tc, TB, TFl, i, S, Pe) to a CSV file.
 
+Only the current climate scenario and the 100-year return period are calculated
+and written to the CSV. Other annualities (for example HQ30 and HQ300) are skipped.
+
 Usage:
     python batch_nam_calculations.py \
         [--output output.csv] \
@@ -39,7 +42,20 @@ sys.path.insert(0, _PROJECT_ROOT)
 # Import required modules
 from helpers.prisma import prisma
 # Import the NAM function directly (not the task wrapper)
-import calculations.nam
+from calculations.nam2 import nam2 as nam
+
+# Batch output is limited to this climate scenario and return period.
+TARGET_CLIMATE_SCENARIO = "current"
+TARGET_RETURN_PERIOD = 100
+
+
+def is_target_nam_entry(nam_entry) -> bool:
+    """Return True when the entry is the 100-year annuality."""
+    annuality = getattr(nam_entry, "Annuality", None)
+    number = getattr(annuality, "number", None)
+    if number is None:
+        return False
+    return float(number) == float(TARGET_RETURN_PERIOD)
 
 def get_all_nam_entries(limit: Optional[int] = None, project_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """
@@ -174,6 +190,7 @@ def call_nam_calculation(nam_entry) -> Optional[Dict[str, Any]]:
         # Return period - use the actual number from Annuality, not the ID
         x = int(nam_entry.Annuality.number)
         print(f"  Return period: {x} ({nam_entry.Annuality.description})")
+        print(f"  Climate scenario: {TARGET_CLIMATE_SCENARIO}")
         
         # Catchment parameters
         catchment_area = float(project.catchment_area)
@@ -228,9 +245,8 @@ def call_nam_calculation(nam_entry) -> Optional[Dict[str, Any]]:
         print(f"    routing_method: {routing_method}")
         print(f"    readiness_to_drain: {readiness_to_drain}")
         
-        # Call the NAM function directly (not through Celery)
-        # Get the underlying function from the module
-        nam_function = calculations.nam.nam.__wrapped__
+        # Call nam2 directly (not through Celery), current climate only.
+        nam_function = nam.__wrapped__
         
         # Create kwargs dict to avoid argument conflicts
         kwargs = {
@@ -254,7 +270,8 @@ def call_nam_calculation(nam_entry) -> Optional[Dict[str, Any]]:
             'routing_method': routing_method,
             'readiness_to_drain': readiness_to_drain,
             'discharge_point': discharge_point,
-            'discharge_point_crs': discharge_point_crs
+            'discharge_point_crs': discharge_point_crs,
+            'climate_scenario': TARGET_CLIMATE_SCENARIO,
         }
         
         # Call the function without self parameter
@@ -284,7 +301,8 @@ def save_results_to_csv(results: List[Dict[str, Any]], output_file: str):
     try:
         # Define CSV columns
         fieldnames = [
-            'nam_id', 'project_id', 'project_name', 'user_id', 'return_period', 'return_period_desc',
+            'nam_id', 'project_id', 'project_name', 'user_id', 'climate_scenario',
+            'return_period', 'return_period_desc',
             'catchment_area_km2', 'channel_length_m', 'delta_h_m',
             'water_balance_mode', 'precipitation_factor', 'storm_center_mode', 'routing_method',
             'readiness_to_drain',
@@ -321,6 +339,8 @@ def main():
     args = parser.parse_args()
     
     print("=== Batch NAM Calculations ===")
+    print(f"Climate scenario: {TARGET_CLIMATE_SCENARIO}")
+    print(f"Return period: {TARGET_RETURN_PERIOD}")
     print(f"Output file: {args.output}")
     if args.limit:
         print(f"Limit: {args.limit} entries")
@@ -334,6 +354,19 @@ def main():
         
         if not nam_entries:
             print("No NAM entries found in database")
+            return
+
+        selected_entries = [entry for entry in nam_entries if is_target_nam_entry(entry)]
+        skipped_count = len(nam_entries) - len(selected_entries)
+        print(
+            f"Selected {len(selected_entries)} of {len(nam_entries)} NAM entries "
+            f"({TARGET_CLIMATE_SCENARIO}, {TARGET_RETURN_PERIOD}-year); "
+            f"skipped {skipped_count}"
+        )
+        nam_entries = selected_entries
+
+        if not nam_entries:
+            print(f"No NAM entries with return period {TARGET_RETURN_PERIOD}")
             return
         
         results = []
@@ -353,6 +386,7 @@ def main():
                 'project_id': nam_entry.Project.id,
                 'project_name': getattr(nam_entry.Project, 'title', ''),
                 'user_id': nam_entry.Project.userId,
+                'climate_scenario': TARGET_CLIMATE_SCENARIO,
                 'return_period': nam_entry.x,
                 'return_period_desc': getattr(nam_entry.Annuality, 'description', ''),
                 'catchment_area_km2': nam_entry.Project.catchment_area,

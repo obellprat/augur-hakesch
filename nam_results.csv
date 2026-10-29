@@ -1,0 +1,2 @@
+nam_id,project_id,project_name,user_id,climate_scenario,return_period,return_period_desc,catchment_area_km2,channel_length_m,delta_h_m,water_balance_mode,precipitation_factor,storm_center_mode,routing_method,readiness_to_drain,HQ,Tc,TB,TFl,i,S,Pe,effective_curve_number,calculation_status,error_message,calculation_time
+318,6knjfj_5x7ZWSVRV5g2cX,Steinebach,2,current,3,100,7.510025,5085.0,433.0,uniform,0.748,centroid,time_values,0,10.184305996164777,70.0,70.0,0.0,57.74553728728534,229.01453105261362,0.813659600226214,55.856531291611184,success,,2026-10-28T21:16:16.490326
