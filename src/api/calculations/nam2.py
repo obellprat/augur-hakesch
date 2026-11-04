@@ -1,7 +1,7 @@
 """Simplified distributed SCS-CN rainfall-runoff calculation.
 
-NAM2 intentionally supports one fixed model setup: uniform 60-minute rainfall,
-Ia = 0.1 S, six cumulative 10-minute SCS runoff increments, and time-values routing.
+NAM2 uses uniform rainfall, searches a travel-time-dependent range of event
+durations, applies Ia = 0.1 S, and routes 10-minute runoff increments.
 """
 
 import builtins
@@ -20,13 +20,12 @@ from calculations.discharge import (
     construct_idf_curve,
 )
 from calculations.nam2_core import (
-    calculate_and_route_scs_event,
+    build_duration_candidates,
     calculate_scs_runoff,
+    find_critical_scs_event,
 )
 
 DT_MINUTES = 10
-EVENT_DURATION_MINUTES = 60
-RAIN_BLOCK_COUNT = EVENT_DURATION_MINUTES // DT_MINUTES
 
 
 def _data_directories():
@@ -154,12 +153,7 @@ def nam2(
     debug=True,
     persist=True,
 ):
-    """Run the fixed NAM2 setup while accepting the legacy NAM call signature.
-
-    Precipitation is never scaled. precipitation_factor is accepted for call
-    compatibility and the rainfall stays at factor 1.
-    persist=False returns the hydrograph values without writing NAM_Result.
-    """
+    """Run the fixed NAM2 setup while accepting the legacy NAM call signature."""
 
     def nam_print(*args, **kwargs):
         warning = kwargs.pop("warning", False)
@@ -227,43 +221,44 @@ def nam2(
         climate_factor,
     )
 
-    intensity_60 = float(
-        intensity_fn(rp_years=x, duration_minutes=EVENT_DURATION_MINUTES)
-    )
-    precipitation_mm = intensity_60 * EVENT_DURATION_MINUTES / 60.0
-
-    retention = np.full(cn_data.shape, np.nan, dtype=np.float64)
-    initial_abstraction = np.full(cn_data.shape, np.nan, dtype=np.float64)
-    retention_valid, abstraction_valid, _ = calculate_scs_runoff(
-        precipitation_mm,
-        adjusted_cn[valid_mask],
-    )
-    retention[valid_mask] = retention_valid
-    initial_abstraction[valid_mask] = abstraction_valid
-
-    runoff_depth, runoff_volume_blocks, routed_volumes, discharge = (
-        calculate_and_route_scs_event(
-            precipitation_mm,
-            adjusted_cn,
-            pixel_area_m2,
-            time_values,
-            valid_mask,
+    valid_curve_numbers = adjusted_cn[valid_mask]
+    valid_travel_times = time_values[valid_mask]
+    duration_candidates, travel_time_p95, search_truncated = (
+        build_duration_candidates(
+            valid_travel_times,
             dt_minutes=DT_MINUTES,
-            block_count=RAIN_BLOCK_COUNT,
         )
     )
-    runoff_volumes = np.sum(runoff_volume_blocks, axis=0)
+    critical_event = find_critical_scs_event(
+        intensity_fn=intensity_fn,
+        rp_years=x,
+        durations_minutes=duration_candidates,
+        curve_numbers=valid_curve_numbers,
+        pixel_area_m2=pixel_area_m2,
+        travel_times=valid_travel_times,
+        dt_minutes=DT_MINUTES,
+    )
 
-    peak_discharge = float(np.max(discharge))
+    critical_duration = float(critical_event["critical_duration_minutes"])
+    precipitation_mm = float(critical_event["precipitation_mm"])
+    peak_discharge = float(critical_event["peak_discharge_m3s"])
+    peak_time = float(critical_event["peak_time_minutes"])
+    routed_volumes = critical_event["routed_volumes_m3"]
+    discharge = critical_event["discharge_m3s"]
+    runoff_depth = critical_event["runoff_depth_mm"]
+    total_runoff_volume = float(critical_event["total_runoff_volume_m3"])
     peak_timestep = int(np.argmax(discharge))
-    concentration_time = float((peak_timestep + 1) * DT_MINUTES)
-    mean_retention = float(np.mean(retention[valid_mask]))
-    mean_abstraction = float(np.mean(initial_abstraction[valid_mask]))
-    effective_curve_number = float(np.mean(adjusted_cn[valid_mask]))
+
+    retention_valid, abstraction_valid, _ = calculate_scs_runoff(
+        precipitation_mm,
+        valid_curve_numbers,
+    )
+    mean_retention = float(np.mean(retention_valid))
+    mean_abstraction = float(np.mean(abstraction_valid))
+    effective_curve_number = float(np.mean(valid_curve_numbers))
     catchment_raster_area_m2 = float(np.sum(valid_mask) * pixel_area_m2)
 
     total_precipitation_volume = precipitation_mm * catchment_raster_area_m2 / 1000.0
-    total_runoff_volume = float(np.sum(runoff_volumes[valid_mask]))
     total_infiltration_volume = total_precipitation_volume - total_runoff_volume
     runoff_percentage = (
         100.0 * total_runoff_volume / total_precipitation_volume
@@ -271,32 +266,32 @@ def nam2(
         else 0.0
     )
 
-    final_intensity = float(
-        intensity_fn(rp_years=x, duration_minutes=concentration_time)
-    )
     peak_interval_depth = (
         peak_discharge * DT_MINUTES * 60.0 / catchment_raster_area_m2 * 1000.0
     )
     discharge_list = [float(value) for value in discharge]
     result_data = {
         "HQ": peak_discharge,
-        "Tc": concentration_time,
-        "TB": concentration_time,
-        "TFl": 0.0,
-        "i": final_intensity,
+        "Tc": critical_duration,
+        "TB": critical_duration,
+        "TFl": travel_time_p95,
+        "i": float(critical_event["intensity_mm_per_hour"]),
         "S": mean_retention,
         "Ia": mean_abstraction,
         "Pe": float(peak_interval_depth),
         "HQ_time": json.dumps(discharge_list),
     }
-    if persist:
-        _store_result(nam_id, climate_scenario, result_data, nam_print)
+    _store_result(nam_id, climate_scenario, result_data, nam_print)
 
     nam_print(
         "NAM2 completed:",
-        f"P60={precipitation_mm:.2f} mm,",
+        f"Dcritical={critical_duration:.0f} min,",
+        f"T95={travel_time_p95:.1f} min,",
+        f"Dsearch={duration_candidates[0]}-{duration_candidates[-1]} min,"
+        f"P={precipitation_mm:.2f} mm,",
         f"runoff={total_runoff_volume:.2f} m3,",
-        f"HQ={peak_discharge:.3f} m3/s",
+        f"HQ={peak_discharge:.3f} m3/s,",
+        f"HQ60={critical_event['hq_60_m3s']:.3f} m3/s",
     )
 
     return {
@@ -305,24 +300,37 @@ def nam2(
         "runoff_timesteps": [float(value) for value in routed_volumes],
         "discharge_timesteps": discharge_list,
         "max_timestep": peak_timestep,
+        "peak_time_minutes": peak_time,
+        "critical_duration_minutes": critical_duration,
+        "travel_time_p95_minutes": travel_time_p95,
+        "duration_search_min_minutes": int(duration_candidates[0]),
+        "duration_search_max_minutes": int(duration_candidates[-1]),
+        "duration_search_truncated": bool(search_truncated),
+        "duration_peaks_m3s": {
+            int(duration): float(peak)
+            for duration, peak in critical_event["peaks_by_duration_m3s"].items()
+        },
+        "hq_60_m3s": float(critical_event["hq_60_m3s"]),
         "total_cells": int(np.sum(valid_mask)),
         "pixel_area_m2": float(pixel_area_m2),
         "precipitation_mm": precipitation_mm,
         "precipitation_factor": 1.0,
-        "rain_block_count": RAIN_BLOCK_COUNT,
+        "rain_block_count": int(critical_duration // DT_MINUTES),
         "water_balance": {
-            "approach": "uniform",
+            "approach": "uniform_critical_duration",
             "total_precipitation_volume_m3": float(total_precipitation_volume),
             "total_infiltration_volume_m3": float(total_infiltration_volume),
             "total_runoff_volume_m3": total_runoff_volume,
             "infiltration_percentage": float(100.0 - runoff_percentage),
             "runoff_percentage": float(runoff_percentage),
+            "mean_runoff_depth_mm": float(np.mean(runoff_depth)),
         },
         "routing_method": "time_values",
         "time_values_info": {
             "used_time_values": True,
-            "max_travel_time": float(np.max(time_values[valid_mask])),
-            "mean_travel_time": float(np.mean(time_values[valid_mask])),
-            "min_travel_time": float(np.min(time_values[valid_mask])),
+            "max_travel_time": float(np.max(valid_travel_times)),
+            "mean_travel_time": float(np.mean(valid_travel_times)),
+            "min_travel_time": float(np.min(valid_travel_times)),
+            "p95_travel_time": travel_time_p95,
         },
     }

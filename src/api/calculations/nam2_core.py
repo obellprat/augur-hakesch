@@ -3,6 +3,47 @@
 import numpy as np
 
 
+def build_duration_candidates(
+    travel_times,
+    dt_minutes=10,
+    minimum_duration_minutes=60,
+    maximum_duration_minutes=1440,
+):
+    """Return duration candidates from T95 through twice T95."""
+    if dt_minutes <= 0:
+        raise ValueError("dt_minutes must be positive")
+
+    travel_times = np.asarray(travel_times, dtype=np.float64)
+    valid_times = travel_times[np.isfinite(travel_times) & (travel_times > 0)]
+    if valid_times.size == 0:
+        raise ValueError("at least one positive finite travel time is required")
+
+    travel_time_p95 = float(np.percentile(valid_times, 95))
+    uncapped_duration = max(
+        float(minimum_duration_minutes),
+        2.0 * travel_time_p95,
+    )
+    rounded_duration = int(np.ceil(uncapped_duration / dt_minutes) * dt_minutes)
+    capped_duration = int(
+        np.floor(maximum_duration_minutes / dt_minutes) * dt_minutes
+    )
+    if capped_duration < dt_minutes:
+        raise ValueError("maximum duration must include at least one time step")
+
+    search_start = min(
+        int(np.ceil(travel_time_p95 / dt_minutes) * dt_minutes),
+        capped_duration,
+    )
+    search_end = min(rounded_duration, capped_duration)
+    durations = np.arange(
+        search_start,
+        search_end + dt_minutes,
+        dt_minutes,
+        dtype=int,
+    )
+    return durations, travel_time_p95, rounded_duration > capped_duration
+
+
 def calculate_scs_runoff(precipitation_mm, curve_numbers):
     """Return cell retention, initial abstraction, and runoff depths in mm."""
     curve_numbers = np.asarray(curve_numbers, dtype=np.float64)
@@ -17,6 +58,142 @@ def calculate_scs_runoff(precipitation_mm, curve_numbers):
         / (precipitation_excess + retention[runoff_mask])
     )
     return retention, initial_abstraction, runoff
+
+
+def calculate_routed_scs_event(
+    total_precipitation_mm,
+    curve_numbers,
+    pixel_area_m2,
+    travel_times,
+    block_count,
+    dt_minutes=10,
+):
+    """Calculate and route an SCS event without a block-by-raster allocation."""
+    if dt_minutes <= 0:
+        raise ValueError("dt_minutes must be positive")
+    if block_count <= 0:
+        raise ValueError("block_count must be positive")
+
+    curve_numbers = np.asarray(curve_numbers, dtype=np.float64).reshape(-1)
+    travel_times = np.asarray(travel_times, dtype=np.float64).reshape(-1)
+    if curve_numbers.shape != travel_times.shape:
+        raise ValueError("curve numbers and travel times must have the same shape")
+
+    valid = (
+        np.isfinite(curve_numbers)
+        & (curve_numbers > 0)
+        & np.isfinite(travel_times)
+        & (travel_times > 0)
+    )
+    if not np.any(valid):
+        raise ValueError("at least one valid curve number and travel time is required")
+    curve_numbers = curve_numbers[valid]
+    travel_times = travel_times[valid]
+
+    fractional_steps = travel_times / dt_minutes
+    lower_steps = np.maximum(np.floor(fractional_steps).astype(int), 0)
+    upper_weights = np.clip(fractional_steps - lower_steps, 0.0, 1.0)
+    has_upper_share = upper_weights > 1e-12
+    max_arrival_step = int(np.max(lower_steps + has_upper_share))
+    routed_volumes = np.zeros(max_arrival_step + block_count, dtype=np.float64)
+    previous_runoff = np.zeros_like(curve_numbers)
+
+    for block_index in range(block_count):
+        cumulative_precipitation = (
+            total_precipitation_mm * (block_index + 1) / block_count
+        )
+        _, _, cumulative_runoff = calculate_scs_runoff(
+            cumulative_precipitation,
+            curve_numbers,
+        )
+        incremental_volume = (
+            (cumulative_runoff - previous_runoff) * pixel_area_m2 / 1000.0
+        )
+        np.add.at(
+            routed_volumes,
+            lower_steps + block_index,
+            incremental_volume * (1.0 - upper_weights),
+        )
+        if np.any(has_upper_share):
+            np.add.at(
+                routed_volumes,
+                lower_steps[has_upper_share] + block_index + 1,
+                incremental_volume[has_upper_share]
+                * upper_weights[has_upper_share],
+            )
+        previous_runoff = cumulative_runoff
+
+    return previous_runoff, routed_volumes, routed_volumes / (dt_minutes * 60.0)
+
+
+def find_critical_scs_event(
+    intensity_fn,
+    rp_years,
+    durations_minutes,
+    curve_numbers,
+    pixel_area_m2,
+    travel_times,
+    dt_minutes=10,
+):
+    """Return the routed SCS event with the largest peak discharge."""
+    durations = np.asarray(durations_minutes, dtype=int)
+    if durations.size == 0:
+        raise ValueError("at least one duration is required")
+    if np.any(durations <= 0) or np.any(durations % dt_minutes != 0):
+        raise ValueError("durations must be positive multiples of dt_minutes")
+
+    peaks_by_duration = {}
+    best_event = None
+    for duration in np.unique(np.sort(durations)):
+        duration = int(duration)
+        intensity = float(
+            intensity_fn(rp_years=rp_years, duration_minutes=duration)
+        )
+        precipitation = intensity * duration / 60.0
+        runoff_depth, routed_volumes, discharge = calculate_routed_scs_event(
+            precipitation,
+            curve_numbers,
+            pixel_area_m2,
+            travel_times,
+            block_count=duration // dt_minutes,
+            dt_minutes=dt_minutes,
+        )
+        peak_discharge = float(np.max(discharge))
+        peaks_by_duration[duration] = peak_discharge
+        if best_event is None or peak_discharge > best_event["peak_discharge_m3s"]:
+            peak_index = int(np.argmax(discharge))
+            best_event = {
+                "critical_duration_minutes": duration,
+                "intensity_mm_per_hour": intensity,
+                "precipitation_mm": precipitation,
+                "runoff_depth_mm": runoff_depth,
+                "total_runoff_volume_m3": float(
+                    np.sum(runoff_depth) * pixel_area_m2 / 1000.0
+                ),
+                "routed_volumes_m3": routed_volumes,
+                "discharge_m3s": discharge,
+                "peak_discharge_m3s": peak_discharge,
+                "peak_time_minutes": float((peak_index + 1) * dt_minutes),
+            }
+
+    hq_60_m3s = peaks_by_duration.get(60)
+    if hq_60_m3s is None:
+        comparison_intensity = float(
+            intensity_fn(rp_years=rp_years, duration_minutes=60)
+        )
+        _, _, comparison_discharge = calculate_routed_scs_event(
+            comparison_intensity,
+            curve_numbers,
+            pixel_area_m2,
+            travel_times,
+            block_count=60 // dt_minutes,
+            dt_minutes=dt_minutes,
+        )
+        hq_60_m3s = float(np.max(comparison_discharge))
+
+    best_event["peaks_by_duration_m3s"] = peaks_by_duration
+    best_event["hq_60_m3s"] = hq_60_m3s
+    return best_event
 
 
 def calculate_incremental_scs_runoff_blocks(

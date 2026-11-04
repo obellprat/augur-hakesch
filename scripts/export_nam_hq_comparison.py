@@ -78,8 +78,32 @@ FIELDNAMES = [
     "HQ_100_current_Clark_WSL",
     "HQ_100_current_Landuse_CN",
     "HQ_100_current_Atyp_CN",
+    "Landuse_kritische_Regendauer_min",
+    "Landuse_T95_min",
+    "Landuse_max_untersuchte_Dauer_min",
+    "Landuse_HQ_60",
+    "Landuse_HQ_max",
+    "Landuse_Verhaeltnis_kritische_Dauer_T95",
+    "Landuse_Maximum_an_oberer_Suchgrenze",
+    "Atyp_kritische_Regendauer_min",
+    "Atyp_T95_min",
+    "Atyp_max_untersuchte_Dauer_min",
+    "Atyp_HQ_60",
+    "Atyp_HQ_max",
+    "Atyp_Verhaeltnis_kritische_Dauer_T95",
+    "Atyp_Maximum_an_oberer_Suchgrenze",
     "Fehler",
 ]
+
+NAM_METRIC_SUFFIXES = (
+    "kritische_Regendauer_min",
+    "T95_min",
+    "max_untersuchte_Dauer_min",
+    "HQ_60",
+    "HQ_max",
+    "Verhaeltnis_kritische_Dauer_T95",
+    "Maximum_an_oberer_Suchgrenze",
+)
 
 ATYP_COLUMNS = {
     "Atyp 1": "Atyp_1_pct",
@@ -283,7 +307,7 @@ def install_curve_numbers(data_dir: str, source_tif: str) -> None:
         shutil.rmtree(staging, ignore_errors=True)
 
 
-def run_nam(project: Dict[str, Any]) -> float:
+def run_nam(project: Dict[str, Any]) -> Dict[str, Any]:
     if project["nam_id"] is None:
         raise ValueError("No NAM entry for return period 100")
     if project["idf"] is None:
@@ -321,7 +345,7 @@ def run_nam(project: Dict[str, Any]) -> float:
     if not isinstance(result, dict) or "error" in result or "HQ" not in result:
         message = result.get("error") if isinstance(result, dict) else "NAM returned no HQ"
         raise RuntimeError(message)
-    return float(result["HQ"])
+    return result
 
 
 def _hq(value: Any) -> Any:
@@ -340,6 +364,32 @@ def _bool_cell(value: Any) -> Any:
     if value is None:
         return ""
     return bool(value)
+
+
+def _empty_nam_metrics(prefix: str) -> Dict[str, Any]:
+    return {f"{prefix}_{suffix}": "" for suffix in NAM_METRIC_SUFFIXES}
+
+
+def _nam_metrics(prefix: str, result: Dict[str, Any]) -> Dict[str, Any]:
+    """Characteristic values of one NAM2 duration search."""
+    critical_duration = result.get("critical_duration_minutes")
+    travel_time_p95 = result.get("travel_time_p95_minutes")
+    search_max = result.get("duration_search_max_minutes")
+    ratio = ""
+    if critical_duration is not None and travel_time_p95 not in (None, 0, 0.0):
+        ratio = float(critical_duration) / float(travel_time_p95)
+    at_upper_bound = ""
+    if critical_duration is not None and search_max is not None:
+        at_upper_bound = int(critical_duration) == int(search_max)
+    return {
+        f"{prefix}_kritische_Regendauer_min": _hq(critical_duration),
+        f"{prefix}_T95_min": _hq(travel_time_p95),
+        f"{prefix}_max_untersuchte_Dauer_min": _hq(search_max),
+        f"{prefix}_HQ_60": _hq(result.get("hq_60_m3s")),
+        f"{prefix}_HQ_max": _hq(result.get("HQ")),
+        f"{prefix}_Verhaeltnis_kritische_Dauer_T95": ratio,
+        f"{prefix}_Maximum_an_oberer_Suchgrenze": at_upper_bound,
+    }
 
 
 def _fraction_columns(raw: Any) -> Dict[str, Any]:
@@ -404,6 +454,8 @@ def _result_row(project: Dict[str, Any], fehler: str = "") -> Dict[str, Any]:
         "HQ_100_current_Atyp_CN": "",
         "Fehler": fehler,
     }
+    row.update(_empty_nam_metrics("Landuse"))
+    row.update(_empty_nam_metrics("Atyp"))
     row.update(_fraction_columns(project.get("fractions")))
     return row
 
@@ -415,13 +467,17 @@ def compare_project(project: Dict[str, Any]) -> Dict[str, Any]:
         data_dir = atyp_cn.project_data_dir(project["user_id"], project["project_id"])
         landcover = preserve_landcover(data_dir)
         install_curve_numbers(data_dir, landcover)
-        row["HQ_100_current_Landuse_CN"] = run_nam(project)
+        landuse = run_nam(project)
+        row["HQ_100_current_Landuse_CN"] = float(landuse["HQ"])
+        row.update(_nam_metrics("Landuse", landuse))
     except Exception as exc:
         errors.append(f"Landuse: {exc}")
 
     try:
         atyp_cn.generate_for_project(project["project_id"])
-        row["HQ_100_current_Atyp_CN"] = run_nam(project)
+        atyp = run_nam(project)
+        row["HQ_100_current_Atyp_CN"] = float(atyp["HQ"])
+        row.update(_nam_metrics("Atyp", atyp))
     except Exception as exc:
         errors.append(f"Atyp: {exc}")
 
@@ -470,8 +526,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             row = _result_row(project, fehler=traceback.format_exc(limit=1).strip())
         write_row(args.output, row, write_header=index == 1)
         print(
-            f"  Landuse {row['HQ_100_current_Landuse_CN']} | "
-            f"Atyp {row['HQ_100_current_Atyp_CN']}"
+            f"  Landuse HQ {row['HQ_100_current_Landuse_CN']} "
+            f"(D {row['Landuse_kritische_Regendauer_min']} min, "
+            f"T95 {row['Landuse_T95_min']} min) | "
+            f"Atyp HQ {row['HQ_100_current_Atyp_CN']} "
+            f"(D {row['Atyp_kritische_Regendauer_min']} min, "
+            f"T95 {row['Atyp_T95_min']} min)"
         )
         if row["Fehler"]:
             print(f"  Fehler: {row['Fehler']}")
