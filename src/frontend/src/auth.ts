@@ -23,22 +23,22 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 		cookies: {
 			sessionToken: {
 				name: 'abfluss.session-token',
-				options: { httpOnly: true, sameSite: 'lax', path: '/abfluss', secure: true }
+				options: { httpOnly: true, sameSite: 'lax', path: '/', secure: true }
 			},
 			callbackUrl: {
 				name: 'abfluss.callback-url',
-				options: { httpOnly: true, sameSite: 'lax', path: '/abfluss', secure: true }
+				options: { httpOnly: true, sameSite: 'lax', path: '/', secure: true }
 			},
 			csrfToken: {
 				name: 'abfluss.csrf-token',
-				options: { httpOnly: true, sameSite: 'lax', path: '/abfluss', secure: true }
+				options: { httpOnly: true, sameSite: 'lax', path: '/', secure: true }
 			},
 			pkceCodeVerifier: {
 				name: 'abfluss.pkce.code_verifier',
 				options: {
 					httpOnly: true,
 					sameSite: 'lax',
-					path: '/abfluss',
+					path: '/',
 					secure: true,
 					maxAge: 60 * 15
 				}
@@ -48,7 +48,7 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 				options: {
 					httpOnly: true,
 					sameSite: 'lax',
-					path: '/abfluss',
+					path: '/',
 					secure: true,
 					maxAge: 60 * 15
 				}
@@ -58,7 +58,7 @@ export const { handle, signIn, signOut } = SvelteKitAuth(async () => {
 				options: {
 					httpOnly: true,
 					sameSite: 'lax',
-					path: '/abfluss',
+					path: '/',
 					secure: true,
 					maxAge: 60 * 15
 				}
