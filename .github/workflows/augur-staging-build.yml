@@ -14,6 +14,21 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
 
+    services:
+      postgres:
+        image: postgres:17.5
+        env:
+          POSTGRES_USER: staging_build
+          POSTGRES_PASSWORD: staging_build
+          POSTGRES_DB: staging_build
+        ports:
+          - "127.0.0.1:5432:5432"
+        options: >-
+          --health-cmd "pg_isready -U staging_build -d staging_build"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -22,6 +37,17 @@ jobs:
           password: ${{ secrets.REGISTRY_TOKEN }}
 
       - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+          buildkitd-flags: --allow-insecure-entitlement network.host
+
+      - name: Apply frontend Prisma migrations
+        env:
+          DATABASE_URL: postgresql://staging_build:staging_build@127.0.0.1:5432/staging_build
+        run: npx --yes --package=prisma@6.12.0 prisma migrate deploy --schema=src/frontend/prisma/schema.prisma
 
       - name: Build and push api
         uses: docker/build-push-action@v6
@@ -39,8 +65,10 @@ jobs:
         with:
           context: .
           file: ./src/frontend/Dockerfile
-          # Placeholder URL for Prisma generation during build.
+          # Build connects only to the temporary PostgreSQL service.
           # Actual Staging DB credentials must be provided at runtime.
           build-args: DATABASE_URL=postgresql://staging_build:staging_build@127.0.0.1:5432/staging_build
+          network: host
+          allow: network.host
           push: true
           tags: obellprat/augur-hakesch-frontend:staging
