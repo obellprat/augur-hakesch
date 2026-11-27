@@ -1,11 +1,11 @@
 import { browser } from '$app/environment';
-import type { LayoutLoad } from '../$types';
+import type { LayoutLoad } from './$types';
 
 import '$lib/i18n'; // Import to initialize. Important :)
 import { resolveInitialLocale } from '$lib/i18n';
 import { locale, waitLocale } from 'svelte-i18n';
 
-export const load: LayoutLoad = async () => {
+export const load: LayoutLoad = async ({ data }) => {
 	if (browser) {
 		locale.set(resolveInitialLocale());
 	}
@@ -91,4 +91,6 @@ export const load: LayoutLoad = async () => {
 			html.setAttribute('data-topbar-color', config.topbar.color);
 		}
 	}
+
+	return data;
 };

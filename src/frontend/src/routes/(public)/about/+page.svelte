@@ -3,22 +3,29 @@
 	import pageTitle from '$lib/page/pageTitle';
 	import { _ } from 'svelte-i18n';
 	import { base } from '$app/paths';
+	import { page } from '$app/state';
+	import { CLIMAQVA_URL } from '$lib/dischargeMigration';
+	import DischargeMigrationNotice from '$lib/components/DischargeMigrationNotice.svelte';
 
 	$pageTitle = $_('page.about.title');
+	let dischargeMigrated = $derived(Boolean(page.data.dischargeMigrated));
 
-    let isDark = false;
+	let isDark = $state(false);
 
-    // Detect dark mode by checking the data-bs-theme attribute on <html>
-    onMount(() => {
-        const checkTheme = () => {
-            isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-        };
-        checkTheme();
-        // Listen for theme changes if your app supports switching at runtime
-        const observer = new MutationObserver(checkTheme);
-        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
-        return () => observer.disconnect();
-    });	
+	// Detect dark mode by checking the data-bs-theme attribute on <html>
+	onMount(() => {
+		const checkTheme = () => {
+			isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+		};
+		checkTheme();
+		// Listen for theme changes if your app supports switching at runtime
+		const observer = new MutationObserver(checkTheme);
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['data-bs-theme']
+		});
+		return () => observer.disconnect();
+	});
 </script>
 
 <svelte:head>
@@ -62,13 +69,27 @@
 
 					<h3 class="mt-4">{$_('page.about.getting_started.heading')}</h3>
 					<p class="card-text">{$_('page.about.getting_started.p1')}</p>
+					<DischargeMigrationNotice
+						migrated={dischargeMigrated}
+						compact={true}
+						showCta={false}
+						className="mb-3"
+					/>
 					<div class="d-flex gap-2">
 						<a class="btn btn-primary" href="{base}/precipitation"
 							>{$_('page.about.getting_started.open_precip')}</a
 						>
-						<a class="btn btn-outline-primary" href="{base}/discharge"
-							>{$_('page.about.getting_started.open_discharge')}</a
+						<a
+							class="btn btn-outline-primary"
+							href={dischargeMigrated ? CLIMAQVA_URL : `${base}/discharge`}
 						>
+							{dischargeMigrated
+								? $_('page.discharge.migration.ctaClimaQva')
+								: $_('page.about.getting_started.open_discharge')}
+							{#if dischargeMigrated}
+								<i class="ti ti-external-link ms-1" aria-hidden="true"></i>
+							{/if}
+						</a>
 					</div>
 
 					<h3 class="mt-4">{$_('page.about.credits.heading')}</h3>

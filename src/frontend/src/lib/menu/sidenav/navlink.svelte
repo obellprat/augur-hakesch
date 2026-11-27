@@ -17,12 +17,13 @@
 	} = $props();
 	import { _ } from 'svelte-i18n';
 
-	let active = $derived(page.url.pathname.includes(href));
+	let isExternal = $derived(/^https?:\/\//.test(href));
+	let active = $derived(!isExternal && page.url.pathname.includes(href));
 	$effect(() => {
 		if (page.url.pathname == '/' && href == '/') active = true;
 	});
 
-	let url = base + '/' + href;
+	let url = $derived(isExternal ? href : base + '/' + href);
 </script>
 
 <li class={['side-nav-item', { active }]}>
@@ -86,6 +87,7 @@
 			class="side-nav-link"
 			data-sveltekit-preload-data="off"
 			target={target}
+			rel={target === '_blank' ? 'noopener noreferrer' : undefined}
 		>
 			<span class="menu-icon"><i class={icon}></i></span>
 			<span class="menu-text"> {title} </span>
@@ -97,9 +99,18 @@
 			</ul>
 		</div>
 	{:else}
-		<a href={url} class="side-nav-link" data-sveltekit-preload-data="off" target={target}>
+		<a
+			href={url}
+			class="side-nav-link"
+			data-sveltekit-preload-data="off"
+			target={target}
+			rel={target === '_blank' ? 'noopener noreferrer' : undefined}
+		>
 			<span class="menu-icon"><i class={icon}></i></span>
 			<span class="menu-text"> {title} </span>
+			{#if isExternal}
+				<span class="ms-auto"><i class="ti ti-external-link fs-14" aria-hidden="true"></i></span>
+			{/if}
 		</a>
 	{/if}
 </li>

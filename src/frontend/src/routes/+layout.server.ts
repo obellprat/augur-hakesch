@@ -1,5 +1,6 @@
 import { env as publicEnv } from '$env/dynamic/public';
 import { env as privateEnv } from '$env/dynamic/private';
+import { isDischargeMigratedServer } from '$lib/server/dischargeMigration';
 import type { LayoutServerLoad } from './$types';
 
 const getApiBaseUrl = (): string | undefined =>
@@ -24,6 +25,7 @@ const buildApiUrl = (path: string): string | null => {
 };
 
 export const load: LayoutServerLoad = async (event) => {
+	const dischargeMigrated = isDischargeMigratedServer();
 	const session = await event.locals.auth();
 	const sessionWithToken = session as any;
 	const unreadImportantNewsUrl = buildApiUrl('/news/important/unread');
@@ -61,7 +63,8 @@ export const load: LayoutServerLoad = async (event) => {
 			apiversion: 'undefined',
 			version: '0.3.0.dev1',
 			session,
-			importantNews
+			importantNews,
+			dischargeMigrated
 		};
 	}
 
@@ -77,7 +80,8 @@ export const load: LayoutServerLoad = async (event) => {
 			apiversion: versionObject.version, // This will include the version from the API response
 			version: '1.3.2', // This is dynamically set in the build process
 			session,
-			importantNews
+			importantNews,
+			dischargeMigrated
 		};
 	} catch (error) {
 		console.error(`Error in load function for /: ${error}`);
@@ -87,6 +91,7 @@ export const load: LayoutServerLoad = async (event) => {
 		apiversion: 'undefined', // Fallback in case of error
 		version: '0.3.0.dev1', // This is dynamically set in the build process
 		session,
-		importantNews
+		importantNews,
+		dischargeMigrated
 	};
 };

@@ -1,9 +1,12 @@
-import type { PageServerLoad } from './$types';
+import type { LayoutServerLoad } from './$types';
 import { getAllProjects } from '$lib/server/project';
+import { redirectIfDischargeMigrated } from '$lib/server/dischargeMigration';
 import { redirect } from '@sveltejs/kit';
 import { base } from '$app/paths';
 
-export const load: PageServerLoad = async (events) => {
+export const load: LayoutServerLoad = async (events) => {
+	redirectIfDischargeMigrated();
+
 	const session = await events.locals.auth();
 	if (session?.myuser?.id) {
 		const projects = await getAllProjects(session.myuser.id);

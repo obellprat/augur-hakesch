@@ -3,8 +3,10 @@
 	import Navlink from './navlink.svelte';
 	import { _ } from 'svelte-i18n';
 	import { page } from '$app/state';
+	import { CLIMAQVA_URL } from '$lib/dischargeMigration';
 
 	let props = $props();
+	let dischargeMigrated = $derived(Boolean(page.data.dischargeMigrated));
 	let aboutActive = $derived(
 		page.url.pathname.includes('/about') ||
 			page.url.pathname.includes('/news') ||
@@ -47,10 +49,10 @@
 			<Navlink title={$_('page.precipitation.nav')} href="precipitation" icon="ti ti-cloud-rain" />
 			<Navlink
 				title={$_('page.discharge.nav')}
-				href="discharge"
+				href={dischargeMigrated ? CLIMAQVA_URL : 'discharge'}
 				icon="ti ti-chart-histogram"
-				projectcount={page.data.projects?.length}
-				currentproject={page.data.project}
+				projectcount={dischargeMigrated ? 0 : page.data.projects?.length}
+				currentproject={dischargeMigrated ? null : page.data.project}
 			/>
 
 			<!--<Navlink title="Isozones" href="isozones" icon="ti ti-stopwatch" />-->
