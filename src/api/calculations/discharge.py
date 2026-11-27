@@ -1076,6 +1076,36 @@ def _clear_isozones_running_on_failure(project_id: str) -> None:
                 pass
 
 
+def _delta_h_from_dem_and_mask(dem_values: np.ndarray, catch_mask: np.ndarray) -> float:
+    """Elevation range (max - min) inside a catchment boolean mask."""
+    dem_values = np.asarray(dem_values, dtype=np.float64).copy()
+    catch_mask = np.asarray(catch_mask, dtype=bool)
+    if catch_mask.shape != dem_values.shape:
+        raise ValueError(
+            f"Catchment mask shape {catch_mask.shape} does not match DEM shape "
+            f"{dem_values.shape} after clip_to; view both onto the clipped grid."
+        )
+    dem_values[~catch_mask] = np.nan
+    dem_values[dem_values < 0] = np.nan
+    finite = dem_values[np.isfinite(dem_values)]
+    if finite.size == 0:
+        raise ValueError("No valid DEM values inside catchment for delta_H")
+    return float(np.nanmax(finite) - np.nanmin(finite))
+
+
+def _delta_h_within_catchment(grid, dem, catch) -> float:
+    """
+    Max-min elevation inside ``catch`` after ``grid.clip_to(catch)``.
+
+    ``catch`` still has the pre-clip window shape; ``dem`` from ``read_raster``
+    follows the clipped viewfinder. Both must be ``grid.view``'d first.
+    """
+    dem_values = np.asarray(np.ma.filled(grid.view(dem), np.nan), dtype=np.float64)
+    catch_mask = np.asarray(grid.view(catch, dtype=np.uint8), dtype=bool)
+    return _delta_h_from_dem_and_mask(dem_values, catch_mask)
+
+
+
 @app.task(name="prepare_discharge_hydroparameters", bind=True)
 def prepare_discharge_hydroparameters(self, projectId: str, userId: int, northing: float, easting: float, a_crit = 3000, v_gerinne = 1.5):
     try:
@@ -1258,12 +1288,10 @@ def _prepare_discharge_hydroparameters_impl(self, projectId: str, userId: int, n
     L_cum = cumulative_length(branches)
 
     # Reload DEM and compute elevation range strictly within the catchment.
+    # After clip_to(catch), dem follows the clipped viewfinder while catch still
+    # has the full window shape — align both with grid2.view (same as polygonize).
     dem = grid2.read_raster(temp_dem_path)
-    dem_values = np.asarray(np.ma.filled(dem, np.nan), dtype=np.float64)
-    catch_mask = np.asarray(catch, dtype=bool)
-    dem_values[~catch_mask] = np.nan
-    dem_values[dem_values < 0] = np.nan
-    delta_H = float(np.nanmax(dem_values) - np.nanmin(dem_values))
+    delta_H = _delta_h_within_catchment(grid2, dem, catch)
 
     # calculate slope
     self.update_state(state='PROGRESS',
@@ -1272,7 +1300,7 @@ def _prepare_discharge_hydroparameters_impl(self, projectId: str, userId: int, n
     slope_percentage = slope * 100
 
     # Free DEM arrays — no longer needed after slope calculation
-    del dem, dem_values, slope
+    del dem, slope
     gc.collect()
 
     # create wald raster    
