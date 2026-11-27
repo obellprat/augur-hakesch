@@ -1,4 +1,5 @@
 import { getProjectById, getAllZones } from '$lib/server/project';
+import { redirectIfDischargeMigrated } from '$lib/server/dischargeMigration';
 import { error } from '@sveltejs/kit';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
@@ -37,6 +38,8 @@ type BulkPayload = {
 };
 
 export const load = async ({ params }) => {
+	redirectIfDischargeMigrated();
+
 	if (browser) {
 		if (!page.data.session?.user?.name) {
 			redirect(303, `./login?redirect_url=` + page.url.href + '/discharge');

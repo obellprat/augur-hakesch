@@ -1,9 +1,12 @@
 import type { PageServerLoad, Actions } from './$types';
 import { getAllProjects, deleteProject } from '$lib/server/project';
+import { redirectIfDischargeMigrated } from '$lib/server/dischargeMigration';
 import { fail, redirect } from '@sveltejs/kit';
 import { base } from '$app/paths';
 
 export const load: PageServerLoad = async (events) => {
+	redirectIfDischargeMigrated();
+
 	const session = await events.locals.auth();
 	if (!session?.myuser?.id) {
 		redirect(303, `${base}/login?redirect_url=${base}/discharge`);

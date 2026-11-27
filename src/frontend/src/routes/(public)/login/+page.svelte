@@ -3,6 +3,9 @@
 	import { base } from '$app/paths';
 	import { startKeycloakLogin } from '$lib/auth/keycloakAuth';
 	import { _ } from 'svelte-i18n';
+	import DischargeMigrationNotice from '$lib/components/DischargeMigrationNotice.svelte';
+
+	let dischargeMigrated = $derived(Boolean(page.data.dischargeMigrated));
 
 	const callbackUrl = $derived(
 		page.url.searchParams.get('redirect_url')
@@ -15,6 +18,7 @@
 	<div class="container-fluid">
 		<div class="row">
 			<div class="col-12">
+				<DischargeMigrationNotice migrated={dischargeMigrated} className="mb-3" />
 				<div class="card">
 					<div class="card-body">
 						<h1 class="card-title">{$_('page.login.title')}</h1>
